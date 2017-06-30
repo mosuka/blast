@@ -1,0 +1,13 @@
+{
+  "document": {
+    "id": "4",
+    "fields": {
+      "name": "Ferret",
+      "description": "Ferret is a super fast, highly configurable search library written in Ruby.",
+      "category": "Library",
+      "popularity": 2.0,
+      "release": "2005-10-01T00:00:00Z",
+      "type": "document"
+    }
+  }
+}

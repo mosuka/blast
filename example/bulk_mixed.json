@@ -1,0 +1,63 @@
+{
+  "batch_size": 1000,
+  "requests": [
+    {
+      "method": "put",
+      "document": {
+        "id": "1",
+        "fields": {
+          "name": "Bleve",
+          "description": "Bleve is a full-text search and indexing library for Go.",
+          "category": "Library",
+          "popularity": 3,
+          "release": "2014-04-18T00:00:00Z",
+          "type": "document"
+        }
+      }
+    },
+    {
+      "method": "delete",
+      "document": {
+        "id": "2"
+      }
+    },
+    {
+      "method": "delete",
+      "document": {
+        "id": "3"
+      }
+    },
+    {
+      "method": "delete",
+      "document": {
+        "id": "4"
+      }
+    },
+    {
+      "method": "delete",
+      "document": {
+        "id": "5"
+      }
+    },
+    {
+      "method": "delete",
+      "document": {
+        "id": "6"
+      }
+    },
+    {
+      "method": "put",
+      "document": {
+        "id": "7",
+        "fields": {
+          "name": "Blast",
+          "description": "Blast is a full-text search and indexing server written in Go, built on top of Bleve.",
+          "category": "Server",
+          "popularity": 1,
+          "release": "2017-01-13T00:00:00Z",
+          "type": "document"
+        }
+      }
+    }
+  ]
+}

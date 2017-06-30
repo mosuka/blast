@@ -12,16 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Eclipse
-.classpath
-.project
+log_format: text
+log_output: ""
+log_level: "info"
 
-# Gogland
-.idea/
+port: 10000
+path: "./data/index"
 
-# Blast
-*.log
-bin
-data
-vendor/*
-!/vendor/manifest
+index_mapping: ""
+index_type: "upside_down"
+kvstore: "boltdb"
+kvconfig: ""
+
+delete_index_at_startup: false
+delete_index_at_shutdown: false

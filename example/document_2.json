@@ -1,0 +1,13 @@
+{
+  "document": {
+    "id": "2",
+    "fields": {
+      "name": "Lucene",
+      "description": "Apache Lucene is a high-performance, full-featured text search engine library written entirely in Java.",
+      "category": "Library",
+      "popularity": 4.0,
+      "release": "2000-03-30T00:00:00Z",
+      "type": "document"
+    }
+  }
+}

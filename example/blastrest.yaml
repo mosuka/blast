@@ -12,16 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Eclipse
-.classpath
-.project
+log_format: text
+log_output: ""
+log_level: "info"
 
-# Gogland
-.idea/
-
-# Blast
-*.log
-bin
-data
-vendor/*
-!/vendor/manifest
+port: 20000
+base_uri: "api"
+server: "localhost:10000"

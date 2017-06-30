@@ -1,0 +1,96 @@
+//  Copyright (c) 2017 Minoru Osuka
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 		http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+
+package proto;
+
+service Blast {
+    rpc GetIndex(GetIndexRequest) returns (GetIndexResponse) {}
+    rpc PutDocument(PutDocumentRequest) returns (PutDocumentResponse) {}
+    rpc GetDocument(GetDocumentRequest) returns (GetDocumentResponse) {}
+    rpc DeleteDocument(DeleteDocumentRequest) returns (DeleteDocumentResponse) {}
+    rpc Bulk(BulkRequest) returns (BulkResponse) {}
+    rpc Search(SearchRequest) returns (SearchResponse) {}
+}
+
+message Document {
+    string id = 1;
+    google.protobuf.Any fields = 2;
+}
+
+message UpdateRequest {
+    string method = 1;
+    Document document = 2;
+}
+
+message GetIndexRequest {
+    bool include_index_mapping = 1;
+    bool include_index_type = 2;
+    bool include_kvstore = 3;
+    bool include_kvconfig = 4;
+}
+
+message GetIndexResponse {
+    string path = 1;
+    google.protobuf.Any index_mapping = 2;
+    string index_type = 3;
+    string kvstore = 4;
+    google.protobuf.Any kvconfig = 5;
+}
+
+message PutDocumentRequest {
+    Document document = 1;
+}
+
+message PutDocumentResponse {
+    int32 put_count = 1;
+}
+
+message GetDocumentRequest {
+    string id = 1;
+}
+
+message GetDocumentResponse {
+    Document document = 1;
+}
+
+message DeleteDocumentRequest {
+    string id = 1;
+}
+
+message DeleteDocumentResponse {
+    int32 delete_count = 1;
+}
+
+message BulkRequest {
+    int32 batch_size = 1;
+    repeated UpdateRequest requests = 2;
+}
+
+message BulkResponse {
+    int32 put_count = 1;
+    int32 put_error_count = 2;
+    int32 delete_count = 3;
+}
+
+message SearchRequest {
+    google.protobuf.Any search_request = 1;
+}
+
+message SearchResponse {
+    google.protobuf.Any search_result = 1;
+}

@@ -1,0 +1,5 @@
+{
+  "create_if_missing": true,
+  "error_if_exists": true,
+  "path": "/var/blast/data/index/store"
+}

@@ -1,0 +1,47 @@
+{
+  "batch_size": 1000,
+  "requests": [
+    {
+      "method": "delete",
+      "document": {
+        "id": "1"
+      }
+    },
+    {
+      "method": "delete",
+      "document": {
+        "id": "2"
+      }
+    },
+    {
+      "method": "delete",
+      "document": {
+        "id": "3"
+      }
+    },
+    {
+      "method": "delete",
+      "document": {
+        "id": "4"
+      }
+    },
+    {
+      "method": "delete",
+      "document": {
+        "id": "5"
+      }
+    },
+    {
+      "method": "delete",
+      "document": {
+        "id": "6"
+      }
+    },
+    {
+      "method": "delete",
+      "document": {
+        "id": "7"
+      }
+    }
+  ]
+}
