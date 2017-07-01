@@ -204,7 +204,7 @@ func LoadConfig() {
 	viper.SetDefault("index_type", DefaultIndexType)
 	viper.SetDefault("kvstore", DefaultKvstore)
 	viper.SetDefault("kvconfig", DefaultKvconfig)
-	viper.SetDefault("open_existing_index", DefaultDeleteIndexAtStartup)
+	viper.SetDefault("delete_index_at_startup", DefaultDeleteIndexAtStartup)
 	viper.SetDefault("delete_index_at_shutdown", DefaultDeleteIndexAtShutdown)
 
 	if viper.GetString("config") != "" {
