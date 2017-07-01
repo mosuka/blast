@@ -161,7 +161,7 @@ func runERootCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	server := grpc.NewBlastGRPCServer(viper.GetInt("port"), viper.GetString("path"), indexMapping, viper.GetString("index_type"), viper.GetString("kvstore"), kvconfig)
+	server := grpc.NewBlastGRPCServer(viper.GetInt("port"), viper.GetString("index_path"), indexMapping, viper.GetString("index_type"), viper.GetString("kvstore"), kvconfig)
 	server.Start(viper.GetBool("delete_index_at_startup"))
 
 	signalChan := make(chan os.Signal, 1)
@@ -197,9 +197,8 @@ func LoadConfig() {
 	viper.SetDefault("log_format", DefaultLogFormat)
 	viper.SetDefault("log_output", DefaultLogOutput)
 	viper.SetDefault("log_level", DefaultLogLevel)
-
 	viper.SetDefault("port", DefaultPort)
-	viper.SetDefault("path", DefaultPath)
+	viper.SetDefault("index_path", DefaultIndexPath)
 	viper.SetDefault("index_mapping", DefaultIndexMapping)
 	viper.SetDefault("index_type", DefaultIndexType)
 	viper.SetDefault("kvstore", DefaultKvstore)
@@ -231,7 +230,7 @@ func init() {
 	RootCmd.Flags().String("log-output", DefaultLogOutput, "log output path")
 	RootCmd.Flags().String("log-level", DefaultLogLevel, "log level")
 	RootCmd.Flags().Int("port", DefaultPort, "port number")
-	RootCmd.Flags().String("path", DefaultPath, "index directory path")
+	RootCmd.Flags().String("index-path", DefaultIndexPath, "index directory path")
 	RootCmd.Flags().String("index-mapping", DefaultIndexMapping, "index mapping path")
 	RootCmd.Flags().String("index-type", DefaultIndexType, "index type")
 	RootCmd.Flags().String("kvstore", DefaultKvstore, "kvstore")
@@ -244,7 +243,7 @@ func init() {
 	viper.BindPFlag("log_output", RootCmd.Flags().Lookup("log-output"))
 	viper.BindPFlag("log_level", RootCmd.Flags().Lookup("log-level"))
 	viper.BindPFlag("port", RootCmd.Flags().Lookup("port"))
-	viper.BindPFlag("path", RootCmd.Flags().Lookup("path"))
+	viper.BindPFlag("index_path", RootCmd.Flags().Lookup("index-path"))
 	viper.BindPFlag("index_mapping", RootCmd.Flags().Lookup("index-mapping"))
 	viper.BindPFlag("index_type", RootCmd.Flags().Lookup("index-type"))
 	viper.BindPFlag("kvstore", RootCmd.Flags().Lookup("kvstore"))

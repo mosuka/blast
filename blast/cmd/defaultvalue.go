@@ -20,7 +20,7 @@ const (
 	DefaultLogOutput             string = ""
 	DefaultLogLevel              string = "info"
 	DefaultPort                  int    = 10000
-	DefaultPath                  string = "/var/indigo/data/index"
+	DefaultIndexPath             string = "/var/indigo/data/index"
 	DefaultIndexMapping          string = ""
 	DefaultIndexType             string = "upside_down"
 	DefaultKvstore               string = "boltdb"
