@@ -40,7 +40,7 @@ test:
 
 build:
 	@echo ">> building binaries"
-	@for target_pkg in $(TARGET_PACKAGES); do echo $$target_pkg; $(GO) build ${BUILD_TAGS} ${LDFLAGS} -o ./bin/$$target_pkg $$target_pkg; done
+	@for target_pkg in $(TARGET_PACKAGES); do echo $$target_pkg; $(GO) build ${BUILD_TAGS} ${LDFLAGS} -o ./bin/`basename $$target_pkg` $$target_pkg; done
 
 install:
 	@echo ">> installing binaries"

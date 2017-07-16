@@ -28,14 +28,14 @@ import (
 
 type BlastGRPCService struct {
 	Path         string
-	IndexMapping mapping.IndexMapping
+	IndexMapping *mapping.IndexMappingImpl
 	IndexType    string
 	Kvstore      string
 	Kvconfig     map[string]interface{}
 	Index        bleve.Index
 }
 
-func NewBlastGRPCService(path string, indexMapping mapping.IndexMapping, indexType string, kvstore string, kvconfig map[string]interface{}) *BlastGRPCService {
+func NewBlastGRPCService(path string, indexMapping *mapping.IndexMappingImpl, indexType string, kvstore string, kvconfig map[string]interface{}) *BlastGRPCService {
 	return &BlastGRPCService{
 		Path:         path,
 		IndexMapping: indexMapping,
@@ -46,23 +46,8 @@ func NewBlastGRPCService(path string, indexMapping mapping.IndexMapping, indexTy
 	}
 }
 
-func (s *BlastGRPCService) OpenIndex(deleteIndex bool) error {
-	var err error
-	if deleteIndex {
-		err = os.RemoveAll(s.Path)
-		if err == nil {
-			log.WithFields(log.Fields{
-				"path": s.Path,
-			}).Info("succeeded in deleting index")
-		} else {
-			log.WithFields(log.Fields{
-				"path": s.Path,
-				"err":  err,
-			}).Error("failed to delete index")
-		}
-	}
-
-	_, err = os.Stat(s.Path)
+func (s *BlastGRPCService) OpenIndex() error {
+	_, err := os.Stat(s.Path)
 	if os.IsNotExist(err) {
 		log.WithFields(log.Fields{
 			"path": s.Path,
@@ -110,7 +95,7 @@ func (s *BlastGRPCService) OpenIndex(deleteIndex bool) error {
 	return err
 }
 
-func (s *BlastGRPCService) CloseIndex(deleteIndex bool) error {
+func (s *BlastGRPCService) CloseIndex() error {
 	err := s.Index.Close()
 	if err == nil {
 		log.WithFields(log.Fields{}).Info("succeeded in closing index")
@@ -120,26 +105,12 @@ func (s *BlastGRPCService) CloseIndex(deleteIndex bool) error {
 		}).Error("failed to close index")
 	}
 
-	if deleteIndex {
-		err = os.RemoveAll(s.Path)
-		if err == nil {
-			log.WithFields(log.Fields{
-				"path": s.Path,
-			}).Info("succeeded in deleting index")
-		} else {
-			log.WithFields(log.Fields{
-				"path": s.Path,
-				"err":  err,
-			}).Error("failed to delete index")
-		}
-	}
-
 	return err
 }
 
 func (s *BlastGRPCService) GetIndex(ctx context.Context, req *proto.GetIndexRequest) (*proto.GetIndexResponse, error) {
 	protoGetIndexResponse := &proto.GetIndexResponse{
-		Path: s.Path,
+		IndexPath: s.Path,
 	}
 
 	if req.IncludeIndexMapping {
