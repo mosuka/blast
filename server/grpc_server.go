@@ -29,13 +29,13 @@ import (
 type blastGRPCServer struct {
 	hostname   string
 	port       int
+	etcdClient *client.EtcdClientWrapper
 	server     *grpc.Server
 	listener   net.Listener
 	service    *service.BlastGRPCService
-	etcdClient *client.EtcdClientWrapper
 }
 
-func NewBlastGRPCServer(port int) *blastGRPCServer {
+func NewBlastGRPCServer(port int, etcdServers []string, requestTimeout int) *blastGRPCServer {
 	hostname, err := os.Hostname()
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -44,68 +44,54 @@ func NewBlastGRPCServer(port int) *blastGRPCServer {
 		return nil
 	}
 
+	var etcdClient *client.EtcdClientWrapper
+	if len(etcdServers) > 0 {
+		etcdClient, err = client.NewEtcdClientWrapper(etcdServers, requestTimeout)
+		if err == nil {
+			log.WithFields(log.Fields{
+				"etcdServers":    etcdServers,
+				"requestTimeout": requestTimeout,
+			}).Info("succeeded in connect to etcd servers")
+		} else {
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+			}).Error("failed to connect etcd server")
+		}
+	}
+
 	return &blastGRPCServer{
-		hostname: hostname,
-		port:     port,
+		hostname:   hostname,
+		port:       port,
+		etcdClient: etcdClient,
 	}
 }
 
-func (s *blastGRPCServer) StartOnCluster(etcdServers []string, requestTimeout int, clusterName string) error {
-	etcdClient, err := client.NewEtcdClientWrapper(etcdServers, requestTimeout)
-	if err == nil {
+func (s *blastGRPCServer) JoinCluster(clusterName string) error {
+	if s.etcdClient != nil {
 		log.WithFields(log.Fields{
-			"etcdServers":    etcdServers,
-			"requestTimeout": requestTimeout,
-		}).Info("succeeded in connect to etcd servers")
-	} else {
-		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Error("failed to connect etcd server")
-		return nil
+			"cluster":  clusterName,
+			"hostname": s.hostname,
+			"port":     s.port,
+		}).Info("join a cluster")
 	}
-	s.etcdClient = etcdClient
+	return nil
+}
 
-	indexPath, err := s.etcdClient.GetIndexPath(clusterName)
-	if err != nil {
+func (s *blastGRPCServer) LeaveCluster(clusterName string) error {
+	if s.etcdClient != nil {
 		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Error("failed to get indexPath")
-		return nil
+			"cluster":  clusterName,
+			"hostname": s.hostname,
+			"port":     s.port,
+		}).Info("leave a cluster")
 	}
+	return nil
+}
 
-	indexMapping, err := s.etcdClient.GetIndexMapping(clusterName)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Error("failed to get indexMapping")
-		return nil
-	}
+func (s *blastGRPCServer) GetIndexMappingFromEtc(clusterName string) error {
+	s.etcdClient.GetIndexMapping(clusterName)
 
-	indexType, err := s.etcdClient.GetIndexType(clusterName)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Error("failed to get indexType")
-		return nil
-	}
-
-	kvstore, err := s.etcdClient.GetKvstore(clusterName)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Error("failed to get kvstore")
-		return nil
-	}
-
-	kvconfig, err := s.etcdClient.GetKvconfig(clusterName)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Error("failed to get kvconfig")
-		return nil
-	}
-
-	return s.Start(indexPath, indexMapping, indexType, kvstore, kvconfig)
+	return nil
 }
 
 func (s *blastGRPCServer) Start(indexPath string, indexMapping *mapping.IndexMappingImpl, indexType string, kvstore string, kvconfig map[string]interface{}) error {

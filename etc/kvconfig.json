@@ -1,5 +1,4 @@
 {
   "create_if_missing": true,
-  "error_if_exists": false,
-  "path": "./data/index/store"
+  "error_if_exists": false
 }

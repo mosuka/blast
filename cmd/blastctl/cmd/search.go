@@ -87,14 +87,15 @@ func runESearchCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// get search_request
-	searchRequestBytes, _, _, err := jsonparser.Get(data, "search_request")
-	if err != nil {
-		return err
-	}
 	var searchRequest *bleve.SearchRequest
-	err = json.Unmarshal(searchRequestBytes, &searchRequest)
-	if err != nil {
-		return err
+	searchRequestBytes, _, _, err := jsonparser.Get(data, "search_request")
+	if err == nil {
+		err = json.Unmarshal(searchRequestBytes, &searchRequest)
+		if err != nil {
+			return err
+		}
+	} else {
+		searchRequest = bleve.NewSearchRequest(nil)
 	}
 
 	// overwrite request

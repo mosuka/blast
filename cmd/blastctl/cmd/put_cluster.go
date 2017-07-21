@@ -27,7 +27,7 @@ import (
 type PutClusterCommandOptions struct {
 	etcdServers    []string
 	requestTimeout int
-	name           string
+	clusterName    string
 	shards         int
 	indexPath      string
 	indexMapping   string
@@ -39,7 +39,7 @@ type PutClusterCommandOptions struct {
 var putClusterCmdOpts = PutClusterCommandOptions{
 	etcdServers:    []string{"localhost:2379"},
 	requestTimeout: 15000,
-	name:           "",
+	clusterName:    "",
 	shards:         1,
 	indexPath:      "./data/index",
 	indexMapping:   "",
@@ -57,7 +57,7 @@ var putClusterCmd = &cobra.Command{
 
 func runEPutClusterCmd(cmd *cobra.Command, args []string) error {
 	// check id
-	if putClusterCmdOpts.name == "" {
+	if putClusterCmdOpts.clusterName == "" {
 		return fmt.Errorf("required flag: --%s", cmd.Flag("name").Name)
 	}
 
@@ -98,19 +98,40 @@ func runEPutClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 	defer cw.Close()
 
-	// create cluster
-	err = cw.PutCluster(putClusterCmdOpts.name,
-		putClusterCmdOpts.shards,
-		putClusterCmdOpts.indexPath,
-		indexMapping,
-		putClusterCmdOpts.indexType,
-		putClusterCmdOpts.kvstore,
-		kvconfig)
+	err = cw.PutShards(putClusterCmdOpts.clusterName, putClusterCmdOpts.shards, false)
+	if err != nil {
+		return err
+	}
+	err = cw.PutIndexMapping(putClusterCmdOpts.clusterName, indexMapping, false)
+	if err != nil {
+		return err
+	}
+	err = cw.PutIndexType(putClusterCmdOpts.clusterName, putClusterCmdOpts.indexType, false)
+	if err != nil {
+		return err
+	}
+	err = cw.PutKvstore(putClusterCmdOpts.clusterName, putClusterCmdOpts.kvstore, false)
+	if err != nil {
+		return err
+	}
+	err = cw.PutKvconfig(putClusterCmdOpts.clusterName, kvconfig, false)
 	if err != nil {
 		return err
 	}
 
-	resp := make(map[string]interface{})
+	resp := struct {
+		Shards       int                       `json:"shards,omitempty"`
+		IndexMapping *mapping.IndexMappingImpl `json:"index_mapping,omitempty"`
+		IndexType    string                    `json:"index_type,omitempty"`
+		Kvstore      string                    `json:"kvstore,omitempty"`
+		Kvconfig     map[string]interface{}    `json:"kvconfig,omitempty"`
+	}{
+		Shards:       putClusterCmdOpts.shards,
+		IndexMapping: indexMapping,
+		IndexType:    putClusterCmdOpts.indexType,
+		Kvstore:      putClusterCmdOpts.kvstore,
+		Kvconfig:     kvconfig,
+	}
 
 	// output response
 	switch rootCmdOpts.outputFormat {
@@ -134,7 +155,7 @@ func init() {
 
 	putClusterCmd.Flags().StringSliceVar(&putClusterCmdOpts.etcdServers, "etcd-server", putClusterCmdOpts.etcdServers, "etcd server to connect to")
 	putClusterCmd.Flags().IntVar(&putClusterCmdOpts.requestTimeout, "request-timeout", putClusterCmdOpts.requestTimeout, "request timeout")
-	putClusterCmd.Flags().StringVar(&putClusterCmdOpts.name, "name", putClusterCmdOpts.name, "cluster name")
+	putClusterCmd.Flags().StringVar(&putClusterCmdOpts.clusterName, "cluster-name", putClusterCmdOpts.clusterName, "cluster name")
 	putClusterCmd.Flags().IntVar(&putClusterCmdOpts.shards, "shards", putClusterCmdOpts.shards, "number of shards")
 	putClusterCmd.Flags().StringVar(&putClusterCmdOpts.indexPath, "index-path", putClusterCmdOpts.indexPath, "index directory path")
 	putClusterCmd.Flags().StringVar(&putClusterCmdOpts.indexMapping, "index-mapping", putClusterCmdOpts.indexMapping, "index mapping")

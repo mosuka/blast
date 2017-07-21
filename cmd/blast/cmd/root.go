@@ -37,6 +37,7 @@ type RootCommandOptions struct {
 	etcdServers    []string
 	requestTimeout int
 	clusterName    string
+	shards         int
 	port           int
 	indexPath      string
 	indexMapping   string
@@ -54,6 +55,7 @@ var rootCmdOpts = RootCommandOptions{
 	etcdServers:    []string{},
 	requestTimeout: 15000,
 	clusterName:    "",
+	shards:         1,
 	port:           10000,
 	indexPath:      "./data/index",
 	indexMapping:   "",
@@ -159,43 +161,41 @@ func persistentPreRunERootCmd(cmd *cobra.Command, args []string) error {
 }
 
 func runERootCmd(cmd *cobra.Command, args []string) error {
+	var indexMapping *mapping.IndexMappingImpl
+	if viper.GetString("index_mapping") != "" {
+		file, err := os.Open(viper.GetString("index_mapping"))
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		indexMapping, err = util.NewIndexMapping(file)
+		if err != nil {
+			return err
+		}
+	}
+
+	var kvconfig map[string]interface{}
+	if viper.GetString("kvconfig") != "" {
+		file, err := os.Open(viper.GetString("kvconfig"))
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		kvconfig, err = util.NewKvconfig(file)
+		if err != nil {
+			return err
+		}
+	}
+
 	// server
-	s := server.NewBlastGRPCServer(
-		viper.GetInt("port"),
-	)
+	svr := server.NewBlastGRPCServer(viper.GetInt("port"), viper.GetStringSlice("etcd_servers"), viper.GetInt("request_timeout"))
 
-	if len(viper.GetStringSlice("etcd_servers")) > 0 {
-		s.StartOnCluster(viper.GetStringSlice("etcd_servers"), viper.GetInt("request_timeout"), viper.GetString("cluster_name"))
-	} else {
-		var indexMapping *mapping.IndexMappingImpl
-		if viper.GetString("index_mapping") != "" {
-			file, err := os.Open(viper.GetString("index_mapping"))
-			if err != nil {
-				return err
-			}
-			defer file.Close()
+	svr.Start(viper.GetString("index_path"), indexMapping, viper.GetString("index_type"), viper.GetString("kvstore"), kvconfig)
 
-			indexMapping, err = util.NewIndexMapping(file)
-			if err != nil {
-				return err
-			}
-		}
-
-		var kvconfig map[string]interface{}
-		if viper.GetString("kvconfig") != "" {
-			file, err := os.Open(viper.GetString("kvconfig"))
-			if err != nil {
-				return err
-			}
-			defer file.Close()
-
-			kvconfig, err = util.NewKvconfig(file)
-			if err != nil {
-				return err
-			}
-		}
-
-		s.Start(viper.GetString("index_path"), indexMapping, viper.GetString("index_type"), viper.GetString("kvstore"), kvconfig)
+	if viper.GetString("cluster_name") != "" {
+		svr.JoinCluster(viper.GetString("cluster_name"))
 	}
 
 	signalChan := make(chan os.Signal, 1)
@@ -211,7 +211,11 @@ func runERootCmd(cmd *cobra.Command, args []string) error {
 			"signal": sig,
 		}).Info("trap signal")
 
-		s.Stop()
+		if viper.GetString("cluster_name") != "" {
+			svr.LeaveCluster(viper.GetString("cluster_name"))
+		}
+
+		svr.Stop()
 
 		return nil
 	}
@@ -233,6 +237,7 @@ func LoadConfig() {
 	viper.SetDefault("log_level", rootCmdOpts.logLevel)
 	viper.SetDefault("etcd_endpoints", rootCmdOpts.etcdServers)
 	viper.SetDefault("request_timeout", rootCmdOpts.requestTimeout)
+	viper.SetDefault("shards", rootCmdOpts.requestTimeout)
 	viper.SetDefault("cluster_name", rootCmdOpts.clusterName)
 	viper.SetDefault("port", rootCmdOpts.port)
 	viper.SetDefault("index_path", rootCmdOpts.indexPath)
@@ -269,6 +274,7 @@ func init() {
 	RootCmd.Flags().StringSlice("etcd-server", rootCmdOpts.etcdServers, "etcd server")
 	RootCmd.Flags().Int("request-timeout", rootCmdOpts.requestTimeout, "request timeout")
 	RootCmd.Flags().String("cluster-name", rootCmdOpts.clusterName, "cluster name")
+	RootCmd.Flags().Int("shards", rootCmdOpts.shards, "shards")
 	RootCmd.Flags().String("index-path", rootCmdOpts.indexPath, "index directory path")
 	RootCmd.Flags().String("index-mapping", rootCmdOpts.indexMapping, "index mapping path")
 	RootCmd.Flags().String("index-type", rootCmdOpts.indexType, "index type")
@@ -284,6 +290,7 @@ func init() {
 	viper.BindPFlag("etcd_servers", RootCmd.Flags().Lookup("etcd-server"))
 	viper.BindPFlag("request_timeout", RootCmd.Flags().Lookup("request-timeout"))
 	viper.BindPFlag("cluster_name", RootCmd.Flags().Lookup("cluster-name"))
+	viper.BindPFlag("shards", RootCmd.Flags().Lookup("shards"))
 	viper.BindPFlag("index_path", RootCmd.Flags().Lookup("index-path"))
 	viper.BindPFlag("index_mapping", RootCmd.Flags().Lookup("index-mapping"))
 	viper.BindPFlag("index_type", RootCmd.Flags().Lookup("index-type"))

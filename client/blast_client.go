@@ -65,13 +65,13 @@ func (c *BlastClientWrapper) GetIndex(includeIndexMapping bool, includeIndexType
 		IndexMapping *mapping.IndexMappingImpl `json:"index_mapping,omitempty"`
 		IndexType    string                    `json:"index_type,omitempty"`
 		Kvstore      string                    `json:"kvstore,omitempty"`
-		Kvconfig     map[string]interface{}    `json:"kvconfig,omitempty"`
+		Kvconfig     *map[string]interface{}   `json:"kvconfig,omitempty"`
 	}{
 		IndexPath:    resp.IndexPath,
 		IndexMapping: resp.GetIndexMappingActual(),
 		IndexType:    resp.IndexType,
 		Kvstore:      resp.Kvstore,
-		Kvconfig:     *resp.GetKvconfigActual(),
+		Kvconfig:     resp.GetKvconfigActual(),
 	}
 
 	return r, nil

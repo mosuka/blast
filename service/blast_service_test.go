@@ -25,10 +25,10 @@ func TestBlastGRPCService(t *testing.T) {
 	dir, _ := os.Getwd()
 
 	path, _ := ioutil.TempDir("/tmp", "indigo")
-	indexMappingPath := dir + "/../example/index_mapping.json"
+	indexMappingPath := dir + "/../etc/index_mapping.json"
 	indexType := "upside_down"
 	kvstore := "boltdb"
-	kvconfigPath := dir + "/../example/kvconfig.json"
+	kvconfigPath := dir + "/../etc/kvconfig.json"
 
 	indexMappingFile, err := os.Open(indexMappingPath)
 	if err != nil {

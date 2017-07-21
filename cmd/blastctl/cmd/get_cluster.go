@@ -17,6 +17,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/blevesearch/bleve/mapping"
 	"github.com/mosuka/blast/client"
 	"github.com/spf13/cobra"
 )
@@ -24,13 +25,13 @@ import (
 type GetClusterCommandOptions struct {
 	etcdServers    []string
 	requestTimeout int
-	name           string
+	clusterName    string
 }
 
 var getClusterCmdOpts = GetClusterCommandOptions{
 	etcdServers:    []string{"localhost:2379"},
 	requestTimeout: 15000,
-	name:           "",
+	clusterName:    "",
 }
 
 var getClusterCmd = &cobra.Command{
@@ -42,8 +43,8 @@ var getClusterCmd = &cobra.Command{
 
 func runEGetClusterCmd(cmd *cobra.Command, args []string) error {
 	// check id
-	if getClusterCmdOpts.name == "" {
-		return fmt.Errorf("required flag: --%s", cmd.Flag("name").Name)
+	if getClusterCmdOpts.clusterName == "" {
+		return fmt.Errorf("required flag: --%s", cmd.Flag("cluster-name").Name)
 	}
 
 	// create client
@@ -53,10 +54,39 @@ func runEGetClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 	defer cw.Close()
 
-	// get cluster
-	resp, err := cw.GetCluster(getClusterCmdOpts.name)
+	shards, err := cw.GetShards(getClusterCmdOpts.clusterName)
 	if err != nil {
 		return err
+	}
+	indexMapping, err := cw.GetIndexMapping(getClusterCmdOpts.clusterName)
+	if err != nil {
+		return err
+	}
+	indexType, err := cw.GetIndexType(getClusterCmdOpts.clusterName)
+	if err != nil {
+		return err
+	}
+	kvstore, err := cw.GetKvstore(getClusterCmdOpts.clusterName)
+	if err != nil {
+		return err
+	}
+	kvconfig, err := cw.GetKvconfig(getClusterCmdOpts.clusterName)
+	if err != nil {
+		return err
+	}
+
+	resp := struct {
+		Shards       int                       `json:"shards,omitempty"`
+		IndexMapping *mapping.IndexMappingImpl `json:"index_mapping,omitempty"`
+		IndexType    string                    `json:"index_type,omitempty"`
+		Kvstore      string                    `json:"kvstore,omitempty"`
+		Kvconfig     map[string]interface{}    `json:"kvconfig,omitempty"`
+	}{
+		Shards:       shards,
+		IndexMapping: indexMapping,
+		IndexType:    indexType,
+		Kvstore:      kvstore,
+		Kvconfig:     kvconfig,
 	}
 
 	// output response
@@ -81,7 +111,7 @@ func init() {
 
 	getClusterCmd.Flags().StringSliceVar(&getClusterCmdOpts.etcdServers, "etcd-server", getClusterCmdOpts.etcdServers, "etcd server to connect to")
 	getClusterCmd.Flags().IntVar(&getClusterCmdOpts.requestTimeout, "request-timeout", getClusterCmdOpts.requestTimeout, "request timeout")
-	getClusterCmd.Flags().StringVar(&getClusterCmdOpts.name, "name", getClusterCmdOpts.name, "cluster name")
+	getClusterCmd.Flags().StringVar(&getClusterCmdOpts.clusterName, "cluster-name", getClusterCmdOpts.clusterName, "cluster name")
 
 	getCmd.AddCommand(getClusterCmd)
 }

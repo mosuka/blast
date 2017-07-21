@@ -24,13 +24,13 @@ import (
 type DeleteClusterCommandOptions struct {
 	etcdServers    []string
 	requestTimeout int
-	name           string
+	clusterName    string
 }
 
 var deleteClusterCmdOpts = DeleteClusterCommandOptions{
 	etcdServers:    []string{"localhost:2379"},
 	requestTimeout: 15000,
-	name:           "",
+	clusterName:    "",
 }
 
 var deleteClusterCmd = &cobra.Command{
@@ -42,8 +42,8 @@ var deleteClusterCmd = &cobra.Command{
 
 func runEDeleteClusterCmd(cmd *cobra.Command, args []string) error {
 	// check id
-	if deleteClusterCmdOpts.name == "" {
-		return fmt.Errorf("required flag: --%s", cmd.Flag("name").Name)
+	if deleteClusterCmdOpts.clusterName == "" {
+		return fmt.Errorf("required flag: --%s", cmd.Flag("cluster-name").Name)
 	}
 
 	// create client
@@ -53,12 +53,27 @@ func runEDeleteClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 	defer cw.Close()
 
-	// delete cluster
-	err = cw.DeleteCluster(deleteClusterCmdOpts.name)
+	err = cw.DeleteShards(deleteClusterCmdOpts.clusterName)
+	if err != nil {
+		return err
+	}
+	err = cw.DeleteIndexMapping(deleteClusterCmdOpts.clusterName)
+	if err != nil {
+		return err
+	}
+	err = cw.DeleteIndexType(deleteClusterCmdOpts.clusterName)
+	if err != nil {
+		return err
+	}
+	err = cw.DeleteKvstore(deleteClusterCmdOpts.clusterName)
 	if err != nil {
 		return err
 	}
 
+	err = cw.DeleteKvconfig(deleteClusterCmdOpts.clusterName)
+	if err != nil {
+		return err
+	}
 	resp := make(map[string]interface{})
 
 	// output response
@@ -83,7 +98,7 @@ func init() {
 
 	deleteClusterCmd.Flags().StringSliceVar(&deleteClusterCmdOpts.etcdServers, "etcd-server", deleteClusterCmdOpts.etcdServers, "etcd server to connect to")
 	deleteClusterCmd.Flags().IntVar(&deleteClusterCmdOpts.requestTimeout, "request-timeout", deleteClusterCmdOpts.requestTimeout, "request timeout")
-	deleteClusterCmd.Flags().StringVar(&deleteClusterCmdOpts.name, "name", deleteClusterCmdOpts.name, "cluster name")
+	deleteClusterCmd.Flags().StringVar(&deleteClusterCmdOpts.clusterName, "cluster-name", deleteClusterCmdOpts.clusterName, "cluster name")
 
 	deleteCmd.AddCommand(deleteClusterCmd)
 }
