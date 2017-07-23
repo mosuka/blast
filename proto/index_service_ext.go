@@ -109,7 +109,7 @@ func (m *GetIndexResponse) SetIndexMappingActual(indexMapping *mapping.IndexMapp
 	}
 }
 
-func (m *GetIndexResponse) GetKvconfigActual() *map[string]interface{} {
+func (m *GetIndexResponse) GetKvconfigActual() map[string]interface{} {
 	if m == nil {
 		return nil
 	}
@@ -123,7 +123,7 @@ func (m *GetIndexResponse) GetKvconfigActual() *map[string]interface{} {
 		return nil
 	}
 
-	return kvconfig.(*map[string]interface{})
+	return *kvconfig.(*map[string]interface{})
 }
 
 func (m *GetIndexResponse) SetKvconfigActual(kvconfig map[string]interface{}) {

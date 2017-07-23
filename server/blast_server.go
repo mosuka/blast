@@ -45,7 +45,7 @@ func NewBlastGRPCServer(port int, etcdServers []string, requestTimeout int) *bla
 	}
 
 	var etcdClient *client.EtcdClientWrapper
-	if len(etcdServers) > 0 {
+	if etcdServers != nil && len(etcdServers) > 0 {
 		etcdClient, err = client.NewEtcdClientWrapper(etcdServers, requestTimeout)
 		if err == nil {
 			log.WithFields(log.Fields{
@@ -98,7 +98,7 @@ func (s *blastGRPCServer) Start(indexPath string, indexMapping *mapping.IndexMap
 	s.server = grpc.NewServer()
 	s.service = service.NewBlastGRPCService(indexPath, indexMapping, indexType, kvstore, kvconfig)
 
-	proto.RegisterBlastServer(s.server, s.service)
+	proto.RegisterIndexServer(s.server, s.service)
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", s.port))
 	if err == nil {

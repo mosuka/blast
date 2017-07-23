@@ -28,7 +28,7 @@ type DeleteDocumentCommandOptions struct {
 }
 
 var deleteDocumentCmdOpts = DeleteDocumentCommandOptions{
-	server:         "localhost:10000",
+	server:         "localhost:20884",
 	requestTimeout: 15000,
 	id:             "",
 }

@@ -16,6 +16,6 @@ log_format: text
 log_output:
 log_level: info
 
-port: 20000
+port: 8080
 base_uri: api
-server: localhost:10000
+server: localhost:20884

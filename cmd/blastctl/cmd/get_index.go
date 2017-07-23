@@ -31,7 +31,7 @@ type GetIndexCommandOptions struct {
 }
 
 var getIndexCmdOpts = GetIndexCommandOptions{
-	server:              "localhost:10000",
+	server:              "localhost:20884",
 	requestTimeout:      15000,
 	includeIndexMapping: false,
 	includeIndexType:    false,

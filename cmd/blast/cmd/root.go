@@ -56,7 +56,7 @@ var rootCmdOpts = RootCommandOptions{
 	requestTimeout: 15000,
 	clusterName:    "",
 	shards:         1,
-	port:           10000,
+	port:           20884,
 	indexPath:      "./data/index",
 	indexMapping:   "",
 	indexType:      "upside_down",

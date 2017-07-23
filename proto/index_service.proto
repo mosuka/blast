@@ -18,7 +18,7 @@ import "google/protobuf/any.proto";
 
 package proto;
 
-service Blast {
+service Index {
     rpc GetIndex(GetIndexRequest) returns (GetIndexResponse) {}
     rpc PutDocument(PutDocumentRequest) returns (PutDocumentResponse) {}
     rpc GetDocument(GetDocumentRequest) returns (GetDocumentResponse) {}

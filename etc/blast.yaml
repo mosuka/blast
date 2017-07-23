@@ -16,7 +16,7 @@ log_format: text
 log_output:
 log_level: info
 
-port: 10000
+port: 20884
 
 cluster_name: default
 etcd_servers:

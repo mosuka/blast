@@ -25,7 +25,7 @@ import (
 
 type BlastClientWrapper struct {
 	conn           *grpc.ClientConn
-	client         proto.BlastClient
+	client         proto.IndexClient
 	requestTimeout int
 }
 
@@ -35,7 +35,7 @@ func NewBlastClientWrapper(server string, requestTimeout int) (*BlastClientWrapp
 		return nil, err
 	}
 
-	ic := proto.NewBlastClient(conn)
+	ic := proto.NewIndexClient(conn)
 
 	return &BlastClientWrapper{
 		conn:           conn,
@@ -65,7 +65,7 @@ func (c *BlastClientWrapper) GetIndex(includeIndexMapping bool, includeIndexType
 		IndexMapping *mapping.IndexMappingImpl `json:"index_mapping,omitempty"`
 		IndexType    string                    `json:"index_type,omitempty"`
 		Kvstore      string                    `json:"kvstore,omitempty"`
-		Kvconfig     *map[string]interface{}   `json:"kvconfig,omitempty"`
+		Kvconfig     map[string]interface{}    `json:"kvconfig,omitempty"`
 	}{
 		IndexPath:    resp.IndexPath,
 		IndexMapping: resp.GetIndexMappingActual(),

@@ -33,7 +33,7 @@ type PutDocumentCommandOptions struct {
 }
 
 var putDocumentCmdOpts = PutDocumentCommandOptions{
-	server:         "localhost:10000",
+	server:         "localhost:20884",
 	requestTimeout: 15000,
 	id:             "",
 	fields:         "",
