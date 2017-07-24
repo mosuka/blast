@@ -161,41 +161,68 @@ func persistentPreRunERootCmd(cmd *cobra.Command, args []string) error {
 }
 
 func runERootCmd(cmd *cobra.Command, args []string) error {
-	var indexMapping *mapping.IndexMappingImpl
-	if viper.GetString("index_mapping") != "" {
-		file, err := os.Open(viper.GetString("index_mapping"))
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-
-		indexMapping, err = util.NewIndexMapping(file)
-		if err != nil {
-			return err
-		}
-	}
-
-	var kvconfig map[string]interface{}
-	if viper.GetString("kvconfig") != "" {
-		file, err := os.Open(viper.GetString("kvconfig"))
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-
-		kvconfig, err = util.NewKvconfig(file)
-		if err != nil {
-			return err
-		}
-	}
-
 	// server
-	svr := server.NewBlastGRPCServer(viper.GetInt("port"), viper.GetStringSlice("etcd_servers"), viper.GetInt("request_timeout"))
+	svr := server.NewBlastServer()
 
-	svr.Start(viper.GetString("index_path"), indexMapping, viper.GetString("index_type"), viper.GetString("kvstore"), kvconfig)
+	if len(viper.GetStringSlice("etcd_servers")) > 0 && viper.GetString("cluster_name") != "" {
+		err := svr.ConnectEtcd(viper.GetStringSlice("etcd_servers"), viper.GetInt("request_timeout"))
+		if err != nil {
+			return err
+		}
 
-	if viper.GetString("cluster_name") != "" {
+		indexMapping, err := svr.GetIndexMappingFromEtc(viper.GetString("cluster_name"))
+		if err != nil {
+			return err
+		}
+
+		indexType, err := svr.GetIndexTypeFromEtc(viper.GetString("cluster_name"))
+		if err != nil {
+			return err
+		}
+
+		kvstore, err := svr.GetKvstoreFromEtc(viper.GetString("cluster_name"))
+		if err != nil {
+			return err
+		}
+
+		kvconfig, err := svr.GetKvconfigFromEtc(viper.GetString("cluster_name"))
+		if err != nil {
+			return err
+		}
+
+		svr.Start(viper.GetInt("port"), viper.GetString("index_path"), indexMapping, indexType, kvstore, kvconfig)
+
 		svr.JoinCluster(viper.GetString("cluster_name"))
+	} else {
+		var indexMapping *mapping.IndexMappingImpl
+		if viper.GetString("index_mapping") != "" {
+			file, err := os.Open(viper.GetString("index_mapping"))
+			if err != nil {
+				return err
+			}
+			defer file.Close()
+
+			indexMapping, err = util.NewIndexMapping(file)
+			if err != nil {
+				return err
+			}
+		}
+
+		var kvconfig map[string]interface{}
+		if viper.GetString("kvconfig") != "" {
+			file, err := os.Open(viper.GetString("kvconfig"))
+			if err != nil {
+				return err
+			}
+			defer file.Close()
+
+			kvconfig, err = util.NewKvconfig(file)
+			if err != nil {
+				return err
+			}
+		}
+
+		svr.Start(viper.GetInt("port"), viper.GetString("index_path"), indexMapping, viper.GetString("index_type"), viper.GetString("kvstore"), kvconfig)
 	}
 
 	signalChan := make(chan os.Signal, 1)

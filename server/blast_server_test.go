@@ -22,7 +22,7 @@ import (
 	"time"
 )
 
-func TestBlastGRPCServer(t *testing.T) {
+func TestBlastServer(t *testing.T) {
 	dir, _ := os.Getwd()
 
 	port := 0
@@ -56,13 +56,13 @@ func TestBlastGRPCServer(t *testing.T) {
 	}
 	kvconfig["path"] = path + "/store"
 
-	gRPCServer := NewBlastGRPCServer(port, []string{}, 15000)
+	gRPCServer := NewBlastServer()
 
 	if gRPCServer == nil {
 		t.Fatalf("unexpected error.  expected not nil, actual %v", gRPCServer)
 	}
 
-	err = gRPCServer.Start(path, indexMapping, indexType, kvstore, kvconfig)
+	err = gRPCServer.Start(port, path, indexMapping, indexType, kvstore, kvconfig)
 
 	if err != nil {
 		t.Fatalf("unexpected error. %v", err)

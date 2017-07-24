@@ -26,7 +26,7 @@ import (
 	"time"
 )
 
-type BlastGRPCService struct {
+type BlastService struct {
 	Path         string
 	IndexMapping *mapping.IndexMappingImpl
 	IndexType    string
@@ -35,8 +35,8 @@ type BlastGRPCService struct {
 	Index        bleve.Index
 }
 
-func NewBlastGRPCService(path string, indexMapping *mapping.IndexMappingImpl, indexType string, kvstore string, kvconfig map[string]interface{}) *BlastGRPCService {
-	return &BlastGRPCService{
+func NewBlastService(path string, indexMapping *mapping.IndexMappingImpl, indexType string, kvstore string, kvconfig map[string]interface{}) *BlastService {
+	return &BlastService{
 		Path:         path,
 		IndexMapping: indexMapping,
 		IndexType:    indexType,
@@ -46,7 +46,7 @@ func NewBlastGRPCService(path string, indexMapping *mapping.IndexMappingImpl, in
 	}
 }
 
-func (s *BlastGRPCService) OpenIndex() error {
+func (s *BlastService) OpenIndex() error {
 	_, err := os.Stat(s.Path)
 	if os.IsNotExist(err) {
 		log.WithFields(log.Fields{
@@ -95,7 +95,7 @@ func (s *BlastGRPCService) OpenIndex() error {
 	return err
 }
 
-func (s *BlastGRPCService) CloseIndex() error {
+func (s *BlastService) CloseIndex() error {
 	err := s.Index.Close()
 	if err == nil {
 		log.WithFields(log.Fields{}).Info("succeeded in closing index")
@@ -108,7 +108,7 @@ func (s *BlastGRPCService) CloseIndex() error {
 	return err
 }
 
-func (s *BlastGRPCService) GetIndex(ctx context.Context, req *proto.GetIndexRequest) (*proto.GetIndexResponse, error) {
+func (s *BlastService) GetIndex(ctx context.Context, req *proto.GetIndexRequest) (*proto.GetIndexResponse, error) {
 	protoGetIndexResponse := &proto.GetIndexResponse{
 		IndexPath: s.Path,
 	}
@@ -140,7 +140,7 @@ func (s *BlastGRPCService) GetIndex(ctx context.Context, req *proto.GetIndexRequ
 	return protoGetIndexResponse, nil
 }
 
-func (s *BlastGRPCService) PutDocument(ctx context.Context, req *proto.PutDocumentRequest) (*proto.PutDocumentResponse, error) {
+func (s *BlastService) PutDocument(ctx context.Context, req *proto.PutDocumentRequest) (*proto.PutDocumentResponse, error) {
 	putCount := int32(0)
 	fields, err := proto.UnmarshalAny(req.Document.Fields)
 	if err == nil {
@@ -173,7 +173,7 @@ func (s *BlastGRPCService) PutDocument(ctx context.Context, req *proto.PutDocume
 	}, err
 }
 
-func (s *BlastGRPCService) GetDocument(ctx context.Context, req *proto.GetDocumentRequest) (*proto.GetDocumentResponse, error) {
+func (s *BlastService) GetDocument(ctx context.Context, req *proto.GetDocumentRequest) (*proto.GetDocumentResponse, error) {
 	fields := make(map[string]interface{})
 	if doc, err := s.Index.Document(req.Id); err == nil {
 		if doc != nil {
@@ -247,7 +247,7 @@ func (s *BlastGRPCService) GetDocument(ctx context.Context, req *proto.GetDocume
 	}, err
 }
 
-func (s *BlastGRPCService) DeleteDocument(ctx context.Context, req *proto.DeleteDocumentRequest) (*proto.DeleteDocumentResponse, error) {
+func (s *BlastService) DeleteDocument(ctx context.Context, req *proto.DeleteDocumentRequest) (*proto.DeleteDocumentResponse, error) {
 	deleteCount := int32(0)
 	err := s.Index.Delete(req.Id)
 	if err == nil {
@@ -267,7 +267,7 @@ func (s *BlastGRPCService) DeleteDocument(ctx context.Context, req *proto.Delete
 	}, err
 }
 
-func (s *BlastGRPCService) Bulk(ctx context.Context, req *proto.BulkRequest) (*proto.BulkResponse, error) {
+func (s *BlastService) Bulk(ctx context.Context, req *proto.BulkRequest) (*proto.BulkResponse, error) {
 	var (
 		batchCount    int32
 		putCount      int32
@@ -363,7 +363,7 @@ func (s *BlastGRPCService) Bulk(ctx context.Context, req *proto.BulkRequest) (*p
 	}, nil
 }
 
-func (s *BlastGRPCService) Search(ctx context.Context, req *proto.SearchRequest) (*proto.SearchResponse, error) {
+func (s *BlastService) Search(ctx context.Context, req *proto.SearchRequest) (*proto.SearchResponse, error) {
 	searchRequest, err := proto.UnmarshalAny(req.SearchRequest)
 	if err != nil {
 		log.WithFields(log.Fields{
