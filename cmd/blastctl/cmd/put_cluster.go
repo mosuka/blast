@@ -29,7 +29,6 @@ type PutClusterCommandOptions struct {
 	requestTimeout int
 	clusterName    string
 	shards         int
-	indexPath      string
 	indexMapping   string
 	indexType      string
 	kvstore        string
@@ -41,7 +40,6 @@ var putClusterCmdOpts = PutClusterCommandOptions{
 	requestTimeout: 15000,
 	clusterName:    "",
 	shards:         1,
-	indexPath:      "./data/index",
 	indexMapping:   "",
 	indexType:      "upside_down",
 	kvstore:        "boltdb",
@@ -58,7 +56,7 @@ var putClusterCmd = &cobra.Command{
 func runEPutClusterCmd(cmd *cobra.Command, args []string) error {
 	// check id
 	if putClusterCmdOpts.clusterName == "" {
-		return fmt.Errorf("required flag: --%s", cmd.Flag("name").Name)
+		return fmt.Errorf("required flag: --%s", cmd.Flag("cluster-name").Name)
 	}
 
 	// IndexMapping
@@ -91,6 +89,14 @@ func runEPutClusterCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	resp := struct {
+		Shards       int                       `json:"shards,omitempty"`
+		IndexMapping *mapping.IndexMappingImpl `json:"index_mapping,omitempty"`
+		IndexType    string                    `json:"index_type,omitempty"`
+		Kvstore      string                    `json:"kvstore,omitempty"`
+		Kvconfig     map[string]interface{}    `json:"kvconfig,omitempty"`
+	}{}
+
 	// create client
 	cw, err := client.NewEtcdClientWrapper(putClusterCmdOpts.etcdServers, getClusterCmdOpts.requestTimeout)
 	if err != nil {
@@ -98,39 +104,44 @@ func runEPutClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 	defer cw.Close()
 
-	err = cw.PutShards(putClusterCmdOpts.clusterName, putClusterCmdOpts.shards, false)
-	if err != nil {
-		return err
-	}
-	err = cw.PutIndexMapping(putClusterCmdOpts.clusterName, indexMapping, false)
-	if err != nil {
-		return err
-	}
-	err = cw.PutIndexType(putClusterCmdOpts.clusterName, putClusterCmdOpts.indexType, false)
-	if err != nil {
-		return err
-	}
-	err = cw.PutKvstore(putClusterCmdOpts.clusterName, putClusterCmdOpts.kvstore, false)
-	if err != nil {
-		return err
-	}
-	err = cw.PutKvconfig(putClusterCmdOpts.clusterName, kvconfig, false)
-	if err != nil {
-		return err
+	if cmd.Flag("shards").Changed {
+		err = cw.PutShards(putClusterCmdOpts.clusterName, putClusterCmdOpts.shards, false)
+		if err != nil {
+			return err
+		}
+		resp.Shards = putClusterCmdOpts.shards
 	}
 
-	resp := struct {
-		Shards       int                       `json:"shards,omitempty"`
-		IndexMapping *mapping.IndexMappingImpl `json:"index_mapping,omitempty"`
-		IndexType    string                    `json:"index_type,omitempty"`
-		Kvstore      string                    `json:"kvstore,omitempty"`
-		Kvconfig     map[string]interface{}    `json:"kvconfig,omitempty"`
-	}{
-		Shards:       putClusterCmdOpts.shards,
-		IndexMapping: indexMapping,
-		IndexType:    putClusterCmdOpts.indexType,
-		Kvstore:      putClusterCmdOpts.kvstore,
-		Kvconfig:     kvconfig,
+	if cmd.Flag("index-mapping").Changed {
+		err = cw.PutIndexMapping(putClusterCmdOpts.clusterName, indexMapping, false)
+		if err != nil {
+			return err
+		}
+		resp.IndexMapping = indexMapping
+	}
+
+	if cmd.Flag("index-type").Changed {
+		err = cw.PutIndexType(putClusterCmdOpts.clusterName, putClusterCmdOpts.indexType, false)
+		if err != nil {
+			return err
+		}
+		resp.IndexType = putClusterCmdOpts.indexType
+	}
+
+	if cmd.Flag("kvstore").Changed {
+		err = cw.PutKvstore(putClusterCmdOpts.clusterName, putClusterCmdOpts.kvstore, false)
+		if err != nil {
+			return err
+		}
+		resp.Kvstore = putClusterCmdOpts.kvstore
+	}
+
+	if cmd.Flag("kvconfig").Changed {
+		err = cw.PutKvconfig(putClusterCmdOpts.clusterName, kvconfig, false)
+		if err != nil {
+			return err
+		}
+		resp.Kvconfig = kvconfig
 	}
 
 	// output response
@@ -157,7 +168,6 @@ func init() {
 	putClusterCmd.Flags().IntVar(&putClusterCmdOpts.requestTimeout, "request-timeout", putClusterCmdOpts.requestTimeout, "request timeout")
 	putClusterCmd.Flags().StringVar(&putClusterCmdOpts.clusterName, "cluster-name", putClusterCmdOpts.clusterName, "cluster name")
 	putClusterCmd.Flags().IntVar(&putClusterCmdOpts.shards, "shards", putClusterCmdOpts.shards, "number of shards")
-	putClusterCmd.Flags().StringVar(&putClusterCmdOpts.indexPath, "index-path", putClusterCmdOpts.indexPath, "index directory path")
 	putClusterCmd.Flags().StringVar(&putClusterCmdOpts.indexMapping, "index-mapping", putClusterCmdOpts.indexMapping, "index mapping")
 	putClusterCmd.Flags().StringVar(&putClusterCmdOpts.indexType, "index-type", putClusterCmdOpts.indexType, "index type")
 	putClusterCmd.Flags().StringVar(&putClusterCmdOpts.kvstore, "kvstore", putClusterCmdOpts.kvstore, "kvstore")

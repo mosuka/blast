@@ -16,10 +16,10 @@ log_format: text
 log_output:
 log_level: info
 
-port: 20884
-index_path: ./data/index
+port: 20885
+index_path: ./data/index2
 
-index_mapping: ./etc/index_mapping.json
-index_type: upside_down
-kvstore: boltdb
-kvconfig: ./etc/kvconfig.json
+etcd_servers:
+  - localhost:2379
+request_timeout: 15000
+cluster_name: default
