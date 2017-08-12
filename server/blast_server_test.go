@@ -26,8 +26,8 @@ func TestBlastServer(t *testing.T) {
 	dir, _ := os.Getwd()
 
 	port := 0
-	path, _ := ioutil.TempDir("/tmp", "blast")
-	path = path + "/index/data"
+	indexPath, _ := ioutil.TempDir("/tmp", "blast")
+	indexPath = indexPath + "/index/data"
 	indexMappingPath := dir + "/../etc/index_mapping.json"
 	indexType := "upside_down"
 	kvstore := "boltdb"
@@ -54,15 +54,14 @@ func TestBlastServer(t *testing.T) {
 	if err != nil {
 		t.Errorf("could not load kvconfig %v", err)
 	}
-	kvconfig["path"] = path + "/store"
 
-	gRPCServer := NewBlastServer()
+	gRPCServer := NewStandaloneMode(port, indexPath, indexMapping, indexType, kvstore, kvconfig)
 
 	if gRPCServer == nil {
-		t.Fatalf("unexpected error.  expected not nil, actual %v", gRPCServer)
+		t.Fatalf("unexpected error. expected not nil, actual %v", gRPCServer)
 	}
 
-	err = gRPCServer.Start(port, path, indexMapping, indexType, kvstore, kvconfig)
+	err = gRPCServer.Start()
 
 	if err != nil {
 		t.Fatalf("unexpected error. %v", err)
@@ -75,5 +74,5 @@ func TestBlastServer(t *testing.T) {
 		t.Fatalf("unexpected error. %v", err)
 	}
 
-	os.RemoveAll(path)
+	os.RemoveAll(indexPath)
 }

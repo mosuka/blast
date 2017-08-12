@@ -61,8 +61,8 @@ var searchCmdOpts = SearchCommandOptions{
 
 var searchCmd = &cobra.Command{
 	Use:   "search",
-	Short: "searches the documents from the Blast Server",
-	Long:  `The search command searches the documents from the Blast Server.`,
+	Short: "searches the documents",
+	Long:  `The search command searches the documents.`,
 	RunE:  runESearchCmd,
 }
 

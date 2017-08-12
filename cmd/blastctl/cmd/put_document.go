@@ -42,8 +42,8 @@ var putDocumentCmdOpts = PutDocumentCommandOptions{
 
 var putDocumentCmd = &cobra.Command{
 	Use:   "document",
-	Short: "puts the document to the Blast Server",
-	Long:  `The index document command puts the document to the Blast Server.`,
+	Short: "puts the document",
+	Long:  `The index document command puts the document.`,
 	RunE:  runEPutDocumentCmd,
 }
 

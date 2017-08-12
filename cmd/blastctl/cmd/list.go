@@ -18,14 +18,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var putCmd = &cobra.Command{
-	Use:   "put",
-	Short: "puts the object",
-	Long:  `The put command puts the object.`,
-	RunE:  runEPutCmd,
+var listCmd = &cobra.Command{
+	Use:   "list",
+	Short: "lists the objects",
+	Long:  `The list command lists the objects.`,
+	RunE:  runEListCmd,
 }
 
-func runEPutCmd(cmd *cobra.Command, args []string) error {
+func runEListCmd(cmd *cobra.Command, args []string) error {
 	if len(args) < 1 {
 		return cmd.Help()
 	}
@@ -39,5 +39,5 @@ func runEPutCmd(cmd *cobra.Command, args []string) error {
 }
 
 func init() {
-	RootCmd.AddCommand(putCmd)
+	RootCmd.AddCommand(listCmd)
 }

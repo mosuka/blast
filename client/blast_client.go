@@ -219,11 +219,11 @@ func (c *BlastClientWrapper) Bulk(requests []map[string]interface{}, batchSize i
 	return r, nil
 }
 
-func (c *BlastClientWrapper) Search(seardhRequests *bleve.SearchRequest, opts ...grpc.CallOption) (interface{}, error) {
+func (c *BlastClientWrapper) Search(searchRequests *bleve.SearchRequest, opts ...grpc.CallOption) (interface{}, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	sr, err := proto.MarshalAny(seardhRequests)
+	sr, err := proto.MarshalAny(searchRequests)
 	if err != nil {
 		return nil, err
 	}

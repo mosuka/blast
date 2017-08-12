@@ -35,8 +35,8 @@ var deleteDocumentCmdOpts = DeleteDocumentCommandOptions{
 
 var deleteDocumentCmd = &cobra.Command{
 	Use:   "document",
-	Short: "deletes the document from the Blast Server",
-	Long:  `The delete document command deletes the document from the Blast Server.`,
+	Short: "deletes the document",
+	Long:  `The delete document command deletes the document.`,
 	RunE:  runEDeleteDocumentCmd,
 }
 

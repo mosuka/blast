@@ -35,8 +35,8 @@ var getDocumentCmdOpts = GetDocumentCommandOptions{
 
 var getDocumentCmd = &cobra.Command{
 	Use:   "document",
-	Short: "gets the document from the Blast Server",
-	Long:  `The get document command gets the document from the Blast Server.`,
+	Short: "gets the document",
+	Long:  `The get document command gets the document.`,
 	RunE:  runEGetDocumentCmd,
 }
 

@@ -40,8 +40,8 @@ var bulkCmdOpts = BulkCommandOptions{
 
 var bulkCmd = &cobra.Command{
 	Use:   "bulk",
-	Short: "indexes the documents in bulk",
-	Long:  `The bulk command indexes the documents in bulk.`,
+	Short: "puts or deletes the documents in bulk",
+	Long:  `The bulk command puts or deletes the documents in bulk.`,
 	RunE:  runEBulkCmd,
 }
 

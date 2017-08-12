@@ -41,12 +41,19 @@ var getIndexCmdOpts = GetIndexCommandOptions{
 
 var getIndexCmd = &cobra.Command{
 	Use:   "index",
-	Short: "gets the index mapping from the Blast Server",
-	Long:  `The get index command gets the index information from the Blast Server.`,
+	Short: "gets the index information",
+	Long:  `The get index command gets the index information.`,
 	RunE:  runEGetIndexCmd,
 }
 
 func runEGetIndexCmd(cmd *cobra.Command, args []string) error {
+	if !getIndexCmdOpts.includeIndexMapping && !getIndexCmdOpts.includeIndexType && !getIndexCmdOpts.includeKvstore && !getIndexCmdOpts.includeKvconfig {
+		getIndexCmdOpts.includeIndexMapping = true
+		getIndexCmdOpts.includeIndexType = true
+		getIndexCmdOpts.includeKvstore = true
+		getIndexCmdOpts.includeKvconfig = true
+	}
+
 	// create client
 	cw, err := client.NewBlastClientWrapper(getIndexCmdOpts.server, getIndexCmdOpts.requestTimeout)
 	if err != nil {

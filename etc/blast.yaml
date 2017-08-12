@@ -19,7 +19,7 @@ log_level: info
 port: 20884
 index_path: ./data/index
 
-index_mapping: ./etc/index_mapping.json
-index_type: upside_down
-kvstore: boltdb
-kvconfig: ./etc/kvconfig.json
+#index_mapping: ./etc/index_mapping.json
+#index_type: upside_down
+#kvstore: boltdb
+#kvconfig: ./etc/kvconfig.json

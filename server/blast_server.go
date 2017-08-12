@@ -26,17 +26,17 @@ import (
 	"os"
 )
 
-type blastServer struct {
-	hostname   string
-	port       int
-	etcdClient *client.EtcdClientWrapper
-	server     *grpc.Server
-	listener   net.Listener
-	service    *service.BlastService
+type BlastServer struct {
+	host        string
+	port        int
+	etcdClient  *client.EtcdClientWrapper
+	clusterName string
+	server      *grpc.Server
+	service     *service.BlastService
 }
 
-func NewBlastServer() *blastServer {
-	hostname, err := os.Hostname()
+func NewStandaloneMode(port int, indexPath string, indexMapping *mapping.IndexMappingImpl, indexType string, kvstore string, kvconfig map[string]interface{}) *BlastServer {
+	host, err := os.Hostname()
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err.Error(),
@@ -44,101 +44,123 @@ func NewBlastServer() *blastServer {
 		return nil
 	}
 
-	return &blastServer{
-		hostname: hostname,
+	svr := grpc.NewServer()
+	svc := service.NewBlastService(indexPath, indexMapping, indexType, kvstore, kvconfig)
+	proto.RegisterIndexServer(svr, svc)
+
+	return &BlastServer{
+		host:    host,
+		port:    port,
+		server:  svr,
+		service: svc,
 	}
 }
 
-func (s *blastServer) ConnectEtcd(etcdServers []string, requestTimeout int) error {
-	var etcdClient *client.EtcdClientWrapper
-	var err error
-
-	if etcdServers != nil && len(etcdServers) > 0 {
-		etcdClient, err = client.NewEtcdClientWrapper(etcdServers, requestTimeout)
-		if err == nil {
-			log.WithFields(log.Fields{
-				"etcdServers":    etcdServers,
-				"requestTimeout": requestTimeout,
-			}).Info("succeeded in connect to etcd servers")
-		} else {
-			log.WithFields(log.Fields{
-				"error": err.Error(),
-			}).Error("failed to connect etcd server")
-		}
+func NewClusterMode(port int, indexPath string, etcdServers []string, etcdDialTimeout int, etcdRequestTimeout int, clusterName string) *BlastServer {
+	host, err := os.Hostname()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err.Error(),
+		}).Error("failed to get hostname")
+		return nil
 	}
 
-	s.etcdClient = etcdClient
+	etcdClient, err := client.NewEtcdClientWrapper(etcdServers, etcdDialTimeout, etcdRequestTimeout)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err.Error(),
+		}).Error("failed to connect etcd server")
+		return nil
+	}
 
-	return nil
+	indexMapping, err := etcdClient.GetIndexMapping(clusterName)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"clusterName": clusterName,
+			"error":       err.Error(),
+		}).Error("failed to get index mapping")
+		return nil
+	}
+	log.WithFields(log.Fields{
+		"clusterName": clusterName,
+	}).Info("succeeded in get index mapping")
+
+	indexType, err := etcdClient.GetIndexType(clusterName)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"clusterName": clusterName,
+			"error":       err.Error(),
+		}).Error("failed to get index type")
+		return nil
+	}
+	log.WithFields(log.Fields{
+		"clusterName": clusterName,
+	}).Info("succeeded in get index type")
+
+	kvstore, err := etcdClient.GetKvstore(clusterName)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"clusterName": clusterName,
+			"error":       err.Error(),
+		}).Error("failed to get kvstore")
+		return nil
+	}
+	log.WithFields(log.Fields{
+		"clusterName": clusterName,
+	}).Info("succeeded in get kvstore")
+
+	kvconfig, err := etcdClient.GetKvconfig(clusterName)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"clusterName": clusterName,
+			"error":       err.Error(),
+		}).Error("failed to get kvconfig")
+		return nil
+	}
+	log.WithFields(log.Fields{
+		"clusterName": clusterName,
+	}).Info("succeeded in get kvconfig")
+
+	svr := grpc.NewServer()
+	svc := service.NewBlastService(indexPath, indexMapping, indexType, kvstore, kvconfig)
+	proto.RegisterIndexServer(svr, svc)
+
+	return &BlastServer{
+		host:        host,
+		port:        port,
+		etcdClient:  etcdClient,
+		clusterName: clusterName,
+		server:      svr,
+		service:     svc,
+	}
 }
 
-func (s *blastServer) JoinCluster(clusterName string) error {
+func (s *BlastServer) joinCluster() error {
 	if s.etcdClient != nil {
 		log.WithFields(log.Fields{
-			"cluster":  clusterName,
-			"hostname": s.hostname,
-			"port":     s.port,
+			"cluster": s.clusterName,
+			"host":    s.host,
+			"port":    s.port,
 		}).Info("join a cluster")
 	}
+
 	return nil
 }
 
-func (s *blastServer) LeaveCluster(clusterName string) error {
+func (s *BlastServer) leaveCluster() error {
 	if s.etcdClient != nil {
 		log.WithFields(log.Fields{
-			"cluster":  clusterName,
-			"hostname": s.hostname,
-			"port":     s.port,
+			"cluster": s.clusterName,
+			"host":    s.host,
+			"port":    s.port,
 		}).Info("leave a cluster")
 	}
+
 	return nil
 }
 
-func (s *blastServer) GetIndexMappingFromEtc(clusterName string) (*mapping.IndexMappingImpl, error) {
-	indexMapping, err := s.etcdClient.GetIndexMapping(clusterName)
-	if err != nil {
-		return nil, err
-	}
-
-	return indexMapping, nil
-}
-
-func (s *blastServer) GetIndexTypeFromEtc(clusterName string) (string, error) {
-	indexType, err := s.etcdClient.GetIndexType(clusterName)
-	if err != nil {
-		return "", err
-	}
-
-	return indexType, nil
-}
-
-func (s *blastServer) GetKvstoreFromEtc(clusterName string) (string, error) {
-	kvstore, err := s.etcdClient.GetKvstore(clusterName)
-	if err != nil {
-		return "", err
-	}
-
-	return kvstore, nil
-}
-
-func (s *blastServer) GetKvconfigFromEtc(clusterName string) (map[string]interface{}, error) {
-	kvconfig, err := s.etcdClient.GetKvconfig(clusterName)
-	if err != nil {
-		return nil, err
-	}
-
-	return kvconfig, nil
-}
-
-func (s *blastServer) Start(port int, indexPath string, indexMapping *mapping.IndexMappingImpl, indexType string, kvstore string, kvconfig map[string]interface{}) error {
-	s.server = grpc.NewServer()
-	s.service = service.NewBlastService(indexPath, indexMapping, indexType, kvstore, kvconfig)
-
-	proto.RegisterIndexServer(s.server, s.service)
-
-	s.port = port
-
-	l, err := net.Listen("tcp", fmt.Sprintf(":%d", s.port))
+func (s *BlastServer) Start() error {
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", s.port))
 	if err == nil {
 		log.WithFields(log.Fields{
 			"port": s.port,
@@ -148,47 +170,49 @@ func (s *blastServer) Start(port int, indexPath string, indexMapping *mapping.In
 			"port":  s.port,
 			"error": err.Error(),
 		}).Error("failed to create listener")
-		return nil
+		return err
 	}
-	s.listener = l
 
 	go func() {
 		s.service.OpenIndex()
-		s.server.Serve(s.listener)
+		s.server.Serve(listener)
 		return
 	}()
-
 	log.WithFields(log.Fields{
-		"host": s.hostname,
+		"host": s.host,
 		"port": s.port,
 	}).Info("The Blast server started")
+
+	err = s.joinCluster()
 
 	return nil
 }
 
-func (s *blastServer) Stop() error {
+func (s *BlastServer) Stop() error {
+	err := s.leaveCluster()
+
 	if s.etcdClient != nil {
 		err := s.etcdClient.Close()
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err.Error(),
 			}).Error("failed to close etcd client")
-			return nil
+			return err
 		}
 	}
 
-	err := s.service.CloseIndex()
+	err = s.service.CloseIndex()
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err.Error(),
 		}).Error("failed to close index")
-		return nil
+		return err
 	}
 
 	s.server.GracefulStop()
 
 	log.WithFields(log.Fields{
-		"host": s.hostname,
+		"host": s.host,
 		"port": s.port,
 	}).Info("The Blast server stopped")
 

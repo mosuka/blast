@@ -21,5 +21,12 @@ index_path: ./data/index1
 
 etcd_servers:
   - localhost:2379
-request_timeout: 15000
+etcd_dial_timeout: 5000
+etcd_request_timeout: 5000
+
 cluster_name: default
+
+index_mapping: ./etc/index_mapping.json
+index_type: upside_down
+kvstore: boltdb
+kvconfig: ./etc/kvconfig.json

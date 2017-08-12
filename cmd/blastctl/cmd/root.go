@@ -33,8 +33,8 @@ var rootCmdOpts = RootCommandOptions{
 
 var RootCmd = &cobra.Command{
 	Use:               "blastctl",
-	Short:             "Blast Server controller",
-	Long:              `The Command Line Interface for controlling the Blast Server.`,
+	Short:             "Blast control command",
+	Long:              `The Command Line Interface for controlling the Blast.`,
 	PersistentPreRunE: persistentPreRunERootCmd,
 	RunE:              runERootCmd,
 }

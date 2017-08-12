@@ -23,15 +23,27 @@ import (
 )
 
 type GetClusterCommandOptions struct {
-	etcdServers    []string
-	requestTimeout int
-	clusterName    string
+	etcdServers           []string
+	etcdDialTimeout       int
+	etcdRequestTimeout    int
+	clusterName           string
+	includeNumberOfShards bool
+	includeIndexMapping   bool
+	includeIndexType      bool
+	includeKvstore        bool
+	includeKvconfig       bool
 }
 
 var getClusterCmdOpts = GetClusterCommandOptions{
-	etcdServers:    []string{"localhost:2379"},
-	requestTimeout: 15000,
-	clusterName:    "",
+	etcdServers:           []string{"localhost:2379"},
+	etcdDialTimeout:       5000,
+	etcdRequestTimeout:    5000,
+	clusterName:           "",
+	includeNumberOfShards: false,
+	includeIndexMapping:   false,
+	includeIndexType:      false,
+	includeKvstore:        false,
+	includeKvconfig:       false,
 }
 
 var getClusterCmd = &cobra.Command{
@@ -42,51 +54,77 @@ var getClusterCmd = &cobra.Command{
 }
 
 func runEGetClusterCmd(cmd *cobra.Command, args []string) error {
-	// check id
+	// check cluster name
 	if getClusterCmdOpts.clusterName == "" {
 		return fmt.Errorf("required flag: --%s", cmd.Flag("cluster-name").Name)
 	}
 
+	if !getClusterCmdOpts.includeNumberOfShards && !getClusterCmdOpts.includeIndexMapping && !getClusterCmdOpts.includeIndexType && !getClusterCmdOpts.includeKvstore && !getClusterCmdOpts.includeKvconfig {
+		getClusterCmdOpts.includeNumberOfShards = true
+		getClusterCmdOpts.includeIndexMapping = true
+		getClusterCmdOpts.includeIndexType = true
+		getClusterCmdOpts.includeKvstore = true
+		getClusterCmdOpts.includeKvconfig = true
+	}
+
 	// create client
-	cw, err := client.NewEtcdClientWrapper(getClusterCmdOpts.etcdServers, getClusterCmdOpts.requestTimeout)
+	cw, err := client.NewEtcdClientWrapper(getClusterCmdOpts.etcdServers, getClusterCmdOpts.etcdDialTimeout, getClusterCmdOpts.etcdRequestTimeout)
 	if err != nil {
 		return err
 	}
 	defer cw.Close()
 
-	shards, err := cw.GetShards(getClusterCmdOpts.clusterName)
-	if err != nil {
-		return err
-	}
-	indexMapping, err := cw.GetIndexMapping(getClusterCmdOpts.clusterName)
-	if err != nil {
-		return err
-	}
-	indexType, err := cw.GetIndexType(getClusterCmdOpts.clusterName)
-	if err != nil {
-		return err
-	}
-	kvstore, err := cw.GetKvstore(getClusterCmdOpts.clusterName)
-	if err != nil {
-		return err
-	}
-	kvconfig, err := cw.GetKvconfig(getClusterCmdOpts.clusterName)
-	if err != nil {
-		return err
+	resp := struct {
+		NumberOfShards int                       `json:"number_of_shards,omitempty"`
+		IndexMapping   *mapping.IndexMappingImpl `json:"index_mapping,omitempty"`
+		IndexType      string                    `json:"index_type,omitempty"`
+		Kvstore        string                    `json:"kvstore,omitempty"`
+		Kvconfig       map[string]interface{}    `json:"kvconfig,omitempty"`
+	}{}
+
+	if getClusterCmdOpts.includeNumberOfShards == true {
+		numberOfShards, err := cw.GetNumberOfShards(getClusterCmdOpts.clusterName)
+		if err != nil {
+			return err
+		}
+
+		resp.NumberOfShards = numberOfShards
 	}
 
-	resp := struct {
-		Shards       int                       `json:"shards,omitempty"`
-		IndexMapping *mapping.IndexMappingImpl `json:"index_mapping,omitempty"`
-		IndexType    string                    `json:"index_type,omitempty"`
-		Kvstore      string                    `json:"kvstore,omitempty"`
-		Kvconfig     map[string]interface{}    `json:"kvconfig,omitempty"`
-	}{
-		Shards:       shards,
-		IndexMapping: indexMapping,
-		IndexType:    indexType,
-		Kvstore:      kvstore,
-		Kvconfig:     kvconfig,
+	if getClusterCmdOpts.includeIndexMapping == true {
+		indexMapping, err := cw.GetIndexMapping(getClusterCmdOpts.clusterName)
+		if err != nil {
+			return err
+		}
+
+		resp.IndexMapping = indexMapping
+	}
+
+	if getClusterCmdOpts.includeIndexType == true {
+		indexType, err := cw.GetIndexType(getClusterCmdOpts.clusterName)
+		if err != nil {
+			return err
+		}
+
+		resp.IndexType = indexType
+	}
+
+	if getClusterCmdOpts.includeKvstore == true {
+		kvstore, err := cw.GetKvstore(getClusterCmdOpts.clusterName)
+		if err != nil {
+			return err
+		}
+
+		resp.Kvstore = kvstore
+	}
+
+	if getClusterCmdOpts.includeKvconfig == true {
+		kvconfig, err := cw.GetKvconfig(getClusterCmdOpts.clusterName)
+		if err != nil {
+			return err
+		}
+
+		resp.Kvconfig = kvconfig
 	}
 
 	// output response
@@ -110,8 +148,14 @@ func init() {
 	getClusterCmd.Flags().SortFlags = false
 
 	getClusterCmd.Flags().StringSliceVar(&getClusterCmdOpts.etcdServers, "etcd-server", getClusterCmdOpts.etcdServers, "etcd server to connect to")
-	getClusterCmd.Flags().IntVar(&getClusterCmdOpts.requestTimeout, "request-timeout", getClusterCmdOpts.requestTimeout, "request timeout")
+	getClusterCmd.Flags().IntVar(&getClusterCmdOpts.etcdDialTimeout, "etcd-dial-timeout", getClusterCmdOpts.etcdDialTimeout, "etcd dial timeout")
+	getClusterCmd.Flags().IntVar(&getClusterCmdOpts.etcdRequestTimeout, "etcd-request-timeout", getClusterCmdOpts.etcdRequestTimeout, "etcd request timeout")
 	getClusterCmd.Flags().StringVar(&getClusterCmdOpts.clusterName, "cluster-name", getClusterCmdOpts.clusterName, "cluster name")
+	getClusterCmd.Flags().BoolVar(&getClusterCmdOpts.includeNumberOfShards, "include-number-of-shards", getClusterCmdOpts.includeNumberOfShards, "include number of shards")
+	getClusterCmd.Flags().BoolVar(&getClusterCmdOpts.includeIndexMapping, "include-index-mapping", getClusterCmdOpts.includeIndexMapping, "include index mapping")
+	getClusterCmd.Flags().BoolVar(&getClusterCmdOpts.includeIndexType, "include-index-type", getClusterCmdOpts.includeIndexType, "include index type")
+	getClusterCmd.Flags().BoolVar(&getClusterCmdOpts.includeKvstore, "include-kvstore", getClusterCmdOpts.includeKvstore, "include kvstore")
+	getClusterCmd.Flags().BoolVar(&getClusterCmdOpts.includeKvconfig, "include-kvconfig", getClusterCmdOpts.includeKvconfig, "include kvconfig")
 
 	getCmd.AddCommand(getClusterCmd)
 }

@@ -21,7 +21,6 @@ import (
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/clientv3/clientv3util"
-	//"github.com/mosuka/blast/cluster"
 	"strconv"
 	"time"
 )
@@ -32,14 +31,14 @@ type EtcdClientWrapper struct {
 	requestTimeout int
 }
 
-func NewEtcdClientWrapper(endpoints []string, requestTimeout int) (*EtcdClientWrapper, error) {
+func NewEtcdClientWrapper(endpoints []string, dialTimeout int, requestTimeout int) (*EtcdClientWrapper, error) {
 	if len(endpoints) <= 0 {
-		return nil, nil
+		return nil, fmt.Errorf("endpoints are required")
 	}
 
 	cfg := clientv3.Config{
 		Endpoints:   endpoints,
-		DialTimeout: 5 * time.Second,
+		DialTimeout: time.Duration(dialTimeout) * time.Millisecond,
 		Context:     context.Background(),
 	}
 	c, err := clientv3.New(cfg)
@@ -54,137 +53,61 @@ func NewEtcdClientWrapper(endpoints []string, requestTimeout int) (*EtcdClientWr
 	}, nil
 }
 
-//func (c *EtcdClientWrapper) PutCluster(name string, shards int, indexPath string, indexMapping *mapping.IndexMappingImpl, indexType string, kvstore string, kvconfig map[string]interface{}, disableOverwrite bool) error {
-//	var err error
+//func (c *EtcdClientWrapper) AddWorker(clusterName string, name string, disableOverwrite bool) error {
+//	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+//	defer cancel()
 //
-//	err = c.PutShards(name, shards, disableOverwrite)
-//	if err != nil {
-//		return err
-//	}
+//	keyRoot := fmt.Sprintf("/blast/%s", clusterName)
+//	keyWorkers := fmt.Sprintf("%s/%s", keyRoot, "workers")
 //
-//	err = c.PutIndexPath(name, indexPath, disableOverwrite)
-//	if err != nil {
-//		return err
-//	}
-//
-//	err = c.PutIndexMapping(name, indexMapping, disableOverwrite)
-//	if err != nil {
-//		return err
-//	}
-//
-//	err = c.PutIndexType(name, indexType, disableOverwrite)
-//	if err != nil {
-//		return err
-//	}
-//
-//	err = c.PutKvstore(name, kvstore, disableOverwrite)
-//	if err != nil {
-//		return err
-//	}
-//
-//	err = c.PutKvconfig(name, kvconfig, disableOverwrite)
-//	if err != nil {
-//		return err
+//	if disableOverwrite {
+//		_, err := c.kv.Txn(ctx).
+//			If(clientv3util.KeyMissing(keyWorkers)).
+//			Then(clientv3.OpPut(keyWorkers, strconv.Itoa(shards))).
+//			Commit()
+//		if err != nil {
+//			return err
+//		}
+//	} else {
+//		_, err := c.kv.Put(ctx, keyWorkers, strconv.Itoa(shards))
+//		if err != nil {
+//			return err
+//		}
 //	}
 //
 //	return nil
 //}
 
-//func (c *EtcdClientWrapper) GetCluster(name string) (*cluster.ClusterInfo, error) {
-//	shards, err := c.GetShards(name)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	indexPath, err := c.GetIndexPath(name)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	indexMapping, err := c.GetIndexMapping(name)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	indexType, err := c.GetIndexType(name)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	kvstore, err := c.GetKvstore(name)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	kvconfig, err := c.GetKvconfig(name)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	r := &cluster.ClusterInfo{
-//		Name:         name,
-//		Shards:       shards,
-//		IndexPath:    indexPath,
-//		IndexMapping: indexMapping,
-//		IndexType:    indexType,
-//		Kvstore:      kvstore,
-//		Kvconfig:     kvconfig,
-//	}
-//
-//	return r, nil
-//}
+func (c *EtcdClientWrapper) RemoveWorker(clusterName string, name string, disableOverwrite bool) error {
 
-//func (c *EtcdClientWrapper) DeleteCluster(name string) error {
-//	err := c.DeleteShards(name)
-//	if err != nil {
-//		return err
-//	}
-//
-//	err = c.DeleteIndexPath(name)
-//	if err != nil {
-//		return err
-//	}
-//
-//	err = c.DeleteIndexMapping(name)
-//	if err != nil {
-//		return err
-//	}
-//
-//	err = c.DeleteIndexType(name)
-//	if err != nil {
-//		return err
-//	}
-//
-//	err = c.DeleteKvstore(name)
-//	if err != nil {
-//		return err
-//	}
-//
-//	err = c.DeleteKvconfig(name)
-//	if err != nil {
-//		return err
-//	}
-//
-//	return nil
-//}
+	return nil
+}
 
-func (c *EtcdClientWrapper) PutShards(clusterName string, shards int, disableOverwrite bool) error {
+func (c *EtcdClientWrapper) GetWorkers(clusterName string) error {
+
+	return nil
+}
+
+func (c *EtcdClientWrapper) PutNumberOfShards(clusterName string, numberOfShards int, disableOverwrite bool) error {
+	if clusterName == "" {
+		return fmt.Errorf("clusterName is required")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	keyRoot := fmt.Sprintf("/blast/%s", clusterName)
-	keyShards := fmt.Sprintf("%s/%s", keyRoot, "shards")
+	keyNumberOfShards := fmt.Sprintf("/blast/clusters/%s/numberOfShards", clusterName)
 
 	if disableOverwrite {
 		_, err := c.kv.Txn(ctx).
-			If(clientv3util.KeyMissing(keyShards)).
-			Then(clientv3.OpPut(keyShards, strconv.Itoa(shards))).
+			If(clientv3util.KeyMissing(keyNumberOfShards)).
+			Then(clientv3.OpPut(keyNumberOfShards, strconv.Itoa(numberOfShards))).
 			Commit()
 		if err != nil {
 			return err
 		}
 	} else {
-		_, err := c.kv.Put(ctx, keyShards, strconv.Itoa(shards))
+		_, err := c.kv.Put(ctx, keyNumberOfShards, strconv.Itoa(numberOfShards))
 		if err != nil {
 			return err
 		}
@@ -193,37 +116,47 @@ func (c *EtcdClientWrapper) PutShards(clusterName string, shards int, disableOve
 	return nil
 }
 
-func (c *EtcdClientWrapper) GetShards(clusterName string) (int, error) {
+func (c *EtcdClientWrapper) GetNumberOfShards(clusterName string) (int, error) {
+	if clusterName == "" {
+		return 0, fmt.Errorf("clusterName is required")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	keyRoot := fmt.Sprintf("/blast/%s", clusterName)
-	keyShards := fmt.Sprintf("%s/%s", keyRoot, "shards")
+	keyNumberOfShards := fmt.Sprintf("/blast/clusters/%s/numberOfShards", clusterName)
 
-	var shards int
+	var numberOfShards int
 
-	resp, err := c.kv.Get(ctx, keyShards)
+	resp, err := c.kv.Get(ctx, keyNumberOfShards)
 	if err != nil {
 		return 0, err
 	}
 	for _, ev := range resp.Kvs {
-		shards, err = strconv.Atoi(string(ev.Value))
+		numberOfShards, err = strconv.Atoi(string(ev.Value))
 		if err != nil {
 			return 0, err
 		}
 	}
 
-	return shards, nil
+	if numberOfShards <= 0 {
+		return 0, fmt.Errorf("numberOfShards is 0")
+	}
+
+	return numberOfShards, nil
 }
 
-func (c *EtcdClientWrapper) DeleteShards(clusterName string) error {
+func (c *EtcdClientWrapper) DeleteNumberOfShards(clusterName string) error {
+	if clusterName == "" {
+		return fmt.Errorf("clusterName is required")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	keyRoot := fmt.Sprintf("/blast/%s", clusterName)
-	keyShards := fmt.Sprintf("%s/%s", keyRoot, "shards")
+	keyNumberOfShards := fmt.Sprintf("/blast/clusters/%s/numberOfShards", clusterName)
 
-	_, err := c.kv.Delete(ctx, keyShards)
+	_, err := c.kv.Delete(ctx, keyNumberOfShards)
 	if err != nil {
 		return err
 	}
@@ -231,72 +164,15 @@ func (c *EtcdClientWrapper) DeleteShards(clusterName string) error {
 	return nil
 }
 
-//func (c *EtcdClientWrapper) PutIndexPath(clusterName string, indexPath string, disableOverwrite bool) error {
-//	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
-//	defer cancel()
-//
-//	keyRoot := fmt.Sprintf("/blast/%s", clusterName)
-//	keyIndexPath := fmt.Sprintf("%s/%s", keyRoot, "indexPath")
-//
-//	if disableOverwrite {
-//		_, err := c.kv.Txn(ctx).
-//			If(clientv3util.KeyMissing(keyIndexPath)).
-//			Then(clientv3.OpPut(keyIndexPath, indexPath)).
-//			Commit()
-//		if err != nil {
-//			return err
-//		}
-//	} else {
-//		_, err := c.kv.Put(ctx, keyIndexPath, indexPath)
-//		if err != nil {
-//			return err
-//		}
-//	}
-//
-//	return nil
-//}
-
-//func (c *EtcdClientWrapper) GetIndexPath(clusterName string) (string, error) {
-//	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
-//	defer cancel()
-//
-//	keyRoot := fmt.Sprintf("/blast/%s", clusterName)
-//	keyIndexPath := fmt.Sprintf("%s/%s", keyRoot, "indexPath")
-//
-//	var indexPath string
-//
-//	resp, err := c.kv.Get(ctx, keyIndexPath)
-//	if err != nil {
-//		return "", err
-//	}
-//	for _, ev := range resp.Kvs {
-//		indexPath = string(ev.Value)
-//	}
-//
-//	return indexPath, nil
-//}
-
-//func (c *EtcdClientWrapper) DeleteIndexPath(clusterName string) error {
-//	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
-//	defer cancel()
-//
-//	keyRoot := fmt.Sprintf("/blast/%s", clusterName)
-//	keyIndexPath := fmt.Sprintf("%s/%s", keyRoot, "indexPath")
-//
-//	_, err := c.kv.Delete(ctx, keyIndexPath)
-//	if err != nil {
-//		return err
-//	}
-//
-//	return nil
-//}
-
 func (c *EtcdClientWrapper) PutIndexMapping(clusterName string, indexMapping *mapping.IndexMappingImpl, disableOverwrite bool) error {
+	if clusterName == "" {
+		return fmt.Errorf("clusterName is required")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	keyRoot := fmt.Sprintf("/blast/%s", clusterName)
-	keyIndexMapping := fmt.Sprintf("%s/%s", keyRoot, "indexMapping")
+	keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/indexMapping", clusterName)
 
 	var bytesIndexMapping []byte
 	var err error
@@ -326,11 +202,14 @@ func (c *EtcdClientWrapper) PutIndexMapping(clusterName string, indexMapping *ma
 }
 
 func (c *EtcdClientWrapper) GetIndexMapping(clusterName string) (*mapping.IndexMappingImpl, error) {
+	if clusterName == "" {
+		return nil, fmt.Errorf("clusterName is required")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	keyRoot := fmt.Sprintf("/blast/%s", clusterName)
-	keyIndexMapping := fmt.Sprintf("%s/%s", keyRoot, "indexMapping")
+	keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/indexMapping", clusterName)
 
 	var indexMapping *mapping.IndexMappingImpl
 
@@ -345,17 +224,27 @@ func (c *EtcdClientWrapper) GetIndexMapping(clusterName string) (*mapping.IndexM
 		}
 	}
 
+	if indexMapping == nil {
+		return nil, fmt.Errorf("indexMapping is nil")
+	}
+
 	return indexMapping, nil
 }
 
 func (c *EtcdClientWrapper) DeleteIndexMapping(clusterName string) error {
+	if clusterName == "" {
+		return fmt.Errorf("clusterName is required")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	keyRoot := fmt.Sprintf("/blast/%s", clusterName)
-	keyIndexMapping := fmt.Sprintf("%s/%s", keyRoot, "indexMapping")
+	keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/indexMapping", clusterName)
 
-	_, err := c.kv.Delete(ctx, keyIndexMapping)
+	_, err := c.kv.Txn(ctx).
+		If(clientv3util.KeyExists(keyIndexMapping)).
+		Then(clientv3.OpDelete(keyIndexMapping)).
+		Commit()
 	if err != nil {
 		return err
 	}
@@ -364,11 +253,14 @@ func (c *EtcdClientWrapper) DeleteIndexMapping(clusterName string) error {
 }
 
 func (c *EtcdClientWrapper) PutIndexType(clusterName string, indexType string, disableOverwrite bool) error {
+	if clusterName == "" {
+		return fmt.Errorf("clusterName is required")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	keyRoot := fmt.Sprintf("/blast/%s", clusterName)
-	keyIndexType := fmt.Sprintf("%s/%s", keyRoot, "indexType")
+	keyIndexType := fmt.Sprintf("/blast/clusters/%s/indexType", clusterName)
 
 	if disableOverwrite {
 		_, err := c.kv.Txn(ctx).
@@ -389,11 +281,14 @@ func (c *EtcdClientWrapper) PutIndexType(clusterName string, indexType string, d
 }
 
 func (c *EtcdClientWrapper) GetIndexType(clusterName string) (string, error) {
+	if clusterName == "" {
+		return "", fmt.Errorf("clusterName is required")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	keyRoot := fmt.Sprintf("/blast/%s", clusterName)
-	keyIndexType := fmt.Sprintf("%s/%s", keyRoot, "indexType")
+	keyIndexType := fmt.Sprintf("/blast/clusters/%s/indexType", clusterName)
 
 	var indexType string
 
@@ -405,17 +300,27 @@ func (c *EtcdClientWrapper) GetIndexType(clusterName string) (string, error) {
 		indexType = string(ev.Value)
 	}
 
+	if indexType == "" {
+		return "", fmt.Errorf("indexType is \"\"")
+	}
+
 	return indexType, nil
 }
 
 func (c *EtcdClientWrapper) DeleteIndexType(clusterName string) error {
+	if clusterName == "" {
+		return fmt.Errorf("clusterName is required")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	keyRoot := fmt.Sprintf("/blast/%s", clusterName)
-	keyIndexType := fmt.Sprintf("%s/%s", keyRoot, "indexType")
+	keyIndexType := fmt.Sprintf("/blast/clusters/%s/indexType", clusterName)
 
-	_, err := c.kv.Delete(ctx, keyIndexType)
+	_, err := c.kv.Txn(ctx).
+		If(clientv3util.KeyExists(keyIndexType)).
+		Then(clientv3.OpDelete(keyIndexType)).
+		Commit()
 	if err != nil {
 		return err
 	}
@@ -424,11 +329,14 @@ func (c *EtcdClientWrapper) DeleteIndexType(clusterName string) error {
 }
 
 func (c *EtcdClientWrapper) PutKvstore(clusterName string, kvstore string, disableOverwrite bool) error {
+	if clusterName == "" {
+		return fmt.Errorf("clusterName is required")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	keyRoot := fmt.Sprintf("/blast/%s", clusterName)
-	keyKvstore := fmt.Sprintf("%s/%s", keyRoot, "kvstore")
+	keyKvstore := fmt.Sprintf("/blast/clusters/%s/kvstore", clusterName)
 
 	if disableOverwrite {
 		_, err := c.kv.Txn(ctx).
@@ -449,11 +357,14 @@ func (c *EtcdClientWrapper) PutKvstore(clusterName string, kvstore string, disab
 }
 
 func (c *EtcdClientWrapper) GetKvstore(clusterName string) (string, error) {
+	if clusterName == "" {
+		return "", fmt.Errorf("clusterName is required")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	keyRoot := fmt.Sprintf("/blast/%s", clusterName)
-	keyKvstore := fmt.Sprintf("%s/%s", keyRoot, "kvstore")
+	keyKvstore := fmt.Sprintf("/blast/clusters/%s/kvstore", clusterName)
 
 	var kvstore string
 
@@ -465,17 +376,27 @@ func (c *EtcdClientWrapper) GetKvstore(clusterName string) (string, error) {
 		kvstore = string(ev.Value)
 	}
 
+	if kvstore == "" {
+		return "", fmt.Errorf("kvstore is \"\"")
+	}
+
 	return kvstore, nil
 }
 
 func (c *EtcdClientWrapper) DeleteKvstore(clusterName string) error {
+	if clusterName == "" {
+		return fmt.Errorf("clusterName is required")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	keyRoot := fmt.Sprintf("/blast/%s", clusterName)
-	keyKvstore := fmt.Sprintf("%s/%s", keyRoot, "kvstore")
+	keyKvstore := fmt.Sprintf("/blast/clusters/%s/kvstore", clusterName)
 
-	_, err := c.kv.Delete(ctx, keyKvstore)
+	_, err := c.kv.Txn(ctx).
+		If(clientv3util.KeyExists(keyKvstore)).
+		Then(clientv3.OpDelete(keyKvstore)).
+		Commit()
 	if err != nil {
 		return err
 	}
@@ -484,11 +405,14 @@ func (c *EtcdClientWrapper) DeleteKvstore(clusterName string) error {
 }
 
 func (c *EtcdClientWrapper) PutKvconfig(clusterName string, kvconfig map[string]interface{}, disableOverwrite bool) error {
+	if clusterName == "" {
+		return fmt.Errorf("clusterName is required")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	keyRoot := fmt.Sprintf("/blast/%s", clusterName)
-	keyKvconfig := fmt.Sprintf("%s/%s", keyRoot, "kvconfig")
+	keyKvconfig := fmt.Sprintf("/blast/clusters/%s/kvconfig", clusterName)
 
 	var bytesKvconfig []byte
 	var err error
@@ -518,11 +442,14 @@ func (c *EtcdClientWrapper) PutKvconfig(clusterName string, kvconfig map[string]
 }
 
 func (c *EtcdClientWrapper) GetKvconfig(clusterName string) (map[string]interface{}, error) {
+	if clusterName == "" {
+		return nil, fmt.Errorf("clusterName is required")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	keyRoot := fmt.Sprintf("/blast/%s", clusterName)
-	keyKvconfig := fmt.Sprintf("%s/%s", keyRoot, "kvconfig")
+	keyKvconfig := fmt.Sprintf("/blast/clusters/%s/kvconfig", clusterName)
 
 	var kvconfig map[string]interface{}
 
@@ -537,17 +464,27 @@ func (c *EtcdClientWrapper) GetKvconfig(clusterName string) (map[string]interfac
 		}
 	}
 
+	if kvconfig == nil {
+		return nil, fmt.Errorf("kvconfig is nil")
+	}
+
 	return kvconfig, nil
 }
 
 func (c *EtcdClientWrapper) DeleteKvconfig(clusterName string) error {
+	if clusterName == "" {
+		return fmt.Errorf("clusterName is required")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	keyRoot := fmt.Sprintf("/blast/%s", clusterName)
-	keyKvconfig := fmt.Sprintf("%s/%s", keyRoot, "kvconfig")
+	keyKvconfig := fmt.Sprintf("/blast/clusters/%s/kvconfig", clusterName)
 
-	_, err := c.kv.Delete(ctx, keyKvconfig)
+	_, err := c.kv.Txn(ctx).
+		If(clientv3util.KeyExists(keyKvconfig)).
+		Then(clientv3.OpDelete(keyKvconfig)).
+		Commit()
 	if err != nil {
 		return err
 	}

@@ -22,38 +22,40 @@ import (
 )
 
 type DeleteClusterCommandOptions struct {
-	etcdServers    []string
-	requestTimeout int
-	clusterName    string
+	etcdServers        []string
+	etcdDialTimeout    int
+	etcdRequestTimeout int
+	clusterName        string
 }
 
 var deleteClusterCmdOpts = DeleteClusterCommandOptions{
-	etcdServers:    []string{"localhost:2379"},
-	requestTimeout: 15000,
-	clusterName:    "",
+	etcdServers:        []string{"localhost:2379"},
+	etcdDialTimeout:    5000,
+	etcdRequestTimeout: 5000,
+	clusterName:        "",
 }
 
 var deleteClusterCmd = &cobra.Command{
 	Use:   "cluster",
-	Short: "deletes the cluster info",
-	Long:  `The delete cluster command deletes the cluster info.`,
+	Short: "deletes the cluster information",
+	Long:  `The delete cluster command deletes the cluster information.`,
 	RunE:  runEDeleteClusterCmd,
 }
 
 func runEDeleteClusterCmd(cmd *cobra.Command, args []string) error {
-	// check id
+	// check cluster name
 	if deleteClusterCmdOpts.clusterName == "" {
 		return fmt.Errorf("required flag: --%s", cmd.Flag("cluster-name").Name)
 	}
 
 	// create client
-	cw, err := client.NewEtcdClientWrapper(deleteClusterCmdOpts.etcdServers, deleteClusterCmdOpts.requestTimeout)
+	cw, err := client.NewEtcdClientWrapper(deleteClusterCmdOpts.etcdServers, deleteClusterCmdOpts.etcdDialTimeout, deleteClusterCmdOpts.etcdRequestTimeout)
 	if err != nil {
 		return err
 	}
 	defer cw.Close()
 
-	err = cw.DeleteShards(deleteClusterCmdOpts.clusterName)
+	err = cw.DeleteNumberOfShards(deleteClusterCmdOpts.clusterName)
 	if err != nil {
 		return err
 	}
@@ -97,7 +99,8 @@ func init() {
 	deleteClusterCmd.Flags().SortFlags = false
 
 	deleteClusterCmd.Flags().StringSliceVar(&deleteClusterCmdOpts.etcdServers, "etcd-server", deleteClusterCmdOpts.etcdServers, "etcd server to connect to")
-	deleteClusterCmd.Flags().IntVar(&deleteClusterCmdOpts.requestTimeout, "request-timeout", deleteClusterCmdOpts.requestTimeout, "request timeout")
+	deleteClusterCmd.Flags().IntVar(&deleteClusterCmdOpts.etcdDialTimeout, "etcd-dial-timeout", deleteClusterCmdOpts.etcdDialTimeout, "etcd dial timeout")
+	deleteClusterCmd.Flags().IntVar(&deleteClusterCmdOpts.etcdRequestTimeout, "etcd-request-timeout", deleteClusterCmdOpts.etcdRequestTimeout, "etcd request timeout")
 	deleteClusterCmd.Flags().StringVar(&deleteClusterCmdOpts.clusterName, "cluster-name", deleteClusterCmdOpts.clusterName, "cluster name")
 
 	deleteCmd.AddCommand(deleteClusterCmd)
