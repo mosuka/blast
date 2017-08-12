@@ -509,8 +509,8 @@ func (c *EtcdClientWrapper) Watch(clusterName string) error {
 		for _, ev := range wresp.Events {
 			log.WithFields(log.Fields{
 				"type":  ev.Type,
-				"key":   ev.Kv.Key,
-				"value": ev.Kv.Value,
+				"key":   string(ev.Kv.Key),
+				"value": string(ev.Kv.Value),
 			}).Info("information changes in cluster has detected")
 		}
 	}

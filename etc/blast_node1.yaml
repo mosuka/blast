@@ -25,8 +25,3 @@ etcd_dial_timeout: 5000
 etcd_request_timeout: 5000
 
 cluster_name: default
-
-index_mapping: ./etc/index_mapping.json
-index_type: upside_down
-kvstore: boltdb
-kvconfig: ./etc/kvconfig.json
