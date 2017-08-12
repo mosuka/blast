@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc"
 	"net"
 	"os"
+	"time"
 )
 
 type BlastServer struct {
@@ -159,7 +160,34 @@ func (s *BlastServer) leaveCluster() error {
 	return nil
 }
 
+func (s *BlastServer) Watch() {
+	log.Infof("start watching %s", s.clusterName)
+
+	go func() {
+		for {
+			err := s.etcdClient.Watch(s.clusterName)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"clusterName": s.clusterName,
+					"error":       err.Error(),
+				}).Error("failed to watch cluster")
+
+				time.Sleep(time.Duration(3000) * time.Millisecond)
+
+				continue
+			}
+		}
+		return
+	}()
+
+	return
+}
+
 func (s *BlastServer) Start() error {
+	if s.etcdClient != nil && s.clusterName != "" {
+		s.Watch()
+	}
+
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", s.port))
 	if err == nil {
 		log.WithFields(log.Fields{

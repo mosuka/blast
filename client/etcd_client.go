@@ -21,6 +21,7 @@ import (
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/clientv3/clientv3util"
+	log "github.com/sirupsen/logrus"
 	"strconv"
 	"time"
 )
@@ -487,6 +488,31 @@ func (c *EtcdClientWrapper) DeleteKvconfig(clusterName string) error {
 		Commit()
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (c *EtcdClientWrapper) Watch(clusterName string) error {
+	if clusterName == "" {
+		return fmt.Errorf("clusterName is required")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	defer cancel()
+
+	keyCluster := fmt.Sprintf("/blast/clusters/%s", clusterName)
+
+	rch := c.client.Watch(ctx, keyCluster, clientv3.WithPrefix())
+
+	for wresp := range rch {
+		for _, ev := range wresp.Events {
+			log.WithFields(log.Fields{
+				"type":  ev.Type,
+				"key":   ev.Kv.Key,
+				"value": ev.Kv.Value,
+			}).Info("information changes in cluster has detected")
+		}
 	}
 
 	return nil
