@@ -55,7 +55,7 @@ func runEGetIndexCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// create client
-	cw, err := client.NewBlastClientWrapper(getIndexCmdOpts.server, getIndexCmdOpts.requestTimeout)
+	cw, err := client.NewBlastClient(getIndexCmdOpts.server, getIndexCmdOpts.requestTimeout)
 	if err != nil {
 		return err
 	}

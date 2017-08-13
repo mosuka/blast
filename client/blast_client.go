@@ -23,13 +23,13 @@ import (
 	"time"
 )
 
-type BlastClientWrapper struct {
+type BlastClient struct {
 	conn           *grpc.ClientConn
 	client         proto.IndexClient
 	requestTimeout int
 }
 
-func NewBlastClientWrapper(server string, requestTimeout int) (*BlastClientWrapper, error) {
+func NewBlastClient(server string, requestTimeout int) (*BlastClient, error) {
 	conn, err := grpc.Dial(server, grpc.WithInsecure())
 	if err != nil {
 		return nil, err
@@ -37,14 +37,14 @@ func NewBlastClientWrapper(server string, requestTimeout int) (*BlastClientWrapp
 
 	ic := proto.NewIndexClient(conn)
 
-	return &BlastClientWrapper{
+	return &BlastClient{
 		conn:           conn,
 		client:         ic,
 		requestTimeout: requestTimeout,
 	}, nil
 }
 
-func (c *BlastClientWrapper) GetIndex(includeIndexMapping bool, includeIndexType bool, includeKvstore bool, includeKvconfig bool, opts ...grpc.CallOption) (interface{}, error) {
+func (c *BlastClient) GetIndex(includeIndexMapping bool, includeIndexType bool, includeKvstore bool, includeKvconfig bool, opts ...grpc.CallOption) (interface{}, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -77,7 +77,7 @@ func (c *BlastClientWrapper) GetIndex(includeIndexMapping bool, includeIndexType
 	return r, nil
 }
 
-func (c *BlastClientWrapper) PutDocument(id string, fields map[string]interface{}, opts ...grpc.CallOption) (interface{}, error) {
+func (c *BlastClient) PutDocument(id string, fields map[string]interface{}, opts ...grpc.CallOption) (interface{}, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -104,7 +104,7 @@ func (c *BlastClientWrapper) PutDocument(id string, fields map[string]interface{
 	return r, nil
 }
 
-func (c *BlastClientWrapper) GetDocument(id string, opts ...grpc.CallOption) (interface{}, error) {
+func (c *BlastClient) GetDocument(id string, opts ...grpc.CallOption) (interface{}, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -134,7 +134,7 @@ func (c *BlastClientWrapper) GetDocument(id string, opts ...grpc.CallOption) (in
 	return r, nil
 }
 
-func (c *BlastClientWrapper) DeleteDocument(id string, opts ...grpc.CallOption) (interface{}, error) {
+func (c *BlastClient) DeleteDocument(id string, opts ...grpc.CallOption) (interface{}, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -156,7 +156,7 @@ func (c *BlastClientWrapper) DeleteDocument(id string, opts ...grpc.CallOption) 
 	return r, err
 }
 
-func (c *BlastClientWrapper) Bulk(requests []map[string]interface{}, batchSize int32, opts ...grpc.CallOption) (interface{}, error) {
+func (c *BlastClient) Bulk(requests []map[string]interface{}, batchSize int32, opts ...grpc.CallOption) (interface{}, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -219,7 +219,7 @@ func (c *BlastClientWrapper) Bulk(requests []map[string]interface{}, batchSize i
 	return r, nil
 }
 
-func (c *BlastClientWrapper) Search(searchRequests *bleve.SearchRequest, opts ...grpc.CallOption) (interface{}, error) {
+func (c *BlastClient) Search(searchRequests *bleve.SearchRequest, opts ...grpc.CallOption) (interface{}, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -246,6 +246,6 @@ func (c *BlastClientWrapper) Search(searchRequests *bleve.SearchRequest, opts ..
 	return r, err
 }
 
-func (c *BlastClientWrapper) Close() error {
+func (c *BlastClient) Close() error {
 	return c.conn.Close()
 }

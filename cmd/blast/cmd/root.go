@@ -30,39 +30,49 @@ import (
 )
 
 type RootCommandOptions struct {
-	config             string
-	logFormat          string
-	logOutput          string
-	logLevel           string
-	etcdServers        []string
+	config string
+
+	logFormat string
+	logOutput string
+	logLevel  string
+
+	port         int
+	indexPath    string
+	indexMapping string
+	indexType    string
+	kvstore      string
+	kvconfig     string
+
+	etcdEndpoints      []string
 	etcdDialTimeout    int
 	etcdRequestTimeout int
-	clusterName        string
-	port               int
-	indexPath          string
-	indexMapping       string
-	indexType          string
-	kvstore            string
-	kvconfig           string
-	versionFlag        bool
+	cluster            string
+	shard              string
+
+	versionFlag bool
 }
 
 var rootCmdOpts = RootCommandOptions{
-	config:             "",
-	logFormat:          "text",
-	logOutput:          "",
-	logLevel:           "info",
-	port:               20884,
-	etcdServers:        []string{},
+	config: "",
+
+	logFormat: "text",
+	logOutput: "",
+	logLevel:  "info",
+
+	port:         20884,
+	indexPath:    "./data/index",
+	indexMapping: "",
+	indexType:    "upside_down",
+	kvstore:      "boltdb",
+	kvconfig:     "",
+
+	etcdEndpoints:      []string{},
 	etcdDialTimeout:    5000,
 	etcdRequestTimeout: 5000,
-	clusterName:        "",
-	indexPath:          "./data/index",
-	indexMapping:       "",
-	indexType:          "upside_down",
-	kvstore:            "boltdb",
-	kvconfig:           "",
-	versionFlag:        false,
+	cluster:            "",
+	shard:              "",
+
+	versionFlag: false,
 }
 
 var logOutput *os.File
@@ -189,35 +199,25 @@ func runERootCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	var svr *server.BlastServer
-	if len(viper.GetStringSlice("etcd_servers")) > 0 || viper.GetString("cluster_name") != "" {
-		log.Info("start on cluster mode")
-		svr = server.NewClusterMode(
-			viper.GetInt("port"),
-			viper.GetString("index_path"),
-			viper.GetStringSlice("etcd_servers"),
-			viper.GetInt("etcd_dial_timeout"),
-			viper.GetInt("etcd_request_timeout"),
-			viper.GetString("cluster_name"),
-		)
-	} else {
-		log.Info("start on standalone mode")
-		svr = server.NewStandaloneMode(
-			viper.GetInt("port"),
-			viper.GetString("index_path"),
-			indexMapping,
-			viper.GetString("index_type"),
-			viper.GetString("kvstore"),
-			kvconfig,
-		)
-	}
-
-	if svr == nil {
+	blastServer, err := server.NewBlastServer(
+		viper.GetInt("port"),
+		viper.GetString("index_path"),
+		indexMapping,
+		viper.GetString("index_type"),
+		viper.GetString("kvstore"),
+		kvconfig,
+		viper.GetStringSlice("etcd_endpoints"),
+		viper.GetInt("etcd_dial_timeout"),
+		viper.GetInt("etcd_request_timeout"),
+		viper.GetString("cluster"),
+		viper.GetString("shard"),
+	)
+	if err != nil {
 		log.Fatal("server initialization error")
 		return nil
 	}
 
-	err := svr.Start()
+	err = blastServer.Start()
 	if err != nil {
 		return nil
 	}
@@ -235,7 +235,7 @@ func runERootCmd(cmd *cobra.Command, args []string) error {
 			"signal": sig,
 		}).Info("trap signal")
 
-		svr.Stop()
+		blastServer.Stop()
 
 		return nil
 	}
@@ -256,10 +256,11 @@ func LoadConfig() {
 	viper.SetDefault("log_output", rootCmdOpts.logOutput)
 	viper.SetDefault("log_level", rootCmdOpts.logLevel)
 	viper.SetDefault("port", rootCmdOpts.port)
-	viper.SetDefault("etcd_endpoints", rootCmdOpts.etcdServers)
+	viper.SetDefault("etcd_endpoints", rootCmdOpts.etcdEndpoints)
 	viper.SetDefault("etcd_dial_timeout", rootCmdOpts.etcdDialTimeout)
 	viper.SetDefault("etcd_request_timeout", rootCmdOpts.etcdRequestTimeout)
-	viper.SetDefault("cluster_name", rootCmdOpts.clusterName)
+	viper.SetDefault("cluster", rootCmdOpts.cluster)
+	viper.SetDefault("shard", rootCmdOpts.shard)
 	viper.SetDefault("index_path", rootCmdOpts.indexPath)
 	viper.SetDefault("index_mapping", rootCmdOpts.indexMapping)
 	viper.SetDefault("index_type", rootCmdOpts.indexType)
@@ -291,10 +292,11 @@ func init() {
 	RootCmd.Flags().String("log-output", rootCmdOpts.logOutput, "log output path")
 	RootCmd.Flags().String("log-level", rootCmdOpts.logLevel, "log level")
 	RootCmd.Flags().Int("port", rootCmdOpts.port, "port number")
-	RootCmd.Flags().StringSlice("etcd-server", rootCmdOpts.etcdServers, "etcd server")
+	RootCmd.Flags().StringSlice("etcd-endpoint", rootCmdOpts.etcdEndpoints, "etcd endpoint")
 	RootCmd.Flags().Int("etcd-dial-timeout", rootCmdOpts.etcdDialTimeout, "etcd dial timeout")
 	RootCmd.Flags().Int("etcd-request-timeout", rootCmdOpts.etcdRequestTimeout, "etcd request timeout")
-	RootCmd.Flags().String("cluster-name", rootCmdOpts.clusterName, "cluster name")
+	RootCmd.Flags().String("cluster", rootCmdOpts.cluster, "cluster name")
+	RootCmd.Flags().String("shard", rootCmdOpts.shard, "shard name")
 	RootCmd.Flags().String("index-path", rootCmdOpts.indexPath, "index directory path")
 	RootCmd.Flags().String("index-mapping", rootCmdOpts.indexMapping, "index mapping path")
 	RootCmd.Flags().String("index-type", rootCmdOpts.indexType, "index type")
@@ -307,10 +309,11 @@ func init() {
 	viper.BindPFlag("log_output", RootCmd.Flags().Lookup("log-output"))
 	viper.BindPFlag("log_level", RootCmd.Flags().Lookup("log-level"))
 	viper.BindPFlag("port", RootCmd.Flags().Lookup("port"))
-	viper.BindPFlag("etcd_servers", RootCmd.Flags().Lookup("etcd-server"))
+	viper.BindPFlag("etcd_endpoints", RootCmd.Flags().Lookup("etcd-endpoint"))
 	viper.BindPFlag("etcd_dial_timeout", RootCmd.Flags().Lookup("etcd-dial-timeout"))
 	viper.BindPFlag("etcd_request_timeout", RootCmd.Flags().Lookup("etcd-request-timeout"))
-	viper.BindPFlag("cluster_name", RootCmd.Flags().Lookup("cluster-name"))
+	viper.BindPFlag("cluster", RootCmd.Flags().Lookup("cluster"))
+	viper.BindPFlag("shard", RootCmd.Flags().Lookup("shard"))
 	viper.BindPFlag("index_path", RootCmd.Flags().Lookup("index-path"))
 	viper.BindPFlag("index_mapping", RootCmd.Flags().Lookup("index-mapping"))
 	viper.BindPFlag("index_type", RootCmd.Flags().Lookup("index-type"))

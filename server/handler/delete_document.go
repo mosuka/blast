@@ -23,10 +23,10 @@ import (
 )
 
 type DeleteDocumentHandler struct {
-	client *client.BlastClientWrapper
+	client *client.BlastClient
 }
 
-func NewDeleteDocumentHandler(c *client.BlastClientWrapper) *DeleteDocumentHandler {
+func NewDeleteDocumentHandler(c *client.BlastClient) *DeleteDocumentHandler {
 	return &DeleteDocumentHandler{
 		client: c,
 	}

@@ -25,10 +25,10 @@ import (
 )
 
 type PutDocumentHandler struct {
-	client *client.BlastClientWrapper
+	client *client.BlastClient
 }
 
-func NewPutDocumentHandler(c *client.BlastClientWrapper) *PutDocumentHandler {
+func NewPutDocumentHandler(c *client.BlastClient) *PutDocumentHandler {
 	return &PutDocumentHandler{
 		client: c,
 	}

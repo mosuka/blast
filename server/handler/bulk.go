@@ -25,10 +25,10 @@ import (
 )
 
 type BulkHandler struct {
-	client *client.BlastClientWrapper
+	client *client.BlastClient
 }
 
-func NewBulkHandler(c *client.BlastClientWrapper) *BulkHandler {
+func NewBulkHandler(c *client.BlastClient) *BulkHandler {
 	return &BulkHandler{
 		client: c,
 	}

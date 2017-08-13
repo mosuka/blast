@@ -47,7 +47,7 @@ func runEDeleteDocumentCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// create client
-	cw, err := client.NewBlastClientWrapper(deleteDocumentCmdOpts.server, deleteDocumentCmdOpts.requestTimeout)
+	cw, err := client.NewBlastClient(deleteDocumentCmdOpts.server, deleteDocumentCmdOpts.requestTimeout)
 	if err != nil {
 		return err
 	}

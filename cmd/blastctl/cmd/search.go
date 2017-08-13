@@ -143,7 +143,7 @@ func runESearchCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// create client
-	cw, err := client.NewBlastClientWrapper(searchCmdOpts.server, searchCmdOpts.requestTimeout)
+	cw, err := client.NewBlastClient(searchCmdOpts.server, searchCmdOpts.requestTimeout)
 	if err != nil {
 		return err
 	}

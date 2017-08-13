@@ -99,8 +99,7 @@ func runECreateClusterCmd(cmd *cobra.Command, args []string) error {
 		Kvconfig       map[string]interface{}    `json:"kvconfig,omitempty"`
 	}{}
 
-	// create client
-	cw, err := client.NewEtcdClientWrapper(createClusterCmdOpts.etcdServers, createClusterCmdOpts.etcdDialTimeout, createClusterCmdOpts.etcdRequestTimeout)
+	cw, err := client.NewEtcdClient(createClusterCmdOpts.etcdServers, createClusterCmdOpts.etcdDialTimeout, createClusterCmdOpts.etcdRequestTimeout)
 	if err != nil {
 		return err
 	}

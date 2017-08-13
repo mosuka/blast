@@ -26,70 +26,101 @@ import (
 	"time"
 )
 
-type EtcdClientWrapper struct {
+var (
+	STATE_ACTIVE = "active"
+	STATE_DOWN   = "down"
+)
+
+type EtcdClient struct {
+	endpoints      []string
+	dialTimeout    int
+	requestTimeout int
 	client         *clientv3.Client
 	kv             clientv3.KV
-	requestTimeout int
 }
 
-func NewEtcdClientWrapper(endpoints []string, dialTimeout int, requestTimeout int) (*EtcdClientWrapper, error) {
-	if len(endpoints) <= 0 {
-		return nil, fmt.Errorf("endpoints are required")
-	}
-
+func NewEtcdClient(endpoints []string, dialTimeout int, requestTimeout int) (*EtcdClient, error) {
 	cfg := clientv3.Config{
 		Endpoints:   endpoints,
 		DialTimeout: time.Duration(dialTimeout) * time.Millisecond,
 		Context:     context.Background(),
 	}
-	c, err := clientv3.New(cfg)
+	client, err := clientv3.New(cfg)
 	if err != nil {
-		return nil, err
+		log.WithFields(log.Fields{
+			"endpoints":      endpoints,
+			"dialTimeout":    dialTimeout,
+			"requestTimeout": requestTimeout,
+		}).Error("failed to connect etcd endpoints")
+
+		return nil, fmt.Errorf("failed to connect etcd endpoints")
 	}
 
-	return &EtcdClientWrapper{
-		client:         c,
-		kv:             clientv3.NewKV(c),
+	log.WithFields(log.Fields{
+		"endpoints":      endpoints,
+		"dialTimeout":    dialTimeout,
+		"requestTimeout": requestTimeout,
+	}).Info("succeeded in connect to etcd endpoints")
+
+	return &EtcdClient{
+		endpoints:      endpoints,
+		dialTimeout:    dialTimeout,
 		requestTimeout: requestTimeout,
+		client:         client,
+		kv:             clientv3.NewKV(client),
 	}, nil
 }
 
-//func (c *EtcdClientWrapper) AddWorker(clusterName string, name string, disableOverwrite bool) error {
-//	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
-//	defer cancel()
-//
-//	keyRoot := fmt.Sprintf("/blast/%s", clusterName)
-//	keyWorkers := fmt.Sprintf("%s/%s", keyRoot, "workers")
-//
-//	if disableOverwrite {
-//		_, err := c.kv.Txn(ctx).
-//			If(clientv3util.KeyMissing(keyWorkers)).
-//			Then(clientv3.OpPut(keyWorkers, strconv.Itoa(shards))).
-//			Commit()
-//		if err != nil {
-//			return err
-//		}
-//	} else {
-//		_, err := c.kv.Put(ctx, keyWorkers, strconv.Itoa(shards))
-//		if err != nil {
-//			return err
-//		}
-//	}
-//
-//	return nil
-//}
+func (c *EtcdClient) AddCluster(clusterName string, disableOverwrite bool) error {
+	if clusterName == "" {
+		return fmt.Errorf("clusterName is required")
+	}
 
-func (c *EtcdClientWrapper) RemoveWorker(clusterName string, name string, disableOverwrite bool) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	defer cancel()
+
+	keyCluster := fmt.Sprintf("/blast/clusters/%s", clusterName)
+
+	if disableOverwrite {
+		_, err := c.kv.Txn(ctx).
+			If(clientv3util.KeyMissing(keyCluster)).
+			Then(clientv3.OpPut(keyCluster, STATE_DOWN)).
+			Commit()
+		if err != nil {
+			return err
+		}
+	} else {
+		_, err := c.kv.Put(ctx, keyCluster, STATE_DOWN)
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
 
-func (c *EtcdClientWrapper) GetWorkers(clusterName string) error {
+func (c *EtcdClient) RemoveCluster(clusterName string, disableOverwrite bool) error {
+	if clusterName == "" {
+		return fmt.Errorf("clusterName is required")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	defer cancel()
+
+	keyCluster := fmt.Sprintf("/blast/clusters/%s", clusterName)
+
+	_, err := c.kv.Txn(ctx).
+		If(clientv3util.KeyExists(keyCluster)).
+		Then(clientv3.OpDelete(keyCluster)).
+		Commit()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func (c *EtcdClientWrapper) PutNumberOfShards(clusterName string, numberOfShards int, disableOverwrite bool) error {
+func (c *EtcdClient) PutNumberOfShards(clusterName string, numberOfShards int, disableOverwrite bool) error {
 	if clusterName == "" {
 		return fmt.Errorf("clusterName is required")
 	}
@@ -117,7 +148,7 @@ func (c *EtcdClientWrapper) PutNumberOfShards(clusterName string, numberOfShards
 	return nil
 }
 
-func (c *EtcdClientWrapper) GetNumberOfShards(clusterName string) (int, error) {
+func (c *EtcdClient) GetNumberOfShards(clusterName string) (int, error) {
 	if clusterName == "" {
 		return 0, fmt.Errorf("clusterName is required")
 	}
@@ -147,7 +178,7 @@ func (c *EtcdClientWrapper) GetNumberOfShards(clusterName string) (int, error) {
 	return numberOfShards, nil
 }
 
-func (c *EtcdClientWrapper) DeleteNumberOfShards(clusterName string) error {
+func (c *EtcdClient) DeleteNumberOfShards(clusterName string) error {
 	if clusterName == "" {
 		return fmt.Errorf("clusterName is required")
 	}
@@ -165,7 +196,7 @@ func (c *EtcdClientWrapper) DeleteNumberOfShards(clusterName string) error {
 	return nil
 }
 
-func (c *EtcdClientWrapper) PutIndexMapping(clusterName string, indexMapping *mapping.IndexMappingImpl, disableOverwrite bool) error {
+func (c *EtcdClient) PutIndexMapping(clusterName string, indexMapping *mapping.IndexMappingImpl, disableOverwrite bool) error {
 	if clusterName == "" {
 		return fmt.Errorf("clusterName is required")
 	}
@@ -202,7 +233,7 @@ func (c *EtcdClientWrapper) PutIndexMapping(clusterName string, indexMapping *ma
 	return nil
 }
 
-func (c *EtcdClientWrapper) GetIndexMapping(clusterName string) (*mapping.IndexMappingImpl, error) {
+func (c *EtcdClient) GetIndexMapping(clusterName string) (*mapping.IndexMappingImpl, error) {
 	if clusterName == "" {
 		return nil, fmt.Errorf("clusterName is required")
 	}
@@ -232,7 +263,7 @@ func (c *EtcdClientWrapper) GetIndexMapping(clusterName string) (*mapping.IndexM
 	return indexMapping, nil
 }
 
-func (c *EtcdClientWrapper) DeleteIndexMapping(clusterName string) error {
+func (c *EtcdClient) DeleteIndexMapping(clusterName string) error {
 	if clusterName == "" {
 		return fmt.Errorf("clusterName is required")
 	}
@@ -253,7 +284,7 @@ func (c *EtcdClientWrapper) DeleteIndexMapping(clusterName string) error {
 	return nil
 }
 
-func (c *EtcdClientWrapper) PutIndexType(clusterName string, indexType string, disableOverwrite bool) error {
+func (c *EtcdClient) PutIndexType(clusterName string, indexType string, disableOverwrite bool) error {
 	if clusterName == "" {
 		return fmt.Errorf("clusterName is required")
 	}
@@ -281,7 +312,7 @@ func (c *EtcdClientWrapper) PutIndexType(clusterName string, indexType string, d
 	return nil
 }
 
-func (c *EtcdClientWrapper) GetIndexType(clusterName string) (string, error) {
+func (c *EtcdClient) GetIndexType(clusterName string) (string, error) {
 	if clusterName == "" {
 		return "", fmt.Errorf("clusterName is required")
 	}
@@ -308,7 +339,7 @@ func (c *EtcdClientWrapper) GetIndexType(clusterName string) (string, error) {
 	return indexType, nil
 }
 
-func (c *EtcdClientWrapper) DeleteIndexType(clusterName string) error {
+func (c *EtcdClient) DeleteIndexType(clusterName string) error {
 	if clusterName == "" {
 		return fmt.Errorf("clusterName is required")
 	}
@@ -329,7 +360,7 @@ func (c *EtcdClientWrapper) DeleteIndexType(clusterName string) error {
 	return nil
 }
 
-func (c *EtcdClientWrapper) PutKvstore(clusterName string, kvstore string, disableOverwrite bool) error {
+func (c *EtcdClient) PutKvstore(clusterName string, kvstore string, disableOverwrite bool) error {
 	if clusterName == "" {
 		return fmt.Errorf("clusterName is required")
 	}
@@ -357,7 +388,7 @@ func (c *EtcdClientWrapper) PutKvstore(clusterName string, kvstore string, disab
 	return nil
 }
 
-func (c *EtcdClientWrapper) GetKvstore(clusterName string) (string, error) {
+func (c *EtcdClient) GetKvstore(clusterName string) (string, error) {
 	if clusterName == "" {
 		return "", fmt.Errorf("clusterName is required")
 	}
@@ -384,7 +415,7 @@ func (c *EtcdClientWrapper) GetKvstore(clusterName string) (string, error) {
 	return kvstore, nil
 }
 
-func (c *EtcdClientWrapper) DeleteKvstore(clusterName string) error {
+func (c *EtcdClient) DeleteKvstore(clusterName string) error {
 	if clusterName == "" {
 		return fmt.Errorf("clusterName is required")
 	}
@@ -405,7 +436,7 @@ func (c *EtcdClientWrapper) DeleteKvstore(clusterName string) error {
 	return nil
 }
 
-func (c *EtcdClientWrapper) PutKvconfig(clusterName string, kvconfig map[string]interface{}, disableOverwrite bool) error {
+func (c *EtcdClient) PutKvconfig(clusterName string, kvconfig map[string]interface{}, disableOverwrite bool) error {
 	if clusterName == "" {
 		return fmt.Errorf("clusterName is required")
 	}
@@ -442,7 +473,7 @@ func (c *EtcdClientWrapper) PutKvconfig(clusterName string, kvconfig map[string]
 	return nil
 }
 
-func (c *EtcdClientWrapper) GetKvconfig(clusterName string) (map[string]interface{}, error) {
+func (c *EtcdClient) GetKvconfig(clusterName string) (map[string]interface{}, error) {
 	if clusterName == "" {
 		return nil, fmt.Errorf("clusterName is required")
 	}
@@ -472,7 +503,7 @@ func (c *EtcdClientWrapper) GetKvconfig(clusterName string) (map[string]interfac
 	return kvconfig, nil
 }
 
-func (c *EtcdClientWrapper) DeleteKvconfig(clusterName string) error {
+func (c *EtcdClient) DeleteKvconfig(clusterName string) error {
 	if clusterName == "" {
 		return fmt.Errorf("clusterName is required")
 	}
@@ -493,31 +524,128 @@ func (c *EtcdClientWrapper) DeleteKvconfig(clusterName string) error {
 	return nil
 }
 
-func (c *EtcdClientWrapper) Watch(clusterName string) error {
+func (c *EtcdClient) AddShard(clusterName string, shardName string, disableOverwrite bool) error {
 	if clusterName == "" {
 		return fmt.Errorf("clusterName is required")
+	}
+	if shardName == "" {
+		return fmt.Errorf("shardName is required")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	keyCluster := fmt.Sprintf("/blast/clusters/%s", clusterName)
+	keyShard := fmt.Sprintf("/blast/clusters/%s/shards/%s", clusterName, shardName)
 
-	rch := c.client.Watch(ctx, keyCluster, clientv3.WithPrefix())
-
-	for wresp := range rch {
-		for _, ev := range wresp.Events {
-			log.WithFields(log.Fields{
-				"type":  ev.Type,
-				"key":   string(ev.Kv.Key),
-				"value": string(ev.Kv.Value),
-			}).Info("information changes in cluster has detected")
+	if disableOverwrite {
+		_, err := c.kv.Txn(ctx).
+			If(clientv3util.KeyMissing(keyShard)).
+			Then(clientv3.OpPut(keyShard, STATE_DOWN)).
+			Commit()
+		if err != nil {
+			return err
+		}
+	} else {
+		_, err := c.kv.Put(ctx, keyShard, STATE_DOWN)
+		if err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
-func (c *EtcdClientWrapper) Close() error {
+func (c *EtcdClient) RemoveShard(clusterName string, shardName string, disableOverwrite bool) error {
+	if clusterName == "" {
+		return fmt.Errorf("clusterName is required")
+	}
+	if shardName == "" {
+		return fmt.Errorf("shardName is required")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	defer cancel()
+
+	keyShard := fmt.Sprintf("/blast/clusters/%s/shards/%s", clusterName, shardName)
+
+	_, err := c.kv.Txn(ctx).
+		If(clientv3util.KeyExists(keyShard)).
+		Then(clientv3.OpDelete(keyShard)).
+		Commit()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *EtcdClient) AddNode(clusterName string, shardName string, nodeName string, disableOverwrite bool) error {
+	if clusterName == "" {
+		return fmt.Errorf("clusterName is required")
+	}
+	if shardName == "" {
+		return fmt.Errorf("shardName is required")
+	}
+	if nodeName == "" {
+		return fmt.Errorf("nodeName is required")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	defer cancel()
+
+	keyNode := fmt.Sprintf("/blast/clusters/%s/shards/%s/nodes/%s", clusterName, shardName, nodeName)
+
+	if disableOverwrite {
+		_, err := c.kv.Txn(ctx).
+			If(clientv3util.KeyMissing(keyNode)).
+			Then(clientv3.OpPut(keyNode, STATE_DOWN)).
+			Commit()
+		if err != nil {
+			return err
+		}
+	} else {
+		_, err := c.kv.Put(ctx, keyNode, STATE_DOWN)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c *EtcdClient) RemoveNode(clusterName string, shardName string, nodeName string, disableOverwrite bool) error {
+	if clusterName == "" {
+		return fmt.Errorf("clusterName is required")
+	}
+	if shardName == "" {
+		return fmt.Errorf("shardName is required")
+	}
+	if nodeName == "" {
+		return fmt.Errorf("nodeName is required")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	defer cancel()
+
+	keyNode := fmt.Sprintf("/blast/clusters/%s/shards/%s/nodes/%s", clusterName, shardName, nodeName)
+
+	_, err := c.kv.Txn(ctx).
+		If(clientv3util.KeyExists(keyNode)).
+		Then(clientv3.OpDelete(keyNode)).
+		Commit()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *EtcdClient) Close() error {
+	log.WithFields(log.Fields{
+		"endpoints":      c.endpoints,
+		"dialTimeout":    c.dialTimeout,
+		"requestTimeout": c.requestTimeout,
+	}).Info("disconnect etcd endpoints")
+
 	return c.client.Close()
 }

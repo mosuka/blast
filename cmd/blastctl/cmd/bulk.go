@@ -88,7 +88,7 @@ func runEBulkCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// create client
-	cw, err := client.NewBlastClientWrapper(bulkCmdOpts.server, bulkCmdOpts.requestTimeout)
+	cw, err := client.NewBlastClient(bulkCmdOpts.server, bulkCmdOpts.requestTimeout)
 	if err != nil {
 		return err
 	}

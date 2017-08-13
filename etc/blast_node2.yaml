@@ -19,9 +19,10 @@ log_level: info
 port: 20885
 index_path: ./data/index2
 
-etcd_servers:
+etcd_endpoints:
   - localhost:2379
 etcd_dial_timeout: 5000
 etcd_request_timeout: 5000
 
-cluster_name: default
+cluster: default
+shard: shard2

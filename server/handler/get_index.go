@@ -22,10 +22,10 @@ import (
 )
 
 type GetIndexHandler struct {
-	client *client.BlastClientWrapper
+	client *client.BlastClient
 }
 
-func NewGetIndexHandler(c *client.BlastClientWrapper) *GetIndexHandler {
+func NewGetIndexHandler(c *client.BlastClient) *GetIndexHandler {
 	return &GetIndexHandler{
 		client: c,
 	}

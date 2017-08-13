@@ -47,7 +47,7 @@ func runEGetDocumentCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// create client
-	cw, err := client.NewBlastClientWrapper(getDocumentCmdOpts.server, getDocumentCmdOpts.requestTimeout)
+	cw, err := client.NewBlastClient(getDocumentCmdOpts.server, getDocumentCmdOpts.requestTimeout)
 	if err != nil {
 		return err
 	}

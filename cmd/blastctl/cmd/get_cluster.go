@@ -68,7 +68,7 @@ func runEGetClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// create client
-	cw, err := client.NewEtcdClientWrapper(getClusterCmdOpts.etcdServers, getClusterCmdOpts.etcdDialTimeout, getClusterCmdOpts.etcdRequestTimeout)
+	cw, err := client.NewEtcdClient(createClusterCmdOpts.etcdServers, createClusterCmdOpts.etcdDialTimeout, createClusterCmdOpts.etcdRequestTimeout)
 	if err != nil {
 		return err
 	}

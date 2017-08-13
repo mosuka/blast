@@ -100,14 +100,14 @@ func runEEditClusterCmd(cmd *cobra.Command, args []string) error {
 	}{}
 
 	// create client
-	cw, err := client.NewEtcdClientWrapper(editClusterCmdOpts.etcdServers, getClusterCmdOpts.etcdDialTimeout, getClusterCmdOpts.etcdRequestTimeout)
+	cw, err := client.NewEtcdClient(createClusterCmdOpts.etcdServers, createClusterCmdOpts.etcdDialTimeout, createClusterCmdOpts.etcdRequestTimeout)
 	if err != nil {
 		return err
 	}
 	defer cw.Close()
 
 	if cmd.Flag("number-of-shards").Changed {
-		err = cw.PutNumberOfShards(editClusterCmdOpts.clusterName, editClusterCmdOpts.numberOfShards, false)
+		err := cw.PutNumberOfShards(editClusterCmdOpts.clusterName, editClusterCmdOpts.numberOfShards, false)
 		if err != nil {
 			return err
 		}
@@ -115,7 +115,7 @@ func runEEditClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if cmd.Flag("index-mapping").Changed {
-		err = cw.PutIndexMapping(editClusterCmdOpts.clusterName, indexMapping, false)
+		err := cw.PutIndexMapping(editClusterCmdOpts.clusterName, indexMapping, false)
 		if err != nil {
 			return err
 		}
@@ -123,7 +123,7 @@ func runEEditClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if cmd.Flag("index-type").Changed {
-		err = cw.PutIndexType(editClusterCmdOpts.clusterName, editClusterCmdOpts.indexType, false)
+		err := cw.PutIndexType(editClusterCmdOpts.clusterName, editClusterCmdOpts.indexType, false)
 		if err != nil {
 			return err
 		}
@@ -131,7 +131,7 @@ func runEEditClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if cmd.Flag("kvstore").Changed {
-		err = cw.PutKvstore(editClusterCmdOpts.clusterName, editClusterCmdOpts.kvstore, false)
+		err := cw.PutKvstore(editClusterCmdOpts.clusterName, editClusterCmdOpts.kvstore, false)
 		if err != nil {
 			return err
 		}
@@ -139,7 +139,7 @@ func runEEditClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if cmd.Flag("kvconfig").Changed {
-		err = cw.PutKvconfig(editClusterCmdOpts.clusterName, kvconfig, false)
+		err := cw.PutKvconfig(editClusterCmdOpts.clusterName, kvconfig, false)
 		if err != nil {
 			return err
 		}
