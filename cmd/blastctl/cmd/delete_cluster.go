@@ -22,14 +22,14 @@ import (
 )
 
 type DeleteClusterCommandOptions struct {
-	etcdServers        []string
+	etcdEndpoints      []string
 	etcdDialTimeout    int
 	etcdRequestTimeout int
 	clusterName        string
 }
 
 var deleteClusterCmdOpts = DeleteClusterCommandOptions{
-	etcdServers:        []string{"localhost:2379"},
+	etcdEndpoints:      []string{"localhost:2379"},
 	etcdDialTimeout:    5000,
 	etcdRequestTimeout: 5000,
 	clusterName:        "",
@@ -49,7 +49,7 @@ func runEDeleteClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// create client
-	cw, err := client.NewEtcdClient(createClusterCmdOpts.etcdServers, createClusterCmdOpts.etcdDialTimeout, createClusterCmdOpts.etcdRequestTimeout)
+	cw, err := client.NewEtcdClient(createClusterCmdOpts.etcdEndpoints, createClusterCmdOpts.etcdDialTimeout, createClusterCmdOpts.etcdRequestTimeout)
 	if err != nil {
 		return err
 	}
@@ -98,7 +98,7 @@ func runEDeleteClusterCmd(cmd *cobra.Command, args []string) error {
 func init() {
 	deleteClusterCmd.Flags().SortFlags = false
 
-	deleteClusterCmd.Flags().StringSliceVar(&deleteClusterCmdOpts.etcdServers, "etcd-server", deleteClusterCmdOpts.etcdServers, "etcd server to connect to")
+	deleteClusterCmd.Flags().StringSliceVar(&deleteClusterCmdOpts.etcdEndpoints, "etcd-endpoint", deleteClusterCmdOpts.etcdEndpoints, "etcd endpoint")
 	deleteClusterCmd.Flags().IntVar(&deleteClusterCmdOpts.etcdDialTimeout, "etcd-dial-timeout", deleteClusterCmdOpts.etcdDialTimeout, "etcd dial timeout")
 	deleteClusterCmd.Flags().IntVar(&deleteClusterCmdOpts.etcdRequestTimeout, "etcd-request-timeout", deleteClusterCmdOpts.etcdRequestTimeout, "etcd request timeout")
 	deleteClusterCmd.Flags().StringVar(&deleteClusterCmdOpts.clusterName, "cluster-name", deleteClusterCmdOpts.clusterName, "cluster name")

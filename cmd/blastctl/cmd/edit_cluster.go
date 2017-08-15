@@ -25,7 +25,7 @@ import (
 )
 
 type EditClusterCommandOptions struct {
-	etcdServers        []string
+	etcdEndpoints      []string
 	etcdDialTimeout    int
 	etcdRequestTimeout int
 	clusterName        string
@@ -37,7 +37,7 @@ type EditClusterCommandOptions struct {
 }
 
 var editClusterCmdOpts = EditClusterCommandOptions{
-	etcdServers:        []string{"localhost:2379"},
+	etcdEndpoints:      []string{"localhost:2379"},
 	etcdDialTimeout:    5000,
 	etcdRequestTimeout: 5000,
 	clusterName:        "",
@@ -100,7 +100,7 @@ func runEEditClusterCmd(cmd *cobra.Command, args []string) error {
 	}{}
 
 	// create client
-	cw, err := client.NewEtcdClient(createClusterCmdOpts.etcdServers, createClusterCmdOpts.etcdDialTimeout, createClusterCmdOpts.etcdRequestTimeout)
+	cw, err := client.NewEtcdClient(createClusterCmdOpts.etcdEndpoints, createClusterCmdOpts.etcdDialTimeout, createClusterCmdOpts.etcdRequestTimeout)
 	if err != nil {
 		return err
 	}
@@ -166,7 +166,7 @@ func runEEditClusterCmd(cmd *cobra.Command, args []string) error {
 func init() {
 	editClusterCmd.Flags().SortFlags = false
 
-	editClusterCmd.Flags().StringSliceVar(&editClusterCmdOpts.etcdServers, "etcd-server", editClusterCmdOpts.etcdServers, "etcd server to connect to")
+	editClusterCmd.Flags().StringSliceVar(&editClusterCmdOpts.etcdEndpoints, "etcd-endpoint", editClusterCmdOpts.etcdEndpoints, "etcd eendpoint")
 	editClusterCmd.Flags().IntVar(&editClusterCmdOpts.etcdDialTimeout, "etcd-dial-timeout", editClusterCmdOpts.etcdDialTimeout, "etcd dial timeout")
 	editClusterCmd.Flags().IntVar(&editClusterCmdOpts.etcdRequestTimeout, "etcd-request-timeout", editClusterCmdOpts.etcdRequestTimeout, "etcd request timeout")
 	editClusterCmd.Flags().StringVar(&editClusterCmdOpts.clusterName, "cluster-name", editClusterCmdOpts.clusterName, "cluster name")
