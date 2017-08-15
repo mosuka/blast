@@ -60,13 +60,13 @@ func TestBlastServer(t *testing.T) {
 		t.Errorf("could not load kvconfig %v", err)
 	}
 
-	gRPCServer, err := NewBlastServer(port, indexPath, indexMapping, indexType, kvstore, kvconfig, etcdEndpoints, etcdDialTimeout, etcdRequestTimeout, cluster, shard)
+	blastServer, err := NewBlastServer(port, indexPath, indexMapping, indexType, kvstore, kvconfig, etcdEndpoints, etcdDialTimeout, etcdRequestTimeout, cluster, shard)
 
-	if gRPCServer == nil {
-		t.Fatalf("unexpected error. expected not nil, actual %v", gRPCServer)
+	if blastServer == nil {
+		t.Fatalf("unexpected error. expected not nil, actual %v", blastServer)
 	}
 
-	err = gRPCServer.Start()
+	err = blastServer.Start()
 
 	if err != nil {
 		t.Fatalf("unexpected error. %v", err)
@@ -74,7 +74,7 @@ func TestBlastServer(t *testing.T) {
 
 	time.Sleep(10 * time.Second)
 
-	err = gRPCServer.Stop()
+	err = blastServer.Stop()
 	if err != nil {
 		t.Fatalf("unexpected error. %v", err)
 	}

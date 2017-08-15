@@ -15,42 +15,77 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"github.com/blevesearch/bleve/mapping"
-	"github.com/mosuka/blast/client"
+	"github.com/coreos/etcd/clientv3"
 	"github.com/mosuka/blast/proto"
 	"github.com/mosuka/blast/service"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"net"
 	"os"
+	"time"
+)
+
+var (
+	STATE_ACTIVE = "active"
+	STATE_READY  = "ready"
+	STATE_DOWN   = "down"
 )
 
 type BlastServer struct {
-	host       string
-	port       int
-	server     *grpc.Server
-	service    *service.BlastService
-	etcdClient *client.EtcdClient
-	cluster    string
-	shard      string
+	hostname           string
+	port               int
+	server             *grpc.Server
+	service            *service.BlastService
+	etcdClient         *clientv3.Client
+	etcdKv             clientv3.KV
+	etcdRequestTimeout int
+	cluster            string
+	shard              string
+	node               string
 }
 
 func NewBlastServer(port int, indexPath string, indexMapping *mapping.IndexMappingImpl, indexType string, kvstore string, kvconfig map[string]interface{}, etcdEndpoints []string, etcdDialTimeout int, etcdRequestTimeout int, cluster string, shard string) (*BlastServer, error) {
-	host, err := os.Hostname()
+	hostname, err := os.Hostname()
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err.Error(),
-		}).Error("failed to get hostname")
+		}).Error("failed to get the hostname")
 		return nil, err
 	}
+	log.WithFields(log.Fields{
+		"hostname": hostname,
+	}).Info("got the hostname")
 
-	var etcdClient *client.EtcdClient
+	node := fmt.Sprintf("%s:%d", hostname, port)
+	log.WithFields(log.Fields{
+		"node": node,
+	}).Info("determine the node")
+
+	var etcdClient *clientv3.Client
 	if len(etcdEndpoints) > 0 {
-		etcdClient, err = client.NewEtcdClient(etcdEndpoints, etcdDialTimeout, etcdRequestTimeout)
+		etcdConfig := clientv3.Config{
+			Endpoints:   etcdEndpoints,
+			DialTimeout: time.Duration(etcdDialTimeout) * time.Millisecond,
+			Context:     context.Background(),
+		}
+		etcdClient, err = clientv3.New(etcdConfig)
 		if err != nil {
+			log.WithFields(log.Fields{
+				"etcdConfig": etcdConfig,
+				"error":      err.Error(),
+			}).Error("failed to create the etcd client")
 			return nil, err
 		}
+		log.WithFields(log.Fields{
+			"etcdConfig": etcdConfig,
+		}).Info("created the etcd client")
+	}
+	var etcdKv clientv3.KV
+	if etcdClient != nil {
+		etcdKv = clientv3.NewKV(etcdClient)
 	}
 
 	svr := grpc.NewServer()
@@ -58,63 +93,183 @@ func NewBlastServer(port int, indexPath string, indexMapping *mapping.IndexMappi
 	proto.RegisterIndexServer(svr, svc)
 
 	return &BlastServer{
-		host:       host,
-		port:       port,
-		server:     svr,
-		service:    svc,
-		etcdClient: etcdClient,
-		cluster:    cluster,
-		shard:      shard,
+		hostname:           hostname,
+		port:               port,
+		server:             svr,
+		service:            svc,
+		etcdClient:         etcdClient,
+		etcdKv:             etcdKv,
+		etcdRequestTimeout: etcdRequestTimeout,
+		cluster:            cluster,
+		shard:              shard,
+		node:               node,
 	}, nil
 }
 
 func (s *BlastServer) Start() error {
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", s.port))
-	if err == nil {
-		log.WithFields(log.Fields{
-			"port": s.port,
-		}).Info("create listener")
-	} else {
+	if err != nil {
 		log.WithFields(log.Fields{
 			"port":  s.port,
 			"error": err.Error(),
-		}).Error("failed to create listener")
+		}).Error("failed to create the listener")
 		return err
 	}
+	log.WithFields(log.Fields{
+		"port": s.port,
+	}).Info("created the listener")
 
 	go func() {
 		s.service.OpenIndex()
 		s.server.Serve(listener)
 		return
 	}()
-	log.WithFields(log.Fields{
-		"host": s.host,
-		"port": s.port,
-	}).Info("The Blast server started")
+	log.Info("the blast server has been started")
+
+	if s.etcdClient != nil {
+		go func() {
+			for {
+				s.watchCluster()
+			}
+			return
+		}()
+		log.Info("watching the cluster information has been started")
+
+		err = s.joinCluster()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"cluster": s.cluster,
+				"shard":   s.shard,
+				"node":    s.node,
+				"error":   err.Error(),
+			}).Error("the blast server failed to join the cluster")
+			return err
+		}
+		log.WithFields(log.Fields{
+			"cluster": s.cluster,
+			"shard":   s.shard,
+			"node":    s.node,
+		}).Info("the blast server has been joined the cluster")
+	}
 
 	return nil
 }
 
 func (s *BlastServer) Stop() error {
-
 	if s.etcdClient != nil {
-		s.etcdClient.Close()
+		err := s.leaveCluster()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"cluster": s.cluster,
+				"shard":   s.shard,
+				"node":    s.node,
+				"error":   err.Error(),
+			}).Error("the blast server failed to leave the cluster")
+		}
+		log.WithFields(log.Fields{
+			"cluster": s.cluster,
+			"shard":   s.shard,
+			"node":    s.node,
+		}).Info("the blast server has been left the cluster")
+
+		err = s.etcdClient.Close()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+			}).Error("failed to disconnect from the etcd")
+		}
+		log.Info("disconnected from the etcd")
 	}
 
 	err := s.service.CloseIndex()
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err.Error(),
-		}).Error("failed to close index")
-		return err
+		}).Error("failed to close the index")
 	}
+	log.Info("closed the index")
 
 	s.server.GracefulStop()
 
+	log.Info("the blast server has been stopped")
+
+	return err
+}
+
+func (s *BlastServer) watchCluster() {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(s.etcdRequestTimeout)*time.Millisecond)
+	defer cancel()
+
+	keyCluster := fmt.Sprintf("/blast/clusters/%s", s.cluster)
+
+	rch := s.etcdClient.Watch(ctx, keyCluster, clientv3.WithPrefix())
+	for wresp := range rch {
+		for _, ev := range wresp.Events {
+			log.WithFields(log.Fields{
+				"type":  ev.Type,
+				"key":   fmt.Sprintf("%s", ev.Kv.Key),
+				"value": fmt.Sprintf("%s", ev.Kv.Value),
+			}).Info("the cluster information has been changed")
+		}
+	}
+
+	return
+}
+
+func (s *BlastServer) joinCluster() error {
+	if s.cluster == "" {
+		return fmt.Errorf("cluster is required")
+	}
+	if s.shard == "" {
+		return fmt.Errorf("shard is required")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(s.etcdRequestTimeout)*time.Millisecond)
+	defer cancel()
+
+	keyNode := fmt.Sprintf("/blast/clusters/%s/shards/%s/nodes/%s", s.cluster, s.shard, s.node)
+
+	_, err := s.etcdKv.Put(ctx, keyNode, STATE_READY)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"key":   keyNode,
+			"value": STATE_READY,
+			"error": err,
+		}).Error("failed to put the data")
+		return err
+	}
 	log.WithFields(log.Fields{
-		"host": s.host,
-		"port": s.port,
-	}).Info("The Blast server stopped")
+		"key":   keyNode,
+		"value": STATE_READY,
+	}).Info("put the data")
+
+	return nil
+}
+
+func (s *BlastServer) leaveCluster() error {
+	if s.cluster == "" {
+		return fmt.Errorf("cluster is required")
+	}
+	if s.shard == "" {
+		return fmt.Errorf("shard is required")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(s.etcdRequestTimeout)*time.Millisecond)
+	defer cancel()
+
+	keyNode := fmt.Sprintf("/blast/clusters/%s/shards/%s/nodes/%s", s.cluster, s.shard, s.node)
+
+	_, err := s.etcdKv.Delete(ctx, keyNode)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"key":   keyNode,
+			"error": err,
+		}).Error("failed to delete the data")
+		return err
+	}
+	log.WithFields(log.Fields{
+		"key": keyNode,
+	}).Info("deleted the data")
 
 	return nil
 }

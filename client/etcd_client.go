@@ -21,20 +21,20 @@ import (
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/clientv3/clientv3util"
-	log "github.com/sirupsen/logrus"
 	"strconv"
 	"time"
 )
 
 var (
 	STATE_ACTIVE = "active"
+	STATE_READY  = "ready"
 	STATE_DOWN   = "down"
 )
 
 type EtcdClient struct {
-	endpoints      []string
-	dialTimeout    int
-	requestTimeout int
+	Endpoints      []string
+	DialTimeout    int
+	RequestTimeout int
 	client         *clientv3.Client
 	kv             clientv3.KV
 }
@@ -47,25 +47,13 @@ func NewEtcdClient(endpoints []string, dialTimeout int, requestTimeout int) (*Et
 	}
 	client, err := clientv3.New(cfg)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"endpoints":      endpoints,
-			"dialTimeout":    dialTimeout,
-			"requestTimeout": requestTimeout,
-		}).Error("failed to connect etcd endpoints")
-
 		return nil, fmt.Errorf("failed to connect etcd endpoints")
 	}
 
-	log.WithFields(log.Fields{
-		"endpoints":      endpoints,
-		"dialTimeout":    dialTimeout,
-		"requestTimeout": requestTimeout,
-	}).Info("succeeded in connect to etcd endpoints")
-
 	return &EtcdClient{
-		endpoints:      endpoints,
-		dialTimeout:    dialTimeout,
-		requestTimeout: requestTimeout,
+		Endpoints:      endpoints,
+		DialTimeout:    dialTimeout,
+		RequestTimeout: requestTimeout,
 		client:         client,
 		kv:             clientv3.NewKV(client),
 	}, nil
@@ -76,7 +64,7 @@ func (c *EtcdClient) AddCluster(clusterName string, disableOverwrite bool) error
 		return fmt.Errorf("clusterName is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.RequestTimeout)*time.Millisecond)
 	defer cancel()
 
 	keyCluster := fmt.Sprintf("/blast/clusters/%s", clusterName)
@@ -104,7 +92,7 @@ func (c *EtcdClient) RemoveCluster(clusterName string, disableOverwrite bool) er
 		return fmt.Errorf("clusterName is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.RequestTimeout)*time.Millisecond)
 	defer cancel()
 
 	keyCluster := fmt.Sprintf("/blast/clusters/%s", clusterName)
@@ -125,7 +113,7 @@ func (c *EtcdClient) PutNumberOfShards(clusterName string, numberOfShards int, d
 		return fmt.Errorf("clusterName is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.RequestTimeout)*time.Millisecond)
 	defer cancel()
 
 	keyNumberOfShards := fmt.Sprintf("/blast/clusters/%s/numberOfShards", clusterName)
@@ -153,7 +141,7 @@ func (c *EtcdClient) GetNumberOfShards(clusterName string) (int, error) {
 		return 0, fmt.Errorf("clusterName is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.RequestTimeout)*time.Millisecond)
 	defer cancel()
 
 	keyNumberOfShards := fmt.Sprintf("/blast/clusters/%s/numberOfShards", clusterName)
@@ -183,7 +171,7 @@ func (c *EtcdClient) DeleteNumberOfShards(clusterName string) error {
 		return fmt.Errorf("clusterName is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.RequestTimeout)*time.Millisecond)
 	defer cancel()
 
 	keyNumberOfShards := fmt.Sprintf("/blast/clusters/%s/numberOfShards", clusterName)
@@ -201,7 +189,7 @@ func (c *EtcdClient) PutIndexMapping(clusterName string, indexMapping *mapping.I
 		return fmt.Errorf("clusterName is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.RequestTimeout)*time.Millisecond)
 	defer cancel()
 
 	keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/indexMapping", clusterName)
@@ -238,7 +226,7 @@ func (c *EtcdClient) GetIndexMapping(clusterName string) (*mapping.IndexMappingI
 		return nil, fmt.Errorf("clusterName is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.RequestTimeout)*time.Millisecond)
 	defer cancel()
 
 	keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/indexMapping", clusterName)
@@ -268,7 +256,7 @@ func (c *EtcdClient) DeleteIndexMapping(clusterName string) error {
 		return fmt.Errorf("clusterName is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.RequestTimeout)*time.Millisecond)
 	defer cancel()
 
 	keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/indexMapping", clusterName)
@@ -289,7 +277,7 @@ func (c *EtcdClient) PutIndexType(clusterName string, indexType string, disableO
 		return fmt.Errorf("clusterName is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.RequestTimeout)*time.Millisecond)
 	defer cancel()
 
 	keyIndexType := fmt.Sprintf("/blast/clusters/%s/indexType", clusterName)
@@ -317,7 +305,7 @@ func (c *EtcdClient) GetIndexType(clusterName string) (string, error) {
 		return "", fmt.Errorf("clusterName is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.RequestTimeout)*time.Millisecond)
 	defer cancel()
 
 	keyIndexType := fmt.Sprintf("/blast/clusters/%s/indexType", clusterName)
@@ -344,7 +332,7 @@ func (c *EtcdClient) DeleteIndexType(clusterName string) error {
 		return fmt.Errorf("clusterName is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.RequestTimeout)*time.Millisecond)
 	defer cancel()
 
 	keyIndexType := fmt.Sprintf("/blast/clusters/%s/indexType", clusterName)
@@ -365,7 +353,7 @@ func (c *EtcdClient) PutKvstore(clusterName string, kvstore string, disableOverw
 		return fmt.Errorf("clusterName is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.RequestTimeout)*time.Millisecond)
 	defer cancel()
 
 	keyKvstore := fmt.Sprintf("/blast/clusters/%s/kvstore", clusterName)
@@ -393,7 +381,7 @@ func (c *EtcdClient) GetKvstore(clusterName string) (string, error) {
 		return "", fmt.Errorf("clusterName is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.RequestTimeout)*time.Millisecond)
 	defer cancel()
 
 	keyKvstore := fmt.Sprintf("/blast/clusters/%s/kvstore", clusterName)
@@ -420,7 +408,7 @@ func (c *EtcdClient) DeleteKvstore(clusterName string) error {
 		return fmt.Errorf("clusterName is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.RequestTimeout)*time.Millisecond)
 	defer cancel()
 
 	keyKvstore := fmt.Sprintf("/blast/clusters/%s/kvstore", clusterName)
@@ -441,7 +429,7 @@ func (c *EtcdClient) PutKvconfig(clusterName string, kvconfig map[string]interfa
 		return fmt.Errorf("clusterName is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.RequestTimeout)*time.Millisecond)
 	defer cancel()
 
 	keyKvconfig := fmt.Sprintf("/blast/clusters/%s/kvconfig", clusterName)
@@ -478,7 +466,7 @@ func (c *EtcdClient) GetKvconfig(clusterName string) (map[string]interface{}, er
 		return nil, fmt.Errorf("clusterName is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.RequestTimeout)*time.Millisecond)
 	defer cancel()
 
 	keyKvconfig := fmt.Sprintf("/blast/clusters/%s/kvconfig", clusterName)
@@ -508,7 +496,7 @@ func (c *EtcdClient) DeleteKvconfig(clusterName string) error {
 		return fmt.Errorf("clusterName is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.RequestTimeout)*time.Millisecond)
 	defer cancel()
 
 	keyKvconfig := fmt.Sprintf("/blast/clusters/%s/kvconfig", clusterName)
@@ -532,7 +520,7 @@ func (c *EtcdClient) AddShard(clusterName string, shardName string, disableOverw
 		return fmt.Errorf("shardName is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.RequestTimeout)*time.Millisecond)
 	defer cancel()
 
 	keyShard := fmt.Sprintf("/blast/clusters/%s/shards/%s", clusterName, shardName)
@@ -563,7 +551,7 @@ func (c *EtcdClient) RemoveShard(clusterName string, shardName string, disableOv
 		return fmt.Errorf("shardName is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.RequestTimeout)*time.Millisecond)
 	defer cancel()
 
 	keyShard := fmt.Sprintf("/blast/clusters/%s/shards/%s", clusterName, shardName)
@@ -590,7 +578,7 @@ func (c *EtcdClient) AddNode(clusterName string, shardName string, nodeName stri
 		return fmt.Errorf("nodeName is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.RequestTimeout)*time.Millisecond)
 	defer cancel()
 
 	keyNode := fmt.Sprintf("/blast/clusters/%s/shards/%s/nodes/%s", clusterName, shardName, nodeName)
@@ -624,7 +612,7 @@ func (c *EtcdClient) RemoveNode(clusterName string, shardName string, nodeName s
 		return fmt.Errorf("nodeName is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.RequestTimeout)*time.Millisecond)
 	defer cancel()
 
 	keyNode := fmt.Sprintf("/blast/clusters/%s/shards/%s/nodes/%s", clusterName, shardName, nodeName)
@@ -640,12 +628,24 @@ func (c *EtcdClient) RemoveNode(clusterName string, shardName string, nodeName s
 	return nil
 }
 
-func (c *EtcdClient) Close() error {
-	log.WithFields(log.Fields{
-		"endpoints":      c.endpoints,
-		"dialTimeout":    c.dialTimeout,
-		"requestTimeout": c.requestTimeout,
-	}).Info("disconnect etcd endpoints")
+func (c *EtcdClient) Watch(clusterName string) []*clientv3.Event {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.RequestTimeout)*time.Millisecond)
+	defer cancel()
 
+	keyCluster := fmt.Sprintf("/blast/clusters/%s", clusterName)
+
+	events := make([]*clientv3.Event, 0)
+
+	rch := c.client.Watch(ctx, keyCluster, clientv3.WithPrefix())
+	for wresp := range rch {
+		for _, ev := range wresp.Events {
+			events = append(events, ev)
+		}
+	}
+
+	return events
+}
+
+func (c *EtcdClient) Close() error {
 	return c.client.Close()
 }
