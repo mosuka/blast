@@ -22,21 +22,21 @@ import (
 )
 
 type GetIndexCommandOptions struct {
-	server              string
-	requestTimeout      int
-	includeIndexMapping bool
-	includeIndexType    bool
-	includeKvstore      bool
-	includeKvconfig     bool
+	server         string
+	requestTimeout int
+	indexMapping   bool
+	indexType      bool
+	kvstore        bool
+	kvconfig       bool
 }
 
 var getIndexCmdOpts = GetIndexCommandOptions{
-	server:              "localhost:20884",
-	requestTimeout:      15000,
-	includeIndexMapping: false,
-	includeIndexType:    false,
-	includeKvstore:      false,
-	includeKvconfig:     false,
+	server:         "localhost:20884",
+	requestTimeout: 15000,
+	indexMapping:   false,
+	indexType:      false,
+	kvstore:        false,
+	kvconfig:       false,
 }
 
 var getIndexCmd = &cobra.Command{
@@ -47,11 +47,11 @@ var getIndexCmd = &cobra.Command{
 }
 
 func runEGetIndexCmd(cmd *cobra.Command, args []string) error {
-	if !getIndexCmdOpts.includeIndexMapping && !getIndexCmdOpts.includeIndexType && !getIndexCmdOpts.includeKvstore && !getIndexCmdOpts.includeKvconfig {
-		getIndexCmdOpts.includeIndexMapping = true
-		getIndexCmdOpts.includeIndexType = true
-		getIndexCmdOpts.includeKvstore = true
-		getIndexCmdOpts.includeKvconfig = true
+	if !getIndexCmdOpts.indexMapping && !getIndexCmdOpts.indexType && !getIndexCmdOpts.kvstore && !getIndexCmdOpts.kvconfig {
+		getIndexCmdOpts.indexMapping = true
+		getIndexCmdOpts.indexType = true
+		getIndexCmdOpts.kvstore = true
+		getIndexCmdOpts.kvconfig = true
 	}
 
 	// create client
@@ -62,7 +62,7 @@ func runEGetIndexCmd(cmd *cobra.Command, args []string) error {
 	defer cw.Close()
 
 	// request
-	resp, err := cw.GetIndex(getIndexCmdOpts.includeIndexMapping, getIndexCmdOpts.includeIndexType, getIndexCmdOpts.includeKvstore, getIndexCmdOpts.includeKvconfig)
+	resp, err := cw.GetIndex(getIndexCmdOpts.indexMapping, getIndexCmdOpts.indexType, getIndexCmdOpts.kvstore, getIndexCmdOpts.kvconfig)
 	if err != nil {
 		return err
 	}
@@ -89,10 +89,10 @@ func init() {
 
 	getIndexCmd.Flags().StringVar(&getIndexCmdOpts.server, "server", getIndexCmdOpts.server, "server to connect to")
 	getIndexCmd.Flags().IntVar(&getIndexCmdOpts.requestTimeout, "request-timeout", getIndexCmdOpts.requestTimeout, "request timeout")
-	getIndexCmd.Flags().BoolVar(&getIndexCmdOpts.includeIndexMapping, "include-index-mapping", getIndexCmdOpts.includeIndexMapping, "include index mapping")
-	getIndexCmd.Flags().BoolVar(&getIndexCmdOpts.includeIndexType, "include-index-type", getIndexCmdOpts.includeIndexType, "include index type")
-	getIndexCmd.Flags().BoolVar(&getIndexCmdOpts.includeKvstore, "include-kvstore", getIndexCmdOpts.includeKvstore, "include kvstore")
-	getIndexCmd.Flags().BoolVar(&getIndexCmdOpts.includeKvconfig, "include-kvconfig", getIndexCmdOpts.includeKvconfig, "include kvconfig")
+	getIndexCmd.Flags().BoolVar(&getIndexCmdOpts.indexMapping, "index-mapping", getIndexCmdOpts.indexMapping, "include index mapping")
+	getIndexCmd.Flags().BoolVar(&getIndexCmdOpts.indexType, "index-type", getIndexCmdOpts.indexType, "include index type")
+	getIndexCmd.Flags().BoolVar(&getIndexCmdOpts.kvstore, "kvstore", getIndexCmdOpts.kvstore, "include kvstore")
+	getIndexCmd.Flags().BoolVar(&getIndexCmdOpts.kvconfig, "kvconfig", getIndexCmdOpts.kvconfig, "include kvconfig")
 
 	getCmd.AddCommand(getIndexCmd)
 }

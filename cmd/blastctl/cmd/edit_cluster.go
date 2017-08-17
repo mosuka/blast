@@ -15,21 +15,22 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/blevesearch/bleve/mapping"
-	"github.com/mosuka/blast/client"
+	"github.com/coreos/etcd/clientv3"
 	"github.com/mosuka/blast/util"
 	"github.com/spf13/cobra"
 	"os"
+	"time"
 )
 
 type EditClusterCommandOptions struct {
 	etcdEndpoints      []string
 	etcdDialTimeout    int
 	etcdRequestTimeout int
-	clusterName        string
-	numberOfShards     int
+	cluster            string
 	indexMapping       string
 	indexType          string
 	kvstore            string
@@ -40,8 +41,7 @@ var editClusterCmdOpts = EditClusterCommandOptions{
 	etcdEndpoints:      []string{"localhost:2379"},
 	etcdDialTimeout:    5000,
 	etcdRequestTimeout: 5000,
-	clusterName:        "",
-	numberOfShards:     1,
+	cluster:            "",
 	indexMapping:       "",
 	indexType:          "upside_down",
 	kvstore:            "boltdb",
@@ -57,8 +57,8 @@ var editClusterCmd = &cobra.Command{
 
 func runEEditClusterCmd(cmd *cobra.Command, args []string) error {
 	// check cluster name
-	if editClusterCmdOpts.clusterName == "" {
-		return fmt.Errorf("required flag: --%s", cmd.Flag("cluster-name").Name)
+	if editClusterCmdOpts.cluster == "" {
+		return fmt.Errorf("required flag: --%s", cmd.Flag("cluster").Name)
 	}
 
 	// IndexMapping
@@ -91,31 +91,55 @@ func runEEditClusterCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	resp := struct {
-		NumberOfShards int                       `json:"number_of_shards,omitempty"`
-		IndexMapping   *mapping.IndexMappingImpl `json:"index_mapping,omitempty"`
-		IndexType      string                    `json:"index_type,omitempty"`
-		Kvstore        string                    `json:"kvstore,omitempty"`
-		Kvconfig       map[string]interface{}    `json:"kvconfig,omitempty"`
-	}{}
+	var err error
 
-	// create client
-	cw, err := client.NewEtcdClient(createClusterCmdOpts.etcdEndpoints, createClusterCmdOpts.etcdDialTimeout, createClusterCmdOpts.etcdRequestTimeout)
-	if err != nil {
-		return err
-	}
-	defer cw.Close()
-
-	if cmd.Flag("number-of-shards").Changed {
-		err := cw.PutNumberOfShards(editClusterCmdOpts.clusterName, editClusterCmdOpts.numberOfShards, false)
+	var bytesIndexMapping []byte
+	if indexMapping != nil {
+		bytesIndexMapping, err = json.Marshal(indexMapping)
 		if err != nil {
 			return err
 		}
-		resp.NumberOfShards = editClusterCmdOpts.numberOfShards
 	}
 
+	var bytesKvconfig []byte
+	if kvconfig != nil {
+		bytesKvconfig, err = json.Marshal(kvconfig)
+		if err != nil {
+			return err
+		}
+	}
+
+	cfg := clientv3.Config{
+		Endpoints:   editClusterCmdOpts.etcdEndpoints,
+		DialTimeout: time.Duration(editClusterCmdOpts.etcdDialTimeout) * time.Millisecond,
+		Context:     context.Background(),
+	}
+
+	c, err := clientv3.New(cfg)
+	if err != nil {
+		return err
+	}
+	defer c.Close()
+
+	var kv clientv3.KV
+	if c != nil {
+		kv = clientv3.NewKV(c)
+	}
+
+	resp := struct {
+		IndexMapping *mapping.IndexMappingImpl `json:"index_mapping,omitempty"`
+		IndexType    string                    `json:"index_type,omitempty"`
+		Kvstore      string                    `json:"kvstore,omitempty"`
+		Kvconfig     map[string]interface{}    `json:"kvconfig,omitempty"`
+	}{}
+
 	if cmd.Flag("index-mapping").Changed {
-		err := cw.PutIndexMapping(editClusterCmdOpts.clusterName, indexMapping, false)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(editClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
+		defer cancel()
+
+		keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/indexMapping", editClusterCmdOpts.cluster)
+
+		_, err = kv.Put(ctx, keyIndexMapping, string(bytesIndexMapping))
 		if err != nil {
 			return err
 		}
@@ -123,7 +147,12 @@ func runEEditClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if cmd.Flag("index-type").Changed {
-		err := cw.PutIndexType(editClusterCmdOpts.clusterName, editClusterCmdOpts.indexType, false)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(editClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
+		defer cancel()
+
+		keyIndexType := fmt.Sprintf("/blast/clusters/%s/indexType", editClusterCmdOpts.cluster)
+
+		_, err = kv.Put(ctx, keyIndexType, editClusterCmdOpts.indexType)
 		if err != nil {
 			return err
 		}
@@ -131,7 +160,12 @@ func runEEditClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if cmd.Flag("kvstore").Changed {
-		err := cw.PutKvstore(editClusterCmdOpts.clusterName, editClusterCmdOpts.kvstore, false)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(editClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
+		defer cancel()
+
+		keyKvstore := fmt.Sprintf("/blast/clusters/%s/kvstore", editClusterCmdOpts.cluster)
+
+		_, err = kv.Put(ctx, keyKvstore, editClusterCmdOpts.kvstore)
 		if err != nil {
 			return err
 		}
@@ -139,7 +173,12 @@ func runEEditClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if cmd.Flag("kvconfig").Changed {
-		err := cw.PutKvconfig(editClusterCmdOpts.clusterName, kvconfig, false)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(editClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
+		defer cancel()
+
+		keyKvconfig := fmt.Sprintf("/blast/clusters/%s/kvconfig", editClusterCmdOpts.cluster)
+
+		_, err = kv.Put(ctx, keyKvconfig, string(bytesKvconfig))
 		if err != nil {
 			return err
 		}
@@ -169,8 +208,7 @@ func init() {
 	editClusterCmd.Flags().StringSliceVar(&editClusterCmdOpts.etcdEndpoints, "etcd-endpoint", editClusterCmdOpts.etcdEndpoints, "etcd eendpoint")
 	editClusterCmd.Flags().IntVar(&editClusterCmdOpts.etcdDialTimeout, "etcd-dial-timeout", editClusterCmdOpts.etcdDialTimeout, "etcd dial timeout")
 	editClusterCmd.Flags().IntVar(&editClusterCmdOpts.etcdRequestTimeout, "etcd-request-timeout", editClusterCmdOpts.etcdRequestTimeout, "etcd request timeout")
-	editClusterCmd.Flags().StringVar(&editClusterCmdOpts.clusterName, "cluster-name", editClusterCmdOpts.clusterName, "cluster name")
-	editClusterCmd.Flags().IntVar(&editClusterCmdOpts.numberOfShards, "number-of-shards", editClusterCmdOpts.numberOfShards, "number of shards")
+	editClusterCmd.Flags().StringVar(&editClusterCmdOpts.cluster, "cluster", editClusterCmdOpts.cluster, "cluster name")
 	editClusterCmd.Flags().StringVar(&editClusterCmdOpts.indexMapping, "index-mapping", editClusterCmdOpts.indexMapping, "index mapping")
 	editClusterCmd.Flags().StringVar(&editClusterCmdOpts.indexType, "index-type", editClusterCmdOpts.indexType, "index type")
 	editClusterCmd.Flags().StringVar(&editClusterCmdOpts.kvstore, "kvstore", editClusterCmdOpts.kvstore, "kvstore")

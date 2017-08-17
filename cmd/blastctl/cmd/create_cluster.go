@@ -15,21 +15,23 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/blevesearch/bleve/mapping"
-	"github.com/mosuka/blast/client"
+	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/clientv3/clientv3util"
 	"github.com/mosuka/blast/util"
 	"github.com/spf13/cobra"
 	"os"
+	"time"
 )
 
 type CreateClusterCommandOptions struct {
 	etcdEndpoints      []string
 	etcdDialTimeout    int
 	etcdRequestTimeout int
-	clusterName        string
-	numberOfShards     int
+	cluster            string
 	indexMapping       string
 	indexType          string
 	kvstore            string
@@ -40,8 +42,7 @@ var createClusterCmdOpts = CreateClusterCommandOptions{
 	etcdEndpoints:      []string{"localhost:2379"},
 	etcdDialTimeout:    5000,
 	etcdRequestTimeout: 5000,
-	clusterName:        "",
-	numberOfShards:     1,
+	cluster:            "",
 	indexMapping:       "",
 	indexType:          "upside_down",
 	kvstore:            "boltdb",
@@ -57,8 +58,8 @@ var createClusterCmd = &cobra.Command{
 
 func runECreateClusterCmd(cmd *cobra.Command, args []string) error {
 	// check cluster name
-	if createClusterCmdOpts.clusterName == "" {
-		return fmt.Errorf("required flag: --%s", cmd.Flag("cluster-name").Name)
+	if createClusterCmdOpts.cluster == "" {
+		return fmt.Errorf("required flag: --%s", cmd.Flag("cluster").Name)
 	}
 
 	// IndexMapping
@@ -91,49 +92,73 @@ func runECreateClusterCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	keyCluster := fmt.Sprintf("/blast/clusters/%s", createClusterCmdOpts.cluster)
+	keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/indexMapping", createClusterCmdOpts.cluster)
+	keyIndexType := fmt.Sprintf("/blast/clusters/%s/indexType", createClusterCmdOpts.cluster)
+	keyKvstore := fmt.Sprintf("/blast/clusters/%s/kvstore", createClusterCmdOpts.cluster)
+	keyKvconfig := fmt.Sprintf("/blast/clusters/%s/kvconfig", createClusterCmdOpts.cluster)
+
+	var err error
+
+	var bytesIndexMapping []byte
+	if indexMapping != nil {
+		bytesIndexMapping, err = json.Marshal(indexMapping)
+		if err != nil {
+			return err
+		}
+	}
+
+	var bytesKvconfig []byte
+	if kvconfig != nil {
+		bytesKvconfig, err = json.Marshal(kvconfig)
+		if err != nil {
+			return err
+		}
+	}
+
+	cfg := clientv3.Config{
+		Endpoints:   createClusterCmdOpts.etcdEndpoints,
+		DialTimeout: time.Duration(createClusterCmdOpts.etcdDialTimeout) * time.Millisecond,
+		Context:     context.Background(),
+	}
+
+	c, err := clientv3.New(cfg)
+	if err != nil {
+		return err
+	}
+	defer c.Close()
+
+	var kv clientv3.KV
+	if c != nil {
+		kv = clientv3.NewKV(c)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(createClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
+	defer cancel()
+
+	_, err = kv.Txn(ctx).
+		If(clientv3util.KeyMissing(keyCluster)).
+		Then(
+			clientv3.OpPut(keyIndexMapping, string(bytesIndexMapping)),
+			clientv3.OpPut(keyIndexType, createClusterCmdOpts.indexType),
+			clientv3.OpPut(keyKvstore, createClusterCmdOpts.kvstore),
+			clientv3.OpPut(keyKvconfig, string(bytesKvconfig)),
+		).Commit()
+	if err != nil {
+		return err
+	}
+
 	resp := struct {
-		NumberOfShards int                       `json:"number_of_shards,omitempty"`
-		IndexMapping   *mapping.IndexMappingImpl `json:"index_mapping,omitempty"`
-		IndexType      string                    `json:"index_type,omitempty"`
-		Kvstore        string                    `json:"kvstore,omitempty"`
-		Kvconfig       map[string]interface{}    `json:"kvconfig,omitempty"`
-	}{}
-
-	cw, err := client.NewEtcdClient(createClusterCmdOpts.etcdEndpoints, createClusterCmdOpts.etcdDialTimeout, createClusterCmdOpts.etcdRequestTimeout)
-	if err != nil {
-		return err
+		IndexMapping *mapping.IndexMappingImpl `json:"index_mapping,omitempty"`
+		IndexType    string                    `json:"index_type,omitempty"`
+		Kvstore      string                    `json:"kvstore,omitempty"`
+		Kvconfig     map[string]interface{}    `json:"kvconfig,omitempty"`
+	}{
+		IndexMapping: indexMapping,
+		IndexType:    createClusterCmdOpts.indexType,
+		Kvstore:      createClusterCmdOpts.kvstore,
+		Kvconfig:     kvconfig,
 	}
-	defer cw.Close()
-
-	err = cw.PutNumberOfShards(createClusterCmdOpts.clusterName, createClusterCmdOpts.numberOfShards, true)
-	if err != nil {
-		return err
-	}
-	resp.NumberOfShards = createClusterCmdOpts.numberOfShards
-
-	err = cw.PutIndexMapping(createClusterCmdOpts.clusterName, indexMapping, true)
-	if err != nil {
-		return err
-	}
-	resp.IndexMapping = indexMapping
-
-	err = cw.PutIndexType(createClusterCmdOpts.clusterName, createClusterCmdOpts.indexType, true)
-	if err != nil {
-		return err
-	}
-	resp.IndexType = createClusterCmdOpts.indexType
-
-	err = cw.PutKvstore(createClusterCmdOpts.clusterName, createClusterCmdOpts.kvstore, true)
-	if err != nil {
-		return err
-	}
-	resp.Kvstore = createClusterCmdOpts.kvstore
-
-	err = cw.PutKvconfig(createClusterCmdOpts.clusterName, kvconfig, true)
-	if err != nil {
-		return err
-	}
-	resp.Kvconfig = kvconfig
 
 	// output response
 	switch rootCmdOpts.outputFormat {
@@ -158,8 +183,7 @@ func init() {
 	createClusterCmd.Flags().StringSliceVar(&createClusterCmdOpts.etcdEndpoints, "etcd-endpoint", createClusterCmdOpts.etcdEndpoints, "etcd endpoint")
 	createClusterCmd.Flags().IntVar(&createClusterCmdOpts.etcdDialTimeout, "etcd-dial-timeout", createClusterCmdOpts.etcdDialTimeout, "etcd dial timeout")
 	createClusterCmd.Flags().IntVar(&createClusterCmdOpts.etcdRequestTimeout, "etcd-request-timeout", createClusterCmdOpts.etcdRequestTimeout, "etcd request timeout")
-	createClusterCmd.Flags().StringVar(&createClusterCmdOpts.clusterName, "cluster-name", createClusterCmdOpts.clusterName, "cluster name")
-	createClusterCmd.Flags().IntVar(&createClusterCmdOpts.numberOfShards, "number-of-shards", createClusterCmdOpts.numberOfShards, "number of shards")
+	createClusterCmd.Flags().StringVar(&createClusterCmdOpts.cluster, "cluster", createClusterCmdOpts.cluster, "cluster name")
 	createClusterCmd.Flags().StringVar(&createClusterCmdOpts.indexMapping, "index-mapping", createClusterCmdOpts.indexMapping, "index mapping")
 	createClusterCmd.Flags().StringVar(&createClusterCmdOpts.indexType, "index-type", createClusterCmdOpts.indexType, "index type")
 	createClusterCmd.Flags().StringVar(&createClusterCmdOpts.kvstore, "kvstore", createClusterCmdOpts.kvstore, "kvstore")
