@@ -109,10 +109,6 @@ func runEGetClusterCmd(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		//if indexMapping == nil {
-		//	return fmt.Errorf("indexMapping is nil")
-		//}
-
 		resp.IndexMapping = indexMapping
 	}
 
@@ -132,10 +128,6 @@ func runEGetClusterCmd(cmd *cobra.Command, args []string) error {
 			indexType = string(ev.Value)
 		}
 
-		//if indexType == "" {
-		//	return fmt.Errorf("indexType is \"\"")
-		//}
-
 		resp.IndexType = indexType
 	}
 
@@ -154,10 +146,6 @@ func runEGetClusterCmd(cmd *cobra.Command, args []string) error {
 		for _, ev := range kvresp.Kvs {
 			kvstore = string(ev.Value)
 		}
-
-		//if kvstore == "" {
-		//	return fmt.Errorf("kvstore is \"\"")
-		//}
 
 		resp.Kvstore = kvstore
 	}
@@ -180,10 +168,6 @@ func runEGetClusterCmd(cmd *cobra.Command, args []string) error {
 				return err
 			}
 		}
-
-		//if kvconfig == nil {
-		//	return fmt.Errorf("kvconfig is nil")
-		//}
 
 		resp.Kvconfig = kvconfig
 	}
