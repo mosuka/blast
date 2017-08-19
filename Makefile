@@ -20,8 +20,8 @@ GO := GO15VENDOREXPERIMENT=1 go
 PACKAGES = $(shell $(GO) list ./... | grep -v '/vendor/')
 PROTOBUFS = $(shell find . -name '*.proto' | sort --unique | grep -v /vendor/)
 TARGET_PACKAGES = $(shell find . -name 'main.go' -print0 | xargs -0 -n1 dirname | sort --unique | grep -v /vendor/)
-#BUILD_TAGS = "-tags=lang"
 BUILD_TAGS = "-tags=''"
+#BUILD_TAGS = "-tags=lang"
 
 vendoring:
 	@echo ">> vendoring dependencies"
