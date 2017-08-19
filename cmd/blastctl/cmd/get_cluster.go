@@ -67,8 +67,8 @@ func runEGetClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	cfg := clientv3.Config{
-		Endpoints:   editClusterCmdOpts.etcdEndpoints,
-		DialTimeout: time.Duration(editClusterCmdOpts.etcdDialTimeout) * time.Millisecond,
+		Endpoints:   putClusterCmdOpts.etcdEndpoints,
+		DialTimeout: time.Duration(putClusterCmdOpts.etcdDialTimeout) * time.Millisecond,
 		Context:     context.Background(),
 	}
 
@@ -90,10 +90,10 @@ func runEGetClusterCmd(cmd *cobra.Command, args []string) error {
 		Kvconfig     map[string]interface{}    `json:"kvconfig,omitempty"`
 	}{}
 
-	if getClusterCmdOpts.indexMapping == true {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(getClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
-		defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(getClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
+	defer cancel()
 
+	if getClusterCmdOpts.indexMapping == true {
 		keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/indexMapping", getClusterCmdOpts.cluster)
 
 		var indexMapping *mapping.IndexMappingImpl
@@ -113,9 +113,6 @@ func runEGetClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if getClusterCmdOpts.indexType == true {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(getClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
-		defer cancel()
-
 		keyIndexType := fmt.Sprintf("/blast/clusters/%s/indexType", getClusterCmdOpts.cluster)
 
 		var indexType string
@@ -132,9 +129,6 @@ func runEGetClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if getClusterCmdOpts.kvstore == true {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(getClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
-		defer cancel()
-
 		keyKvstore := fmt.Sprintf("/blast/clusters/%s/kvstore", getClusterCmdOpts.cluster)
 
 		var kvstore string
@@ -151,9 +145,6 @@ func runEGetClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if getClusterCmdOpts.kvconfig == true {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(getClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
-		defer cancel()
-
 		keyKvconfig := fmt.Sprintf("/blast/clusters/%s/kvconfig", getClusterCmdOpts.cluster)
 
 		var kvconfig map[string]interface{}

@@ -26,7 +26,7 @@ import (
 	"time"
 )
 
-type EditClusterCommandOptions struct {
+type PutClusterCommandOptions struct {
 	etcdEndpoints      []string
 	etcdDialTimeout    int
 	etcdRequestTimeout int
@@ -37,7 +37,7 @@ type EditClusterCommandOptions struct {
 	kvconfig           string
 }
 
-var editClusterCmdOpts = EditClusterCommandOptions{
+var putClusterCmdOpts = PutClusterCommandOptions{
 	etcdEndpoints:      []string{"localhost:2379"},
 	etcdDialTimeout:    5000,
 	etcdRequestTimeout: 5000,
@@ -48,23 +48,23 @@ var editClusterCmdOpts = EditClusterCommandOptions{
 	kvconfig:           "",
 }
 
-var editClusterCmd = &cobra.Command{
+var putClusterCmd = &cobra.Command{
 	Use:   "cluster",
 	Short: "edits the cluster information",
 	Long:  `The edit cluster command edits the cluster information.`,
-	RunE:  runEEditClusterCmd,
+	RunE:  runEPutClusterCmd,
 }
 
-func runEEditClusterCmd(cmd *cobra.Command, args []string) error {
+func runEPutClusterCmd(cmd *cobra.Command, args []string) error {
 	// check cluster name
-	if editClusterCmdOpts.cluster == "" {
+	if putClusterCmdOpts.cluster == "" {
 		return fmt.Errorf("required flag: --%s", cmd.Flag("cluster").Name)
 	}
 
 	// IndexMapping
 	indexMapping := mapping.NewIndexMapping()
-	if editClusterCmdOpts.indexMapping != "" {
-		file, err := os.Open(editClusterCmdOpts.indexMapping)
+	if putClusterCmdOpts.indexMapping != "" {
+		file, err := os.Open(putClusterCmdOpts.indexMapping)
 		if err != nil {
 			return err
 		}
@@ -78,8 +78,8 @@ func runEEditClusterCmd(cmd *cobra.Command, args []string) error {
 
 	// Kvconfig
 	kvconfig := make(map[string]interface{})
-	if editClusterCmdOpts.kvconfig != "" {
-		file, err := os.Open(editClusterCmdOpts.kvconfig)
+	if putClusterCmdOpts.kvconfig != "" {
+		file, err := os.Open(putClusterCmdOpts.kvconfig)
 		if err != nil {
 			return err
 		}
@@ -110,8 +110,8 @@ func runEEditClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	cfg := clientv3.Config{
-		Endpoints:   editClusterCmdOpts.etcdEndpoints,
-		DialTimeout: time.Duration(editClusterCmdOpts.etcdDialTimeout) * time.Millisecond,
+		Endpoints:   putClusterCmdOpts.etcdEndpoints,
+		DialTimeout: time.Duration(putClusterCmdOpts.etcdDialTimeout) * time.Millisecond,
 		Context:     context.Background(),
 	}
 
@@ -133,11 +133,11 @@ func runEEditClusterCmd(cmd *cobra.Command, args []string) error {
 		Kvconfig     map[string]interface{}    `json:"kvconfig,omitempty"`
 	}{}
 
-	if cmd.Flag("index-mapping").Changed {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(editClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
-		defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(putClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
+	defer cancel()
 
-		keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/indexMapping", editClusterCmdOpts.cluster)
+	if cmd.Flag("index-mapping").Changed {
+		keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/indexMapping", putClusterCmdOpts.cluster)
 
 		_, err = kv.Put(ctx, keyIndexMapping, string(bytesIndexMapping))
 		if err != nil {
@@ -147,36 +147,27 @@ func runEEditClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if cmd.Flag("index-type").Changed {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(editClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
-		defer cancel()
+		keyIndexType := fmt.Sprintf("/blast/clusters/%s/indexType", putClusterCmdOpts.cluster)
 
-		keyIndexType := fmt.Sprintf("/blast/clusters/%s/indexType", editClusterCmdOpts.cluster)
-
-		_, err = kv.Put(ctx, keyIndexType, editClusterCmdOpts.indexType)
+		_, err = kv.Put(ctx, keyIndexType, putClusterCmdOpts.indexType)
 		if err != nil {
 			return err
 		}
-		resp.IndexType = editClusterCmdOpts.indexType
+		resp.IndexType = putClusterCmdOpts.indexType
 	}
 
 	if cmd.Flag("kvstore").Changed {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(editClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
-		defer cancel()
+		keyKvstore := fmt.Sprintf("/blast/clusters/%s/kvstore", putClusterCmdOpts.cluster)
 
-		keyKvstore := fmt.Sprintf("/blast/clusters/%s/kvstore", editClusterCmdOpts.cluster)
-
-		_, err = kv.Put(ctx, keyKvstore, editClusterCmdOpts.kvstore)
+		_, err = kv.Put(ctx, keyKvstore, putClusterCmdOpts.kvstore)
 		if err != nil {
 			return err
 		}
-		resp.Kvstore = editClusterCmdOpts.kvstore
+		resp.Kvstore = putClusterCmdOpts.kvstore
 	}
 
 	if cmd.Flag("kvconfig").Changed {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(editClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
-		defer cancel()
-
-		keyKvconfig := fmt.Sprintf("/blast/clusters/%s/kvconfig", editClusterCmdOpts.cluster)
+		keyKvconfig := fmt.Sprintf("/blast/clusters/%s/kvconfig", putClusterCmdOpts.cluster)
 
 		_, err = kv.Put(ctx, keyKvconfig, string(bytesKvconfig))
 		if err != nil {
@@ -203,16 +194,16 @@ func runEEditClusterCmd(cmd *cobra.Command, args []string) error {
 }
 
 func init() {
-	editClusterCmd.Flags().SortFlags = false
+	putClusterCmd.Flags().SortFlags = false
 
-	editClusterCmd.Flags().StringSliceVar(&editClusterCmdOpts.etcdEndpoints, "etcd-endpoint", editClusterCmdOpts.etcdEndpoints, "etcd eendpoint")
-	editClusterCmd.Flags().IntVar(&editClusterCmdOpts.etcdDialTimeout, "etcd-dial-timeout", editClusterCmdOpts.etcdDialTimeout, "etcd dial timeout")
-	editClusterCmd.Flags().IntVar(&editClusterCmdOpts.etcdRequestTimeout, "etcd-request-timeout", editClusterCmdOpts.etcdRequestTimeout, "etcd request timeout")
-	editClusterCmd.Flags().StringVar(&editClusterCmdOpts.cluster, "cluster", editClusterCmdOpts.cluster, "cluster name")
-	editClusterCmd.Flags().StringVar(&editClusterCmdOpts.indexMapping, "index-mapping", editClusterCmdOpts.indexMapping, "index mapping")
-	editClusterCmd.Flags().StringVar(&editClusterCmdOpts.indexType, "index-type", editClusterCmdOpts.indexType, "index type")
-	editClusterCmd.Flags().StringVar(&editClusterCmdOpts.kvstore, "kvstore", editClusterCmdOpts.kvstore, "kvstore")
-	editClusterCmd.Flags().StringVar(&editClusterCmdOpts.kvconfig, "kvconfig", editClusterCmdOpts.kvconfig, "kvconfig")
+	putClusterCmd.Flags().StringSliceVar(&putClusterCmdOpts.etcdEndpoints, "etcd-endpoint", putClusterCmdOpts.etcdEndpoints, "etcd eendpoint")
+	putClusterCmd.Flags().IntVar(&putClusterCmdOpts.etcdDialTimeout, "etcd-dial-timeout", putClusterCmdOpts.etcdDialTimeout, "etcd dial timeout")
+	putClusterCmd.Flags().IntVar(&putClusterCmdOpts.etcdRequestTimeout, "etcd-request-timeout", putClusterCmdOpts.etcdRequestTimeout, "etcd request timeout")
+	putClusterCmd.Flags().StringVar(&putClusterCmdOpts.cluster, "cluster", putClusterCmdOpts.cluster, "cluster name")
+	putClusterCmd.Flags().StringVar(&putClusterCmdOpts.indexMapping, "index-mapping", putClusterCmdOpts.indexMapping, "index mapping")
+	putClusterCmd.Flags().StringVar(&putClusterCmdOpts.indexType, "index-type", putClusterCmdOpts.indexType, "index type")
+	putClusterCmd.Flags().StringVar(&putClusterCmdOpts.kvstore, "kvstore", putClusterCmdOpts.kvstore, "kvstore")
+	putClusterCmd.Flags().StringVar(&putClusterCmdOpts.kvconfig, "kvconfig", putClusterCmdOpts.kvconfig, "kvconfig")
 
-	editCmd.AddCommand(editClusterCmd)
+	putCmd.AddCommand(putClusterCmd)
 }

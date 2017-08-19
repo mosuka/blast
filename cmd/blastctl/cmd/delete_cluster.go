@@ -78,17 +78,17 @@ func runEDeleteClusterCmd(cmd *cobra.Command, args []string) error {
 		kv = clientv3.NewKV(c)
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(deleteClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
+	defer cancel()
+
 	resp := struct {
-		IndexMapping string `json:"index_mapping,omitempty"`
-		IndexType    string `json:"index_type,omitempty"`
-		Kvstore      string `json:"kvstore,omitempty"`
-		Kvconfig     string `json:"kvconfig,omitempty"`
+		IndexMapping bool `json:"index_mapping"`
+		IndexType    bool `json:"index_type"`
+		Kvstore      bool `json:"kvstore"`
+		Kvconfig     bool `json:"kvconfig"`
 	}{}
 
 	if deleteClusterCmdOpts.indexMapping == true {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(deleteClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
-		defer cancel()
-
 		keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/indexMapping", deleteClusterCmdOpts.cluster)
 
 		_, err := kv.Delete(ctx, keyIndexMapping)
@@ -96,13 +96,10 @@ func runEDeleteClusterCmd(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		resp.IndexMapping = "deleted"
+		resp.IndexMapping = true
 	}
 
 	if deleteClusterCmdOpts.indexType == true {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(deleteClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
-		defer cancel()
-
 		keyIndexType := fmt.Sprintf("/blast/clusters/%s/indexType", deleteClusterCmdOpts.cluster)
 
 		_, err := kv.Delete(ctx, keyIndexType)
@@ -110,13 +107,10 @@ func runEDeleteClusterCmd(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		resp.IndexType = "deleted"
+		resp.IndexType = true
 	}
 
 	if deleteClusterCmdOpts.kvstore == true {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(deleteClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
-		defer cancel()
-
 		keyKvstore := fmt.Sprintf("/blast/clusters/%s/kvstore", deleteClusterCmdOpts.cluster)
 
 		_, err := kv.Delete(ctx, keyKvstore)
@@ -124,13 +118,10 @@ func runEDeleteClusterCmd(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		resp.Kvstore = "deleted"
+		resp.Kvstore = true
 	}
 
 	if deleteClusterCmdOpts.kvconfig == true {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(deleteClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
-		defer cancel()
-
 		keyKvconfig := fmt.Sprintf("/blast/clusters/%s/kvconfig", deleteClusterCmdOpts.cluster)
 
 		_, err := kv.Delete(ctx, keyKvconfig)
@@ -138,7 +129,7 @@ func runEDeleteClusterCmd(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		resp.Kvconfig = "deleted"
+		resp.Kvconfig = true
 	}
 
 	// output response
