@@ -50,6 +50,8 @@ message GetIndexResponse {
     string index_type = 3;
     string kvstore = 4;
     google.protobuf.Any kvconfig = 5;
+    bool succeeded = 6;
+    string message = 7;
 }
 
 message PutDocumentRequest {
@@ -57,7 +59,8 @@ message PutDocumentRequest {
 }
 
 message PutDocumentResponse {
-    int32 put_count = 1;
+    bool succeeded = 1;
+    string message = 2;
 }
 
 message GetDocumentRequest {
@@ -66,6 +69,8 @@ message GetDocumentRequest {
 
 message GetDocumentResponse {
     Document document = 1;
+    bool succeeded = 2;
+    string message = 3;
 }
 
 message DeleteDocumentRequest {
@@ -73,18 +78,21 @@ message DeleteDocumentRequest {
 }
 
 message DeleteDocumentResponse {
-    int32 delete_count = 1;
+    bool succeeded = 1;
+    string message = 2;
 }
 
 message BulkRequest {
     int32 batch_size = 1;
-    repeated UpdateRequest requests = 2;
+    repeated UpdateRequest update_requests = 2;
 }
 
 message BulkResponse {
     int32 put_count = 1;
     int32 put_error_count = 2;
     int32 delete_count = 3;
+    bool succeeded = 4;
+    string message = 5;
 }
 
 message SearchRequest {
@@ -93,4 +101,6 @@ message SearchRequest {
 
 message SearchResponse {
     google.protobuf.Any search_result = 1;
+    bool succeeded = 2;
+    string message = 3;
 }

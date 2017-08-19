@@ -16,6 +16,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/coreos/etcd/clientv3"
@@ -83,9 +84,94 @@ func NewBlastServer(port int, indexPath string, indexMapping *mapping.IndexMappi
 			"etcdConfig": etcdConfig,
 		}).Info("created the etcd client")
 	}
+
 	var etcdKv clientv3.KV
 	if etcdClient != nil {
 		etcdKv = clientv3.NewKV(etcdClient)
+		log.Info("created the etcd kv")
+	}
+
+	if etcdKv != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(etcdRequestTimeout)*time.Millisecond)
+		defer cancel()
+
+		// fetch index mapping
+		keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/indexMapping", cluster)
+		kvresp, err := etcdKv.Get(ctx, keyIndexMapping)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+			}).Error("failed to fetch the index mapping")
+
+			return nil, err
+		}
+		log.Info("succeeded in fetch the index mapping")
+
+		for _, ev := range kvresp.Kvs {
+			err = json.Unmarshal(ev.Value, &indexMapping)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"error": err.Error(),
+				}).Error("failed to unmarshal the index mapping")
+
+				return nil, err
+			}
+		}
+
+		// fetch index type
+		keyIndexType := fmt.Sprintf("/blast/clusters/%s/indexType", cluster)
+		kvresp, err = etcdKv.Get(ctx, keyIndexType)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+			}).Error("failed to fetch the index type")
+
+			return nil, err
+		}
+		log.Info("succeeded in fetch the index type")
+
+		for _, ev := range kvresp.Kvs {
+			indexType = string(ev.Value)
+		}
+
+		// fetch kvstore
+		keyKvstore := fmt.Sprintf("/blast/clusters/%s/kvstore", cluster)
+		kvresp, err = etcdKv.Get(ctx, keyKvstore)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+			}).Error("failed to fetch the kvstore")
+
+			return nil, err
+		}
+		log.Info("succeeded in fetch the kvstore")
+
+		for _, ev := range kvresp.Kvs {
+			kvstore = string(ev.Value)
+		}
+
+		// fetch kvconfig
+		keyKvconfig := fmt.Sprintf("/blast/clusters/%s/kvconfig", cluster)
+		kvresp, err = etcdKv.Get(ctx, keyKvconfig)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+			}).Error("failed to fetch the kvconfig")
+
+			return nil, err
+		}
+		log.Info("succeeded in fetch the kvconfig")
+
+		for _, ev := range kvresp.Kvs {
+			err = json.Unmarshal(ev.Value, &kvconfig)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"error": err.Error(),
+				}).Error("failed to unmarshal the kvconfig")
+
+				return nil, err
+			}
+		}
 	}
 
 	svr := grpc.NewServer()

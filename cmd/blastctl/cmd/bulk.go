@@ -26,6 +26,7 @@ import (
 
 type BulkCommandOptions struct {
 	server         string
+	dialTimeout    int
 	requestTimeout int
 	batchSize      int32
 	request        string
@@ -33,6 +34,7 @@ type BulkCommandOptions struct {
 
 var bulkCmdOpts = BulkCommandOptions{
 	server:         "localhost:20884",
+	dialTimeout:    60000,
 	requestTimeout: 60000,
 	batchSize:      1000,
 	request:        "",
@@ -88,17 +90,14 @@ func runEBulkCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// create client
-	cw, err := client.NewBlastClient(bulkCmdOpts.server, bulkCmdOpts.requestTimeout)
+	cw, err := client.NewBlastClient(bulkCmdOpts.server, bulkCmdOpts.dialTimeout, bulkCmdOpts.requestTimeout)
 	if err != nil {
 		return err
 	}
 	defer cw.Close()
 
 	// request
-	resp, err := cw.Bulk(requests, int32(batchSize))
-	if err != nil {
-		return err
-	}
+	resp, _ := cw.Bulk(requests, int32(batchSize))
 
 	// output request
 	switch rootCmdOpts.outputFormat {
@@ -121,6 +120,7 @@ func init() {
 	bulkCmd.Flags().SortFlags = false
 
 	bulkCmd.Flags().StringVar(&bulkCmdOpts.server, "server", bulkCmdOpts.server, "server to connect to")
+	bulkCmd.Flags().IntVar(&bulkCmdOpts.dialTimeout, "dial-timeout", bulkCmdOpts.dialTimeout, "dial timeout")
 	bulkCmd.Flags().IntVar(&bulkCmdOpts.requestTimeout, "request-timeout", bulkCmdOpts.requestTimeout, "request timeout")
 	bulkCmd.Flags().Int32Var(&bulkCmdOpts.batchSize, "batch-size", bulkCmdOpts.batchSize, "batch size of bulk request")
 	bulkCmd.Flags().StringVar(&bulkCmdOpts.request, "request", bulkCmdOpts.request, "request file")

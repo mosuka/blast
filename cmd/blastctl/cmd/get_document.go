@@ -23,12 +23,14 @@ import (
 
 type GetDocumentCommandOptions struct {
 	server         string
+	dialTimeout    int
 	requestTimeout int
 	id             string
 }
 
 var getDocumentCmdOpts = GetDocumentCommandOptions{
 	server:         "localhost:20884",
+	dialTimeout:    15000,
 	requestTimeout: 15000,
 	id:             "",
 }
@@ -47,17 +49,14 @@ func runEGetDocumentCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// create client
-	cw, err := client.NewBlastClient(getDocumentCmdOpts.server, getDocumentCmdOpts.requestTimeout)
+	cw, err := client.NewBlastClient(getDocumentCmdOpts.server, getDocumentCmdOpts.dialTimeout, getDocumentCmdOpts.requestTimeout)
 	if err != nil {
 		return err
 	}
 	defer cw.Close()
 
 	// request
-	resp, err := cw.GetDocument(getDocumentCmdOpts.id)
-	if err != nil {
-		return err
-	}
+	resp, _ := cw.GetDocument(getDocumentCmdOpts.id)
 
 	// output response
 	switch rootCmdOpts.outputFormat {
@@ -80,6 +79,7 @@ func init() {
 	getDocumentCmd.Flags().SortFlags = false
 
 	getDocumentCmd.Flags().StringVar(&getDocumentCmdOpts.server, "server", getDocumentCmdOpts.server, "server to connect to")
+	getDocumentCmd.Flags().IntVar(&getDocumentCmdOpts.dialTimeout, "dial-timeout", getDocumentCmdOpts.dialTimeout, "dial timeout")
 	getDocumentCmd.Flags().IntVar(&getDocumentCmdOpts.requestTimeout, "request-timeout", getDocumentCmdOpts.requestTimeout, "request timeout")
 	getDocumentCmd.Flags().StringVar(&getDocumentCmdOpts.id, "id", getDocumentCmdOpts.id, "document id")
 

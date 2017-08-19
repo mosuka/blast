@@ -26,6 +26,7 @@ import (
 
 type PutDocumentCommandOptions struct {
 	server         string
+	dialTimeout    int
 	requestTimeout int
 	id             string
 	fields         string
@@ -34,6 +35,7 @@ type PutDocumentCommandOptions struct {
 
 var putDocumentCmdOpts = PutDocumentCommandOptions{
 	server:         "localhost:20884",
+	dialTimeout:    15000,
 	requestTimeout: 15000,
 	id:             "",
 	fields:         "",
@@ -98,17 +100,14 @@ func runEPutDocumentCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// create client
-	cw, err := client.NewBlastClient(putDocumentCmdOpts.server, putDocumentCmdOpts.requestTimeout)
+	cw, err := client.NewBlastClient(putDocumentCmdOpts.server, putDocumentCmdOpts.dialTimeout, putDocumentCmdOpts.requestTimeout)
 	if err != nil {
 		return err
 	}
 	defer cw.Close()
 
 	// request
-	resp, err := cw.PutDocument(id, fields)
-	if err != nil {
-		return err
-	}
+	resp, _ := cw.PutDocument(id, fields)
 
 	// output response
 	switch rootCmdOpts.outputFormat {
@@ -131,6 +130,7 @@ func init() {
 	putDocumentCmd.Flags().SortFlags = false
 
 	putDocumentCmd.Flags().StringVar(&putDocumentCmdOpts.server, "server", putDocumentCmdOpts.server, "server to connect to")
+	putDocumentCmd.Flags().IntVar(&putDocumentCmdOpts.dialTimeout, "dial-timeout", putDocumentCmdOpts.dialTimeout, "dial timeout")
 	putDocumentCmd.Flags().IntVar(&putDocumentCmdOpts.requestTimeout, "request-timeout", putDocumentCmdOpts.requestTimeout, "request timeout")
 	putDocumentCmd.Flags().StringVar(&putDocumentCmdOpts.id, "id", putDocumentCmdOpts.id, "document id")
 	putDocumentCmd.Flags().StringVar(&putDocumentCmdOpts.fields, "fields", putDocumentCmdOpts.fields, "document fields")

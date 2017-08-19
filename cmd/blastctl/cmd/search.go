@@ -27,6 +27,7 @@ import (
 
 type SearchCommandOptions struct {
 	server           string
+	dialTimeout      int
 	requestTimeout   int
 	request          string
 	query            string
@@ -44,6 +45,7 @@ type SearchCommandOptions struct {
 
 var searchCmdOpts = SearchCommandOptions{
 	server:           "localhost:20884",
+	dialTimeout:      15000,
 	requestTimeout:   15000,
 	request:          "",
 	query:            "",
@@ -143,17 +145,14 @@ func runESearchCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// create client
-	cw, err := client.NewBlastClient(searchCmdOpts.server, searchCmdOpts.requestTimeout)
+	cw, err := client.NewBlastClient(searchCmdOpts.server, searchCmdOpts.dialTimeout, searchCmdOpts.requestTimeout)
 	if err != nil {
 		return err
 	}
 	defer cw.Close()
 
 	// request
-	resp, err := cw.Search(searchRequest)
-	if err != nil {
-		return err
-	}
+	resp, _ := cw.Search(searchRequest)
 
 	// output response
 	switch rootCmdOpts.outputFormat {
@@ -176,6 +175,7 @@ func init() {
 	searchCmd.Flags().SortFlags = false
 
 	searchCmd.Flags().StringVar(&searchCmdOpts.server, "server", searchCmdOpts.server, "server to connect to")
+	searchCmd.Flags().IntVar(&searchCmdOpts.dialTimeout, "dial-timeout", searchCmdOpts.dialTimeout, "dial timeout")
 	searchCmd.Flags().IntVar(&searchCmdOpts.requestTimeout, "request-timeout", searchCmdOpts.requestTimeout, "request timeout")
 	searchCmd.Flags().StringVar(&searchCmdOpts.request, "request", searchCmdOpts.request, "resource file")
 	searchCmd.Flags().StringVar(&searchCmdOpts.query, "query", searchCmdOpts.query, "query string")

@@ -35,6 +35,7 @@ type RootCommandOptions struct {
 	port           int
 	server         string
 	baseURI        string
+	dialTimeout    int
 	requestTimeout int
 	versionFlag    bool
 }
@@ -47,7 +48,8 @@ var rootCmdOpts = RootCommandOptions{
 	port:           8080,
 	server:         "localhost:20884",
 	baseURI:        "/api",
-	requestTimeout: 60000,
+	dialTimeout:    15000,
+	requestTimeout: 15000,
 	versionFlag:    false,
 }
 
@@ -147,7 +149,7 @@ func persistentPreRunERootCmd(cmd *cobra.Command, args []string) error {
 }
 
 func runERootCmd(cmd *cobra.Command, args []string) error {
-	s := server.NewBlastRESTServer(viper.GetInt("port"), viper.GetString("base_uri"), viper.GetString("server"), viper.GetInt("timeout"))
+	s := server.NewBlastRESTServer(viper.GetInt("port"), viper.GetString("base_uri"), viper.GetString("server"), viper.GetInt("dial_timeout"), viper.GetInt("request_timeout"))
 	s.Start()
 
 	signalChan := make(chan os.Signal, 1)
@@ -216,6 +218,7 @@ func init() {
 	RootCmd.Flags().Int("port", rootCmdOpts.port, "port number")
 	RootCmd.Flags().String("base-uri", rootCmdOpts.baseURI, "base URI of API endpoint")
 	RootCmd.Flags().String("server", rootCmdOpts.server, "server to connect to")
+	RootCmd.Flags().Int("dial-timeout", rootCmdOpts.dialTimeout, "dial timeout")
 	RootCmd.Flags().Int("request-timeout", rootCmdOpts.requestTimeout, "request timeout")
 	RootCmd.Flags().BoolVarP(&rootCmdOpts.versionFlag, "version", "v", rootCmdOpts.versionFlag, "show version numner")
 
@@ -226,5 +229,6 @@ func init() {
 	viper.BindPFlag("port", RootCmd.Flags().Lookup("port"))
 	viper.BindPFlag("base_uri", RootCmd.Flags().Lookup("base-uri"))
 	viper.BindPFlag("server", RootCmd.Flags().Lookup("server"))
-	viper.BindPFlag("timeout", RootCmd.Flags().Lookup("timeout"))
+	viper.BindPFlag("dial_timeou", RootCmd.Flags().Lookup("dial-timeou"))
+	viper.BindPFlag("request_timeout", RootCmd.Flags().Lookup("request-timeout"))
 }

@@ -23,6 +23,7 @@ import (
 
 type GetIndexCommandOptions struct {
 	server         string
+	dialTimeout    int
 	requestTimeout int
 	indexMapping   bool
 	indexType      bool
@@ -32,6 +33,7 @@ type GetIndexCommandOptions struct {
 
 var getIndexCmdOpts = GetIndexCommandOptions{
 	server:         "localhost:20884",
+	dialTimeout:    15000,
 	requestTimeout: 15000,
 	indexMapping:   false,
 	indexType:      false,
@@ -55,7 +57,7 @@ func runEGetIndexCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// create client
-	cw, err := client.NewBlastClient(getIndexCmdOpts.server, getIndexCmdOpts.requestTimeout)
+	cw, err := client.NewBlastClient(getIndexCmdOpts.server, getIndexCmdOpts.dialTimeout, getIndexCmdOpts.requestTimeout)
 	if err != nil {
 		return err
 	}
@@ -88,6 +90,7 @@ func init() {
 	getIndexCmd.Flags().SortFlags = false
 
 	getIndexCmd.Flags().StringVar(&getIndexCmdOpts.server, "server", getIndexCmdOpts.server, "server to connect to")
+	getIndexCmd.Flags().IntVar(&getIndexCmdOpts.dialTimeout, "dial-timeout", getIndexCmdOpts.dialTimeout, "dial timeout")
 	getIndexCmd.Flags().IntVar(&getIndexCmdOpts.requestTimeout, "request-timeout", getIndexCmdOpts.requestTimeout, "request timeout")
 	getIndexCmd.Flags().BoolVar(&getIndexCmdOpts.indexMapping, "index-mapping", getIndexCmdOpts.indexMapping, "include index mapping")
 	getIndexCmd.Flags().BoolVar(&getIndexCmdOpts.indexType, "index-type", getIndexCmdOpts.indexType, "include index type")

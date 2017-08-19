@@ -28,14 +28,15 @@ type blastRESTServer struct {
 	router         *mux.Router
 	listener       net.Listener
 	client         *client.BlastClient
+	dialTimeout    int
 	requestTimeout int
 }
 
-func NewBlastRESTServer(port int, basePath, server string, requestTimeout int) *blastRESTServer {
+func NewBlastRESTServer(port int, basePath, server string, dialTimeout int, requestTimeout int) *blastRESTServer {
 	router := mux.NewRouter()
 	router.StrictSlash(true)
 
-	c, err := client.NewBlastClient(server, requestTimeout)
+	c, err := client.NewBlastClient(server, dialTimeout, requestTimeout)
 	if err != nil {
 		return nil
 	}

@@ -17,7 +17,6 @@ package client
 import (
 	"context"
 	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve/mapping"
 	"github.com/mosuka/blast/proto"
 	"google.golang.org/grpc"
 	"time"
@@ -29,8 +28,11 @@ type BlastClient struct {
 	requestTimeout int
 }
 
-func NewBlastClient(server string, requestTimeout int) (*BlastClient, error) {
-	conn, err := grpc.Dial(server, grpc.WithInsecure())
+func NewBlastClient(server string, dialTimeout int, requestTimeout int) (*BlastClient, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(dialTimeout)*time.Millisecond)
+	defer cancel()
+
+	conn, err := grpc.DialContext(ctx, server, grpc.WithInsecure())
 	if err != nil {
 		return nil, err
 	}
@@ -44,137 +46,125 @@ func NewBlastClient(server string, requestTimeout int) (*BlastClient, error) {
 	}, nil
 }
 
-func (c *BlastClient) GetIndex(includeIndexMapping bool, includeIndexType bool, includeKvstore bool, includeKvconfig bool, opts ...grpc.CallOption) (interface{}, error) {
+func (c *BlastClient) GetIndex(includeIndexMapping bool, includeIndexType bool, includeKvstore bool, includeKvconfig bool, opts ...grpc.CallOption) (*GetIndexResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	req := &proto.GetIndexRequest{
+	protoReq := &proto.GetIndexRequest{
 		IncludeIndexMapping: includeIndexMapping,
 		IncludeIndexType:    includeIndexType,
 		IncludeKvstore:      includeKvstore,
 		IncludeKvconfig:     includeKvconfig,
 	}
 
-	resp, err := c.client.GetIndex(ctx, req, opts...)
+	protoResp, err := c.client.GetIndex(ctx, protoReq, opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	r := struct {
-		IndexPath    string                    `json:"index_path,omitempty"`
-		IndexMapping *mapping.IndexMappingImpl `json:"index_mapping,omitempty"`
-		IndexType    string                    `json:"index_type,omitempty"`
-		Kvstore      string                    `json:"kvstore,omitempty"`
-		Kvconfig     map[string]interface{}    `json:"kvconfig,omitempty"`
-	}{
-		IndexPath:    resp.IndexPath,
-		IndexMapping: resp.GetIndexMappingActual(),
-		IndexType:    resp.IndexType,
-		Kvstore:      resp.Kvstore,
-		Kvconfig:     resp.GetKvconfigActual(),
+	resp := &GetIndexResponse{
+		IndexPath:    protoResp.IndexPath,
+		IndexMapping: protoResp.GetIndexMappingActual(),
+		IndexType:    protoResp.IndexType,
+		Kvstore:      protoResp.Kvstore,
+		Kvconfig:     protoResp.GetKvconfigActual(),
 	}
 
-	return r, nil
+	return resp, nil
 }
 
-func (c *BlastClient) PutDocument(id string, fields map[string]interface{}, opts ...grpc.CallOption) (interface{}, error) {
+func (c *BlastClient) PutDocument(id string, fields map[string]interface{}, opts ...grpc.CallOption) (*PutDocumentResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	d := &proto.Document{
-		Id: id,
-	}
-	d.SetFieldsActual(fields)
+	doc := &proto.Document{}
+	doc.Id = id
+	doc.SetFieldsActual(fields)
 
-	req := &proto.PutDocumentRequest{
-		Document: d,
+	protoReq := &proto.PutDocumentRequest{
+		Document: doc,
 	}
 
-	resp, err := c.client.PutDocument(ctx, req, opts...)
+	protoResp, err := c.client.PutDocument(ctx, protoReq, opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	r := struct {
-		PutCount int32 `json:"put_count"`
-	}{
-		PutCount: resp.PutCount,
+	resp := &PutDocumentResponse{
+		Succeeded: protoResp.Succeeded,
+		Message:   protoResp.Message,
 	}
 
-	return r, nil
+	return resp, nil
 }
 
-func (c *BlastClient) GetDocument(id string, opts ...grpc.CallOption) (interface{}, error) {
+func (c *BlastClient) GetDocument(id string, opts ...grpc.CallOption) (*GetDocumentResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	req := &proto.GetDocumentRequest{
+	protoReq := &proto.GetDocumentRequest{
 		Id: id,
 	}
 
-	resp, err := c.client.GetDocument(ctx, req, opts...)
-	if err != nil {
-		return nil, err
+	protoResp, _ := c.client.GetDocument(ctx, protoReq, opts...)
+
+	var doc *Document
+	if protoResp.Document != nil {
+		doc = &Document{
+			Id:     protoResp.Document.Id,
+			Fields: protoResp.Document.GetFieldsActual(),
+		}
 	}
 
-	d := struct {
-		Id     string                 `json:"id,omitempty"`
-		Fields map[string]interface{} `json:"fields,omitempty"`
-	}{
-		Id:     resp.Document.Id,
-		Fields: resp.Document.GetFieldsActual(),
+	resp := &GetDocumentResponse{
+		Succeeded: protoResp.Succeeded,
+		Document:  doc,
+		Message:   protoResp.Message,
 	}
 
-	r := struct {
-		Document interface{} `json:"document,omitempty"`
-	}{
-		Document: d,
-	}
-
-	return r, nil
+	return resp, nil
 }
 
-func (c *BlastClient) DeleteDocument(id string, opts ...grpc.CallOption) (interface{}, error) {
+func (c *BlastClient) DeleteDocument(id string, opts ...grpc.CallOption) (*DeleteDocumentResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	req := &proto.DeleteDocumentRequest{
+	protoReq := &proto.DeleteDocumentRequest{
 		Id: id,
 	}
 
-	resp, err := c.client.DeleteDocument(ctx, req, opts...)
+	protoResp, err := c.client.DeleteDocument(ctx, protoReq, opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	r := struct {
-		DeleteCount int32 `json:"delete_count"`
-	}{
-		DeleteCount: resp.DeleteCount,
+	resp := &DeleteDocumentResponse{
+		Succeeded: protoResp.Succeeded,
+		Message:   protoResp.Message,
 	}
 
-	return r, err
+	return resp, err
 }
 
-func (c *BlastClient) Bulk(requests []map[string]interface{}, batchSize int32, opts ...grpc.CallOption) (interface{}, error) {
+func (c *BlastClient) Bulk(requests []map[string]interface{}, batchSize int32, opts ...grpc.CallOption) (*BulkResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	rs := make([]*proto.UpdateRequest, 0)
-	for _, request := range requests {
+	updateRequests := make([]*proto.UpdateRequest, 0)
+	for _, updateRequest := range requests {
 		r := &proto.UpdateRequest{}
 
 		// check method
-		if _, ok := request["method"]; ok {
-			r.Method = request["method"].(string)
+		if _, ok := updateRequest["method"]; ok {
+			r.Method = updateRequest["method"].(string)
 		}
 
 		// check document
 		var document map[string]interface{}
-		if _, ok := request["document"]; ok {
+		if _, ok := updateRequest["document"]; ok {
 			d := &proto.Document{}
 
-			document = request["document"].(map[string]interface{})
+			document = updateRequest["document"].(map[string]interface{})
 
 			// check document.id
 			if _, ok := document["id"]; ok {
@@ -193,33 +183,31 @@ func (c *BlastClient) Bulk(requests []map[string]interface{}, batchSize int32, o
 			r.Document = d
 		}
 
-		rs = append(rs, r)
+		updateRequests = append(updateRequests, r)
 	}
 
-	req := &proto.BulkRequest{
-		BatchSize: batchSize,
-		Requests:  rs,
+	protoReq := &proto.BulkRequest{
+		BatchSize:      batchSize,
+		UpdateRequests: updateRequests,
 	}
 
-	resp, err := c.client.Bulk(ctx, req, opts...)
+	protoResp, err := c.client.Bulk(ctx, protoReq, opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	r := struct {
-		PutCount      int32 `json:"put_count"`
-		PutErrorCount int32 `json:"put_error_count"`
-		DeleteCount   int32 `json:"delete_count"`
-	}{
-		PutCount:      resp.PutCount,
-		PutErrorCount: resp.PutErrorCount,
-		DeleteCount:   resp.DeleteCount,
+	resp := &BulkResponse{
+		PutCount:      protoResp.PutCount,
+		PutErrorCount: protoResp.PutErrorCount,
+		DeleteCount:   protoResp.DeleteCount,
+		Succeeded:     protoResp.Succeeded,
+		Message:       protoResp.Message,
 	}
 
-	return r, nil
+	return resp, nil
 }
 
-func (c *BlastClient) Search(searchRequests *bleve.SearchRequest, opts ...grpc.CallOption) (interface{}, error) {
+func (c *BlastClient) Search(searchRequests *bleve.SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -228,22 +216,22 @@ func (c *BlastClient) Search(searchRequests *bleve.SearchRequest, opts ...grpc.C
 		return nil, err
 	}
 
-	req := &proto.SearchRequest{
+	protoReq := &proto.SearchRequest{
 		SearchRequest: &sr,
 	}
 
-	resp, err := c.client.Search(ctx, req, opts...)
+	protoResp, err := c.client.Search(ctx, protoReq, opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	r := struct {
-		SearchResult *bleve.SearchResult `json:"search_result,omitempty"`
-	}{
-		SearchResult: resp.GetSearchResultActual(),
+	resp := &SearchResponse{
+		SearchResult: protoResp.GetSearchResultActual(),
+		Succeeded:    protoResp.Succeeded,
+		Message:      protoResp.Message,
 	}
 
-	return r, err
+	return resp, err
 }
 
 func (c *BlastClient) Close() error {

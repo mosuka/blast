@@ -20,9 +20,10 @@ func TestIndigoRESTServer(t *testing.T) {
 	port := 0
 	basePath := "/api"
 	server := "localhost:1289"
+	dialTimeout := 15000
 	requestTimeout := 15000
 
-	restServer := NewBlastRESTServer(port, basePath, server, requestTimeout)
+	restServer := NewBlastRESTServer(port, basePath, server, dialTimeout, requestTimeout)
 
 	if restServer == nil {
 		t.Fatalf("unexpected error.  expected not nil, actual %v", restServer)

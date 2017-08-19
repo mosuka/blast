@@ -23,12 +23,14 @@ import (
 
 type DeleteDocumentCommandOptions struct {
 	server         string
+	dialTimeout    int
 	requestTimeout int
 	id             string
 }
 
 var deleteDocumentCmdOpts = DeleteDocumentCommandOptions{
 	server:         "localhost:20884",
+	dialTimeout:    15000,
 	requestTimeout: 15000,
 	id:             "",
 }
@@ -47,17 +49,14 @@ func runEDeleteDocumentCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// create client
-	cw, err := client.NewBlastClient(deleteDocumentCmdOpts.server, deleteDocumentCmdOpts.requestTimeout)
+	cw, err := client.NewBlastClient(deleteDocumentCmdOpts.server, deleteDocumentCmdOpts.dialTimeout, deleteDocumentCmdOpts.requestTimeout)
 	if err != nil {
 		return err
 	}
 	defer cw.Close()
 
 	// request
-	resp, err := cw.DeleteDocument(deleteDocumentCmdOpts.id)
-	if err != nil {
-		return err
-	}
+	resp, _ := cw.DeleteDocument(deleteDocumentCmdOpts.id)
 
 	// output response
 	switch rootCmdOpts.outputFormat {
@@ -80,6 +79,7 @@ func init() {
 	deleteDocumentCmd.Flags().SortFlags = false
 
 	deleteDocumentCmd.Flags().StringVar(&deleteDocumentCmdOpts.server, "server", deleteDocumentCmdOpts.server, "server to connect to")
+	deleteDocumentCmd.Flags().IntVar(&deleteDocumentCmdOpts.dialTimeout, "dial-timeout", deleteDocumentCmdOpts.dialTimeout, "dial timeout")
 	deleteDocumentCmd.Flags().IntVar(&deleteDocumentCmdOpts.requestTimeout, "request-timeout", deleteDocumentCmdOpts.requestTimeout, "request timeout")
 	deleteDocumentCmd.Flags().StringVar(&deleteDocumentCmdOpts.id, "id", deleteDocumentCmdOpts.id, "document id")
 

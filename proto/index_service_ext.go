@@ -100,13 +100,17 @@ func (m *GetIndexResponse) GetIndexMappingActual() *mapping.IndexMappingImpl {
 	return indexMapping.(*mapping.IndexMappingImpl)
 }
 
-func (m *GetIndexResponse) SetIndexMappingActual(indexMapping *mapping.IndexMappingImpl) {
+func (m *GetIndexResponse) SetIndexMappingActual(indexMapping *mapping.IndexMappingImpl) error {
 	if m != nil {
 		indexMapingAny, err := MarshalAny(indexMapping)
-		if err == nil {
-			m.IndexMapping = &indexMapingAny
+		if err != nil {
+			return err
 		}
+
+		m.IndexMapping = &indexMapingAny
 	}
+
+	return nil
 }
 
 func (m *GetIndexResponse) GetKvconfigActual() map[string]interface{} {
@@ -126,13 +130,16 @@ func (m *GetIndexResponse) GetKvconfigActual() map[string]interface{} {
 	return *kvconfig.(*map[string]interface{})
 }
 
-func (m *GetIndexResponse) SetKvconfigActual(kvconfig map[string]interface{}) {
+func (m *GetIndexResponse) SetKvconfigActual(kvconfig map[string]interface{}) error {
 	if m != nil {
 		kvconfigAny, err := MarshalAny(kvconfig)
-		if err == nil {
-			m.Kvconfig = &kvconfigAny
+		if err != nil {
+			return err
 		}
+		m.Kvconfig = &kvconfigAny
 	}
+
+	return nil
 }
 
 func (m *SearchRequest) GetSearchRequestActual() *bleve.SearchRequest {
