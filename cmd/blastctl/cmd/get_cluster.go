@@ -94,7 +94,7 @@ func runEGetClusterCmd(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	if getClusterCmdOpts.indexMapping == true {
-		keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/indexMapping", getClusterCmdOpts.cluster)
+		keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/index_mapping", getClusterCmdOpts.cluster)
 
 		var indexMapping *mapping.IndexMappingImpl
 
@@ -113,7 +113,7 @@ func runEGetClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if getClusterCmdOpts.indexType == true {
-		keyIndexType := fmt.Sprintf("/blast/clusters/%s/indexType", getClusterCmdOpts.cluster)
+		keyIndexType := fmt.Sprintf("/blast/clusters/%s/index_type", getClusterCmdOpts.cluster)
 
 		var indexType string
 

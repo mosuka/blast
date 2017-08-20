@@ -17,6 +17,7 @@ package client
 import (
 	"context"
 	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/mapping"
 	"github.com/mosuka/blast/proto"
 	"google.golang.org/grpc"
 	"time"
@@ -46,28 +47,35 @@ func NewBlastClient(server string, dialTimeout int, requestTimeout int) (*BlastC
 	}, nil
 }
 
-func (c *BlastClient) GetIndex(includeIndexMapping bool, includeIndexType bool, includeKvstore bool, includeKvconfig bool, opts ...grpc.CallOption) (*GetIndexResponse, error) {
+func (c *BlastClient) GetIndex(indexMapping bool, indexType bool, kvstore bool, kvconfig bool, opts ...grpc.CallOption) (*GetIndexResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
 	protoReq := &proto.GetIndexRequest{
-		IncludeIndexMapping: includeIndexMapping,
-		IncludeIndexType:    includeIndexType,
-		IncludeKvstore:      includeKvstore,
-		IncludeKvconfig:     includeKvconfig,
+		IndexMapping: indexMapping,
+		IndexType:    indexType,
+		Kvstore:      kvstore,
+		Kvconfig:     kvconfig,
 	}
 
-	protoResp, err := c.client.GetIndex(ctx, protoReq, opts...)
+	protoResp, _ := c.client.GetIndex(ctx, protoReq, opts...)
+
+	im, err := proto.UnmarshalAny(protoResp.IndexMapping)
+	if err != nil {
+		return nil, err
+	}
+
+	kvc, err := proto.UnmarshalAny(protoResp.Kvconfig)
 	if err != nil {
 		return nil, err
 	}
 
 	resp := &GetIndexResponse{
 		IndexPath:    protoResp.IndexPath,
-		IndexMapping: protoResp.GetIndexMappingActual(),
+		IndexMapping: im.(*mapping.IndexMappingImpl),
 		IndexType:    protoResp.IndexType,
 		Kvstore:      protoResp.Kvstore,
-		Kvconfig:     protoResp.GetKvconfigActual(),
+		Kvconfig:     *kvc.(*map[string]interface{}),
 	}
 
 	return resp, nil
@@ -77,20 +85,31 @@ func (c *BlastClient) PutDocument(id string, fields map[string]interface{}, opts
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	doc := &proto.Document{}
-	doc.Id = id
-	doc.SetFieldsActual(fields)
-
-	protoReq := &proto.PutDocumentRequest{
-		Document: doc,
-	}
-
-	protoResp, err := c.client.PutDocument(ctx, protoReq, opts...)
+	fieldAny, err := proto.MarshalAny(fields)
 	if err != nil {
 		return nil, err
 	}
 
+	protoReq := &proto.PutDocumentRequest{
+		Id:     id,
+		Fields: &fieldAny,
+	}
+
+	protoResp, _ := c.client.PutDocument(ctx, protoReq, opts...)
+
+	fieldsTmp, err := proto.UnmarshalAny(protoResp.Fields)
+	if err != nil {
+		return nil, err
+	}
+
+	var fieldsPut map[string]interface{}
+	if fieldsTmp != nil {
+		fieldsPut = *fieldsTmp.(*map[string]interface{})
+	}
+
 	resp := &PutDocumentResponse{
+		Id:        id,
+		Fields:    fieldsPut,
 		Succeeded: protoResp.Succeeded,
 		Message:   protoResp.Message,
 	}
@@ -108,17 +127,20 @@ func (c *BlastClient) GetDocument(id string, opts ...grpc.CallOption) (*GetDocum
 
 	protoResp, _ := c.client.GetDocument(ctx, protoReq, opts...)
 
-	var doc *Document
-	if protoResp.Document != nil {
-		doc = &Document{
-			Id:     protoResp.Document.Id,
-			Fields: protoResp.Document.GetFieldsActual(),
-		}
+	fieldsTmp, err := proto.UnmarshalAny(protoResp.Fields)
+	if err != nil {
+		return nil, err
+	}
+
+	var fields map[string]interface{}
+	if fieldsTmp != nil {
+		fields = *fieldsTmp.(*map[string]interface{})
 	}
 
 	resp := &GetDocumentResponse{
+		Id:        id,
+		Fields:    fields,
 		Succeeded: protoResp.Succeeded,
-		Document:  doc,
 		Message:   protoResp.Message,
 	}
 
@@ -133,26 +155,24 @@ func (c *BlastClient) DeleteDocument(id string, opts ...grpc.CallOption) (*Delet
 		Id: id,
 	}
 
-	protoResp, err := c.client.DeleteDocument(ctx, protoReq, opts...)
-	if err != nil {
-		return nil, err
-	}
+	protoResp, _ := c.client.DeleteDocument(ctx, protoReq, opts...)
 
 	resp := &DeleteDocumentResponse{
+		Id:        id,
 		Succeeded: protoResp.Succeeded,
 		Message:   protoResp.Message,
 	}
 
-	return resp, err
+	return resp, nil
 }
 
 func (c *BlastClient) Bulk(requests []map[string]interface{}, batchSize int32, opts ...grpc.CallOption) (*BulkResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	updateRequests := make([]*proto.UpdateRequest, 0)
+	updateRequests := make([]*proto.BulkRequest_UpdateRequest, 0)
 	for _, updateRequest := range requests {
-		r := &proto.UpdateRequest{}
+		r := &proto.BulkRequest_UpdateRequest{}
 
 		// check method
 		if _, ok := updateRequest["method"]; ok {
@@ -162,7 +182,7 @@ func (c *BlastClient) Bulk(requests []map[string]interface{}, batchSize int32, o
 		// check document
 		var document map[string]interface{}
 		if _, ok := updateRequest["document"]; ok {
-			d := &proto.Document{}
+			d := &proto.BulkRequest_UpdateRequest_Document{}
 
 			document = updateRequest["document"].(map[string]interface{})
 
@@ -207,17 +227,17 @@ func (c *BlastClient) Bulk(requests []map[string]interface{}, batchSize int32, o
 	return resp, nil
 }
 
-func (c *BlastClient) Search(searchRequests *bleve.SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error) {
+func (c *BlastClient) Search(searchRequest *bleve.SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.requestTimeout)*time.Millisecond)
 	defer cancel()
 
-	sr, err := proto.MarshalAny(searchRequests)
+	searchResultAny, err := proto.MarshalAny(searchRequest)
 	if err != nil {
 		return nil, err
 	}
 
 	protoReq := &proto.SearchRequest{
-		SearchRequest: &sr,
+		SearchRequest: &searchResultAny,
 	}
 
 	protoResp, err := c.client.Search(ctx, protoReq, opts...)
@@ -225,8 +245,10 @@ func (c *BlastClient) Search(searchRequests *bleve.SearchRequest, opts ...grpc.C
 		return nil, err
 	}
 
+	searchResult, err := proto.UnmarshalAny(protoResp.SearchResult)
+
 	resp := &SearchResponse{
-		SearchResult: protoResp.GetSearchResultActual(),
+		SearchResult: searchResult.(*bleve.SearchResult),
 		Succeeded:    protoResp.Succeeded,
 		Message:      protoResp.Message,
 	}

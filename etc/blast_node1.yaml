@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-log_format: text
+log_format: json
 log_output:
 log_level: info
 
@@ -24,5 +24,5 @@ etcd_endpoints:
 etcd_dial_timeout: 5000
 etcd_request_timeout: 5000
 
-cluster: default
+cluster: cluster1
 shard: shard1

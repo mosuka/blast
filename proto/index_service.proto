@@ -27,21 +27,11 @@ service Index {
     rpc Search(SearchRequest) returns (SearchResponse) {}
 }
 
-message Document {
-    string id = 1;
-    google.protobuf.Any fields = 2;
-}
-
-message UpdateRequest {
-    string method = 1;
-    Document document = 2;
-}
-
 message GetIndexRequest {
-    bool include_index_mapping = 1;
-    bool include_index_type = 2;
-    bool include_kvstore = 3;
-    bool include_kvconfig = 4;
+    bool index_mapping = 1;
+    bool index_type = 2;
+    bool kvstore = 3;
+    bool kvconfig = 4;
 }
 
 message GetIndexResponse {
@@ -55,12 +45,15 @@ message GetIndexResponse {
 }
 
 message PutDocumentRequest {
-    Document document = 1;
+    string id = 1;
+    google.protobuf.Any fields = 2;
 }
 
 message PutDocumentResponse {
-    bool succeeded = 1;
-    string message = 2;
+    string id = 1;
+    google.protobuf.Any fields = 2;
+    bool succeeded = 3;
+    string message = 4;
 }
 
 message GetDocumentRequest {
@@ -68,9 +61,10 @@ message GetDocumentRequest {
 }
 
 message GetDocumentResponse {
-    Document document = 1;
-    bool succeeded = 2;
-    string message = 3;
+    string id = 1;
+    google.protobuf.Any fields = 2;
+    bool succeeded = 3;
+    string message = 4;
 }
 
 message DeleteDocumentRequest {
@@ -78,11 +72,22 @@ message DeleteDocumentRequest {
 }
 
 message DeleteDocumentResponse {
-    bool succeeded = 1;
-    string message = 2;
+    string id = 1;
+    bool succeeded = 2;
+    string message = 3;
 }
 
 message BulkRequest {
+    message UpdateRequest {
+        message Document {
+            string id = 1;
+            google.protobuf.Any fields = 2;
+        }
+
+        string method = 1;
+        Document document = 2;
+    }
+
     int32 batch_size = 1;
     repeated UpdateRequest update_requests = 2;
 }

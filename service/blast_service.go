@@ -15,7 +15,6 @@
 package service
 
 import (
-	"fmt"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/document"
 	"github.com/blevesearch/bleve/mapping"
@@ -120,40 +119,44 @@ func (s *BlastService) GetIndex(ctx context.Context, req *proto.GetIndexRequest)
 		IndexPath: s.Path,
 	}
 
-	if req.IncludeIndexMapping {
-		err := protoGetIndexResponse.SetIndexMappingActual(s.IndexMapping)
+	if req.IndexMapping {
+		indexMappingAny, err := proto.MarshalAny(s.IndexMapping)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"err": err,
+				"err":       err,
+				"succeeded": false,
 			}).Error("failed to marshal index mapping to Any type")
 
 			return &proto.GetIndexResponse{
 				Succeeded: false,
-				Message:   fmt.Sprintf("failed to marshal index mapping to Any type : %s", err.Error()),
+				Message:   "failed to marshal index mapping to Any type",
 			}, err
 		}
+		protoGetIndexResponse.IndexMapping = &indexMappingAny
 	}
 
-	if req.IncludeIndexType {
+	if req.IndexType {
 		protoGetIndexResponse.IndexType = s.IndexType
 	}
 
-	if req.IncludeKvstore {
+	if req.Kvstore {
 		protoGetIndexResponse.Kvstore = s.Kvstore
 	}
 
-	if req.IncludeKvconfig {
-		err := protoGetIndexResponse.SetKvconfigActual(s.Kvconfig)
+	if req.Kvconfig {
+		kvconfigAny, err := proto.MarshalAny(s.Kvconfig)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"err": err,
+				"err":       err,
+				"succeeded": false,
 			}).Error("failed to marshal kvconfig to Any type")
 
 			return &proto.GetIndexResponse{
 				Succeeded: false,
-				Message:   fmt.Sprintf("failed to marshal kvconfig to Any type : %s", err.Error()),
+				Message:   "failed to marshal kvconfig to Any type",
 			}, err
 		}
+		protoGetIndexResponse.Kvconfig = &kvconfigAny
 	}
 
 	protoGetIndexResponse.Succeeded = true
@@ -163,75 +166,84 @@ func (s *BlastService) GetIndex(ctx context.Context, req *proto.GetIndexRequest)
 }
 
 func (s *BlastService) PutDocument(ctx context.Context, req *proto.PutDocumentRequest) (*proto.PutDocumentResponse, error) {
-	fields, err := proto.UnmarshalAny(req.Document.Fields)
+	fields, err := proto.UnmarshalAny(req.Fields)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"id":  req.Document.Id,
-			"err": err,
-		}).Error("failed to unmarshal fields to Any type")
+			"id":        req.Id,
+			"fields":    req.Fields,
+			"err":       err,
+			"succeeded": false,
+		}).Error("failed to unmarshal fields")
 
 		return &proto.PutDocumentResponse{
+			Id:        req.Id,
+			Fields:    req.Fields,
 			Succeeded: false,
-			Message:   fmt.Sprintf("failed to marshal fields to Any type : %s", err.Error()),
+			Message:   "failed to unmarshal fields",
 		}, err
 	}
 
-	log.WithFields(log.Fields{
-		"id":     req.Document.Id,
-		"fields": fields,
-	}).Debug("fields creation succeeded")
-
-	err = s.Index.Index(req.Document.Id, fields)
+	err = s.Index.Index(req.Id, fields)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"id":     req.Document.Id,
-			"fields": fields,
-			"err":    err,
+			"id":        req.Id,
+			"fields":    fields,
+			"err":       err,
+			"succeeded": false,
 		}).Error("failed to put a document")
 
 		return &proto.PutDocumentResponse{
+			Id:        req.Id,
+			Fields:    req.Fields,
 			Succeeded: false,
-			Message:   fmt.Sprintf("failed to put a document : %s", err.Error()),
+			Message:   "failed to put a document",
 		}, err
 	}
 
 	log.WithFields(log.Fields{
-		"id": req.Document.Id,
+		"id":        req.Id,
+		"fields":    fields,
+		"succeeded": true,
 	}).Info("succeeded in put a document")
 
 	return &proto.PutDocumentResponse{
+		Id:        req.Id,
+		Fields:    req.Fields,
 		Succeeded: true,
 		Message:   "succeeded in put a document",
 	}, nil
 }
 
 func (s *BlastService) GetDocument(ctx context.Context, req *proto.GetDocumentRequest) (*proto.GetDocumentResponse, error) {
-	fields := make(map[string]interface{})
-
 	doc, err := s.Index.Document(req.Id)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"id":  req.Id,
-			"err": err,
+			"id":        req.Id,
+			"err":       err,
+			"succeeded": false,
 		}).Error("failed to get a document")
 
 		return &proto.GetDocumentResponse{
+			Id:        req.Id,
 			Succeeded: false,
-			Message:   fmt.Sprintf("failed to get a document : %s", err.Error()),
+			Message:   "failed to get a document",
 		}, err
 	}
 
 	if doc == nil {
 		log.WithFields(log.Fields{
-			"id": req.Id,
+			"id":        req.Id,
+			"succeeded": true,
 		}).Info("document does not exist")
 
 		return &proto.GetDocumentResponse{
+			Id:        req.Id,
 			Succeeded: true,
 			Message:   "document does not exist",
 		}, nil
 	}
 
+	fields := make(map[string]interface{})
 	for _, field := range doc.Fields {
 		var value interface{}
 
@@ -270,29 +282,30 @@ func (s *BlastService) GetDocument(ctx context.Context, req *proto.GetDocumentRe
 	fieldsAny, err := proto.MarshalAny(fields)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"id":     req.Id,
-			"fields": fields,
-			"err":    err,
-		}).Error("failed to marshal fields to Any type")
+			"id":        req.Id,
+			"fields":    fields,
+			"err":       err,
+			"succeeded": false,
+		}).Error("failed to marshal fields")
 
 		return &proto.GetDocumentResponse{
+			Id:        req.Id,
+			Fields:    &fieldsAny,
 			Succeeded: false,
-			Message:   fmt.Sprintf("failed to marshal fields to Any type : %s", err.Error()),
+			Message:   "failed to marshal fields",
 		}, err
 	}
 
-	document := &proto.Document{
-		Id:     req.Id,
-		Fields: &fieldsAny,
-	}
-
 	log.WithFields(log.Fields{
-		"id": req.Id,
+		"id":        req.Id,
+		"fields":    fields,
+		"succeeded": true,
 	}).Info("succeeded in get a document")
 
 	return &proto.GetDocumentResponse{
+		Id:        req.Id,
+		Fields:    &fieldsAny,
 		Succeeded: true,
-		Document:  document,
 		Message:   "succeeded in get a document",
 	}, err
 }
@@ -301,21 +314,25 @@ func (s *BlastService) DeleteDocument(ctx context.Context, req *proto.DeleteDocu
 	err := s.Index.Delete(req.Id)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"id":  req.Id,
-			"err": err,
+			"id":        req.Id,
+			"err":       err,
+			"succeeded": false,
 		}).Error("failed to delete a document")
 
 		return &proto.DeleteDocumentResponse{
+			Id:        req.Id,
 			Succeeded: false,
-			Message:   fmt.Sprintf("failed to delete a document : %s", err.Error()),
+			Message:   "failed to delete a document",
 		}, err
 	}
 
 	log.WithFields(log.Fields{
-		"id": req.Id,
+		"id":        req.Id,
+		"succeeded": true,
 	}).Info("succeeded in delete a document")
 
 	return &proto.DeleteDocumentResponse{
+		Id:        req.Id,
 		Succeeded: true,
 		Message:   "succeeded in delete a document",
 	}, nil
@@ -347,17 +364,19 @@ func (s *BlastService) Bulk(ctx context.Context, req *proto.BulkRequest) (*proto
 			err = batch.Index(updateRequest.Document.Id, fields)
 			if err != nil {
 				log.WithFields(log.Fields{
-					"num":           num,
-					"updateRequest": updateRequest,
-					"err":           err,
-				}).Warn("failed to put document")
+					"num":    num,
+					"id":     updateRequest.Document.Id,
+					"fields": fields,
+					"err":    err,
+				}).Warn("failed to put a document")
 
 				putErrorCount++
 			}
 
 			log.WithFields(log.Fields{
-				"num":           num,
-				"updateRequest": updateRequest,
+				"num":    num,
+				"id":     updateRequest.Document.Id,
+				"fields": fields,
 			}).Debug("succeeded in put a document")
 
 			putCount++
@@ -366,16 +385,16 @@ func (s *BlastService) Bulk(ctx context.Context, req *proto.BulkRequest) (*proto
 			batch.Delete(updateRequest.Document.Id)
 
 			log.WithFields(log.Fields{
-				"num":           num,
-				"updateRequest": updateRequest,
+				"num": num,
+				"id":  updateRequest.Document.Id,
 			}).Debug("succeeded in delete a document")
 
 			deleteCount++
 			processedCount++
 		default:
 			log.WithFields(log.Fields{
-				"num":           num,
-				"updateRequest": updateRequest,
+				"num":    num,
+				"method": updateRequest.Method,
 			}).Warn("unknown method")
 
 			continue
@@ -385,11 +404,11 @@ func (s *BlastService) Bulk(ctx context.Context, req *proto.BulkRequest) (*proto
 			err := s.Index.Batch(batch)
 			if err == nil {
 				log.WithFields(log.Fields{
-					"count": batch.Size(),
+					"size": batch.Size(),
 				}).Debug("succeeded in put documents in bulk")
 			} else {
 				log.WithFields(log.Fields{
-					"count": batch.Size(),
+					"size": batch.Size(),
 				}).Warn("failed to put documents in bulk")
 			}
 
@@ -401,11 +420,11 @@ func (s *BlastService) Bulk(ctx context.Context, req *proto.BulkRequest) (*proto
 		err := s.Index.Batch(batch)
 		if err == nil {
 			log.WithFields(log.Fields{
-				"count": batch.Size(),
+				"size": batch.Size(),
 			}).Debug("succeeded in put documents in bulk")
 		} else {
 			log.WithFields(log.Fields{
-				"count": batch.Size(),
+				"size": batch.Size(),
 			}).Warn("failed to put documents in bulk")
 		}
 	}
@@ -414,14 +433,15 @@ func (s *BlastService) Bulk(ctx context.Context, req *proto.BulkRequest) (*proto
 		"putCount":      putCount,
 		"putErrorCount": putErrorCount,
 		"deleteCount":   deleteCount,
+		"succeeded":     true,
 	}).Info("succeeded in put documents in bulk")
 
 	return &proto.BulkResponse{
-		Succeeded:     true,
-		Message:       "succeeded in put documents in bulk",
 		PutCount:      putCount,
 		PutErrorCount: putErrorCount,
 		DeleteCount:   deleteCount,
+		Succeeded:     true,
+		Message:       "succeeded in put documents in bulk",
 	}, nil
 }
 
@@ -429,47 +449,45 @@ func (s *BlastService) Search(ctx context.Context, req *proto.SearchRequest) (*p
 	searchRequest, err := proto.UnmarshalAny(req.SearchRequest)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"err": err,
+			"err":       err,
+			"succeeded": false,
 		}).Error("failed to unmarshal search request to Any type")
 
 		return &proto.SearchResponse{
 			Succeeded: false,
-			Message:   fmt.Sprintf("failed to unmarshal search request to Any type : %s", err.Error()),
+			Message:   "failed to unmarshal search request to Any type",
 		}, err
 	}
 
 	searchResult, err := s.Index.Search(searchRequest.(*bleve.SearchRequest))
 	if err != nil {
 		log.WithFields(log.Fields{
-			"err": err,
+			"err":       err,
+			"succeeded": false,
 		}).Error("failed to search documents")
 
 		return &proto.SearchResponse{
 			Succeeded: false,
-			Message:   fmt.Sprintf("failed to search documents : %s", err.Error()),
+			Message:   "failed to search documents",
 		}, err
 	}
 
 	searchResultAny, err := proto.MarshalAny(searchResult)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"err": err,
+			"err":       err,
+			"succeeded": false,
 		}).Error("failed to marshal fields to Any type")
 
 		return &proto.SearchResponse{
 			Succeeded: false,
-			Message:   fmt.Sprintf("failed to marshal fields to Any type : %s", err.Error()),
+			Message:   "failed to marshal fields to Any type",
 		}, err
 	}
 
 	log.WithFields(log.Fields{
-		"hits":     searchResult.Hits,
-		"took":     searchResult.Took,
-		"total":    searchResult.Total,
-		"status":   searchResult.Status,
-		"requests": searchResult.Request,
-		"facets":   searchResult.Facets,
-		"maxScore": searchResult.MaxScore,
+		"searchResult": searchResult,
+		"succeeded":    true,
 	}).Info("succeeded in searching documents")
 
 	return &proto.SearchResponse{

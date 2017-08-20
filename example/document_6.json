@@ -1,13 +1,11 @@
 {
-  "document": {
-    "id": "6",
-    "fields": {
-      "name": "Elasticsearch",
-      "description": "Elasticsearch is a search engine based on Lucene, written in Java.",
-      "category": "Server",
-      "popularity": 5.0,
-      "release": "2010-02-08T00:00:00Z",
-      "type": "document"
-    }
+  "id": "6",
+  "fields": {
+    "name": "Elasticsearch",
+    "description": "Elasticsearch is a search engine based on Lucene, written in Java.",
+    "category": "Server",
+    "popularity": 5.0,
+    "release": "2010-02-08T00:00:00Z",
+    "type": "document"
   }
 }

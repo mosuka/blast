@@ -22,6 +22,7 @@ import (
 	"github.com/coreos/etcd/clientv3"
 	"github.com/mosuka/blast/proto"
 	"github.com/mosuka/blast/service"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"net"
@@ -96,82 +97,96 @@ func NewBlastServer(port int, indexPath string, indexMapping *mapping.IndexMappi
 		defer cancel()
 
 		// fetch index mapping
-		keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/indexMapping", cluster)
+		var fetchedIndexMapping *mapping.IndexMappingImpl
+		keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/index_mapping", cluster)
 		kvresp, err := etcdKv.Get(ctx, keyIndexMapping)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err.Error(),
 			}).Error("failed to fetch the index mapping")
-
 			return nil, err
 		}
-		log.Info("succeeded in fetch the index mapping")
-
 		for _, ev := range kvresp.Kvs {
-			err = json.Unmarshal(ev.Value, &indexMapping)
+			err = json.Unmarshal(ev.Value, &fetchedIndexMapping)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"error": err.Error(),
 				}).Error("failed to unmarshal the index mapping")
-
 				return nil, err
 			}
 		}
+		if fetchedIndexMapping == nil {
+			log.Error("failed to fetch the index mapping")
+			return nil, errors.New("failed to fetch the index mapping")
+		}
+		indexMapping = fetchedIndexMapping
+		log.Info("succeeded in fetch the index mapping")
 
 		// fetch index type
-		keyIndexType := fmt.Sprintf("/blast/clusters/%s/indexType", cluster)
+		var fetchedIndexType string
+		keyIndexType := fmt.Sprintf("/blast/clusters/%s/index_type", cluster)
 		kvresp, err = etcdKv.Get(ctx, keyIndexType)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err.Error(),
 			}).Error("failed to fetch the index type")
-
 			return nil, err
 		}
+		for _, ev := range kvresp.Kvs {
+			fetchedIndexType = string(ev.Value)
+		}
+		if fetchedIndexType == "" {
+			log.Error("failed to fetch the index type")
+			return nil, errors.New("failed to fetch the index type")
+		}
+		indexType = fetchedIndexType
 		log.Info("succeeded in fetch the index type")
 
-		for _, ev := range kvresp.Kvs {
-			indexType = string(ev.Value)
-		}
-
 		// fetch kvstore
+		var fetchedKvstore string
 		keyKvstore := fmt.Sprintf("/blast/clusters/%s/kvstore", cluster)
 		kvresp, err = etcdKv.Get(ctx, keyKvstore)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err.Error(),
 			}).Error("failed to fetch the kvstore")
-
 			return nil, err
 		}
+		for _, ev := range kvresp.Kvs {
+			fetchedKvstore = string(ev.Value)
+		}
+		if fetchedKvstore == "" {
+			log.Error("failed to fetch the kvstore")
+			return nil, errors.New("failed to fetch the kvstore")
+		}
+		kvstore = fetchedKvstore
 		log.Info("succeeded in fetch the kvstore")
 
-		for _, ev := range kvresp.Kvs {
-			kvstore = string(ev.Value)
-		}
-
 		// fetch kvconfig
+		var fetchedKvconfig map[string]interface{}
 		keyKvconfig := fmt.Sprintf("/blast/clusters/%s/kvconfig", cluster)
 		kvresp, err = etcdKv.Get(ctx, keyKvconfig)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err.Error(),
 			}).Error("failed to fetch the kvconfig")
-
 			return nil, err
 		}
-		log.Info("succeeded in fetch the kvconfig")
-
 		for _, ev := range kvresp.Kvs {
-			err = json.Unmarshal(ev.Value, &kvconfig)
+			err = json.Unmarshal(ev.Value, &fetchedKvconfig)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"error": err.Error(),
 				}).Error("failed to unmarshal the kvconfig")
-
 				return nil, err
 			}
 		}
+		if fetchedKvconfig == nil {
+			log.Error("failed to fetch the index mapping")
+			return nil, errors.New("failed to fetch the index mapping")
+		}
+		kvconfig = fetchedKvconfig
+		log.Info("succeeded in fetch the kvconfig")
 	}
 
 	svr := grpc.NewServer()
@@ -193,6 +208,7 @@ func NewBlastServer(port int, indexPath string, indexMapping *mapping.IndexMappi
 }
 
 func (s *BlastServer) Start() error {
+	// create listener
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", s.port))
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -205,14 +221,16 @@ func (s *BlastServer) Start() error {
 		"port": s.port,
 	}).Info("created the listener")
 
+	// start server
 	go func() {
 		s.service.OpenIndex()
 		s.server.Serve(listener)
 		return
 	}()
-	log.Info("the blast server has been started")
+	log.Info("server has been started")
 
 	if s.etcdClient != nil {
+		// start watching
 		go func() {
 			for {
 				s.watchCluster()
@@ -221,6 +239,7 @@ func (s *BlastServer) Start() error {
 		}()
 		log.Info("watching the cluster information has been started")
 
+		// join cluster
 		err = s.joinCluster()
 		if err != nil {
 			log.WithFields(log.Fields{

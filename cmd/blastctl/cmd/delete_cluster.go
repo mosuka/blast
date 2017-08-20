@@ -89,7 +89,7 @@ func runEDeleteClusterCmd(cmd *cobra.Command, args []string) error {
 	}{}
 
 	if deleteClusterCmdOpts.indexMapping == true {
-		keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/indexMapping", deleteClusterCmdOpts.cluster)
+		keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/index_mapping", deleteClusterCmdOpts.cluster)
 
 		_, err := kv.Delete(ctx, keyIndexMapping)
 		if err != nil {
@@ -100,7 +100,7 @@ func runEDeleteClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if deleteClusterCmdOpts.indexType == true {
-		keyIndexType := fmt.Sprintf("/blast/clusters/%s/indexType", deleteClusterCmdOpts.cluster)
+		keyIndexType := fmt.Sprintf("/blast/clusters/%s/index_type", deleteClusterCmdOpts.cluster)
 
 		_, err := kv.Delete(ctx, keyIndexType)
 		if err != nil {

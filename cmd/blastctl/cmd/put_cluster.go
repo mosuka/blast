@@ -137,7 +137,7 @@ func runEPutClusterCmd(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	if cmd.Flag("index-mapping").Changed {
-		keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/indexMapping", putClusterCmdOpts.cluster)
+		keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/index_mapping", putClusterCmdOpts.cluster)
 
 		_, err = kv.Put(ctx, keyIndexMapping, string(bytesIndexMapping))
 		if err != nil {
@@ -147,7 +147,7 @@ func runEPutClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if cmd.Flag("index-type").Changed {
-		keyIndexType := fmt.Sprintf("/blast/clusters/%s/indexType", putClusterCmdOpts.cluster)
+		keyIndexType := fmt.Sprintf("/blast/clusters/%s/index_type", putClusterCmdOpts.cluster)
 
 		_, err = kv.Put(ctx, keyIndexType, putClusterCmdOpts.indexType)
 		if err != nil {

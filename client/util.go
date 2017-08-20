@@ -5,23 +5,22 @@ import (
 	"github.com/blevesearch/bleve/mapping"
 )
 
-type Document struct {
-	Id     string                 `json:"id,omitempty"`
-	Fields map[string]interface{} `json:"fields,omitempty"`
-}
-
 type GetDocumentResponse struct {
-	Document  *Document `json:"document,omitempty"`
-	Succeeded bool      `json:"succeeded"`
-	Message   string    `json:"message,omitempty"`
+	Id        string                 `json:"id,omitempty"`
+	Fields    map[string]interface{} `json:"fields,omitempty"`
+	Succeeded bool                   `json:"succeeded"`
+	Message   string                 `json:"message,omitempty"`
 }
 
 type PutDocumentResponse struct {
-	Succeeded bool   `json:"succeeded"`
-	Message   string `json:"message,omitempty"`
+	Id        string                 `json:"id,omitempty"`
+	Fields    map[string]interface{} `json:"fields,omitempty"`
+	Succeeded bool                   `json:"succeeded"`
+	Message   string                 `json:"message,omitempty"`
 }
 
 type DeleteDocumentResponse struct {
+	Id        string `json:"id,omitempty"`
 	Succeeded bool   `json:"succeeded"`
 	Message   string `json:"message,omitempty"`
 }

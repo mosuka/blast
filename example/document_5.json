@@ -1,13 +1,11 @@
 {
-  "document": {
-    "id": "5",
-    "fields": {
-      "name": "Solr",
-      "description": "Solr is an open source enterprise search platform, written in Java, from the Apache Lucene project.",
-      "category": "Server",
-      "popularity": 5.0,
-      "release": "2006-12-22T00:00:00Z",
-      "type": "document"
-    }
+  "id": "5",
+  "fields": {
+    "name": "Solr",
+    "description": "Solr is an open source enterprise search platform, written in Java, from the Apache Lucene project.",
+    "category": "Server",
+    "popularity": 5.0,
+    "release": "2006-12-22T00:00:00Z",
+    "type": "document"
   }
 }

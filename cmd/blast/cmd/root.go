@@ -55,7 +55,7 @@ type RootCommandOptions struct {
 var rootCmdOpts = RootCommandOptions{
 	config: "",
 
-	logFormat: "text",
+	logFormat: "json",
 	logOutput: "",
 	logLevel:  "info",
 
