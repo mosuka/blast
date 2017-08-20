@@ -46,7 +46,7 @@ var rootCmdOpts = RootCommandOptions{
 	logOutput:      "",
 	logLevel:       "info",
 	port:           8080,
-	server:         "localhost:20884",
+	server:         "localhost:5000",
 	baseURI:        "/api",
 	dialTimeout:    15000,
 	requestTimeout: 15000,

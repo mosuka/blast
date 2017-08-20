@@ -59,7 +59,7 @@ var rootCmdOpts = RootCommandOptions{
 	logOutput: "",
 	logLevel:  "info",
 
-	port:         20884,
+	port:         5000,
 	indexPath:    "./data/index",
 	indexMapping: "",
 	indexType:    "upside_down",

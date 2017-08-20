@@ -16,7 +16,7 @@ log_format: json
 log_output:
 log_level: info
 
-port: 20884
+port: 5000
 index_path: ./data/index1
 
 etcd_endpoints:

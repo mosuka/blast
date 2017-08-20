@@ -29,9 +29,9 @@ type GetDocumentCommandOptions struct {
 }
 
 var getDocumentCmdOpts = GetDocumentCommandOptions{
-	server:         "localhost:20884",
-	dialTimeout:    15000,
-	requestTimeout: 15000,
+	server:         "localhost:5000",
+	dialTimeout:    5000,
+	requestTimeout: 5000,
 	id:             "",
 }
 

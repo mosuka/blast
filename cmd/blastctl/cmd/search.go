@@ -44,7 +44,7 @@ type SearchCommandOptions struct {
 }
 
 var searchCmdOpts = SearchCommandOptions{
-	server:           "localhost:20884",
+	server:           "localhost:5000",
 	dialTimeout:      15000,
 	requestTimeout:   15000,
 	request:          "",

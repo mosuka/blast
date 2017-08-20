@@ -33,7 +33,7 @@ type BulkCommandOptions struct {
 }
 
 var bulkCmdOpts = BulkCommandOptions{
-	server:         "localhost:20884",
+	server:         "localhost:5000",
 	dialTimeout:    60000,
 	requestTimeout: 60000,
 	batchSize:      1000,
