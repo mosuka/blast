@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/buger/jsonparser"
@@ -22,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
+	"time"
 )
 
 type BulkCommandOptions struct {
@@ -67,13 +69,13 @@ func runEBulkCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// get batch_size
+	// get batch_size from request
 	batchSize, err := jsonparser.GetInt(data, "batch_size")
 	if err != nil {
 		return err
 	}
 
-	// get requests
+	// get requests from request
 	requestsBytes, _, _, err := jsonparser.Get(data, "requests")
 	if err != nil {
 		return err
@@ -84,20 +86,33 @@ func runEBulkCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// overwrite batch size
+	// overwrite batch size by command line option
 	if cmd.Flag("batch-size").Changed {
 		batchSize = int64(bulkCmdOpts.batchSize)
 	}
 
+	// create client config
+	cfg := client.Config{
+		Server:      bulkCmdOpts.server,
+		DialTimeout: time.Duration(bulkCmdOpts.dialTimeout) * time.Millisecond,
+	}
+
 	// create client
-	cw, err := client.NewBlastClient(bulkCmdOpts.server, bulkCmdOpts.dialTimeout, bulkCmdOpts.requestTimeout)
+	cl, err := client.NewClient(&cfg)
 	if err != nil {
 		return err
 	}
-	defer cw.Close()
+	defer cl.Close()
 
-	// request
-	resp, _ := cw.Bulk(requests, int32(batchSize))
+	// create index
+	idx := client.NewIndex(cl)
+
+	// create context
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(bulkCmdOpts.requestTimeout)*time.Millisecond)
+	defer cancel()
+
+	// update documents to index in bulk
+	resp, _ := idx.Bulk(ctx, requests, int32(batchSize))
 
 	// output request
 	switch rootCmdOpts.outputFormat {

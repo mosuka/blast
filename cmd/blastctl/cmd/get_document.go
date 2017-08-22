@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"github.com/mosuka/blast/client"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/context"
+	"time"
 )
 
 type GetDocumentCommandOptions struct {
@@ -48,15 +50,28 @@ func runEGetDocumentCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("required flag: --%s", cmd.Flag("id").Name)
 	}
 
+	// create client config
+	cfg := client.Config{
+		Server:      getDocumentCmdOpts.server,
+		DialTimeout: time.Duration(getDocumentCmdOpts.dialTimeout) * time.Millisecond,
+	}
+
 	// create client
-	cw, err := client.NewBlastClient(getDocumentCmdOpts.server, getDocumentCmdOpts.dialTimeout, getDocumentCmdOpts.requestTimeout)
+	cl, err := client.NewClient(&cfg)
 	if err != nil {
 		return err
 	}
-	defer cw.Close()
+	defer cl.Close()
 
-	// request
-	resp, _ := cw.GetDocument(getDocumentCmdOpts.id)
+	// create index
+	idx := client.NewIndex(cl)
+
+	// create context
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(getDocumentCmdOpts.requestTimeout)*time.Millisecond)
+	defer cancel()
+
+	// get document from index
+	resp, _ := idx.GetDocument(ctx, getDocumentCmdOpts.id)
 
 	// output response
 	switch rootCmdOpts.outputFormat {

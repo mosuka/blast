@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/buger/jsonparser"
@@ -22,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
+	"time"
 )
 
 type PutDocumentCommandOptions struct {
@@ -69,14 +71,14 @@ func runEPutDocumentCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// get id
-	id, err := jsonparser.GetString(data, "document", "id")
+	// get id from request
+	id, err := jsonparser.GetString(data, "id")
 	if err != nil {
 		return err
 	}
 
-	// get fields
-	fieldsBytes, _, _, err := jsonparser.Get(data, "document", "fields")
+	// get fields request
+	fieldsBytes, _, _, err := jsonparser.Get(data, "fields")
 	if err != nil {
 		return err
 	}
@@ -86,12 +88,12 @@ func runEPutDocumentCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// overwrite id
+	// overwrite id by command line option
 	if cmd.Flag("id").Changed {
 		id = putDocumentCmdOpts.id
 	}
 
-	// overwrite fields
+	// overwrite fields by command line option
 	if cmd.Flag("fields").Changed {
 		err = json.Unmarshal([]byte(putDocumentCmdOpts.fields), &fields)
 		if err != nil {
@@ -99,15 +101,28 @@ func runEPutDocumentCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	// create client config
+	cfg := client.Config{
+		Server:      putDocumentCmdOpts.server,
+		DialTimeout: time.Duration(putDocumentCmdOpts.dialTimeout) * time.Millisecond,
+	}
+
 	// create client
-	cw, err := client.NewBlastClient(putDocumentCmdOpts.server, putDocumentCmdOpts.dialTimeout, putDocumentCmdOpts.requestTimeout)
+	cl, err := client.NewClient(&cfg)
 	if err != nil {
 		return err
 	}
-	defer cw.Close()
+	defer cl.Close()
 
-	// request
-	resp, _ := cw.PutDocument(id, fields)
+	// create index
+	idx := client.NewIndex(cl)
+
+	// create context
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(putDocumentCmdOpts.requestTimeout)*time.Millisecond)
+	defer cancel()
+
+	// put document to index
+	resp, _ := idx.PutDocument(ctx, id, fields)
 
 	// output response
 	switch rootCmdOpts.outputFormat {

@@ -15,10 +15,12 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/mosuka/blast/client"
 	"github.com/spf13/cobra"
+	"time"
 )
 
 type DeleteDocumentCommandOptions struct {
@@ -48,15 +50,28 @@ func runEDeleteDocumentCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("required flag: --%s", cmd.Flag("id").Name)
 	}
 
+	// create client config
+	cfg := client.Config{
+		Server:      deleteDocumentCmdOpts.server,
+		DialTimeout: time.Duration(deleteDocumentCmdOpts.dialTimeout) * time.Millisecond,
+	}
+
 	// create client
-	cw, err := client.NewBlastClient(deleteDocumentCmdOpts.server, deleteDocumentCmdOpts.dialTimeout, deleteDocumentCmdOpts.requestTimeout)
+	cl, err := client.NewClient(&cfg)
 	if err != nil {
 		return err
 	}
-	defer cw.Close()
+	defer cl.Close()
 
-	// request
-	resp, _ := cw.DeleteDocument(deleteDocumentCmdOpts.id)
+	// create index
+	idx := client.NewIndex(cl)
+
+	// create context
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(deleteDocumentCmdOpts.requestTimeout)*time.Millisecond)
+	defer cancel()
+
+	// delete document from index
+	resp, _ := idx.DeleteDocument(ctx, deleteDocumentCmdOpts.id)
 
 	// output response
 	switch rootCmdOpts.outputFormat {

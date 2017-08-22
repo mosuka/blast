@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/blevesearch/bleve"
@@ -23,6 +24,7 @@ import (
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
+	"time"
 )
 
 type SearchCommandOptions struct {
@@ -88,7 +90,7 @@ func runESearchCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// get search_request
+	// get search_request from request
 	var searchRequest *bleve.SearchRequest
 	searchRequestBytes, _, _, err := jsonparser.Get(data, "search_request")
 	if err == nil {
@@ -100,7 +102,7 @@ func runESearchCmd(cmd *cobra.Command, args []string) error {
 		searchRequest = bleve.NewSearchRequest(nil)
 	}
 
-	// overwrite request
+	// overwrite request by command line option
 	if cmd.Flag("query").Changed {
 		searchRequest.Query = bleve.NewQueryStringQuery(searchCmdOpts.query)
 	}
@@ -144,15 +146,28 @@ func runESearchCmd(cmd *cobra.Command, args []string) error {
 		searchRequest.IncludeLocations = searchCmdOpts.includeLocations
 	}
 
+	// create client config
+	cfg := client.Config{
+		Server:      searchCmdOpts.server,
+		DialTimeout: time.Duration(searchCmdOpts.dialTimeout) * time.Millisecond,
+	}
+
 	// create client
-	cw, err := client.NewBlastClient(searchCmdOpts.server, searchCmdOpts.dialTimeout, searchCmdOpts.requestTimeout)
+	cl, err := client.NewClient(&cfg)
 	if err != nil {
 		return err
 	}
-	defer cw.Close()
+	defer cl.Close()
 
-	// request
-	resp, _ := cw.Search(searchRequest)
+	// create index
+	idx := client.NewIndex(cl)
+
+	// create context
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(searchCmdOpts.requestTimeout)*time.Millisecond)
+	defer cancel()
+
+	// search documents from index
+	resp, _ := idx.Search(ctx, searchRequest)
 
 	// output response
 	switch rootCmdOpts.outputFormat {
