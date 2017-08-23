@@ -19,7 +19,7 @@ import "google/protobuf/any.proto";
 package proto;
 
 service Index {
-    rpc GetIndex(GetIndexRequest) returns (GetIndexResponse) {}
+    rpc GetIndexInfo(GetIndexInfoRequest) returns (GetIndexInfoResponse) {}
     rpc PutDocument(PutDocumentRequest) returns (PutDocumentResponse) {}
     rpc GetDocument(GetDocumentRequest) returns (GetDocumentResponse) {}
     rpc DeleteDocument(DeleteDocumentRequest) returns (DeleteDocumentResponse) {}
@@ -27,14 +27,15 @@ service Index {
     rpc Search(SearchRequest) returns (SearchResponse) {}
 }
 
-message GetIndexRequest {
-    bool index_mapping = 1;
-    bool index_type = 2;
-    bool kvstore = 3;
-    bool kvconfig = 4;
+message GetIndexInfoRequest {
+    bool index_path = 1;
+    bool index_mapping = 2;
+    bool index_type = 3;
+    bool kvstore = 4;
+    bool kvconfig = 5;
 }
 
-message GetIndexResponse {
+message GetIndexInfoResponse {
     string index_path = 1;
     google.protobuf.Any index_mapping = 2;
     string index_type = 3;

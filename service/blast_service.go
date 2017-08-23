@@ -27,7 +27,7 @@ import (
 )
 
 type BlastService struct {
-	Path         string
+	IndexPath    string
 	IndexMapping *mapping.IndexMappingImpl
 	IndexType    string
 	Kvstore      string
@@ -35,9 +35,9 @@ type BlastService struct {
 	Index        bleve.Index
 }
 
-func NewBlastService(path string, indexMapping *mapping.IndexMappingImpl, indexType string, kvstore string, kvconfig map[string]interface{}) *BlastService {
+func NewBlastService(indexPath string, indexMapping *mapping.IndexMappingImpl, indexType string, kvstore string, kvconfig map[string]interface{}) *BlastService {
 	return &BlastService{
-		Path:         path,
+		IndexPath:    indexPath,
 		IndexMapping: indexMapping,
 		IndexType:    indexType,
 		Kvstore:      kvstore,
@@ -47,16 +47,16 @@ func NewBlastService(path string, indexMapping *mapping.IndexMappingImpl, indexT
 }
 
 func (s *BlastService) OpenIndex() error {
-	_, err := os.Stat(s.Path)
+	_, err := os.Stat(s.IndexPath)
 	if os.IsNotExist(err) {
 		log.WithFields(log.Fields{
-			"path": s.Path,
+			"indexPath": s.IndexPath,
 		}).Info("index does not exist")
 
-		s.Index, err = bleve.NewUsing(s.Path, s.IndexMapping, s.IndexType, s.Kvstore, s.Kvconfig)
+		s.Index, err = bleve.NewUsing(s.IndexPath, s.IndexMapping, s.IndexType, s.Kvstore, s.Kvconfig)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"path":         s.Path,
+				"indexPath":    s.IndexPath,
 				"indexMapping": s.IndexMapping,
 				"indexType":    s.IndexType,
 				"kvstore":      s.Kvstore,
@@ -68,7 +68,7 @@ func (s *BlastService) OpenIndex() error {
 		}
 
 		log.WithFields(log.Fields{
-			"path":         s.Path,
+			"indexPath":    s.IndexPath,
 			"indexMapping": s.IndexMapping,
 			"indexType":    s.IndexType,
 			"kvstore":      s.Kvstore,
@@ -76,23 +76,23 @@ func (s *BlastService) OpenIndex() error {
 		}).Info("succeeded in creating index")
 	} else {
 		log.WithFields(log.Fields{
-			"path": s.Path,
+			"indexPath": s.IndexPath,
 		}).Info("index already exists")
 
-		s.Index, err = bleve.OpenUsing(s.Path, s.Kvconfig)
+		s.Index, err = bleve.OpenUsing(s.IndexPath, s.Kvconfig)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"path":     s.Path,
-				"kvconfig": s.Kvconfig,
-				"err":      err,
+				"indexPath": s.IndexPath,
+				"kvconfig":  s.Kvconfig,
+				"err":       err,
 			}).Error("failed to open index")
 
 			return err
 		}
 
 		log.WithFields(log.Fields{
-			"path":     s.Path,
-			"kvconfig": s.Kvconfig,
+			"indexPath": s.IndexPath,
+			"kvconfig":  s.Kvconfig,
 		}).Info("succeeded in opening index")
 	}
 
@@ -114,9 +114,11 @@ func (s *BlastService) CloseIndex() error {
 	return nil
 }
 
-func (s *BlastService) GetIndex(ctx context.Context, req *proto.GetIndexRequest) (*proto.GetIndexResponse, error) {
-	protoGetIndexResponse := &proto.GetIndexResponse{
-		IndexPath: s.Path,
+func (s *BlastService) GetIndexInfo(ctx context.Context, req *proto.GetIndexInfoRequest) (*proto.GetIndexInfoResponse, error) {
+	protoGetIndexResponse := &proto.GetIndexInfoResponse{}
+
+	if req.IndexPath {
+		protoGetIndexResponse.IndexPath = s.IndexPath
 	}
 
 	if req.IndexMapping {
@@ -127,7 +129,7 @@ func (s *BlastService) GetIndex(ctx context.Context, req *proto.GetIndexRequest)
 				"succeeded": false,
 			}).Error("failed to marshal index mapping to Any type")
 
-			return &proto.GetIndexResponse{
+			return &proto.GetIndexInfoResponse{
 				Succeeded: false,
 				Message:   "failed to marshal index mapping to Any type",
 			}, err
@@ -151,7 +153,7 @@ func (s *BlastService) GetIndex(ctx context.Context, req *proto.GetIndexRequest)
 				"succeeded": false,
 			}).Error("failed to marshal kvconfig to Any type")
 
-			return &proto.GetIndexResponse{
+			return &proto.GetIndexInfoResponse{
 				Succeeded: false,
 				Message:   "failed to marshal kvconfig to Any type",
 			}, err

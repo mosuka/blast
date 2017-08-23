@@ -15,7 +15,8 @@
 package handler
 
 const (
-	DefaultBatchSize int32 = 1000
-	DefaultSize      int   = 10
-	DefaultFrom      int   = 0
+	DefaultBatchSize      int32 = 1000
+	DefaultRequestTimeout int   = 5000
+	DefaultSize           int   = 10
+	DefaultFrom           int   = 0
 )

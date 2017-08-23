@@ -15,6 +15,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/buger/jsonparser"
 	"github.com/mosuka/blast/client"
@@ -22,15 +23,16 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 type BulkHandler struct {
-	client *client.BlastClient
+	index client.Index
 }
 
-func NewBulkHandler(c *client.BlastClient) *BulkHandler {
+func NewBulkHandler(i client.Index) *BulkHandler {
 	return &BulkHandler{
-		client: c,
+		index: i,
 	}
 }
 
@@ -99,8 +101,27 @@ func (h *BulkHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		batchSize = int64(DefaultBatchSize)
 	}
 
-	// request
-	resp, err := h.client.Bulk(requests, int32(batchSize))
+	// request timeout
+	requestTimeout := DefaultRequestTimeout
+	if req.URL.Query().Get("requestTimeout") != "" {
+		i, err := strconv.Atoi(req.URL.Query().Get("requestTimeout"))
+		if err != nil {
+			log.WithFields(log.Fields{
+				"err": err,
+			}).Error("failed to set batch size")
+
+			Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		requestTimeout = i
+	}
+
+	// create context
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(requestTimeout)*time.Millisecond)
+	defer cancel()
+
+	// update documents to index in bulk
+	resp, err := h.index.Bulk(ctx, requests, int32(batchSize))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err": err,

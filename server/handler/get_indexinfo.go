@@ -17,7 +17,6 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"github.com/gorilla/mux"
 	"github.com/mosuka/blast/client"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -25,22 +24,53 @@ import (
 	"time"
 )
 
-type GetDocumentHandler struct {
+type GetIndexInfoHandler struct {
 	index client.Index
 }
 
-func NewGetDocumentHandler(i client.Index) *GetDocumentHandler {
-	return &GetDocumentHandler{
+func NewGetIndexInfoHandler(i client.Index) *GetIndexInfoHandler {
+	return &GetIndexInfoHandler{
 		index: i,
 	}
 }
 
-func (h *GetDocumentHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (h *GetIndexInfoHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	log.WithFields(log.Fields{
 		"req": req,
 	}).Info("")
 
-	vars := mux.Vars(req)
+	var indexPath bool
+	if req.URL.Query().Get("indexMapping") == "true" {
+		indexPath = true
+	}
+
+	var indexMapping bool
+	if req.URL.Query().Get("indexMapping") == "true" {
+		indexMapping = true
+	}
+
+	var indexType bool
+	if req.URL.Query().Get("indexType") == "true" {
+		indexType = true
+	}
+
+	var kvstore bool
+	if req.URL.Query().Get("kvstore") == "true" {
+		kvstore = true
+	}
+
+	var kvconfig bool
+	if req.URL.Query().Get("kvconfig") == "true" {
+		kvconfig = true
+	}
+
+	if !indexPath && !indexMapping && !indexType && !kvstore && !kvconfig {
+		indexPath = true
+		indexMapping = true
+		indexType = true
+		kvstore = true
+		kvconfig = true
+	}
 
 	// request timeout
 	requestTimeout := DefaultRequestTimeout
@@ -62,17 +92,17 @@ func (h *GetDocumentHandler) ServeHTTP(w http.ResponseWriter, req *http.Request)
 	defer cancel()
 
 	// request
-	resp, err := h.index.GetDocument(ctx, vars["id"])
+	resp, err := h.index.GetIndexInfo(ctx, indexPath, indexMapping, indexType, kvstore, kvconfig)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"req": req,
-		}).Error("failed to get document")
+			"err": err,
+		}).Error("failed to get index")
 
 		Error(w, err.Error(), http.StatusServiceUnavailable)
 		return
 	}
 
-	// request
+	// output response
 	output, err := json.MarshalIndent(resp, "", "  ")
 	if err != nil {
 		log.WithFields(log.Fields{

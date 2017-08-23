@@ -15,16 +15,19 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/mosuka/blast/client"
 	"github.com/spf13/cobra"
+	"time"
 )
 
 type GetIndexCommandOptions struct {
 	server         string
 	dialTimeout    int
 	requestTimeout int
+	indexPath      bool
 	indexMapping   bool
 	indexType      bool
 	kvstore        bool
@@ -35,6 +38,7 @@ var getIndexCmdOpts = GetIndexCommandOptions{
 	server:         "localhost:5000",
 	dialTimeout:    5000,
 	requestTimeout: 5000,
+	indexPath:      false,
 	indexMapping:   false,
 	indexType:      false,
 	kvstore:        false,
@@ -49,25 +53,36 @@ var getIndexCmd = &cobra.Command{
 }
 
 func runEGetIndexCmd(cmd *cobra.Command, args []string) error {
-	if !getIndexCmdOpts.indexMapping && !getIndexCmdOpts.indexType && !getIndexCmdOpts.kvstore && !getIndexCmdOpts.kvconfig {
+	if !getIndexCmdOpts.indexPath && !getIndexCmdOpts.indexMapping && !getIndexCmdOpts.indexType && !getIndexCmdOpts.kvstore && !getIndexCmdOpts.kvconfig {
+		getIndexCmdOpts.indexPath = true
 		getIndexCmdOpts.indexMapping = true
 		getIndexCmdOpts.indexType = true
 		getIndexCmdOpts.kvstore = true
 		getIndexCmdOpts.kvconfig = true
 	}
 
-	// create client
-	cw, err := client.NewBlastClient(getIndexCmdOpts.server, getIndexCmdOpts.dialTimeout, getIndexCmdOpts.requestTimeout)
-	if err != nil {
-		return err
+	// create client config
+	cfg := client.Config{
+		Server:      getIndexCmdOpts.server,
+		DialTimeout: time.Duration(getIndexCmdOpts.dialTimeout) * time.Millisecond,
 	}
-	defer cw.Close()
 
-	// request
-	resp, err := cw.GetIndex(getIndexCmdOpts.indexMapping, getIndexCmdOpts.indexType, getIndexCmdOpts.kvstore, getIndexCmdOpts.kvconfig)
+	// create client
+	cl, err := client.NewClient(&cfg)
 	if err != nil {
 		return err
 	}
+	defer cl.Close()
+
+	// create index
+	idx := client.NewIndex(cl)
+
+	// create context
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(getDocumentCmdOpts.requestTimeout)*time.Millisecond)
+	defer cancel()
+
+	// get document from index
+	resp, _ := idx.GetIndexInfo(ctx, getIndexCmdOpts.indexPath, getIndexCmdOpts.indexMapping, getIndexCmdOpts.indexType, getIndexCmdOpts.kvstore, getIndexCmdOpts.kvconfig)
 
 	// output response
 	switch rootCmdOpts.outputFormat {
@@ -92,6 +107,7 @@ func init() {
 	getIndexCmd.Flags().StringVar(&getIndexCmdOpts.server, "server", getIndexCmdOpts.server, "server to connect to")
 	getIndexCmd.Flags().IntVar(&getIndexCmdOpts.dialTimeout, "dial-timeout", getIndexCmdOpts.dialTimeout, "dial timeout")
 	getIndexCmd.Flags().IntVar(&getIndexCmdOpts.requestTimeout, "request-timeout", getIndexCmdOpts.requestTimeout, "request timeout")
+	getIndexCmd.Flags().BoolVar(&getIndexCmdOpts.indexPath, "index-path", getIndexCmdOpts.indexPath, "include index path")
 	getIndexCmd.Flags().BoolVar(&getIndexCmdOpts.indexMapping, "index-mapping", getIndexCmdOpts.indexMapping, "include index mapping")
 	getIndexCmd.Flags().BoolVar(&getIndexCmdOpts.indexType, "index-type", getIndexCmdOpts.indexType, "include index type")
 	getIndexCmd.Flags().BoolVar(&getIndexCmdOpts.kvstore, "kvstore", getIndexCmdOpts.kvstore, "include kvstore")

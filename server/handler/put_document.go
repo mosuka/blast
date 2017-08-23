@@ -15,6 +15,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/buger/jsonparser"
 	"github.com/gorilla/mux"
@@ -22,15 +23,17 @@ import (
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 type PutDocumentHandler struct {
-	client *client.BlastClient
+	index client.Index
 }
 
-func NewPutDocumentHandler(c *client.BlastClient) *PutDocumentHandler {
+func NewPutDocumentHandler(i client.Index) *PutDocumentHandler {
 	return &PutDocumentHandler{
-		client: c,
+		index: i,
 	}
 }
 
@@ -87,8 +90,27 @@ func (h *PutDocumentHandler) ServeHTTP(w http.ResponseWriter, req *http.Request)
 	// overwrite request
 	id = vars["id"]
 
+	// request timeout
+	requestTimeout := DefaultRequestTimeout
+	if req.URL.Query().Get("requestTimeout") != "" {
+		i, err := strconv.Atoi(req.URL.Query().Get("requestTimeout"))
+		if err != nil {
+			log.WithFields(log.Fields{
+				"err": err,
+			}).Error("failed to set batch size")
+
+			Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		requestTimeout = i
+	}
+
+	// create context
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(requestTimeout)*time.Millisecond)
+	defer cancel()
+
 	// request
-	resp, err := h.client.PutDocument(id, fields)
+	resp, err := h.index.PutDocument(ctx, id, fields)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"req": req,

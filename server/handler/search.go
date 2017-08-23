@@ -15,6 +15,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/blevesearch/bleve"
 	"github.com/buger/jsonparser"
@@ -24,15 +25,16 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type SearchHandler struct {
-	client *client.BlastClient
+	index client.Index
 }
 
-func NewSearchHandler(c *client.BlastClient) *SearchHandler {
+func NewSearchHandler(i client.Index) *SearchHandler {
 	return &SearchHandler{
-		client: c,
+		index: i,
 	}
 }
 
@@ -163,8 +165,27 @@ func (h *SearchHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+	// request timeout
+	requestTimeout := DefaultRequestTimeout
+	if req.URL.Query().Get("requestTimeout") != "" {
+		i, err := strconv.Atoi(req.URL.Query().Get("requestTimeout"))
+		if err != nil {
+			log.WithFields(log.Fields{
+				"err": err,
+			}).Error("failed to set batch size")
+
+			Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		requestTimeout = i
+	}
+
+	// create context
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(requestTimeout)*time.Millisecond)
+	defer cancel()
+
 	// request
-	resp, err := h.client.Search(searchRequest)
+	resp, err := h.index.Search(ctx, searchRequest)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"req": req,

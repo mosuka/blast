@@ -15,20 +15,23 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/mosuka/blast/client"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 type DeleteDocumentHandler struct {
-	client *client.BlastClient
+	index client.Index
 }
 
-func NewDeleteDocumentHandler(c *client.BlastClient) *DeleteDocumentHandler {
+func NewDeleteDocumentHandler(i client.Index) *DeleteDocumentHandler {
 	return &DeleteDocumentHandler{
-		client: c,
+		index: i,
 	}
 }
 
@@ -39,8 +42,27 @@ func (h *DeleteDocumentHandler) ServeHTTP(w http.ResponseWriter, req *http.Reque
 
 	vars := mux.Vars(req)
 
+	// request timeout
+	requestTimeout := DefaultRequestTimeout
+	if req.URL.Query().Get("requestTimeout") != "" {
+		i, err := strconv.Atoi(req.URL.Query().Get("requestTimeout"))
+		if err != nil {
+			log.WithFields(log.Fields{
+				"err": err,
+			}).Error("failed to set batch size")
+
+			Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		requestTimeout = i
+	}
+
+	// create context
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(requestTimeout)*time.Millisecond)
+	defer cancel()
+
 	// request
-	resp, err := h.client.DeleteDocument(vars["id"])
+	resp, err := h.index.DeleteDocument(ctx, vars["id"])
 	if err != nil {
 		log.WithFields(log.Fields{
 			"req": req,

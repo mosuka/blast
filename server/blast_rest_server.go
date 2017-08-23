@@ -22,34 +22,44 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net"
 	"net/http"
+	"time"
 )
 
 type blastRESTServer struct {
-	router         *mux.Router
-	listener       net.Listener
-	client         *client.BlastClient
-	dialTimeout    int
-	requestTimeout int
+	router      *mux.Router
+	listener    net.Listener
+	client      *client.Client
+	index       client.Index
+	dialTimeout int
 }
 
 func NewBlastRESTServer(port int, basePath, server string, dialTimeout int, requestTimeout int) *blastRESTServer {
 	router := mux.NewRouter()
 	router.StrictSlash(true)
 
-	c, err := client.NewBlastClient(server, dialTimeout, requestTimeout)
+	// create client config
+	cfg := client.Config{
+		Server:      server,
+		DialTimeout: time.Duration(dialTimeout) * time.Millisecond,
+	}
+
+	// create client
+	c, err := client.NewClient(&cfg)
 	if err != nil {
 		return nil
 	}
 
+	i := client.NewIndex(c)
+
 	/*
 	 * set handlers
 	 */
-	router.Handle(fmt.Sprintf("/%s/", basePath), handler.NewGetIndexHandler(c)).Methods("GET")
-	router.Handle(fmt.Sprintf("/%s/{id}", basePath), handler.NewPutDocumentHandler(c)).Methods("PUT")
-	router.Handle(fmt.Sprintf("/%s/{id}", basePath), handler.NewGetDocumentHandler(c)).Methods("GET")
-	router.Handle(fmt.Sprintf("/%s/{id}", basePath), handler.NewDeleteDocumentHandler(c)).Methods("DELETE")
-	router.Handle(fmt.Sprintf("/%s/_bulk", basePath), handler.NewBulkHandler(c)).Methods("POST")
-	router.Handle(fmt.Sprintf("/%s/_search", basePath), handler.NewSearchHandler(c)).Methods("POST")
+	router.Handle(fmt.Sprintf("/%s/", basePath), handler.NewGetIndexInfoHandler(i)).Methods("GET")
+	router.Handle(fmt.Sprintf("/%s/{id}", basePath), handler.NewPutDocumentHandler(i)).Methods("PUT")
+	router.Handle(fmt.Sprintf("/%s/{id}", basePath), handler.NewGetDocumentHandler(i)).Methods("GET")
+	router.Handle(fmt.Sprintf("/%s/{id}", basePath), handler.NewDeleteDocumentHandler(i)).Methods("DELETE")
+	router.Handle(fmt.Sprintf("/%s/_bulk", basePath), handler.NewBulkHandler(i)).Methods("POST")
+	router.Handle(fmt.Sprintf("/%s/_search", basePath), handler.NewSearchHandler(i)).Methods("POST")
 
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err == nil {
@@ -68,6 +78,7 @@ func NewBlastRESTServer(port int, basePath, server string, dialTimeout int, requ
 		router:   router,
 		listener: listener,
 		client:   c,
+		index:    i,
 	}
 }
 

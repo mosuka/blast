@@ -16,12 +16,14 @@ package client
 
 import (
 	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/mapping"
 	"github.com/mosuka/blast/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
 
 type Index interface {
+	GetIndexInfo(ctx context.Context, indexPath bool, indexMapping bool, indexType bool, kvstore bool, kvconfig bool, opts ...grpc.CallOption) (*GetIndexInfoResponse, error)
 	PutDocument(ctx context.Context, id string, fields map[string]interface{}, opts ...grpc.CallOption) (*PutDocumentResponse, error)
 	GetDocument(ctx context.Context, id string, opts ...grpc.CallOption) (*GetDocumentResponse, error)
 	DeleteDocument(ctx context.Context, id string, opts ...grpc.CallOption) (*DeleteDocumentResponse, error)
@@ -39,6 +41,35 @@ func NewIndex(c *Client) Index {
 	return &index{
 		client: ic,
 	}
+}
+
+func (i *index) GetIndexInfo(ctx context.Context, indexPath bool, indexMapping bool, indexType bool, kvstore bool, kvconfig bool, opts ...grpc.CallOption) (*GetIndexInfoResponse, error) {
+	protoReq := &proto.GetIndexInfoRequest{
+		IndexMapping: indexMapping,
+		IndexType:    indexType,
+		Kvstore:      kvstore,
+		Kvconfig:     kvconfig,
+	}
+
+	protoResp, _ := i.client.GetIndexInfo(ctx, protoReq, opts...)
+
+	im, err := proto.UnmarshalAny(protoResp.IndexMapping)
+	if err != nil {
+		return nil, err
+	}
+
+	kvc, err := proto.UnmarshalAny(protoResp.Kvconfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return &GetIndexInfoResponse{
+		IndexPath:    protoResp.IndexPath,
+		IndexMapping: im.(*mapping.IndexMappingImpl),
+		IndexType:    protoResp.IndexType,
+		Kvstore:      protoResp.Kvstore,
+		Kvconfig:     *kvc.(*map[string]interface{}),
+	}, nil
 }
 
 func (i *index) PutDocument(ctx context.Context, id string, fields map[string]interface{}, opts ...grpc.CallOption) (*PutDocumentResponse, error) {

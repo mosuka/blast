@@ -58,7 +58,7 @@ func TestBlastGRPCService(t *testing.T) {
 		t.Fatalf("unexpected error.  expected not nil, actual %v", s)
 	}
 
-	if s.Path != path {
-		t.Errorf("unexpected error.  expected %v, actual %v", path, s.Path)
+	if s.IndexPath != path {
+		t.Errorf("unexpected error.  expected %v, actual %v", path, s.IndexPath)
 	}
 }

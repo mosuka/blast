@@ -39,7 +39,7 @@ type SearchResponse struct {
 	Message      string              `json:"message,omitempty"`
 }
 
-type GetIndexResponse struct {
+type GetIndexInfoResponse struct {
 	IndexPath    string                    `json:"index_path,omitempty"`
 	IndexMapping *mapping.IndexMappingImpl `json:"index_mapping,omitempty"`
 	IndexType    string                    `json:"index_type,omitempty"`
