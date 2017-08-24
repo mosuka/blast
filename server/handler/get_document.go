@@ -26,12 +26,12 @@ import (
 )
 
 type GetDocumentHandler struct {
-	index client.Index
+	client *client.Client
 }
 
-func NewGetDocumentHandler(i client.Index) *GetDocumentHandler {
+func NewGetDocumentHandler(client *client.Client) *GetDocumentHandler {
 	return &GetDocumentHandler{
-		index: i,
+		client: client,
 	}
 }
 
@@ -62,7 +62,7 @@ func (h *GetDocumentHandler) ServeHTTP(w http.ResponseWriter, req *http.Request)
 	defer cancel()
 
 	// request
-	resp, err := h.index.GetDocument(ctx, vars["id"])
+	resp, err := h.client.Index.GetDocument(ctx, vars["id"])
 	if err != nil {
 		log.WithFields(log.Fields{
 			"req": req,

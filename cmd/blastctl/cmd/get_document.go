@@ -57,21 +57,18 @@ func runEGetDocumentCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// create client
-	cl, err := client.NewClient(&cfg)
+	clt, err := client.NewClient(&cfg)
 	if err != nil {
 		return err
 	}
-	defer cl.Close()
-
-	// create index
-	idx := client.NewIndex(cl)
+	defer clt.Close()
 
 	// create context
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(getDocumentCmdOpts.requestTimeout)*time.Millisecond)
 	defer cancel()
 
 	// get document from index
-	resp, _ := idx.GetDocument(ctx, getDocumentCmdOpts.id)
+	resp, _ := clt.Index.GetDocument(ctx, getDocumentCmdOpts.id)
 
 	// output response
 	switch rootCmdOpts.outputFormat {

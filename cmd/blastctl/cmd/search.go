@@ -153,21 +153,18 @@ func runESearchCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// create client
-	cl, err := client.NewClient(&cfg)
+	clt, err := client.NewClient(&cfg)
 	if err != nil {
 		return err
 	}
-	defer cl.Close()
-
-	// create index
-	idx := client.NewIndex(cl)
+	defer clt.Close()
 
 	// create context
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(searchCmdOpts.requestTimeout)*time.Millisecond)
 	defer cancel()
 
 	// search documents from index
-	resp, _ := idx.Search(ctx, searchRequest)
+	resp, _ := clt.Index.Search(ctx, searchRequest)
 
 	// output response
 	switch rootCmdOpts.outputFormat {

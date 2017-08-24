@@ -98,21 +98,18 @@ func runEBulkCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// create client
-	cl, err := client.NewClient(&cfg)
+	clt, err := client.NewClient(&cfg)
 	if err != nil {
 		return err
 	}
-	defer cl.Close()
-
-	// create index
-	idx := client.NewIndex(cl)
+	defer clt.Close()
 
 	// create context
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(bulkCmdOpts.requestTimeout)*time.Millisecond)
 	defer cancel()
 
 	// update documents to index in bulk
-	resp, _ := idx.Bulk(ctx, requests, int32(batchSize))
+	resp, _ := clt.Index.Bulk(ctx, requests, int32(batchSize))
 
 	// output request
 	switch rootCmdOpts.outputFormat {

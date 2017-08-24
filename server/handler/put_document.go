@@ -28,12 +28,12 @@ import (
 )
 
 type PutDocumentHandler struct {
-	index client.Index
+	client *client.Client
 }
 
-func NewPutDocumentHandler(i client.Index) *PutDocumentHandler {
+func NewPutDocumentHandler(client *client.Client) *PutDocumentHandler {
 	return &PutDocumentHandler{
-		index: i,
+		client: client,
 	}
 }
 
@@ -110,7 +110,7 @@ func (h *PutDocumentHandler) ServeHTTP(w http.ResponseWriter, req *http.Request)
 	defer cancel()
 
 	// request
-	resp, err := h.index.PutDocument(ctx, id, fields)
+	resp, err := h.client.Index.PutDocument(ctx, id, fields)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"req": req,

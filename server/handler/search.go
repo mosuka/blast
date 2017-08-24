@@ -29,12 +29,12 @@ import (
 )
 
 type SearchHandler struct {
-	index client.Index
+	client *client.Client
 }
 
-func NewSearchHandler(i client.Index) *SearchHandler {
+func NewSearchHandler(client *client.Client) *SearchHandler {
 	return &SearchHandler{
-		index: i,
+		client: client,
 	}
 }
 
@@ -185,7 +185,7 @@ func (h *SearchHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	defer cancel()
 
 	// request
-	resp, err := h.index.Search(ctx, searchRequest)
+	resp, err := h.client.Index.Search(ctx, searchRequest)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"req": req,

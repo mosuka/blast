@@ -68,21 +68,18 @@ func runEGetIndexCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// create client
-	cl, err := client.NewClient(&cfg)
+	clt, err := client.NewClient(&cfg)
 	if err != nil {
 		return err
 	}
-	defer cl.Close()
-
-	// create index
-	idx := client.NewIndex(cl)
+	defer clt.Close()
 
 	// create context
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(getDocumentCmdOpts.requestTimeout)*time.Millisecond)
 	defer cancel()
 
 	// get document from index
-	resp, _ := idx.GetIndexInfo(ctx, getIndexCmdOpts.indexPath, getIndexCmdOpts.indexMapping, getIndexCmdOpts.indexType, getIndexCmdOpts.kvstore, getIndexCmdOpts.kvconfig)
+	resp, _ := clt.Index.GetIndexInfo(ctx, getIndexCmdOpts.indexPath, getIndexCmdOpts.indexMapping, getIndexCmdOpts.indexType, getIndexCmdOpts.kvstore, getIndexCmdOpts.kvconfig)
 
 	// output response
 	switch rootCmdOpts.outputFormat {

@@ -22,7 +22,7 @@ import (
 type Client struct {
 	Index
 
-	config Config
+	cfg    Config
 	ctx    context.Context
 	cancel context.CancelFunc
 	conn   *grpc.ClientConn
@@ -42,12 +42,16 @@ func NewClient(config *Config) (*Client, error) {
 		return nil, err
 	}
 
-	return &Client{
-		config: *config,
+	clt := &Client{
+		cfg:    *config,
 		ctx:    ctx,
 		cancel: cancel,
 		conn:   conn,
-	}, nil
+	}
+
+	clt.Index = NewIndex(clt)
+
+	return clt, nil
 }
 
 func (c *Client) Close() error {

@@ -27,12 +27,12 @@ import (
 )
 
 type BulkHandler struct {
-	index client.Index
+	client *client.Client
 }
 
-func NewBulkHandler(i client.Index) *BulkHandler {
+func NewBulkHandler(client *client.Client) *BulkHandler {
 	return &BulkHandler{
-		index: i,
+		client: client,
 	}
 }
 
@@ -121,7 +121,7 @@ func (h *BulkHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	defer cancel()
 
 	// update documents to index in bulk
-	resp, err := h.index.Bulk(ctx, requests, int32(batchSize))
+	resp, err := h.client.Index.Bulk(ctx, requests, int32(batchSize))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err": err,

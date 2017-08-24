@@ -25,12 +25,12 @@ import (
 )
 
 type GetIndexInfoHandler struct {
-	index client.Index
+	client *client.Client
 }
 
-func NewGetIndexInfoHandler(i client.Index) *GetIndexInfoHandler {
+func NewGetIndexInfoHandler(client *client.Client) *GetIndexInfoHandler {
 	return &GetIndexInfoHandler{
-		index: i,
+		client: client,
 	}
 }
 
@@ -92,7 +92,7 @@ func (h *GetIndexInfoHandler) ServeHTTP(w http.ResponseWriter, req *http.Request
 	defer cancel()
 
 	// request
-	resp, err := h.index.GetIndexInfo(ctx, indexPath, indexMapping, indexType, kvstore, kvconfig)
+	resp, err := h.client.Index.GetIndexInfo(ctx, indexPath, indexMapping, indexType, kvstore, kvconfig)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err": err,

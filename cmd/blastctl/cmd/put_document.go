@@ -108,21 +108,18 @@ func runEPutDocumentCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// create client
-	cl, err := client.NewClient(&cfg)
+	clt, err := client.NewClient(&cfg)
 	if err != nil {
 		return err
 	}
-	defer cl.Close()
-
-	// create index
-	idx := client.NewIndex(cl)
+	defer clt.Close()
 
 	// create context
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(putDocumentCmdOpts.requestTimeout)*time.Millisecond)
 	defer cancel()
 
 	// put document to index
-	resp, _ := idx.PutDocument(ctx, id, fields)
+	resp, _ := clt.Index.PutDocument(ctx, id, fields)
 
 	// output response
 	switch rootCmdOpts.outputFormat {

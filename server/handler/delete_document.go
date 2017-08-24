@@ -26,12 +26,12 @@ import (
 )
 
 type DeleteDocumentHandler struct {
-	index client.Index
+	client *client.Client
 }
 
-func NewDeleteDocumentHandler(i client.Index) *DeleteDocumentHandler {
+func NewDeleteDocumentHandler(client *client.Client) *DeleteDocumentHandler {
 	return &DeleteDocumentHandler{
-		index: i,
+		client: client,
 	}
 }
 
@@ -62,7 +62,7 @@ func (h *DeleteDocumentHandler) ServeHTTP(w http.ResponseWriter, req *http.Reque
 	defer cancel()
 
 	// request
-	resp, err := h.index.DeleteDocument(ctx, vars["id"])
+	resp, err := h.client.Index.DeleteDocument(ctx, vars["id"])
 	if err != nil {
 		log.WithFields(log.Fields{
 			"req": req,
