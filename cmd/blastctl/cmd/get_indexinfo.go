@@ -65,21 +65,22 @@ func runEGetIndexCmd(cmd *cobra.Command, args []string) error {
 	cfg := client.Config{
 		Server:      getIndexCmdOpts.server,
 		DialTimeout: time.Duration(getIndexCmdOpts.dialTimeout) * time.Millisecond,
+		Context:     context.Background(),
 	}
 
 	// create client
-	clt, err := client.NewClient(&cfg)
+	c, err := client.NewClient(&cfg)
 	if err != nil {
 		return err
 	}
-	defer clt.Close()
+	defer c.Close()
 
 	// create context
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(getDocumentCmdOpts.requestTimeout)*time.Millisecond)
 	defer cancel()
 
 	// get document from index
-	resp, _ := clt.Index.GetIndexInfo(ctx, getIndexCmdOpts.indexPath, getIndexCmdOpts.indexMapping, getIndexCmdOpts.indexType, getIndexCmdOpts.kvstore, getIndexCmdOpts.kvconfig)
+	resp, _ := c.Index.GetIndexInfo(ctx, getIndexCmdOpts.indexPath, getIndexCmdOpts.indexMapping, getIndexCmdOpts.indexType, getIndexCmdOpts.kvstore, getIndexCmdOpts.kvconfig)
 
 	// output response
 	switch rootCmdOpts.outputFormat {

@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/coreos/etcd/clientv3"
+	"github.com/mosuka/blast/client"
 	"github.com/spf13/cobra"
 	"time"
 )
@@ -67,19 +68,20 @@ func runEDeleteClusterCmd(cmd *cobra.Command, args []string) error {
 		Context:     context.Background(),
 	}
 
-	c, err := clientv3.New(cfg)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(deleteClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
+	defer cancel()
+
+	c, err := client.NewCluster(cfg)
+	//c, err := clientv3.New(cfg)
 	if err != nil {
 		return err
 	}
 	defer c.Close()
 
-	var kv clientv3.KV
-	if c != nil {
-		kv = clientv3.NewKV(c)
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(deleteClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
-	defer cancel()
+	//var kv clientv3.KV
+	//if c != nil {
+	//	kv = clientv3.NewKV(c)
+	//}
 
 	resp := struct {
 		IndexMapping bool `json:"index_mapping"`
@@ -89,9 +91,14 @@ func runEDeleteClusterCmd(cmd *cobra.Command, args []string) error {
 	}{}
 
 	if deleteClusterCmdOpts.indexMapping == true {
-		keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/index_mapping", deleteClusterCmdOpts.cluster)
+		//keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/index_mapping", deleteClusterCmdOpts.cluster)
+		//
+		//_, err := kv.Delete(ctx, keyIndexMapping)
+		//if err != nil {
+		//	return err
+		//}
 
-		_, err := kv.Delete(ctx, keyIndexMapping)
+		err = c.DeleteIndexMapping(ctx, deleteClusterCmdOpts.cluster)
 		if err != nil {
 			return err
 		}
@@ -100,9 +107,14 @@ func runEDeleteClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if deleteClusterCmdOpts.indexType == true {
-		keyIndexType := fmt.Sprintf("/blast/clusters/%s/index_type", deleteClusterCmdOpts.cluster)
+		//keyIndexType := fmt.Sprintf("/blast/clusters/%s/index_type", deleteClusterCmdOpts.cluster)
+		//
+		//_, err := kv.Delete(ctx, keyIndexType)
+		//if err != nil {
+		//	return err
+		//}
 
-		_, err := kv.Delete(ctx, keyIndexType)
+		err = c.DeleteIndexType(ctx, deleteClusterCmdOpts.cluster)
 		if err != nil {
 			return err
 		}
@@ -111,9 +123,14 @@ func runEDeleteClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if deleteClusterCmdOpts.kvstore == true {
-		keyKvstore := fmt.Sprintf("/blast/clusters/%s/kvstore", deleteClusterCmdOpts.cluster)
+		//keyKvstore := fmt.Sprintf("/blast/clusters/%s/kvstore", deleteClusterCmdOpts.cluster)
+		//
+		//_, err := kv.Delete(ctx, keyKvstore)
+		//if err != nil {
+		//	return err
+		//}
 
-		_, err := kv.Delete(ctx, keyKvstore)
+		err = c.DeleteKvstore(ctx, deleteClusterCmdOpts.cluster)
 		if err != nil {
 			return err
 		}
@@ -122,9 +139,14 @@ func runEDeleteClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if deleteClusterCmdOpts.kvconfig == true {
-		keyKvconfig := fmt.Sprintf("/blast/clusters/%s/kvconfig", deleteClusterCmdOpts.cluster)
+		//keyKvconfig := fmt.Sprintf("/blast/clusters/%s/kvconfig", deleteClusterCmdOpts.cluster)
+		//
+		//_, err := kv.Delete(ctx, keyKvconfig)
+		//if err != nil {
+		//	return err
+		//}
 
-		_, err := kv.Delete(ctx, keyKvconfig)
+		err = c.DeleteKvconfig(ctx, deleteClusterCmdOpts.cluster)
 		if err != nil {
 			return err
 		}

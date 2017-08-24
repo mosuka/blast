@@ -54,21 +54,22 @@ func runEDeleteDocumentCmd(cmd *cobra.Command, args []string) error {
 	cfg := client.Config{
 		Server:      deleteDocumentCmdOpts.server,
 		DialTimeout: time.Duration(deleteDocumentCmdOpts.dialTimeout) * time.Millisecond,
+		Context:     context.Background(),
 	}
 
 	// create client
-	clt, err := client.NewClient(&cfg)
+	c, err := client.NewClient(&cfg)
 	if err != nil {
 		return err
 	}
-	defer clt.Close()
+	defer c.Close()
 
 	// create context
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(deleteDocumentCmdOpts.requestTimeout)*time.Millisecond)
 	defer cancel()
 
 	// delete document from index
-	resp, _ := clt.Index.DeleteDocument(ctx, deleteDocumentCmdOpts.id)
+	resp, _ := c.Index.DeleteDocument(ctx, deleteDocumentCmdOpts.id)
 
 	// output response
 	switch rootCmdOpts.outputFormat {

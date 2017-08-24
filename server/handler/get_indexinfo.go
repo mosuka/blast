@@ -28,9 +28,9 @@ type GetIndexInfoHandler struct {
 	client *client.Client
 }
 
-func NewGetIndexInfoHandler(client *client.Client) *GetIndexInfoHandler {
+func NewGetIndexInfoHandler(c *client.Client) *GetIndexInfoHandler {
 	return &GetIndexInfoHandler{
-		client: client,
+		client: c,
 	}
 }
 

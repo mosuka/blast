@@ -42,16 +42,16 @@ func NewClient(config *Config) (*Client, error) {
 		return nil, err
 	}
 
-	clt := &Client{
+	c := &Client{
 		cfg:    *config,
 		ctx:    ctx,
 		cancel: cancel,
 		conn:   conn,
 	}
 
-	clt.Index = NewIndex(clt)
+	c.Index = NewIndex(c)
 
-	return clt, nil
+	return c, nil
 }
 
 func (c *Client) Close() error {

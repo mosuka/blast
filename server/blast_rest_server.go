@@ -43,7 +43,7 @@ func NewBlastRESTServer(port int, basePath, server string, dialTimeout int, requ
 	}
 
 	// create client
-	clt, err := client.NewClient(&cfg)
+	c, err := client.NewClient(&cfg)
 	if err != nil {
 		return nil
 	}
@@ -51,12 +51,12 @@ func NewBlastRESTServer(port int, basePath, server string, dialTimeout int, requ
 	/*
 	 * set handlers
 	 */
-	router.Handle(fmt.Sprintf("/%s/", basePath), handler.NewGetIndexInfoHandler(clt)).Methods("GET")
-	router.Handle(fmt.Sprintf("/%s/{id}", basePath), handler.NewPutDocumentHandler(clt)).Methods("PUT")
-	router.Handle(fmt.Sprintf("/%s/{id}", basePath), handler.NewGetDocumentHandler(clt)).Methods("GET")
-	router.Handle(fmt.Sprintf("/%s/{id}", basePath), handler.NewDeleteDocumentHandler(clt)).Methods("DELETE")
-	router.Handle(fmt.Sprintf("/%s/_bulk", basePath), handler.NewBulkHandler(clt)).Methods("POST")
-	router.Handle(fmt.Sprintf("/%s/_search", basePath), handler.NewSearchHandler(clt)).Methods("POST")
+	router.Handle(fmt.Sprintf("/%s/", basePath), handler.NewGetIndexInfoHandler(c)).Methods("GET")
+	router.Handle(fmt.Sprintf("/%s/{id}", basePath), handler.NewPutDocumentHandler(c)).Methods("PUT")
+	router.Handle(fmt.Sprintf("/%s/{id}", basePath), handler.NewGetDocumentHandler(c)).Methods("GET")
+	router.Handle(fmt.Sprintf("/%s/{id}", basePath), handler.NewDeleteDocumentHandler(c)).Methods("DELETE")
+	router.Handle(fmt.Sprintf("/%s/_bulk", basePath), handler.NewBulkHandler(c)).Methods("POST")
+	router.Handle(fmt.Sprintf("/%s/_search", basePath), handler.NewSearchHandler(c)).Methods("POST")
 
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err == nil {
@@ -74,7 +74,7 @@ func NewBlastRESTServer(port int, basePath, server string, dialTimeout int, requ
 	return &blastRESTServer{
 		router:   router,
 		listener: listener,
-		client:   clt,
+		client:   c,
 	}
 }
 

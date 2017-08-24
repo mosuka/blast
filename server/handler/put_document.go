@@ -31,9 +31,9 @@ type PutDocumentHandler struct {
 	client *client.Client
 }
 
-func NewPutDocumentHandler(client *client.Client) *PutDocumentHandler {
+func NewPutDocumentHandler(c *client.Client) *PutDocumentHandler {
 	return &PutDocumentHandler{
-		client: client,
+		client: c,
 	}
 }
 

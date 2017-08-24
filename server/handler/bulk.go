@@ -30,9 +30,9 @@ type BulkHandler struct {
 	client *client.Client
 }
 
-func NewBulkHandler(client *client.Client) *BulkHandler {
+func NewBulkHandler(c *client.Client) *BulkHandler {
 	return &BulkHandler{
-		client: client,
+		client: c,
 	}
 }
 

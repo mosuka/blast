@@ -32,9 +32,9 @@ type SearchHandler struct {
 	client *client.Client
 }
 
-func NewSearchHandler(client *client.Client) *SearchHandler {
+func NewSearchHandler(c *client.Client) *SearchHandler {
 	return &SearchHandler{
-		client: client,
+		client: c,
 	}
 }
 

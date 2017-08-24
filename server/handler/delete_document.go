@@ -29,9 +29,9 @@ type DeleteDocumentHandler struct {
 	client *client.Client
 }
 
-func NewDeleteDocumentHandler(client *client.Client) *DeleteDocumentHandler {
+func NewDeleteDocumentHandler(c *client.Client) *DeleteDocumentHandler {
 	return &DeleteDocumentHandler{
-		client: client,
+		client: c,
 	}
 }
 

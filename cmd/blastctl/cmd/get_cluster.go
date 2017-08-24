@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/coreos/etcd/clientv3"
+	"github.com/mosuka/blast/client"
 	"github.com/spf13/cobra"
 	"time"
 )
@@ -72,16 +73,17 @@ func runEGetClusterCmd(cmd *cobra.Command, args []string) error {
 		Context:     context.Background(),
 	}
 
-	c, err := clientv3.New(cfg)
+	//c, err := clientv3.New(cfg)
+	c, err := client.NewCluster(cfg)
 	if err != nil {
 		return err
 	}
 	defer c.Close()
 
-	var kv clientv3.KV
-	if c != nil {
-		kv = clientv3.NewKV(c)
-	}
+	//var kv clientv3.KV
+	//if c != nil {
+	//	kv = clientv3.NewKV(c)
+	//}
 
 	resp := struct {
 		IndexMapping *mapping.IndexMappingImpl `json:"index_mapping,omitempty"`
@@ -94,70 +96,90 @@ func runEGetClusterCmd(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	if getClusterCmdOpts.indexMapping == true {
-		keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/index_mapping", getClusterCmdOpts.cluster)
+		//keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/index_mapping", getClusterCmdOpts.cluster)
+		//
+		//var indexMapping *mapping.IndexMappingImpl
+		//
+		//kvresp, err := kv.Get(ctx, keyIndexMapping)
+		//if err != nil {
+		//	return err
+		//}
+		//for _, ev := range kvresp.Kvs {
+		//	err = json.Unmarshal(ev.Value, &indexMapping)
+		//	if err != nil {
+		//		return err
+		//	}
+		//}
 
-		var indexMapping *mapping.IndexMappingImpl
-
-		kvresp, err := kv.Get(ctx, keyIndexMapping)
+		indexMapping, err := c.GetIndexMapping(ctx, getClusterCmdOpts.cluster)
 		if err != nil {
 			return err
-		}
-		for _, ev := range kvresp.Kvs {
-			err = json.Unmarshal(ev.Value, &indexMapping)
-			if err != nil {
-				return err
-			}
 		}
 
 		resp.IndexMapping = indexMapping
 	}
 
 	if getClusterCmdOpts.indexType == true {
-		keyIndexType := fmt.Sprintf("/blast/clusters/%s/index_type", getClusterCmdOpts.cluster)
+		//keyIndexType := fmt.Sprintf("/blast/clusters/%s/index_type", getClusterCmdOpts.cluster)
+		//
+		//var indexType string
+		//
+		//kvresp, err := kv.Get(ctx, keyIndexType)
+		//if err != nil {
+		//	return err
+		//}
+		//for _, ev := range kvresp.Kvs {
+		//	indexType = string(ev.Value)
+		//}
 
-		var indexType string
-
-		kvresp, err := kv.Get(ctx, keyIndexType)
+		indexType, err := c.GetIndexType(ctx, getClusterCmdOpts.cluster)
 		if err != nil {
 			return err
-		}
-		for _, ev := range kvresp.Kvs {
-			indexType = string(ev.Value)
 		}
 
 		resp.IndexType = indexType
 	}
 
 	if getClusterCmdOpts.kvstore == true {
-		keyKvstore := fmt.Sprintf("/blast/clusters/%s/kvstore", getClusterCmdOpts.cluster)
+		//keyKvstore := fmt.Sprintf("/blast/clusters/%s/kvstore", getClusterCmdOpts.cluster)
+		//
+		//var kvstore string
+		//
+		//kvresp, err := kv.Get(ctx, keyKvstore)
+		//if err != nil {
+		//	return err
+		//}
+		//for _, ev := range kvresp.Kvs {
+		//	kvstore = string(ev.Value)
+		//}
 
-		var kvstore string
-
-		kvresp, err := kv.Get(ctx, keyKvstore)
+		kvstore, err := c.GetKvstore(ctx, getClusterCmdOpts.cluster)
 		if err != nil {
 			return err
-		}
-		for _, ev := range kvresp.Kvs {
-			kvstore = string(ev.Value)
 		}
 
 		resp.Kvstore = kvstore
 	}
 
 	if getClusterCmdOpts.kvconfig == true {
-		keyKvconfig := fmt.Sprintf("/blast/clusters/%s/kvconfig", getClusterCmdOpts.cluster)
+		//keyKvconfig := fmt.Sprintf("/blast/clusters/%s/kvconfig", getClusterCmdOpts.cluster)
+		//
+		//var kvconfig map[string]interface{}
+		//
+		//kvresp, err := kv.Get(ctx, keyKvconfig)
+		//if err != nil {
+		//	return err
+		//}
+		//for _, ev := range kvresp.Kvs {
+		//	err = json.Unmarshal(ev.Value, &kvconfig)
+		//	if err != nil {
+		//		return err
+		//	}
+		//}
 
-		var kvconfig map[string]interface{}
-
-		kvresp, err := kv.Get(ctx, keyKvconfig)
+		kvconfig, err := c.GetKvconfig(ctx, getClusterCmdOpts.cluster)
 		if err != nil {
 			return err
-		}
-		for _, ev := range kvresp.Kvs {
-			err = json.Unmarshal(ev.Value, &kvconfig)
-			if err != nil {
-				return err
-			}
 		}
 
 		resp.Kvconfig = kvconfig

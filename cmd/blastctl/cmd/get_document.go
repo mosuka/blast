@@ -15,11 +15,11 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/mosuka/blast/client"
 	"github.com/spf13/cobra"
-	"golang.org/x/net/context"
 	"time"
 )
 
@@ -54,21 +54,22 @@ func runEGetDocumentCmd(cmd *cobra.Command, args []string) error {
 	cfg := client.Config{
 		Server:      getDocumentCmdOpts.server,
 		DialTimeout: time.Duration(getDocumentCmdOpts.dialTimeout) * time.Millisecond,
+		Context:     context.Background(),
 	}
 
 	// create client
-	clt, err := client.NewClient(&cfg)
+	c, err := client.NewClient(&cfg)
 	if err != nil {
 		return err
 	}
-	defer clt.Close()
+	defer c.Close()
 
 	// create context
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(getDocumentCmdOpts.requestTimeout)*time.Millisecond)
 	defer cancel()
 
 	// get document from index
-	resp, _ := clt.Index.GetDocument(ctx, getDocumentCmdOpts.id)
+	resp, _ := c.Index.GetDocument(ctx, getDocumentCmdOpts.id)
 
 	// output response
 	switch rootCmdOpts.outputFormat {

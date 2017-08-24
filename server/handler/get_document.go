@@ -29,9 +29,9 @@ type GetDocumentHandler struct {
 	client *client.Client
 }
 
-func NewGetDocumentHandler(client *client.Client) *GetDocumentHandler {
+func NewGetDocumentHandler(c *client.Client) *GetDocumentHandler {
 	return &GetDocumentHandler{
-		client: client,
+		client: c,
 	}
 }
 
