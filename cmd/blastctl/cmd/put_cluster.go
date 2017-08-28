@@ -19,8 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/blevesearch/bleve/mapping"
-	"github.com/coreos/etcd/clientv3"
-	"github.com/mosuka/blast/client"
+	"github.com/mosuka/blast/cluster"
 	"github.com/mosuka/blast/util"
 	"github.com/spf13/cobra"
 	"os"
@@ -31,7 +30,7 @@ type PutClusterCommandOptions struct {
 	etcdEndpoints      []string
 	etcdDialTimeout    int
 	etcdRequestTimeout int
-	cluster            string
+	collection         string
 	indexMapping       string
 	indexType          string
 	kvstore            string
@@ -42,7 +41,7 @@ var putClusterCmdOpts = PutClusterCommandOptions{
 	etcdEndpoints:      []string{"localhost:2379"},
 	etcdDialTimeout:    5000,
 	etcdRequestTimeout: 5000,
-	cluster:            "",
+	collection:         "",
 	indexMapping:       "",
 	indexType:          "upside_down",
 	kvstore:            "boltdb",
@@ -58,8 +57,8 @@ var putClusterCmd = &cobra.Command{
 
 func runEPutClusterCmd(cmd *cobra.Command, args []string) error {
 	// check cluster name
-	if putClusterCmdOpts.cluster == "" {
-		return fmt.Errorf("required flag: --%s", cmd.Flag("cluster").Name)
+	if putClusterCmdOpts.collection == "" {
+		return fmt.Errorf("required flag: --%s", cmd.Flag("collection").Name)
 	}
 
 	// IndexMapping
@@ -92,41 +91,11 @@ func runEPutClusterCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	var err error
-
-	//var bytesIndexMapping []byte
-	//if indexMapping != nil {
-	//	bytesIndexMapping, err = json.Marshal(indexMapping)
-	//	if err != nil {
-	//		return err
-	//	}
-	//}
-
-	//var bytesKvconfig []byte
-	//if kvconfig != nil {
-	//	bytesKvconfig, err = json.Marshal(kvconfig)
-	//	if err != nil {
-	//		return err
-	//	}
-	//}
-
-	cfg := clientv3.Config{
-		Endpoints:   putClusterCmdOpts.etcdEndpoints,
-		DialTimeout: time.Duration(putClusterCmdOpts.etcdDialTimeout) * time.Millisecond,
-		Context:     context.Background(),
-	}
-
-	//c, err := clientv3.New(cfg)
-	c, err := client.NewCluster(cfg)
+	c, err := cluster.NewBlastCluster(putClusterCmdOpts.etcdEndpoints, putClusterCmdOpts.etcdDialTimeout)
 	if err != nil {
 		return err
 	}
 	defer c.Close()
-
-	//var kv clientv3.KV
-	//if c != nil {
-	//	kv = clientv3.NewKV(c)
-	//}
 
 	resp := struct {
 		IndexMapping *mapping.IndexMappingImpl `json:"index_mapping,omitempty"`
@@ -139,14 +108,7 @@ func runEPutClusterCmd(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	if cmd.Flag("index-mapping").Changed {
-		//keyIndexMapping := fmt.Sprintf("/blast/clusters/%s/index_mapping", putClusterCmdOpts.cluster)
-		//
-		//_, err = kv.Put(ctx, keyIndexMapping, string(bytesIndexMapping))
-		//if err != nil {
-		//	return err
-		//}
-
-		err := c.PutIndexMapping(ctx, putClusterCmdOpts.cluster, indexMapping)
+		err := c.PutIndexMapping(ctx, putClusterCmdOpts.collection, indexMapping)
 		if err != nil {
 			return err
 		}
@@ -155,14 +117,7 @@ func runEPutClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if cmd.Flag("index-type").Changed {
-		//keyIndexType := fmt.Sprintf("/blast/clusters/%s/index_type", putClusterCmdOpts.cluster)
-		//
-		//_, err = kv.Put(ctx, keyIndexType, putClusterCmdOpts.indexType)
-		//if err != nil {
-		//	return err
-		//}
-
-		err := c.PutIndexType(ctx, putClusterCmdOpts.cluster, putClusterCmdOpts.indexType)
+		err := c.PutIndexType(ctx, putClusterCmdOpts.collection, putClusterCmdOpts.indexType)
 		if err != nil {
 			return err
 		}
@@ -171,14 +126,7 @@ func runEPutClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if cmd.Flag("kvstore").Changed {
-		//keyKvstore := fmt.Sprintf("/blast/clusters/%s/kvstore", putClusterCmdOpts.cluster)
-		//
-		//_, err = kv.Put(ctx, keyKvstore, putClusterCmdOpts.kvstore)
-		//if err != nil {
-		//	return err
-		//}
-
-		err := c.PutKvstore(ctx, putClusterCmdOpts.cluster, putClusterCmdOpts.kvstore)
+		err := c.PutKvstore(ctx, putClusterCmdOpts.collection, putClusterCmdOpts.kvstore)
 		if err != nil {
 			return err
 		}
@@ -187,14 +135,7 @@ func runEPutClusterCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if cmd.Flag("kvconfig").Changed {
-		//keyKvconfig := fmt.Sprintf("/blast/clusters/%s/kvconfig", putClusterCmdOpts.cluster)
-		//
-		//_, err = kv.Put(ctx, keyKvconfig, string(bytesKvconfig))
-		//if err != nil {
-		//	return err
-		//}
-
-		err := c.PutKvconfig(ctx, putClusterCmdOpts.cluster, kvconfig)
+		err := c.PutKvconfig(ctx, putClusterCmdOpts.collection, kvconfig)
 		if err != nil {
 			return err
 		}
@@ -225,7 +166,7 @@ func init() {
 	putClusterCmd.Flags().StringSliceVar(&putClusterCmdOpts.etcdEndpoints, "etcd-endpoint", putClusterCmdOpts.etcdEndpoints, "etcd eendpoint")
 	putClusterCmd.Flags().IntVar(&putClusterCmdOpts.etcdDialTimeout, "etcd-dial-timeout", putClusterCmdOpts.etcdDialTimeout, "etcd dial timeout")
 	putClusterCmd.Flags().IntVar(&putClusterCmdOpts.etcdRequestTimeout, "etcd-request-timeout", putClusterCmdOpts.etcdRequestTimeout, "etcd request timeout")
-	putClusterCmd.Flags().StringVar(&putClusterCmdOpts.cluster, "cluster", putClusterCmdOpts.cluster, "cluster name")
+	putClusterCmd.Flags().StringVar(&putClusterCmdOpts.collection, "collection", putClusterCmdOpts.collection, "cluster name")
 	putClusterCmd.Flags().StringVar(&putClusterCmdOpts.indexMapping, "index-mapping", putClusterCmdOpts.indexMapping, "index mapping")
 	putClusterCmd.Flags().StringVar(&putClusterCmdOpts.indexType, "index-type", putClusterCmdOpts.indexType, "index type")
 	putClusterCmd.Flags().StringVar(&putClusterCmdOpts.kvstore, "kvstore", putClusterCmdOpts.kvstore, "kvstore")

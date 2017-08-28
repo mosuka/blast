@@ -35,7 +35,7 @@ type index struct {
 	client proto.IndexClient
 }
 
-func NewIndex(c *Client) Index {
+func NewIndex(c *BlastClient) Index {
 	ic := proto.NewIndexClient(c.conn)
 
 	return &index{

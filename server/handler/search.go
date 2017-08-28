@@ -29,10 +29,10 @@ import (
 )
 
 type SearchHandler struct {
-	client *client.Client
+	client *client.BlastClient
 }
 
-func NewSearchHandler(c *client.Client) *SearchHandler {
+func NewSearchHandler(c *client.BlastClient) *SearchHandler {
 	return &SearchHandler{
 		client: c,
 	}

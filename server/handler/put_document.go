@@ -28,10 +28,10 @@ import (
 )
 
 type PutDocumentHandler struct {
-	client *client.Client
+	client *client.BlastClient
 }
 
-func NewPutDocumentHandler(c *client.Client) *PutDocumentHandler {
+func NewPutDocumentHandler(c *client.BlastClient) *PutDocumentHandler {
 	return &PutDocumentHandler{
 		client: c,
 	}

@@ -27,10 +27,10 @@ import (
 )
 
 type BulkHandler struct {
-	client *client.Client
+	client *client.BlastClient
 }
 
-func NewBulkHandler(c *client.Client) *BulkHandler {
+func NewBulkHandler(c *client.BlastClient) *BulkHandler {
 	return &BulkHandler{
 		client: c,
 	}

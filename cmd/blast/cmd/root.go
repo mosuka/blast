@@ -46,7 +46,7 @@ type RootCommandOptions struct {
 	etcdEndpoints      []string
 	etcdDialTimeout    int
 	etcdRequestTimeout int
-	cluster            string
+	collection         string
 	shard              string
 
 	versionFlag bool
@@ -69,7 +69,7 @@ var rootCmdOpts = RootCommandOptions{
 	etcdEndpoints:      []string{},
 	etcdDialTimeout:    5000,
 	etcdRequestTimeout: 5000,
-	cluster:            "",
+	collection:         "",
 	shard:              "",
 
 	versionFlag: false,
@@ -209,8 +209,8 @@ func runERootCmd(cmd *cobra.Command, args []string) error {
 		viper.GetStringSlice("etcd_endpoints"),
 		viper.GetInt("etcd_dial_timeout"),
 		viper.GetInt("etcd_request_timeout"),
-		viper.GetString("cluster"),
-		viper.GetString("shard"),
+		viper.GetString("collection"),
+		//viper.GetString("shard"),
 	)
 	if err != nil {
 		log.Fatal("server initialization error")
@@ -259,7 +259,7 @@ func LoadConfig() {
 	viper.SetDefault("etcd_endpoints", rootCmdOpts.etcdEndpoints)
 	viper.SetDefault("etcd_dial_timeout", rootCmdOpts.etcdDialTimeout)
 	viper.SetDefault("etcd_request_timeout", rootCmdOpts.etcdRequestTimeout)
-	viper.SetDefault("cluster", rootCmdOpts.cluster)
+	viper.SetDefault("collection", rootCmdOpts.collection)
 	viper.SetDefault("shard", rootCmdOpts.shard)
 	viper.SetDefault("index_path", rootCmdOpts.indexPath)
 	viper.SetDefault("index_mapping", rootCmdOpts.indexMapping)
@@ -295,7 +295,7 @@ func init() {
 	RootCmd.Flags().StringSlice("etcd-endpoint", rootCmdOpts.etcdEndpoints, "etcd endpoint")
 	RootCmd.Flags().Int("etcd-dial-timeout", rootCmdOpts.etcdDialTimeout, "etcd dial timeout")
 	RootCmd.Flags().Int("etcd-request-timeout", rootCmdOpts.etcdRequestTimeout, "etcd request timeout")
-	RootCmd.Flags().String("cluster", rootCmdOpts.cluster, "cluster name")
+	RootCmd.Flags().String("collection", rootCmdOpts.collection, "collection name")
 	RootCmd.Flags().String("shard", rootCmdOpts.shard, "shard name")
 	RootCmd.Flags().String("index-path", rootCmdOpts.indexPath, "index directory path")
 	RootCmd.Flags().String("index-mapping", rootCmdOpts.indexMapping, "index mapping path")
@@ -312,7 +312,7 @@ func init() {
 	viper.BindPFlag("etcd_endpoints", RootCmd.Flags().Lookup("etcd-endpoint"))
 	viper.BindPFlag("etcd_dial_timeout", RootCmd.Flags().Lookup("etcd-dial-timeout"))
 	viper.BindPFlag("etcd_request_timeout", RootCmd.Flags().Lookup("etcd-request-timeout"))
-	viper.BindPFlag("cluster", RootCmd.Flags().Lookup("cluster"))
+	viper.BindPFlag("collection", RootCmd.Flags().Lookup("collection"))
 	viper.BindPFlag("shard", RootCmd.Flags().Lookup("shard"))
 	viper.BindPFlag("index_path", RootCmd.Flags().Lookup("index-path"))
 	viper.BindPFlag("index_mapping", RootCmd.Flags().Lookup("index-mapping"))

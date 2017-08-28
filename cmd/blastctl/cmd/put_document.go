@@ -109,7 +109,7 @@ func runEPutDocumentCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// create client
-	c, err := client.NewClient(&cfg)
+	c, err := client.NewBlastClient(&cfg)
 	if err != nil {
 		return err
 	}

@@ -26,10 +26,10 @@ import (
 )
 
 type GetDocumentHandler struct {
-	client *client.Client
+	client *client.BlastClient
 }
 
-func NewGetDocumentHandler(c *client.Client) *GetDocumentHandler {
+func NewGetDocumentHandler(c *client.BlastClient) *GetDocumentHandler {
 	return &GetDocumentHandler{
 		client: c,
 	}

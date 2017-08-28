@@ -36,7 +36,6 @@ func TestBlastServer(t *testing.T) {
 	etcdDialTimeout := 5000
 	etcdRequestTimeout := 5000
 	cluster := ""
-	shard := ""
 
 	indexMappingFile, err := os.Open(indexMappingPath)
 	if err != nil {
@@ -60,7 +59,7 @@ func TestBlastServer(t *testing.T) {
 		t.Errorf("could not load kvconfig %v", err)
 	}
 
-	blastServer, err := NewBlastServer(port, indexPath, indexMapping, indexType, kvstore, kvconfig, etcdEndpoints, etcdDialTimeout, etcdRequestTimeout, cluster, shard)
+	blastServer, err := NewBlastServer(port, indexPath, indexMapping, indexType, kvstore, kvconfig, etcdEndpoints, etcdDialTimeout, etcdRequestTimeout, cluster)
 
 	if blastServer == nil {
 		t.Fatalf("unexpected error. expected not nil, actual %v", blastServer)

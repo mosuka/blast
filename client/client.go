@@ -19,7 +19,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-type Client struct {
+type BlastClient struct {
 	Index
 
 	cfg    Config
@@ -28,7 +28,7 @@ type Client struct {
 	conn   *grpc.ClientConn
 }
 
-func NewClient(config *Config) (*Client, error) {
+func NewBlastClient(config *Config) (*BlastClient, error) {
 	baseCtx := context.TODO()
 	if config.Context != nil {
 		baseCtx = config.Context
@@ -42,7 +42,7 @@ func NewClient(config *Config) (*Client, error) {
 		return nil, err
 	}
 
-	c := &Client{
+	c := &BlastClient{
 		cfg:    *config,
 		ctx:    ctx,
 		cancel: cancel,
@@ -54,7 +54,7 @@ func NewClient(config *Config) (*Client, error) {
 	return c, nil
 }
 
-func (c *Client) Close() error {
+func (c *BlastClient) Close() error {
 	c.cancel()
 	if c.conn != nil {
 		return c.conn.Close()

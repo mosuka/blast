@@ -28,7 +28,7 @@ import (
 type blastRESTServer struct {
 	router      *mux.Router
 	listener    net.Listener
-	client      *client.Client
+	client      *client.BlastClient
 	dialTimeout int
 }
 
@@ -43,7 +43,7 @@ func NewBlastRESTServer(port int, basePath, server string, dialTimeout int, requ
 	}
 
 	// create client
-	c, err := client.NewClient(&cfg)
+	c, err := client.NewBlastClient(&cfg)
 	if err != nil {
 		return nil
 	}
