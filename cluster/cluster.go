@@ -6,12 +6,16 @@ import (
 	"fmt"
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/clientv3/clientv3util"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"strconv"
 	"time"
 )
 
 type BlastCluster interface {
+	CreateCollection(ctx context.Context, collection string, indexMapping *mapping.IndexMappingImpl, indexType string, kvstore string, kvconfig map[string]interface{}, numShards int) error
+	DeleteCollection(ctx context.Context, collection string) error
 	PutIndexMapping(ctx context.Context, cluster string, indexMapping *mapping.IndexMappingImpl) error
 	GetIndexMapping(ctx context.Context, cluster string) (*mapping.IndexMappingImpl, error)
 	DeleteIndexMapping(ctx context.Context, cluster string) error
@@ -24,6 +28,8 @@ type BlastCluster interface {
 	PutKvconfig(ctx context.Context, cluster string, kvconfig map[string]interface{}) error
 	GetKvconfig(ctx context.Context, cluster string) (map[string]interface{}, error)
 	DeleteKvconfig(ctx context.Context, cluster string) error
+	PutNumberOfShards(ctx context.Context, collection string, numShards int) error
+	GetNumberOfShards(ctx context.Context, collection string) (int, error)
 	Watch(ctx context.Context, cluster string) error
 	Close() error
 }
@@ -47,6 +53,81 @@ func NewBlastCluster(endpoints []string, dialTimeout int) (BlastCluster, error) 
 	return &blastCluster{
 		client: c,
 	}, nil
+}
+
+func (c *blastCluster) CreateCollection(ctx context.Context, collection string, indexMapping *mapping.IndexMappingImpl, indexType string, kvstore string, kvconfig map[string]interface{}, numShards int) error {
+	if collection == "" {
+		return errors.New("the collection is required")
+	}
+
+	if indexMapping == nil {
+		return errors.New("the indexMapping is required")
+	}
+
+	if indexType == "" {
+		return errors.New("the indexType is required")
+	}
+
+	if kvstore == "" {
+		return errors.New("the kvstore is required")
+	}
+
+	if kvconfig == nil {
+		return errors.New("the kvconfig is required")
+	}
+
+	keyCluster := fmt.Sprintf("/blast/cluster/collections/%s", collection)
+	keyIndexMapping := fmt.Sprintf("/blast/cluster/collections/%s/index_mapping", collection)
+	keyIndexType := fmt.Sprintf("/blast/cluster/collections/%s/index_type", collection)
+	keyKvstore := fmt.Sprintf("/blast/cluster/collections/%s/kvstore", collection)
+	keyKvconfig := fmt.Sprintf("/blast/cluster/collections/%s/kvconfig", collection)
+	keyNumShards := fmt.Sprintf("/blast/cluster/collections/%s/number_of_shards", collection)
+
+	bytesIndexMapping, err := json.Marshal(indexMapping)
+	if err != nil {
+		return err
+	}
+
+	bytesKvconfig, err := json.Marshal(kvconfig)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.client.KV.Txn(ctx).
+		If(clientv3util.KeyMissing(keyCluster)).
+		Then(clientv3.OpPut(keyIndexMapping, string(bytesIndexMapping)), clientv3.OpPut(keyIndexType, indexType), clientv3.OpPut(keyKvstore, kvstore), clientv3.OpPut(keyKvconfig, string(bytesKvconfig)), clientv3.OpPut(keyNumShards, strconv.Itoa(numShards))).
+		Commit()
+	if err != nil {
+		return err
+	}
+
+	if !resp.Succeeded {
+		return errors.New("failed to create collection")
+	}
+
+	return nil
+}
+
+func (c *blastCluster) DeleteCollection(ctx context.Context, collection string) error {
+	if collection == "" {
+		return errors.New("the collection is required")
+	}
+
+	keyCluster := fmt.Sprintf("/blast/cluster/collections/%s/", collection)
+
+	resp, err := c.client.KV.Txn(ctx).
+		If(clientv3util.KeyMissing(keyCluster)).
+		Then(clientv3.OpDelete(keyCluster, clientv3.WithPrefix())).
+		Commit()
+	if err != nil {
+		return err
+	}
+
+	if !resp.Succeeded {
+		return errors.New("failed to delete collection")
+	}
+
+	return nil
 }
 
 func (c *blastCluster) PutIndexMapping(ctx context.Context, collection string, indexMapping *mapping.IndexMappingImpl) error {
@@ -223,6 +304,36 @@ func (c *blastCluster) DeleteKvconfig(ctx context.Context, collection string) er
 	}
 
 	return nil
+}
+
+func (c *blastCluster) PutNumberOfShards(ctx context.Context, collection string, numShards int) error {
+	keyNumShards := fmt.Sprintf("/blast/cluster/collections/%s/number_of_shards", collection)
+
+	_, err := c.client.Put(ctx, keyNumShards, strconv.Itoa(numShards))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *blastCluster) GetNumberOfShards(ctx context.Context, collection string) (int, error) {
+	keyNumShards := fmt.Sprintf("/blast/cluster/collections/%s/number_of_shards", collection)
+
+	numShards := 0
+
+	kvresp, err := c.client.Get(ctx, keyNumShards)
+	if err != nil {
+		return 0, err
+	}
+	for _, ev := range kvresp.Kvs {
+		numShards, err = strconv.Atoi(string(ev.Value))
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	return numShards, nil
 }
 
 func (c *blastCluster) Watch(ctx context.Context, collection string) error {

@@ -161,8 +161,6 @@ func (s *BlastServer) Start() error {
 	}()
 	log.Info("server has been started")
 
-	//s.BlastCluster.Watch();
-
 	go func() {
 		for {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(15000)*time.Millisecond)

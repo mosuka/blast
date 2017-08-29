@@ -33,6 +33,7 @@ type GetClusterCommandOptions struct {
 	indexType          bool
 	kvstore            bool
 	kvconfig           bool
+	numberOfShards     bool
 }
 
 var getClusterCmdOpts = GetClusterCommandOptions{
@@ -44,6 +45,7 @@ var getClusterCmdOpts = GetClusterCommandOptions{
 	indexType:          false,
 	kvstore:            false,
 	kvconfig:           false,
+	numberOfShards:     false,
 }
 
 var getClusterCmd = &cobra.Command{
@@ -59,63 +61,55 @@ func runEGetClusterCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("required flag: --%s", cmd.Flag("collection").Name)
 	}
 
-	if !getClusterCmdOpts.indexMapping && !getClusterCmdOpts.indexType && !getClusterCmdOpts.kvstore && !getClusterCmdOpts.kvconfig {
+	if !getClusterCmdOpts.indexMapping && !getClusterCmdOpts.indexType && !getClusterCmdOpts.kvstore &&
+		!getClusterCmdOpts.kvconfig && !getClusterCmdOpts.numberOfShards {
 		getClusterCmdOpts.indexMapping = true
 		getClusterCmdOpts.indexType = true
 		getClusterCmdOpts.kvstore = true
 		getClusterCmdOpts.kvconfig = true
+		getClusterCmdOpts.numberOfShards = true
 	}
 
-	c, err := cluster.NewBlastCluster(putClusterCmdOpts.etcdEndpoints, putClusterCmdOpts.etcdDialTimeout)
+	c, err := cluster.NewBlastCluster(editClusterCmdOpts.etcdEndpoints, editClusterCmdOpts.etcdDialTimeout)
 	if err != nil {
 		return err
 	}
 	defer c.Close()
 
 	resp := struct {
-		IndexMapping *mapping.IndexMappingImpl `json:"index_mapping,omitempty"`
-		IndexType    string                    `json:"index_type,omitempty"`
-		Kvstore      string                    `json:"kvstore,omitempty"`
-		Kvconfig     map[string]interface{}    `json:"kvconfig,omitempty"`
+		IndexMapping   *mapping.IndexMappingImpl `json:"index_mapping,omitempty"`
+		IndexType      string                    `json:"index_type,omitempty"`
+		Kvstore        string                    `json:"kvstore,omitempty"`
+		Kvconfig       map[string]interface{}    `json:"kvconfig,omitempty"`
+		NumberOfShards int                       `json:"number_of_shards,omitempty"`
 	}{}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(getClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
 	defer cancel()
 
 	if getClusterCmdOpts.indexMapping == true {
-		indexMapping, err := c.GetIndexMapping(ctx, getClusterCmdOpts.collection)
-		if err != nil {
-			return err
-		}
-
+		indexMapping, _ := c.GetIndexMapping(ctx, getClusterCmdOpts.collection)
 		resp.IndexMapping = indexMapping
 	}
 
 	if getClusterCmdOpts.indexType == true {
-		indexType, err := c.GetIndexType(ctx, getClusterCmdOpts.collection)
-		if err != nil {
-			return err
-		}
-
+		indexType, _ := c.GetIndexType(ctx, getClusterCmdOpts.collection)
 		resp.IndexType = indexType
 	}
 
 	if getClusterCmdOpts.kvstore == true {
-		kvstore, err := c.GetKvstore(ctx, getClusterCmdOpts.collection)
-		if err != nil {
-			return err
-		}
-
+		kvstore, _ := c.GetKvstore(ctx, getClusterCmdOpts.collection)
 		resp.Kvstore = kvstore
 	}
 
 	if getClusterCmdOpts.kvconfig == true {
-		kvconfig, err := c.GetKvconfig(ctx, getClusterCmdOpts.collection)
-		if err != nil {
-			return err
-		}
-
+		kvconfig, _ := c.GetKvconfig(ctx, getClusterCmdOpts.collection)
 		resp.Kvconfig = kvconfig
+	}
+
+	if getClusterCmdOpts.numberOfShards == true {
+		numberOfShards, _ := c.GetNumberOfShards(ctx, getClusterCmdOpts.collection)
+		resp.NumberOfShards = numberOfShards
 	}
 
 	// output response

@@ -28,10 +28,6 @@ type DeleteClusterCommandOptions struct {
 	etcdDialTimeout    int
 	etcdRequestTimeout int
 	collection         string
-	indexMapping       bool
-	indexType          bool
-	kvstore            bool
-	kvconfig           bool
 }
 
 var deleteClusterCmdOpts = DeleteClusterCommandOptions{
@@ -54,13 +50,6 @@ func runEDeleteClusterCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("required flag: --%s", cmd.Flag("collection").Name)
 	}
 
-	if !deleteClusterCmdOpts.indexMapping && !deleteClusterCmdOpts.indexType && !deleteClusterCmdOpts.kvstore && !deleteClusterCmdOpts.kvconfig {
-		deleteClusterCmdOpts.indexMapping = true
-		deleteClusterCmdOpts.indexType = true
-		deleteClusterCmdOpts.kvstore = true
-		deleteClusterCmdOpts.kvconfig = true
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(deleteClusterCmdOpts.etcdRequestTimeout)*time.Millisecond)
 	defer cancel()
 
@@ -71,46 +60,14 @@ func runEDeleteClusterCmd(cmd *cobra.Command, args []string) error {
 	defer c.Close()
 
 	resp := struct {
-		IndexMapping bool `json:"index_mapping"`
-		IndexType    bool `json:"index_type"`
-		Kvstore      bool `json:"kvstore"`
-		Kvconfig     bool `json:"kvconfig"`
-	}{}
-
-	if deleteClusterCmdOpts.indexMapping == true {
-		err = c.DeleteIndexMapping(ctx, deleteClusterCmdOpts.collection)
-		if err != nil {
-			return err
-		}
-
-		resp.IndexMapping = true
+		Succeeded bool `json:"succeeded"`
+	}{
+		Succeeded: true,
 	}
 
-	if deleteClusterCmdOpts.indexType == true {
-		err = c.DeleteIndexType(ctx, deleteClusterCmdOpts.collection)
-		if err != nil {
-			return err
-		}
-
-		resp.IndexType = true
-	}
-
-	if deleteClusterCmdOpts.kvstore == true {
-		err = c.DeleteKvstore(ctx, deleteClusterCmdOpts.collection)
-		if err != nil {
-			return err
-		}
-
-		resp.Kvstore = true
-	}
-
-	if deleteClusterCmdOpts.kvconfig == true {
-		err = c.DeleteKvconfig(ctx, deleteClusterCmdOpts.collection)
-		if err != nil {
-			return err
-		}
-
-		resp.Kvconfig = true
+	err = c.DeleteCollection(ctx, deleteClusterCmdOpts.collection)
+	if err != nil {
+		resp.Succeeded = false
 	}
 
 	// output response
@@ -137,10 +94,10 @@ func init() {
 	deleteClusterCmd.Flags().IntVar(&deleteClusterCmdOpts.etcdDialTimeout, "etcd-dial-timeout", deleteClusterCmdOpts.etcdDialTimeout, "etcd dial timeout")
 	deleteClusterCmd.Flags().IntVar(&deleteClusterCmdOpts.etcdRequestTimeout, "etcd-request-timeout", deleteClusterCmdOpts.etcdRequestTimeout, "etcd request timeout")
 	deleteClusterCmd.Flags().StringVar(&deleteClusterCmdOpts.collection, "collection", deleteClusterCmdOpts.collection, "collection name")
-	deleteClusterCmd.Flags().BoolVar(&deleteClusterCmdOpts.indexMapping, "index-mapping", deleteClusterCmdOpts.indexMapping, "include index mapping")
-	deleteClusterCmd.Flags().BoolVar(&deleteClusterCmdOpts.indexType, "index-type", deleteClusterCmdOpts.indexType, "include index type")
-	deleteClusterCmd.Flags().BoolVar(&deleteClusterCmdOpts.kvstore, "kvstore", deleteClusterCmdOpts.kvstore, "include kvstore")
-	deleteClusterCmd.Flags().BoolVar(&deleteClusterCmdOpts.kvconfig, "kvconfig", deleteClusterCmdOpts.kvconfig, "include kvconfig")
+	//deleteClusterCmd.Flags().BoolVar(&deleteClusterCmdOpts.indexMapping, "index-mapping", deleteClusterCmdOpts.indexMapping, "include index mapping")
+	//deleteClusterCmd.Flags().BoolVar(&deleteClusterCmdOpts.indexType, "index-type", deleteClusterCmdOpts.indexType, "include index type")
+	//deleteClusterCmd.Flags().BoolVar(&deleteClusterCmdOpts.kvstore, "kvstore", deleteClusterCmdOpts.kvstore, "include kvstore")
+	//deleteClusterCmd.Flags().BoolVar(&deleteClusterCmdOpts.kvconfig, "kvconfig", deleteClusterCmdOpts.kvconfig, "include kvconfig")
 
 	deleteCmd.AddCommand(deleteClusterCmd)
 }
