@@ -134,13 +134,6 @@ func NewBlastServer(port int,
 }
 
 func (s *BlastServer) Start() error {
-	if s.BlastCluster != nil {
-		s.watchCollection()
-		log.WithFields(log.Fields{
-			"collection": s.collection,
-		}).Info("watching the cluster information has been started")
-	}
-
 	// create listener
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", s.port))
 	if err != nil {
@@ -153,6 +146,13 @@ func (s *BlastServer) Start() error {
 	log.WithFields(log.Fields{
 		"port": s.port,
 	}).Info("created the listener")
+
+	if s.BlastCluster != nil {
+		s.watchCollection()
+		log.WithFields(log.Fields{
+			"collection": s.collection,
+		}).Info("watching the cluster information has been started")
+	}
 
 	// start server
 	go func() {
@@ -179,7 +179,6 @@ func (s *BlastServer) Start() error {
 }
 
 func (s *BlastServer) Stop() error {
-
 	if s.BlastCluster != nil {
 		err := s.leaveCluster()
 		if err != nil {
@@ -235,12 +234,15 @@ func (s *BlastServer) leaveCluster() error {
 
 func (s *BlastServer) watchCollection() {
 	go func() {
-		for {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(15000)*time.Millisecond)
-			defer cancel()
+		var ctx context.Context
+		var cancel context.CancelFunc
 
+		for {
+			ctx, cancel = context.WithTimeout(context.Background(), time.Duration(15000)*time.Millisecond)
 			s.BlastCluster.Watch(ctx, s.collection)
 		}
+		defer cancel()
+
 		return
 	}()
 
