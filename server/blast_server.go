@@ -29,12 +29,6 @@ import (
 	"time"
 )
 
-//var (
-//	STATE_ACTIVE = "active"
-//	STATE_READY  = "ready"
-//	STATE_DOWN   = "down"
-//)
-
 type BlastServer struct {
 	cluster.BlastCluster
 
@@ -43,8 +37,7 @@ type BlastServer struct {
 	server     *grpc.Server
 	service    *service.BlastService
 	collection string
-	//shard              string
-	//node               string
+	node       string
 }
 
 func NewBlastServer(port int,
@@ -136,10 +129,18 @@ func NewBlastServer(port int,
 		server:       svr,
 		service:      svc,
 		collection:   collection,
+		node:         node,
 	}, nil
 }
 
 func (s *BlastServer) Start() error {
+	if s.BlastCluster != nil {
+		s.watchCollection()
+		log.WithFields(log.Fields{
+			"collection": s.collection,
+		}).Info("watching the cluster information has been started")
+	}
+
 	// create listener
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", s.port))
 	if err != nil {
@@ -161,82 +162,43 @@ func (s *BlastServer) Start() error {
 	}()
 	log.Info("server has been started")
 
-	go func() {
-		for {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(15000)*time.Millisecond)
-			defer cancel()
-
-			s.BlastCluster.Watch(ctx, s.collection)
+	if s.BlastCluster != nil {
+		err := s.joinCluster()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+			}).Error("failed to join the collection")
+		} else {
+			log.WithFields(log.Fields{
+				"collection": s.collection,
+			}).Info("server has been joined the collection")
 		}
-		return
-	}()
-	log.Info("watching the cluster information has been started")
-
-	//if s.etcdClient != nil {
-	//	// start watching
-	//	go func() {
-	//		for {
-	//			s.watchCluster()
-	//		}
-	//		return
-	//	}()
-	//	log.Info("watching the cluster information has been started")
-	//
-	//	// join cluster
-	//	err = s.joinCluster()
-	//	if err != nil {
-	//		log.WithFields(log.Fields{
-	//			"cluster": s.cluster,
-	//			"shard":   s.shard,
-	//			"node":    s.node,
-	//			"error":   err.Error(),
-	//		}).Error("the blast server failed to join the cluster")
-	//		return err
-	//	}
-	//	log.WithFields(log.Fields{
-	//		"cluster": s.cluster,
-	//		"shard":   s.shard,
-	//		"node":    s.node,
-	//	}).Info("the blast server has been joined the cluster")
-	//}
+	}
 
 	return nil
 }
 
 func (s *BlastServer) Stop() error {
+
 	if s.BlastCluster != nil {
-		err := s.BlastCluster.Close()
+		err := s.leaveCluster()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+			}).Error("failed to leave the collection")
+		} else {
+			log.WithFields(log.Fields{
+				"collection": s.collection,
+			}).Info("server has been left the collection")
+		}
+
+		err = s.BlastCluster.Close()
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err.Error(),
 			}).Error("failed to disconnect the cluster")
 		}
 	}
-
-	//if s.etcdClient != nil {
-	//	err := s.leaveCluster()
-	//	if err != nil {
-	//		log.WithFields(log.Fields{
-	//			"cluster": s.cluster,
-	//			"shard":   s.shard,
-	//			"node":    s.node,
-	//			"error":   err.Error(),
-	//		}).Error("the blast server failed to leave the cluster")
-	//	}
-	//	log.WithFields(log.Fields{
-	//		"cluster": s.cluster,
-	//		"shard":   s.shard,
-	//		"node":    s.node,
-	//	}).Info("the blast server has been left the cluster")
-	//
-	//	err = s.etcdClient.Close()
-	//	if err != nil {
-	//		log.WithFields(log.Fields{
-	//			"error": err.Error(),
-	//		}).Error("failed to disconnect from the etcd")
-	//	}
-	//	log.Info("disconnected from the etcd")
-	//}
 
 	err := s.service.CloseIndex()
 	if err != nil {
@@ -253,80 +215,34 @@ func (s *BlastServer) Stop() error {
 	return err
 }
 
-//func (s *BlastServer) watchCluster() {
-//	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(s.etcdRequestTimeout)*time.Millisecond)
-//	defer cancel()
-//
-//	keyCluster := fmt.Sprintf("/blast/clusters/%s", s.cluster)
-//
-//	rch := s.etcdClient.Watch(ctx, keyCluster, clientv3.WithPrefix())
-//	for wresp := range rch {
-//		for _, ev := range wresp.Events {
-//			log.WithFields(log.Fields{
-//				"type":  ev.Type,
-//				"key":   fmt.Sprintf("%s", ev.Kv.Key),
-//				"value": fmt.Sprintf("%s", ev.Kv.Value),
-//			}).Info("the cluster information has been changed")
-//		}
-//	}
-//
-//	return
-//}
+func (s *BlastServer) joinCluster() error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(15000)*time.Millisecond)
+	defer cancel()
 
-//func (s *BlastServer) joinCluster() error {
-//	if s.cluster == "" {
-//		return fmt.Errorf("cluster is required")
-//	}
-//	if s.shard == "" {
-//		return fmt.Errorf("shard is required")
-//	}
-//
-//	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(s.etcdRequestTimeout)*time.Millisecond)
-//	defer cancel()
-//
-//	keyNode := fmt.Sprintf("/blast/clusters/%s/shards/%s/nodes/%s", s.cluster, s.shard, s.node)
-//
-//	_, err := s.etcdKv.Put(ctx, keyNode, STATE_READY)
-//	if err != nil {
-//		log.WithFields(log.Fields{
-//			"key":   keyNode,
-//			"value": STATE_READY,
-//			"error": err,
-//		}).Error("failed to put the data")
-//		return err
-//	}
-//	log.WithFields(log.Fields{
-//		"key":   keyNode,
-//		"value": STATE_READY,
-//	}).Info("put the data")
-//
-//	return nil
-//}
+	err := s.BlastCluster.PutNode(ctx, s.collection, s.node, cluster.STATE_ACTIVE)
 
-//func (s *BlastServer) leaveCluster() error {
-//	if s.cluster == "" {
-//		return fmt.Errorf("cluster is required")
-//	}
-//	if s.shard == "" {
-//		return fmt.Errorf("shard is required")
-//	}
-//
-//	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(s.etcdRequestTimeout)*time.Millisecond)
-//	defer cancel()
-//
-//	keyNode := fmt.Sprintf("/blast/clusters/%s/shards/%s/nodes/%s", s.cluster, s.shard, s.node)
-//
-//	_, err := s.etcdKv.Delete(ctx, keyNode)
-//	if err != nil {
-//		log.WithFields(log.Fields{
-//			"key":   keyNode,
-//			"error": err,
-//		}).Error("failed to delete the data")
-//		return err
-//	}
-//	log.WithFields(log.Fields{
-//		"key": keyNode,
-//	}).Info("deleted the data")
-//
-//	return nil
-//}
+	return err
+}
+
+func (s *BlastServer) leaveCluster() error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(15000)*time.Millisecond)
+	defer cancel()
+
+	err := s.BlastCluster.DeleteNode(ctx, s.collection, s.node)
+
+	return err
+}
+
+func (s *BlastServer) watchCollection() {
+	go func() {
+		for {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(15000)*time.Millisecond)
+			defer cancel()
+
+			s.BlastCluster.Watch(ctx, s.collection)
+		}
+		return
+	}()
+
+	return
+}

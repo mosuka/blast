@@ -13,6 +13,12 @@ import (
 	"time"
 )
 
+var (
+	STATE_ACTIVE = "active"
+	STATE_READY  = "ready"
+	STATE_DOWN   = "down"
+)
+
 type BlastCluster interface {
 	CreateCollection(ctx context.Context, collection string, indexMapping *mapping.IndexMappingImpl, indexType string, kvstore string, kvconfig map[string]interface{}, numShards int) error
 	DeleteCollection(ctx context.Context, collection string) error
@@ -30,6 +36,8 @@ type BlastCluster interface {
 	DeleteKvconfig(ctx context.Context, cluster string) error
 	PutNumberOfShards(ctx context.Context, collection string, numShards int) error
 	GetNumberOfShards(ctx context.Context, collection string) (int, error)
+	PutNode(ctx context.Context, collection string, node string, status string) error
+	DeleteNode(ctx context.Context, collection string, node string) error
 	Watch(ctx context.Context, cluster string) error
 	Close() error
 }
@@ -334,6 +342,28 @@ func (c *blastCluster) GetNumberOfShards(ctx context.Context, collection string)
 	}
 
 	return numShards, nil
+}
+
+func (c *blastCluster) PutNode(ctx context.Context, collection string, node string, status string) error {
+	keyNode := fmt.Sprintf("/blast/cluster/collections/%s/nodes/%s", collection, node)
+
+	_, err := c.client.Put(ctx, keyNode, status)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *blastCluster) DeleteNode(ctx context.Context, collection string, node string) error {
+	keyNode := fmt.Sprintf("/blast/cluster/collections/%s/nodes/%s", collection, node)
+
+	_, err := c.client.Delete(ctx, keyNode)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *blastCluster) Watch(ctx context.Context, collection string) error {
