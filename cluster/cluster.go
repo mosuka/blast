@@ -8,7 +8,7 @@ import (
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/clientv3/clientv3util"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	//log "github.com/sirupsen/logrus"
 	"strconv"
 	"time"
 )
@@ -36,9 +36,10 @@ type BlastCluster interface {
 	DeleteKvconfig(ctx context.Context, cluster string) error
 	PutNumberOfShards(ctx context.Context, collection string, numShards int) error
 	GetNumberOfShards(ctx context.Context, collection string) (int, error)
-	PutNode(ctx context.Context, collection string, node string, status string) error
+	PutNode(ctx context.Context, collection string, node string) error
 	DeleteNode(ctx context.Context, collection string, node string) error
-	Watch(ctx context.Context, cluster string) error
+	//Watch(ctx context.Context, cluster string) error
+	Watch(ctx context.Context, cluster string) clientv3.WatchChan
 	Close() error
 }
 
@@ -344,10 +345,10 @@ func (c *blastCluster) GetNumberOfShards(ctx context.Context, collection string)
 	return numShards, nil
 }
 
-func (c *blastCluster) PutNode(ctx context.Context, collection string, node string, status string) error {
+func (c *blastCluster) PutNode(ctx context.Context, collection string, node string) error {
 	keyNode := fmt.Sprintf("/blast/cluster/collections/%s/nodes/%s", collection, node)
 
-	_, err := c.client.Put(ctx, keyNode, status)
+	_, err := c.client.Put(ctx, keyNode, fmt.Sprintf("%020d", time.Now().UnixNano()))
 	if err != nil {
 		return err
 	}
@@ -366,21 +367,12 @@ func (c *blastCluster) DeleteNode(ctx context.Context, collection string, node s
 	return nil
 }
 
-func (c *blastCluster) Watch(ctx context.Context, collection string) error {
+func (c *blastCluster) Watch(ctx context.Context, collection string) clientv3.WatchChan {
 	keyCluster := fmt.Sprintf("/blast/cluster/collections/%s", collection)
 
 	rch := c.client.Watch(ctx, keyCluster, clientv3.WithPrefix())
-	for wresp := range rch {
-		for _, ev := range wresp.Events {
-			log.WithFields(log.Fields{
-				"type":  ev.Type,
-				"key":   fmt.Sprintf("%s", ev.Kv.Key),
-				"value": fmt.Sprintf("%s", ev.Kv.Value),
-			}).Info("the cluster information has been changed")
-		}
-	}
 
-	return nil
+	return rch
 }
 
 func (c *blastCluster) Close() error {

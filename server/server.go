@@ -218,7 +218,7 @@ func (s *BlastServer) joinCluster() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(15000)*time.Millisecond)
 	defer cancel()
 
-	err := s.BlastCluster.PutNode(ctx, s.collection, s.node, cluster.STATE_ACTIVE)
+	err := s.BlastCluster.PutNode(ctx, s.collection, s.node)
 
 	return err
 }
@@ -239,7 +239,16 @@ func (s *BlastServer) watchCollection() {
 
 		for {
 			ctx, cancel = context.WithTimeout(context.Background(), time.Duration(15000)*time.Millisecond)
-			s.BlastCluster.Watch(ctx, s.collection)
+			rch := s.BlastCluster.Watch(ctx, s.collection)
+			for wresp := range rch {
+				for _, ev := range wresp.Events {
+					log.WithFields(log.Fields{
+						"type":  ev.Type,
+						"key":   fmt.Sprintf("%s", ev.Kv.Key),
+						"value": fmt.Sprintf("%s", ev.Kv.Value),
+					}).Info("the cluster information has been changed")
+				}
+			}
 		}
 		defer cancel()
 
