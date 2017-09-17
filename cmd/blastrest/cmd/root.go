@@ -47,7 +47,7 @@ var rootCmdOpts = RootCommandOptions{
 	logLevel:       "info",
 	port:           8080,
 	server:         "localhost:5000",
-	baseURI:        "/api",
+	baseURI:        "api",
 	dialTimeout:    15000,
 	requestTimeout: 15000,
 	versionFlag:    false,
@@ -229,6 +229,6 @@ func init() {
 	viper.BindPFlag("port", RootCmd.Flags().Lookup("port"))
 	viper.BindPFlag("base_uri", RootCmd.Flags().Lookup("base-uri"))
 	viper.BindPFlag("server", RootCmd.Flags().Lookup("server"))
-	viper.BindPFlag("dial_timeou", RootCmd.Flags().Lookup("dial-timeou"))
+	viper.BindPFlag("dial_timeout", RootCmd.Flags().Lookup("dial-timeout"))
 	viper.BindPFlag("request_timeout", RootCmd.Flags().Lookup("request-timeout"))
 }
