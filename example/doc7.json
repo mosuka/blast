@@ -1,0 +1,7 @@
+{
+  "name": "Blast",
+  "description": "Blast is a full-text search and indexing server written in Go, built on top of Bleve.",
+  "category": "Server",
+  "popularity": 1.0,
+  "release": "2017-01-13T00:00:00Z"
+}

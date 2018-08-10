@@ -1,0 +1,78 @@
+{
+  "search_request": {
+    "query": {
+      "query": "name:*"
+    },
+    "size": 10,
+    "from": 0,
+    "fields": [
+      "*"
+    ],
+    "sort": [
+      "-_score"
+    ],
+    "facets": {
+      "Category count": {
+        "size": 10,
+        "field": "category"
+      },
+      "Popularity range": {
+        "size": 10,
+        "field": "popularity",
+        "numeric_ranges": [
+          {
+            "name": "less than 1",
+            "max": 1
+          },
+          {
+            "name": "more than or equal to 1 and less than 2",
+            "min": 1,
+            "max": 2
+          },
+          {
+            "name": "more than or equal to 2 and less than 3",
+            "min": 2,
+            "max": 3
+          },
+          {
+            "name": "more than or equal to 3 and less than 4",
+            "min": 3,
+            "max": 4
+          },
+          {
+            "name": "more than or equal to 4 and less than 5",
+            "min": 4,
+            "max": 5
+          },
+          {
+            "name": "more than or equal to 5",
+            "min": 5
+          }
+        ]
+      },
+      "Release date range": {
+        "size": 10,
+        "field": "release",
+        "date_ranges": [
+          {
+            "name": "2001 - 2010",
+            "start": "2001-01-01T00:00:00Z",
+            "end": "2010-12-31T23:59:59Z"
+          },
+          {
+            "name": "2011 - 2020",
+            "start": "2011-01-01T00:00:00Z",
+            "end": "2020-12-31T23:59:59Z"
+          }
+        ]
+      }
+    },
+    "highlight": {
+      "style": "html",
+      "fields": [
+        "name",
+        "description"
+      ]
+    }
+  }
+}

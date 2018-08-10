@@ -1,0 +1,93 @@
+[
+  {
+    "type": "PUT",
+    "document": {
+      "id": "1",
+      "fields": {
+        "name": "Bleve",
+        "description": "Bleve is a full-text search and indexing library for Go.",
+        "category": "Library",
+        "popularity": 3.0,
+        "release": "2014-04-18T00:00:00Z"
+      }
+    }
+  },
+  {
+    "type": "PUT",
+    "document": {
+      "id": "2",
+      "fields": {
+        "name": "Lucene",
+        "description": "Apache Lucene is a high-performance, full-featured text search engine library written entirely in Java.",
+        "category": "Library",
+        "popularity": 4.0,
+        "release": "2000-03-30T00:00:00Z"
+      }
+    }
+  },
+  {
+    "type": "PUT",
+    "document": {
+      "id": "3",
+      "fields": {
+        "name": "Whoosh",
+        "description": "Whoosh is a fast, featureful full-text indexing and searching library implemented in pure Python.",
+        "category": "Library",
+        "popularity": 3.0,
+        "release": "2008-02-20T00:00:00Z"
+      }
+    }
+  },
+  {
+    "type": "PUT",
+    "document": {
+      "id": "4",
+      "fields": {
+        "name": "Ferret",
+        "description": "Ferret is a super fast, highly configurable search library written in Ruby.",
+        "category": "Library",
+        "popularity": 2.0,
+        "release": "2005-10-01T00:00:00Z"
+      }
+    }
+  },
+  {
+    "type": "PUT",
+    "document": {
+      "id": "5",
+      "fields": {
+        "name": "Solr",
+        "description": "Solr is an open source enterprise search platform, written in Java, from the Apache Lucene project.",
+        "category": "Server",
+        "popularity": 5.0,
+        "release": "2006-12-22T00:00:00Z"
+      }
+    }
+  },
+  {
+    "type": "PUT",
+    "document": {
+      "id": "6",
+      "fields": {
+        "name": "Elasticsearch",
+        "description": "Elasticsearch is a search engine based on Lucene, written in Java.",
+        "category": "Server",
+        "popularity": 5.0,
+        "release": "2010-02-08T00:00:00Z"
+      }
+    }
+  },
+  {
+    "type": "PUT",
+    "document": {
+      "id": "7",
+      "fields": {
+        "name": "Blast",
+        "description": "Blast is a full-text search and indexing server written in Go, built on top of Bleve.",
+        "category": "Server",
+        "popularity": 1.0,
+        "release": "2017-01-13T00:00:00Z"
+      }
+    }
+  }
+]
