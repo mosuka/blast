@@ -32,7 +32,7 @@ func DefaultConfig() *RaftConfig {
 	config.LocalID = "node0"
 
 	return &RaftConfig{
-		Path:                "/tmp/blast/raft",
+		Path:                "./data/raft",
 		RetainSnapshotCount: 2,
 		Timeout:             10 * time.Second,
 		Config:              config,

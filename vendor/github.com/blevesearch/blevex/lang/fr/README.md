@@ -1,0 +1,1 @@
+This package exposes the French stemmer using libstemmer, however it is NOT required/used by the default Bleve French anayzer which uses the French light stemmer instead.

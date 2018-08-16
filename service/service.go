@@ -26,6 +26,7 @@ import (
 	"sync"
 	"time"
 
+	_ "github.com/blevesearch/bleve/config"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"

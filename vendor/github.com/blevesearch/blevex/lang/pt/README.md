@@ -1,0 +1,1 @@
+This package exposes the Portuguese stemmer using libstemmer, however it is NOT required/used by the default Bleve Portuguese anayzer which uses the Portuguese light stemmer instead.
