@@ -81,6 +81,14 @@
   name = "google.golang.org/grpc"
   version = "1.14.0"
 
+[[override]]
+  name = "github.com/couchbase/moss"
+  branch = "master"
+
+[[override]]
+  name = "github.com/couchbase/ghistogram"
+  branch = "master"
+
 [prune]
   go-tests = true
   unused-packages = true

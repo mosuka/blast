@@ -35,7 +35,7 @@ type IndexConfig struct {
 
 func DefaultConfig() *IndexConfig {
 	return &IndexConfig{
-		Path:         "/tmp/blast/index",
+		Path:         "./data/index",
 		IndexMapping: mapping.NewIndexMapping(),
 		IndexType:    upsidedown.Name,
 		Kvstore:      boltdb.Name,

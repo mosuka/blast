@@ -18,6 +18,8 @@ import (
 	"math"
 
 	"github.com/urfave/cli"
+	"github.com/blevesearch/bleve/index/upsidedown"
+	"github.com/blevesearch/bleve/index/store/boltdb"
 )
 
 var (
@@ -48,28 +50,33 @@ var (
 	}
 	flRaftDir = cli.StringFlag{
 		Name:   "raft-dir",
+		Value:  "./data/raft",
 		Usage:  "Raft data directory",
 		EnvVar: "BLAST_RAFT_DIR",
 	}
-	flRaftSnapshotCount = cli.StringFlag{
+	flRaftSnapshotCount = cli.IntFlag{
 		Name:   "raft-snapshot-count",
+		Value:  2,
 		Usage:  "Raft snapshot count",
 		EnvVar: "BLAST_RAFT_SNAPSHOT_COUNT",
 	}
 	flRaftTimeout = cli.StringFlag{
 		Name:   "raft-timeout",
+		Value:  "10s",
 		Usage:  "Raft timeout",
 		EnvVar: "BLAST_RAFT_TIMEOUT",
 	}
 
 	flStoreDir = cli.StringFlag{
 		Name:   "store-dir",
+		Value:  "./data/store",
 		Usage:  "Store data directory",
 		EnvVar: "BLAST_STORE_DIR",
 	}
 
 	flIndexDir = cli.StringFlag{
 		Name:   "index-dir",
+		Value:  "./data/index",
 		Usage:  "Index data directory",
 		EnvVar: "BLAST_INDEX_DIR",
 	}
@@ -80,11 +87,13 @@ var (
 	}
 	flIndexType = cli.StringFlag{
 		Name:   "index-type",
+		Value:  upsidedown.Name,
 		Usage:  "Index type",
 		EnvVar: "BLAST_INDEX_TYPE",
 	}
 	flIndexKvstore = cli.StringFlag{
 		Name:   "index-kvstore",
+		Value: boltdb.Name,
 		Usage:  "Index Key-Value store",
 		EnvVar: "BLAST_INDEX_KVSTORE",
 	}

@@ -1,0 +1,44 @@
+{
+  "search_request": {
+    "query": {
+      "query": "+_all:search"
+    },
+    "size": 10,
+    "from": 0,
+    "fields": [
+      "*"
+    ],
+    "sort": [
+      "-_score"
+    ],
+    "facets": {
+      "Contributor count": {
+        "size": 10,
+        "field": "contributor"
+      },
+      "Timestamp range": {
+        "size": 10,
+        "field": "timestamp",
+        "date_ranges": [
+          {
+            "name": "2001 - 2010",
+            "start": "2001-01-01T00:00:00Z",
+            "end": "2010-12-31T23:59:59Z"
+          },
+          {
+            "name": "2011 - 2020",
+            "start": "2011-01-01T00:00:00Z",
+            "end": "2020-12-31T23:59:59Z"
+          }
+        ]
+      }
+    },
+    "highlight": {
+      "style": "html",
+      "fields": [
+        "title",
+        "text"
+      ]
+    }
+  }
+}

@@ -37,7 +37,7 @@ type StoreConfig struct {
 
 func DefaultConfig() *StoreConfig {
 	return &StoreConfig{
-		Path:    "/tmp/blast/store",
+		Path:    "./data/store",
 		Mode:    os.FileMode(0600),
 		Options: bolt.DefaultOptions,
 	}
