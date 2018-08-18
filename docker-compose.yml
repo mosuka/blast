@@ -1,0 +1,45 @@
+version: '2'
+services:
+  blast1:
+    image: mosuka/blast:v0.2.0
+    restart: always
+    ports:
+    - 10000:10000
+    - 10001:10001
+    - 10002:10002
+    environment:
+      BLAST_BIND_ADDR: blast1:10000
+      BLAST_GRPC_ADDR: blast1:10001
+      BLAST_HTTP_ADDR: blast1:10002
+      BLAST_NODE_ID: node1
+    command: start
+
+  blast2:
+    image: mosuka/blast:v0.2.0
+    restart: always
+    ports:
+    - 11000:10000
+    - 11001:10001
+    - 11002:10002
+    environment:
+      BLAST_BIND_ADDR: blast2:10000
+      BLAST_GRPC_ADDR: blast2:10001
+      BLAST_HTTP_ADDR: blast2:10002
+      BLAST_NODE_ID: node2
+      BLAST_PEER_GRPC_ADDR: blast1:10001
+    command: start
+
+  blast3:
+    image: mosuka/blast:v0.2.0
+    restart: always
+    ports:
+    - 12000:10000
+    - 12001:10001
+    - 12002:10002
+    environment:
+      BLAST_BIND_ADDR: blast3:10000
+      BLAST_GRPC_ADDR: blast3:10001
+      BLAST_HTTP_ADDR: blast3:10002
+      BLAST_NODE_ID: node3
+      BLAST_PEER_GRPC_ADDR: blast1:10001
+    command: start

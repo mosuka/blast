@@ -1,4 +1,4 @@
-#  Copyright (c) 2017 Minoru Osuka
+#  Copyright (c) 2018 Minoru Osuka
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Eclipse
-.classpath
-.project
+FROM golang:1.10.3
 
-# Gogland
-.idea/
+ARG VERSION=
+ARG BUILD_TAGS=
 
-# Blast
-*.log
-bin
-data
+COPY . /go/src/github.com/mosuka/blast
+
+RUN cd /go/src/github.com/mosuka/blast && \
+    make GOOS=linux GOARCH=amd64 VERSION=${VERSION} BUILD_TAG=${BUILD_TAGS} build
+
+
+FROM alpine:3.7
+#FROM scratch
+
+MAINTAINER Minoru Osuka "minoru.osuka@gmail.com"
+
+RUN apk --no-cache update
+
+COPY --from=0 /go/src/github.com/mosuka/blast/bin/blast /usr/bin/blast
+
+EXPOSE 10000 10001 10002
+
+ENTRYPOINT [ "/usr/bin/blast" ]
+CMD        [ "--help" ]

@@ -47,10 +47,10 @@ Running a Blast node is easy. Start Blast node like so:
 $ ./bin/blast start --bind-addr=localhost:10000 \
                     --grpc-addr=localhost:10001 \
                     --http-addr=localhost:10002 \
-                    --node-id=node0 \
-                    --raft-dir=/tmp/blast/noade0/raft \
-                    --store-dir=/tmp/blast/node0/store \
-                    --index-dir=/tmp/blast/node0/index \
+                    --node-id=node1 \
+                    --raft-dir=/tmp/blast/noade1/raft \
+                    --store-dir=/tmp/blast/node1/store \
+                    --index-dir=/tmp/blast/node1/index \
                     --index-mapping=./example/wikipedia_index_mapping.json
 ```
 
@@ -623,19 +623,19 @@ Blast is easy to bring up the cluster. Blast node is already running, but that i
 $ ./bin/blast start --bind-addr=localhost:11000 \
                     --grpc-addr=localhost:11001 \
                     --http-addr=localhost:11002 \
-                    --node-id=node1 \
-                    --raft-dir=/tmp/blast/node1/raft \
-                    --store-dir=/tmp/blast/node1/store \
-                    --index-dir=/tmp/blast/node1/index \
+                    --node-id=node2 \
+                    --raft-dir=/tmp/blast/node2/raft \
+                    --store-dir=/tmp/blast/node2/store \
+                    --index-dir=/tmp/blast/node2/index \
                     --peer-grpc-addr=localhost:10001 \
                     --index-mapping=./example/wikipedia_index_mapping.json
 $ ./bin/blast start --bind-addr=localhost:12000 \
                     --grpc-addr=localhost:12001 \
                     --http-addr=localhost:12002 \
-                    --node-id=node2 \
-                    --raft-dir=/tmp/blast/node2/raft \
-                    --store-dir=/tmp/blast/node2/store \
-                    --index-dir=/tmp/blast/node2/index \
+                    --node-id=node3 \
+                    --raft-dir=/tmp/blast/node3/raft \
+                    --store-dir=/tmp/blast/node3/store \
+                    --index-dir=/tmp/blast/node3/index \
                     --peer-grpc-addr=localhost:10001 \
                     --index-mapping=./example/wikipedia_index_mapping.json
 ```
@@ -660,7 +660,7 @@ You can see the result in JSON format. The result of the above command is:
         "grpc_address": "localhost:10001",
         "http_address": "localhost:10002"
       },
-      "node_id": "node0"
+      "node_id": "node1"
     },
     {
       "address": "127.0.0.1:11000",
@@ -668,7 +668,7 @@ You can see the result in JSON format. The result of the above command is:
         "grpc_address": "localhost:11001",
         "http_address": "localhost:11002"
       },
-      "node_id": "node1"
+      "node_id": "node2"
     },
     {
       "address": "127.0.0.1:12000",
@@ -676,7 +676,7 @@ You can see the result in JSON format. The result of the above command is:
         "grpc_address": "localhost:12001",
         "http_address": "localhost:12002"
       },
-      "node_id": "node2"
+      "node_id": "node3"
     }
   ],
   "success": true
@@ -701,7 +701,7 @@ You can see the result in JSON format. The result of the above command is:
 }
 ```
 
-So, you can get a document from node0 like following:
+So, you can get a document from node1 like following:
 
 ```bash
 $ ./bin/blast get --grpc-addr=localhost:10001 --pretty-print enwiki_doc1
@@ -723,7 +723,7 @@ You can see the result in JSON format. The result of the above command is:
 }
 ```
 
-Also, you can get same document from node1 (localhost:11001) like following:
+Also, you can get same document from node2 (localhost:11001) like following:
 
 ```bash
 $ ./bin/blast get --grpc-addr=localhost:11001 --pretty-print enwiki_doc1
@@ -745,7 +745,7 @@ You can see the result in JSON format. The result of the above command is:
 }
 ```
 
-Lastly, you can get same document from node2 (localhost:12001) like following:
+Lastly, you can get same document from node3 (localhost:12001) like following:
 
 ```bash
 $ ./bin/blast get --grpc-addr=localhost:12001 --pretty-print enwiki_doc1
@@ -767,3 +767,59 @@ You can see the result in JSON format. The result of the above command is:
 }
 ```
 
+## Blast on Docker
+
+### Building Docker container image on localhost
+
+You can build the Docker container image like so:
+
+```bash
+$ make docker
+```
+
+### Pulling Docker container image from docker.io
+
+You can also use the Docker container image already registered in docker.io like so:
+
+```bash
+$ docker pull mosuka/blast:v0.2.0
+```
+
+See https://hub.docker.com/r/mosuka/blast/tags/
+
+### Running Blast node on Docker
+
+Running a Blast node on Docker. Start Blast node like so:
+
+```bash
+$ docker run --rm --name blast1 \
+    -p 10000:10000 \
+    -p 10001:10001 \
+    -p 10002:10002 \
+    mosuka/blast:v0.2.0 start \
+    --bind-addr=:10000 \
+    --grpc-addr=:10001 \
+    --http-addr=:10002 \
+    --node-id=node1
+```
+
+### Running Blast cluster on Docker Compose
+
+You can also bringing up cluster with Docker Compose.
+First, you need to start 1st node of cluster like so:
+
+```bash
+$ docker-compose up -d blast1
+```
+
+Then, you can start other nodes like so:
+
+```bash
+$ docker-compose up -d blast2 blast3
+```
+
+All nodes are stopped as follows:
+
+```bash
+$ docker-compose stop
+```
