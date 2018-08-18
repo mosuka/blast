@@ -15,7 +15,8 @@
 VERSION ?=
 GOOS = linux
 GOARCH = amd64
-BUILD_TAGS = "kagome"
+BUILD_TAGS = kagome
+BIN_EXT =
 
 GO := CGO_ENABLED=0 GO15VENDOREXPERIMENT=1 go
 
@@ -30,6 +31,9 @@ ifeq ($(VERSION),)
 endif
 LDFLAGS = -ldflags "-X \"github.com/mosuka/blast/version.Version=${VERSION}\""
 
+ifeq ($(GOOS),windows)
+  BIN_EXT = .exe
+endif
 
 .DEFAULT_GOAL := build
 
@@ -72,7 +76,7 @@ build:
 	@echo "   GOOS       = $(GOOS)"
 	@echo "   GOARCH     = $(GOARCH)"
 	@echo "   BUILD_TAGS = $(BUILD_TAGS)"
-	@for target_pkg in $(TARGET_PACKAGES); do echo $$target_pkg; GOARCH=$(GOARCH) GOOS=$(GOOS) $(GO) build -tags=${BUILD_TAGS} ${LDFLAGS} -o ./bin/`basename $$target_pkg` $$target_pkg || exit 1; done
+	@for target_pkg in $(TARGET_PACKAGES); do echo $$target_pkg; GOARCH=$(GOARCH) GOOS=$(GOOS) $(GO) build -tags=${BUILD_TAGS} ${LDFLAGS} -o ./bin/`basename $$target_pkg`$(BIN_EXT) $$target_pkg || exit 1; done
 
 .PHONY: install
 install:
@@ -86,19 +90,20 @@ install:
 .PHONY: dist
 dist:
 	@echo ">> packaging binaries"
-	@echo "   VERSION = $(VERSION)"
-	@echo "   GOOS    = $(GOOS)"
-	@echo "   GOARCH  = $(GOARCH)"
-	mkdir -p ./dist
-	tar zcfv ./dist/blast-${VERSION}.$(GOOS)-$(GOARCH).tar.gz ./bin/* -C ./bin
+	@echo "   VERSION    = $(VERSION)"
+	@echo "   GOOS       = $(GOOS)"
+	@echo "   GOARCH     = $(GOARCH)"
+	@echo "   BUILD_TAGS = $(BUILD_TAGS)"
+	mkdir -p ./dist/$(GOOS)-$(GOARCH)/bin
+	@for target_pkg in $(TARGET_PACKAGES); do echo $$target_pkg; GOARCH=$(GOARCH) GOOS=$(GOOS) $(GO) build -tags=${BUILD_TAGS} ${LDFLAGS} -o ./dist/$(GOOS)-$(GOARCH)/bin/`basename $$target_pkg`$(BIN_EXT) $$target_pkg || exit 1; done
+	(cd ./dist/$(GOOS)-$(GOARCH); tar zcfv ../blast-${VERSION}.$(GOOS)-$(GOARCH).tar.gz .)
 
 .PHONY: docker
 docker:
 	@echo ">> building docker container image"
 	@echo "   VERSION      = $(VERSION)"
-	@echo "   GOOS         = $(GOOS)"
-	@echo "   GOARCH       = $(GOARCH)"
-	docker build -t blast:${VERSION} --build-arg OS=$(GOOS) --build-arg ARCH=$(GOARCH) --build-arg VERSION=${VERSION} .
+	@echo "   BUILD_TAGS   = $(BUILD_TAGS)"
+	docker build -t mosuka/blast:v${VERSION} --build-arg VERSION=${VERSION} --build-arg BUILD_TAGS=${BUILD_TAGS} .
 
 .PHONY: clean
 clean:
