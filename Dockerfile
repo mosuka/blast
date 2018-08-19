@@ -19,12 +19,14 @@ ARG BUILD_TAGS=
 
 COPY . /go/src/github.com/mosuka/blast
 
-RUN cd /go/src/github.com/mosuka/blast && \
-    make GOOS=linux GOARCH=amd64 VERSION=${VERSION} BUILD_TAG=${BUILD_TAGS} build
+RUN apt-get update && \
+    apt-get install -y iproute netcat lsof jq libxml2-utils xmlstarlet tar && \
+    apt-get clean && \
+    cd /go/src/github.com/mosuka/blast && \
+    make GOOS=linux GOARCH=amd64 VERSION=${VERSION} BUILD_TAG="${BUILD_TAGS}" build
 
 
-FROM alpine:3.7
-#FROM scratch
+FROM alpine:3.8
 
 MAINTAINER Minoru Osuka "minoru.osuka@gmail.com"
 

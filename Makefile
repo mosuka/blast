@@ -15,10 +15,10 @@
 VERSION ?=
 GOOS = linux
 GOARCH = amd64
-BUILD_TAGS = kagome
+BUILD_TAGS = "cld2 cznicb icu kagome leveldb libstemmer rocksdb"
 BIN_EXT =
 
-GO := CGO_ENABLED=0 GO15VENDOREXPERIMENT=1 go
+GO := CGO_ENABLED=1 GO15VENDOREXPERIMENT=1 go
 
 PACKAGES = $(shell $(GO) list ./... | grep -v '/vendor/')
 
