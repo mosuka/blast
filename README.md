@@ -18,7 +18,53 @@ Blast makes it easy for programmers to develop search applications with advanced
 
 ## Building Blast
 
-Building Blast requires Go 1.9 or later. To build Blast on Linux like so:
+Blast require Bleve and its extentions (blevex), and some blevex packages require C/C++ libraries. The following sections are instructions for satisfying dependencies on particular platforms.
+
+### Ubuntu 18.04 LTS (Bionic Beaver)
+
+```
+$ sudo apt-get update
+$ sudo apt-get install -y git golang libcld2-dev libicu-dev libleveldb-dev libstemmer-dev libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev liblz4-dev libzstd-dev build-essential gcc-4.8 g++-4.8
+$ sudo apt-get clean
+
+$ sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 70
+$ sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 70
+$ sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 80
+$ sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 80
+
+$ git clone https://github.com/facebook/rocksdb.git
+$ cd rocksdb
+$ sudo make shared_lib install-shared
+$ cd ../
+$ rm -rf rocksdb
+
+$ export GOPATH=${HOME}/go
+$ go get -u -v github.com/blevesearch/cld2
+$ cd $GOPATH/src/github.com/blevesearch/cld2
+$ git clone https://github.com/CLD2Owners/cld2.git
+$ cd cld2/internal
+$ ./compile_libs.sh
+$ sudo cp *.so /usr/local/lib
+```
+
+### macOS High Sierra Version 10.13.6
+
+```bash
+$ brew install icu4c leveldb rocksdb zstd
+$ export CGO_LDFLAGS="-L/usr/local/opt/icu4c/lib -L/usr/local/opt/rocksdb/lib -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz4 -lzstd"
+$ export CGO_CFLAGS="-I/usr/local/opt/icu4c/include -I/usr/local/opt/rocksdb/include"
+$ go get -u -v github.com/blevesearch/cld2
+$ cd $GOPATH/src/github.com/blevesearch/cld2
+$ git clone https://github.com/CLD2Owners/cld2.git
+$ cd cld2/internal
+$ perl -p -i -e 's/soname=/install_name,/' compile_libs.sh
+$ ./compile_libs.sh
+$ sudo cp *.so /usr/local/lib
+```
+
+### Build Blast
+
+Build Blast for Linux as following:
 
 ```bash
 $ git clone git@github.com:mosuka/blast.git
@@ -26,11 +72,22 @@ $ cd blast
 $ make build
 ```
 
-If you want to build Blast other platform, please set `GOOS`、`GOARCH` like following:
+If you want to build for other platform, set `GOOS`, `GOARCH`. For example, build for macOS like following:
 
 ```bash
 $ make GOOS=darwin build
 ```
+
+If you want to build Blast with Bleve and Bleve extentions (blevex), please set `CGO_ENABLED`、`BUILD_TAGS`. For example, enable some or all of Bleve extentions like following:
+
+```bash
+$ make GOOS=darwin BUILD_TAGS="kagome" build
+```
+
+```bash
+$ make GOOS=darwin CGO_ENABLED=1 BUILD_TAGS="full" build
+```
+
 
 You can see the binary file when build successful like so:
 

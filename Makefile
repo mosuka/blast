@@ -15,10 +15,11 @@
 VERSION ?=
 GOOS = linux
 GOARCH = amd64
-BUILD_TAGS = "cld2 cznicb icu kagome leveldb libstemmer rocksdb"
+BUILD_TAGS ?=
+CGO_ENABLED = 0
 BIN_EXT =
 
-GO := CGO_ENABLED=1 GO15VENDOREXPERIMENT=1 go
+GO := CGO_ENABLED=$(CGO_ENABLED) GO15VENDOREXPERIMENT=1 go
 
 PACKAGES = $(shell $(GO) list ./... | grep -v '/vendor/')
 
@@ -67,16 +68,17 @@ test:
 	@echo ">> testing all packages"
 	@echo "   VERSION    = $(VERSION)"
 	@echo "   BUILD_TAGS = $(BUILD_TAGS)"
-	@$(GO) test -v -tags=${BUILD_TAGS} ${LDFLAGS} $(PACKAGES)
+	@$(GO) test -v -tags="${BUILD_TAGS}" ${LDFLAGS} $(PACKAGES)
 
 .PHONY: build
 build:
 	@echo ">> building binaries"
-	@echo "   VERSION    = $(VERSION)"
-	@echo "   GOOS       = $(GOOS)"
-	@echo "   GOARCH     = $(GOARCH)"
-	@echo "   BUILD_TAGS = $(BUILD_TAGS)"
-	@for target_pkg in $(TARGET_PACKAGES); do echo $$target_pkg; GOARCH=$(GOARCH) GOOS=$(GOOS) $(GO) build -tags=${BUILD_TAGS} ${LDFLAGS} -o ./bin/`basename $$target_pkg`$(BIN_EXT) $$target_pkg || exit 1; done
+	@echo "   VERSION     = $(VERSION)"
+	@echo "   GOOS        = $(GOOS)"
+	@echo "   GOARCH      = $(GOARCH)"
+	@echo "   CGO_ENABLED = $(CGO_ENABLED)"
+	@echo "   BUILD_TAGS  = $(BUILD_TAGS)"
+	@for target_pkg in $(TARGET_PACKAGES); do echo $$target_pkg; GOARCH=$(GOARCH) GOOS=$(GOOS) $(GO) build -tags="${BUILD_TAGS}" ${LDFLAGS} -o ./bin/`basename $$target_pkg`$(BIN_EXT) $$target_pkg || exit 1; done
 
 .PHONY: install
 install:
@@ -85,7 +87,7 @@ install:
 	@echo "   GOOS       = $(GOOS)"
 	@echo "   GOARCH     = $(GOARCH)"
 	@echo "   BUILD_TAGS = $(BUILD_TAGS)"
-	@for target_pkg in $(TARGET_PACKAGES); do echo $$target_pkg; GOARCH=$(GOARCH) GOOS=$(GOOS) $(GO) install -tags=${BUILD_TAGS} ${LDFLAGS} $$target_pkg || exit 1; done
+	@for target_pkg in $(TARGET_PACKAGES); do echo $$target_pkg; GOARCH=$(GOARCH) GOOS=$(GOOS) $(GO) install -tags="${BUILD_TAGS}" ${LDFLAGS} $$target_pkg || exit 1; done
 
 .PHONY: dist
 dist:
@@ -95,7 +97,7 @@ dist:
 	@echo "   GOARCH     = $(GOARCH)"
 	@echo "   BUILD_TAGS = $(BUILD_TAGS)"
 	mkdir -p ./dist/$(GOOS)-$(GOARCH)/bin
-	@for target_pkg in $(TARGET_PACKAGES); do echo $$target_pkg; GOARCH=$(GOARCH) GOOS=$(GOOS) $(GO) build -tags=${BUILD_TAGS} ${LDFLAGS} -o ./dist/$(GOOS)-$(GOARCH)/bin/`basename $$target_pkg`$(BIN_EXT) $$target_pkg || exit 1; done
+	@for target_pkg in $(TARGET_PACKAGES); do echo $$target_pkg; GOARCH=$(GOARCH) GOOS=$(GOOS) $(GO) build -tags="${BUILD_TAGS}" ${LDFLAGS} -o ./dist/$(GOOS)-$(GOARCH)/bin/`basename $$target_pkg`$(BIN_EXT) $$target_pkg || exit 1; done
 	(cd ./dist/$(GOOS)-$(GOARCH); tar zcfv ../blast-${VERSION}.$(GOOS)-$(GOARCH).tar.gz .)
 
 .PHONY: docker
@@ -103,7 +105,7 @@ docker:
 	@echo ">> building docker container image"
 	@echo "   VERSION      = $(VERSION)"
 	@echo "   BUILD_TAGS   = $(BUILD_TAGS)"
-	docker build -t mosuka/blast:v${VERSION} --build-arg VERSION=${VERSION} --build-arg BUILD_TAGS=${BUILD_TAGS} .
+	docker build -t mosuka/blast:v${VERSION} --build-arg VERSION=${VERSION} --build-arg BUILD_TAGS="${BUILD_TAGS}" .
 
 .PHONY: clean
 clean:
