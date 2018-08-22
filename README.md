@@ -18,14 +18,26 @@ Blast makes it easy for programmers to develop search applications with advanced
 
 ## Building Blast
 
-Blast require Bleve and its extentions (blevex), and some blevex packages require C/C++ libraries. The following sections are instructions for satisfying dependencies on particular platforms.
+Blast require Bleve and [Bleve Extensions](https://github.com/blevesearch/blevex). Some Bleve Extensions requires C/C++ libraries. The following sections are instructions for satisfying dependencies on particular platforms.
 
-### Ubuntu 18.04 LTS (Bionic Beaver)
+### Ubuntu 18.10
 
 ```
-$ sudo apt-get update
-$ sudo apt-get install -y git golang libcld2-dev libicu-dev libleveldb-dev libstemmer-dev libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev liblz4-dev libzstd-dev librocksdb-dev gcc-4.8 g++-4.8 build-essential
-$ sudo apt-get clean
+$ sudo apt-get install -y git \
+                          golang \
+                          libicu-dev \
+                          libleveldb-dev \
+                          libstemmer-dev \
+                          libgflags-dev \
+                          libsnappy-dev \
+                          zlib1g-dev \
+                          libbz2-dev \
+                          liblz4-dev \
+                          libzstd-dev \
+                          librocksdb-dev \
+                          gcc-4.8 \
+                          g++-4.8 \
+                          build-essential
 
 $ sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 70
 $ sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 70
@@ -44,9 +56,14 @@ $ sudo cp *.so /usr/local/lib
 ### macOS High Sierra Version 10.13.6
 
 ```bash
-$ brew install icu4c leveldb rocksdb zstd
+$ brew install icu4c \
+               leveldb \
+               rocksdb \
+               zstd
+
 $ export CGO_LDFLAGS="-L/usr/local/opt/icu4c/lib -L/usr/local/opt/rocksdb/lib -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz4 -lzstd"
 $ export CGO_CFLAGS="-I/usr/local/opt/icu4c/include -I/usr/local/opt/rocksdb/include"
+
 $ go get -u -v github.com/blevesearch/cld2
 $ cd $GOPATH/src/github.com/blevesearch/cld2
 $ git clone https://github.com/CLD2Owners/cld2.git
@@ -79,9 +96,17 @@ $ make GOOS=darwin BUILD_TAGS=kagome build
 ```
 
 ```bash
-$ make GOOS=darwin CGO_ENABLED=1 BUILD_TAGS=full build
+$ make GOOS=darwin CGO_ENABLED=1 BUILD_TAGS="cld2 cznicb icu kagome leveldb libstemmer rocksdb" build
 ```
 
+| | CGO_ENABLED | BUILD_TAGS |
+| --- | --- | --- |
+| Compact Language Detector | 1 | cld2 |
+| cznicb KV store |  | cznicb |
+| Thai Language Analyser | 1 | icu |
+| Japanese Language Analyser |  | kagome |
+| LevelDB | 1 | leveldb |
+| Danish, German, English, Spanish, Finnish, French, Hungarian, Italian, Dutch, Norwegian, Portuguese, Romanian, Russian, Swedish, Turkish Language Stemmer | 1 | libstemmer |
 
 You can see the binary file when build successful like so:
 

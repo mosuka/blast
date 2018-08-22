@@ -89,10 +89,6 @@
   name = "github.com/couchbase/ghistogram"
   branch = "master"
 
-[[override]]
-  name = "github.com/tecbot/gorocksdb"
-  branch = "master"
-
 [prune]
   go-tests = true
   unused-packages = true
