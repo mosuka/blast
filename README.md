@@ -899,10 +899,10 @@ $ docker run --rm --name blast1 \
     -p 10001:10001 \
     -p 10002:10002 \
     mosuka/blast:v0.3.0 start \
-    --bind-addr=:10000 \
-    --grpc-addr=:10001 \
-    --http-addr=:10002 \
-    --node-id=node1
+      --bind-addr=:10000 \
+      --grpc-addr=:10001 \
+      --http-addr=:10002 \
+      --node-id=node1
 ```
 
 ### Running Blast cluster on Docker Compose
