@@ -107,6 +107,7 @@ $ make GOOS=darwin CGO_ENABLED=1 BUILD_TAGS="cld2 cznicb icu kagome leveldb libs
 | Japanese Language Analyser |  | kagome |
 | LevelDB | 1 | leveldb |
 | Danish, German, English, Spanish, Finnish, French, Hungarian, Italian, Dutch, Norwegian, Portuguese, Romanian, Russian, Swedish, Turkish Language Stemmer | 1 | libstemmer |
+| RocksDB | 1 | rocksdb |
 
 You can see the binary file when build successful like so:
 
