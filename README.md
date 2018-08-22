@@ -24,19 +24,13 @@ Blast require Bleve and its extentions (blevex), and some blevex packages requir
 
 ```
 $ sudo apt-get update
-$ sudo apt-get install -y git golang libcld2-dev libicu-dev libleveldb-dev libstemmer-dev libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev liblz4-dev libzstd-dev build-essential gcc-4.8 g++-4.8
+$ sudo apt-get install -y git golang libcld2-dev libicu-dev libleveldb-dev libstemmer-dev libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev liblz4-dev libzstd-dev librocksdb-dev gcc-4.8 g++-4.8 build-essential
 $ sudo apt-get clean
 
 $ sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 70
 $ sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 70
 $ sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 80
 $ sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 80
-
-$ git clone https://github.com/facebook/rocksdb.git
-$ cd rocksdb
-$ sudo make shared_lib install-shared
-$ cd ../
-$ rm -rf rocksdb
 
 $ export GOPATH=${HOME}/go
 $ go get -u -v github.com/blevesearch/cld2
@@ -81,11 +75,11 @@ $ make GOOS=darwin build
 If you want to build Blast with Bleve and Bleve extentions (blevex), please set `CGO_ENABLED`、`BUILD_TAGS`. For example, enable some or all of Bleve extentions like following:
 
 ```bash
-$ make GOOS=darwin BUILD_TAGS="kagome" build
+$ make GOOS=darwin BUILD_TAGS=kagome build
 ```
 
 ```bash
-$ make GOOS=darwin CGO_ENABLED=1 BUILD_TAGS="full" build
+$ make GOOS=darwin CGO_ENABLED=1 BUILD_TAGS=full build
 ```
 
 
