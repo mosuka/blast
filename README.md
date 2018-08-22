@@ -39,10 +39,10 @@ $ sudo apt-get install -y git \
                           g++-4.8 \
                           build-essential
 
-$ sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 70
-$ sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 70
-$ sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 80
-$ sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 80
+$ sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80
+$ sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 80
+$ sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 90
+$ sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 90
 
 $ export GOPATH=${HOME}/go
 $ go get -u -v github.com/blevesearch/cld2

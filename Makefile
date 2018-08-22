@@ -67,6 +67,7 @@ format:
 test:
 	@echo ">> testing all packages"
 	@echo "   VERSION    = $(VERSION)"
+	@echo "   CGO_ENABLED = $(CGO_ENABLED)"
 	@echo "   BUILD_TAGS = $(BUILD_TAGS)"
 	@$(GO) test -v -tags="${BUILD_TAGS}" ${LDFLAGS} $(PACKAGES)
 
@@ -86,6 +87,7 @@ install:
 	@echo "   VERSION    = $(VERSION)"
 	@echo "   GOOS       = $(GOOS)"
 	@echo "   GOARCH     = $(GOARCH)"
+	@echo "   CGO_ENABLED = $(CGO_ENABLED)"
 	@echo "   BUILD_TAGS = $(BUILD_TAGS)"
 	@for target_pkg in $(TARGET_PACKAGES); do echo $$target_pkg; GOARCH=$(GOARCH) GOOS=$(GOOS) $(GO) install -tags="${BUILD_TAGS}" ${LDFLAGS} $$target_pkg || exit 1; done
 
@@ -95,6 +97,7 @@ dist:
 	@echo "   VERSION    = $(VERSION)"
 	@echo "   GOOS       = $(GOOS)"
 	@echo "   GOARCH     = $(GOARCH)"
+	@echo "   CGO_ENABLED = $(CGO_ENABLED)"
 	@echo "   BUILD_TAGS = $(BUILD_TAGS)"
 	mkdir -p ./dist/$(GOOS)-$(GOARCH)/bin
 	@for target_pkg in $(TARGET_PACKAGES); do echo $$target_pkg; GOARCH=$(GOARCH) GOOS=$(GOOS) $(GO) build -tags="${BUILD_TAGS}" ${LDFLAGS} -o ./dist/$(GOOS)-$(GOARCH)/bin/`basename $$target_pkg`$(BIN_EXT) $$target_pkg || exit 1; done
@@ -104,8 +107,9 @@ dist:
 docker:
 	@echo ">> building docker container image"
 	@echo "   VERSION      = $(VERSION)"
+	@echo "   CGO_ENABLED  = $(CGO_ENABLED)"
 	@echo "   BUILD_TAGS   = $(BUILD_TAGS)"
-	docker build -t mosuka/blast:v${VERSION} --build-arg VERSION=${VERSION} --build-arg BUILD_TAGS="${BUILD_TAGS}" .
+	docker build -t mosuka/blast:v${VERSION} --build-arg VERSION=${VERSION} --build-arg CGO_ENABLED=${CGO_ENABLED} --build-arg BUILD_TAGS="${BUILD_TAGS}" .
 
 .PHONY: clean
 clean:
