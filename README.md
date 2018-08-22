@@ -15,17 +15,21 @@ Blast makes it easy for programmers to develop search applications with advanced
 - Index replication
 - An easy-to-use HTTP API
 - CLI is also available
+- Docker container image is also available
 
 ## Building Blast
 
-Blast require Bleve and [Bleve Extensions](https://github.com/blevesearch/blevex). Some Bleve Extensions requires C/C++ libraries. The following sections are instructions for satisfying dependencies on particular platforms.
+Blast requires Bleve and [Bleve Extensions](https://github.com/blevesearch/blevex). Some Bleve Extensions requires C/C++ libraries. The following sections are instructions for satisfying dependencies on particular platforms.
+
+### Requirement
+
+- Go
+- Git
 
 ### Ubuntu 18.10
 
 ```
-$ sudo apt-get install -y git \
-                          golang \
-                          libicu-dev \
+$ sudo apt-get install -y libicu-dev \
                           libleveldb-dev \
                           libstemmer-dev \
                           libgflags-dev \
@@ -46,7 +50,7 @@ $ sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 90
 
 $ export GOPATH=${HOME}/go
 $ go get -u -v github.com/blevesearch/cld2
-$ cd $GOPATH/src/github.com/blevesearch/cld2
+$ cd ${GOPATH}/src/github.com/blevesearch/cld2
 $ git clone https://github.com/CLD2Owners/cld2.git
 $ cd cld2/internal
 $ ./compile_libs.sh
@@ -61,11 +65,10 @@ $ brew install icu4c \
                rocksdb \
                zstd
 
-$ export CGO_LDFLAGS="-L/usr/local/opt/icu4c/lib -L/usr/local/opt/rocksdb/lib -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz4 -lzstd"
-$ export CGO_CFLAGS="-I/usr/local/opt/icu4c/include -I/usr/local/opt/rocksdb/include"
-
-$ go get -u -v github.com/blevesearch/cld2
-$ cd $GOPATH/src/github.com/blevesearch/cld2
+$ CGO_LDFLAGS="-L/usr/local/opt/icu4c/lib" \
+  CGO_CFLAGS="-I/usr/local/opt/icu4c/include" \
+  go get -u -v github.com/blevesearch/cld2
+$ cd ${GOPATH}/src/github.com/blevesearch/cld2
 $ git clone https://github.com/CLD2Owners/cld2.git
 $ cd cld2/internal
 $ perl -p -i -e 's/soname=/install_name,/' compile_libs.sh
@@ -86,18 +89,40 @@ $ make build
 If you want to build for other platform, set `GOOS`, `GOARCH`. For example, build for macOS like following:
 
 ```bash
-$ make GOOS=darwin build
+$ GOOS=darwin \
+  make build
 ```
 
-If you want to build Blast with Bleve and Bleve extentions (blevex), please set `CGO_ENABLED`、`BUILD_TAGS`. For example, enable some or all of Bleve extentions like following:
-
-```bash
-$ make GOOS=darwin BUILD_TAGS=kagome build
-```
+If you want to build Blast with Bleve and Bleve Extentions (blevex), please set `CGO_LDFLAGS`, `CGO_CFLAGS`, `CGO_ENABLED` and `BUILD_TAGS`. For example, enable Japanese Language Analyzer like following:
 
 ```bash
-$ make GOOS=darwin CGO_ENABLED=1 BUILD_TAGS="cld2 cznicb icu kagome leveldb libstemmer rocksdb" build
+$ BUILD_TAGS=kagome \
+  make build
 ```
+
+You can enable all Bleve Extensions for macOS like following:
+
+```bash
+$ GOOS=darwin \
+  CGO_LDFLAGS="-L/usr/local/opt/icu4c/lib -L/usr/local/opt/rocksdb/lib -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz4 -lzstd" \
+  CGO_CFLAGS="-I/usr/local/opt/icu4c/include -I/usr/local/opt/rocksdb/include" \
+  CGO_ENABLED=1 \
+  BUILD_TAGS="full" \
+  make build
+```
+
+Also, you can enable all Bleve Extensions for Linux like following:
+
+```bash
+$ GOOS=linux \
+  CGO_LDFLAGS="-L/usr/lib -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz4 -lzstd" \
+  CGO_CFLAGS="-I/usr/include/rocksdb" \
+  CGO_ENABLED=1 \
+  BUILD_TAGS=full \
+  make build
+```
+
+Please refer to the following table for details of Bleve Extensions:
 
 | | CGO_ENABLED | BUILD_TAGS |
 | --- | --- | --- |
@@ -873,7 +898,7 @@ $ docker run --rm --name blast1 \
     -p 10000:10000 \
     -p 10001:10001 \
     -p 10002:10002 \
-    mosuka/blast:v0.2.0 start \
+    mosuka/blast:v0.3.0 start \
     --bind-addr=:10000 \
     --grpc-addr=:10001 \
     --http-addr=:10002 \

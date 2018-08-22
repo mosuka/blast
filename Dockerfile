@@ -42,12 +42,16 @@
 FROM ubuntu:18.10
 
 ARG VERSION=
-ARG BUILD_TAGS=
-ARG CGO_ENABLED=0
+#ARG GOOS=linux
+#ARG GOARCH=amd64
+#ARG BUILD_TAGS=full
+#ARG CGO_ENABLED=0
+#ARG CGO_CFLAGS="-I/usr/include/rocksdb"
+#ARG CGO_LDFLAGS="-L/usr/lib -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz4 -lzstd"
 
 ENV GOPATH /go
 
-COPY . /go/src/github.com/mosuka/blast
+COPY . ${GOPATH}/src/github.com/mosuka/blast
 
 RUN apt-get update && \
     apt-get install -y git \
@@ -73,14 +77,21 @@ RUN apt-get update && \
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 90 && \
 
     go get -u -v github.com/blevesearch/cld2 && \
-    cd $GOPATH/src/github.com/blevesearch/cld2 && \
+    cd ${GOPATH}/src/github.com/blevesearch/cld2 && \
     git clone https://github.com/CLD2Owners/cld2.git && \
     cd cld2/internal && \
     ./compile_libs.sh && \
     cp *.so /usr/local/lib && \
 
-    cd /go/src/github.com/mosuka/blast && \
-    make GOOS=linux GOARCH=amd64 VERSION=${VERSION} CGO_ENABLED=${CGO_ENABLED} BUILD_TAG="${BUILD_TAGS}" build
+    cd ${GOPATH}/src/github.com/mosuka/blast && \
+    GOOS=linux \
+    GOARCH=amd64 \
+    CGO_ENABLED=1 \
+    CGO_CFLAGS="-I/usr/include/rocksdb" \
+    CGO_LDFLAGS="-L/usr/lib -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz4 -lzstd" \
+    BUILD_TAGS=full \
+    VERSION=${VERSION} \
+    make build
 
 FROM ubuntu:18.10
 
@@ -99,7 +110,7 @@ RUN apt-get update && \
                        librocksdb-dev && \
     apt-get clean
 
-COPY --from=0 /go/src/github.com/blevesearch/cld2/cld2/internal/*.so /usr/local/lib
+COPY --from=0 /go/src/github.com/blevesearch/cld2/cld2/internal/*.so /usr/local/lib/
 COPY --from=0 /go/src/github.com/mosuka/blast/bin/blast /usr/bin/blast
 
 EXPOSE 10000 10001 10002

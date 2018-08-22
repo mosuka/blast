@@ -13,13 +13,16 @@
 # limitations under the License.
 
 VERSION ?=
-GOOS = linux
-GOARCH = amd64
+GOOS ?= linux
+GOARCH ?= amd64
 BUILD_TAGS ?=
-CGO_ENABLED = 0
-BIN_EXT =
+CGO_ENABLED ?= 0
+CGO_CFLAGS ?=
+CGO_LDFLAGS ?=
+GO15VENDOREXPERIMENT ?= 1
+BIN_EXT ?=
 
-GO := CGO_ENABLED=$(CGO_ENABLED) GO15VENDOREXPERIMENT=1 go
+GO := CGO_ENABLED=$(CGO_ENABLED) GO15VENDOREXPERIMENT=$(CGO_ENABLED) go
 
 PACKAGES = $(shell $(GO) list ./... | grep -v '/vendor/')
 
@@ -30,7 +33,7 @@ TARGET_PACKAGES = $(shell find . -name 'main.go' -print0 | xargs -0 -n1 dirname 
 ifeq ($(VERSION),)
   VERSION = $(shell cat ./Versionfile)
 endif
-LDFLAGS = -ldflags "-X \"github.com/mosuka/blast/version.Version=${VERSION}\""
+LDFLAGS = -ldflags "-X \"github.com/mosuka/blast/version.Version=$(VERSION)\""
 
 ifeq ($(GOOS),windows)
   BIN_EXT = .exe
@@ -66,10 +69,12 @@ format:
 .PHONY: test
 test:
 	@echo ">> testing all packages"
-	@echo "   VERSION    = $(VERSION)"
+	@echo "   VERSION     = $(VERSION)"
 	@echo "   CGO_ENABLED = $(CGO_ENABLED)"
-	@echo "   BUILD_TAGS = $(BUILD_TAGS)"
-	@$(GO) test -v -tags="${BUILD_TAGS}" ${LDFLAGS} $(PACKAGES)
+	@echo "   CGO_CFLAGS  = $(CGO_CFLAGS)"
+	@echo "   CGO_LDFLAGS = $(CGO_LDFLAGS)"
+	@echo "   BUILD_TAGS  = $(BUILD_TAGS)"
+	@$(GO) test -v -tags="$(BUILD_TAGS)" $(LDFLAGS) $(PACKAGES)
 
 .PHONY: build
 build:
@@ -78,41 +83,46 @@ build:
 	@echo "   GOOS        = $(GOOS)"
 	@echo "   GOARCH      = $(GOARCH)"
 	@echo "   CGO_ENABLED = $(CGO_ENABLED)"
+	@echo "   CGO_CFLAGS  = $(CGO_CFLAGS)"
+	@echo "   CGO_LDFLAGS = $(CGO_LDFLAGS)"
 	@echo "   BUILD_TAGS  = $(BUILD_TAGS)"
-	@for target_pkg in $(TARGET_PACKAGES); do echo $$target_pkg; GOARCH=$(GOARCH) GOOS=$(GOOS) $(GO) build -tags="${BUILD_TAGS}" ${LDFLAGS} -o ./bin/`basename $$target_pkg`$(BIN_EXT) $$target_pkg || exit 1; done
+	@for target_pkg in $(TARGET_PACKAGES); do echo $$target_pkg; $(GO) build -tags="$(BUILD_TAGS)" $(LDFLAGS) -o ./bin/`basename $$target_pkg`$(BIN_EXT) $$target_pkg || exit 1; done
 
 .PHONY: install
 install:
 	@echo ">> installing binaries"
-	@echo "   VERSION    = $(VERSION)"
-	@echo "   GOOS       = $(GOOS)"
-	@echo "   GOARCH     = $(GOARCH)"
+	@echo "   VERSION     = $(VERSION)"
+	@echo "   GOOS        = $(GOOS)"
+	@echo "   GOARCH      = $(GOARCH)"
 	@echo "   CGO_ENABLED = $(CGO_ENABLED)"
-	@echo "   BUILD_TAGS = $(BUILD_TAGS)"
-	@for target_pkg in $(TARGET_PACKAGES); do echo $$target_pkg; GOARCH=$(GOARCH) GOOS=$(GOOS) $(GO) install -tags="${BUILD_TAGS}" ${LDFLAGS} $$target_pkg || exit 1; done
+	@echo "   CGO_CFLAGS  = $(CGO_CFLAGS)"
+	@echo "   CGO_LDFLAGS = $(CGO_LDFLAGS)"
+	@echo "   BUILD_TAGS  = $(BUILD_TAGS)"
+	@for target_pkg in $(TARGET_PACKAGES); do echo $$target_pkg; $(GO) install -tags="$(BUILD_TAGS)" $(LDFLAGS) $$target_pkg || exit 1; done
 
 .PHONY: dist
 dist:
 	@echo ">> packaging binaries"
-	@echo "   VERSION    = $(VERSION)"
-	@echo "   GOOS       = $(GOOS)"
-	@echo "   GOARCH     = $(GOARCH)"
+	@echo "   VERSION     = $(VERSION)"
+	@echo "   GOOS        = $(GOOS)"
+	@echo "   GOARCH      = $(GOARCH)"
 	@echo "   CGO_ENABLED = $(CGO_ENABLED)"
-	@echo "   BUILD_TAGS = $(BUILD_TAGS)"
+	@echo "   CGO_CFLAGS  = $(CGO_CFLAGS)"
+	@echo "   CGO_LDFLAGS = $(CGO_LDFLAGS)"
+	@echo "   BUILD_TAGS  = $(BUILD_TAGS)"
 	mkdir -p ./dist/$(GOOS)-$(GOARCH)/bin
-	@for target_pkg in $(TARGET_PACKAGES); do echo $$target_pkg; GOARCH=$(GOARCH) GOOS=$(GOOS) $(GO) build -tags="${BUILD_TAGS}" ${LDFLAGS} -o ./dist/$(GOOS)-$(GOARCH)/bin/`basename $$target_pkg`$(BIN_EXT) $$target_pkg || exit 1; done
+	@for target_pkg in $(TARGET_PACKAGES); do echo $$target_pkg; $(GO) build -tags="$(BUILD_TAGS)" $(LDFLAGS) -o ./dist/$(GOOS)-$(GOARCH)/bin/`basename $$target_pkg`$(BIN_EXT) $$target_pkg || exit 1; done
 	(cd ./dist/$(GOOS)-$(GOARCH); tar zcfv ../blast-${VERSION}.$(GOOS)-$(GOARCH).tar.gz .)
 
 .PHONY: docker
 docker:
 	@echo ">> building docker container image"
-	@echo "   VERSION      = $(VERSION)"
-	@echo "   CGO_ENABLED  = $(CGO_ENABLED)"
-	@echo "   BUILD_TAGS   = $(BUILD_TAGS)"
-	docker build -t mosuka/blast:v${VERSION} --build-arg VERSION=${VERSION} --build-arg CGO_ENABLED=${CGO_ENABLED} --build-arg BUILD_TAGS="${BUILD_TAGS}" .
+	@echo "   VERSION     = $(VERSION)"
+	docker build -t mosuka/blast:v${VERSION} --build-arg VERSION=${VERSION} .
 
 .PHONY: clean
 clean:
 	@echo ">> cleaning binaries"
 	rm -rf ./bin
+	rm -rf ./data
 	rm -rf ./dist
