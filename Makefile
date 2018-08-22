@@ -118,7 +118,8 @@ dist:
 docker:
 	@echo ">> building docker container image"
 	@echo "   VERSION     = $(VERSION)"
-	docker build -t mosuka/blast:v${VERSION} --build-arg VERSION=${VERSION} .
+	docker build -t mosuka/blast:latest --build-arg VERSION=${VERSION} .
+	docker tag mosuka/blast:latest mosuka/blast:v${VERSION}
 
 .PHONY: clean
 clean:
