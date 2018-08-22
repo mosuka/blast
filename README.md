@@ -15,10 +15,70 @@ Blast makes it easy for programmers to develop search applications with advanced
 - Index replication
 - An easy-to-use HTTP API
 - CLI is also available
+- Docker container image is also available
 
 ## Building Blast
 
-Building Blast requires Go 1.9 or later. To build Blast on Linux like so:
+Blast requires Bleve and [Bleve Extensions](https://github.com/blevesearch/blevex). Some Bleve Extensions requires C/C++ libraries. The following sections are instructions for satisfying dependencies on particular platforms.
+
+### Requirement
+
+- Go
+- Git
+
+### Ubuntu 18.10
+
+```
+$ sudo apt-get install -y libicu-dev \
+                          libleveldb-dev \
+                          libstemmer-dev \
+                          libgflags-dev \
+                          libsnappy-dev \
+                          zlib1g-dev \
+                          libbz2-dev \
+                          liblz4-dev \
+                          libzstd-dev \
+                          librocksdb-dev \
+                          gcc-4.8 \
+                          g++-4.8 \
+                          build-essential
+
+$ sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80
+$ sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 80
+$ sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 90
+$ sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 90
+
+$ export GOPATH=${HOME}/go
+$ go get -u -v github.com/blevesearch/cld2
+$ cd ${GOPATH}/src/github.com/blevesearch/cld2
+$ git clone https://github.com/CLD2Owners/cld2.git
+$ cd cld2/internal
+$ ./compile_libs.sh
+$ sudo cp *.so /usr/local/lib
+```
+
+### macOS High Sierra Version 10.13.6
+
+```bash
+$ brew install icu4c \
+               leveldb \
+               rocksdb \
+               zstd
+
+$ CGO_LDFLAGS="-L/usr/local/opt/icu4c/lib" \
+  CGO_CFLAGS="-I/usr/local/opt/icu4c/include" \
+  go get -u -v github.com/blevesearch/cld2
+$ cd ${GOPATH}/src/github.com/blevesearch/cld2
+$ git clone https://github.com/CLD2Owners/cld2.git
+$ cd cld2/internal
+$ perl -p -i -e 's/soname=/install_name,/' compile_libs.sh
+$ ./compile_libs.sh
+$ sudo cp *.so /usr/local/lib
+```
+
+### Build Blast
+
+Build Blast for Linux as following:
 
 ```bash
 $ git clone git@github.com:mosuka/blast.git
@@ -26,11 +86,53 @@ $ cd blast
 $ make build
 ```
 
-If you want to build Blast other platform, please set `GOOS`、`GOARCH` like following:
+If you want to build for other platform, set `GOOS`, `GOARCH`. For example, build for macOS like following:
 
 ```bash
-$ make GOOS=darwin build
+$ GOOS=darwin \
+  make build
 ```
+
+If you want to build Blast with Bleve and Bleve Extentions (blevex), please set `CGO_LDFLAGS`, `CGO_CFLAGS`, `CGO_ENABLED` and `BUILD_TAGS`. For example, enable Japanese Language Analyzer like following:
+
+```bash
+$ BUILD_TAGS=kagome \
+  make build
+```
+
+You can enable all Bleve Extensions for macOS like following:
+
+```bash
+$ GOOS=darwin \
+  CGO_LDFLAGS="-L/usr/local/opt/icu4c/lib -L/usr/local/opt/rocksdb/lib -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz4 -lzstd" \
+  CGO_CFLAGS="-I/usr/local/opt/icu4c/include -I/usr/local/opt/rocksdb/include" \
+  CGO_ENABLED=1 \
+  BUILD_TAGS="full" \
+  make build
+```
+
+Also, you can enable all Bleve Extensions for Linux like following:
+
+```bash
+$ GOOS=linux \
+  CGO_LDFLAGS="-L/usr/lib -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz4 -lzstd" \
+  CGO_CFLAGS="-I/usr/include/rocksdb" \
+  CGO_ENABLED=1 \
+  BUILD_TAGS=full \
+  make build
+```
+
+Please refer to the following table for details of Bleve Extensions:
+
+| | CGO_ENABLED | BUILD_TAGS |
+| --- | --- | --- |
+| Compact Language Detector | 1 | cld2 |
+| cznicb KV store |  | cznicb |
+| Thai Language Analyser | 1 | icu |
+| Japanese Language Analyser |  | kagome |
+| LevelDB | 1 | leveldb |
+| Danish, German, English, Spanish, Finnish, French, Hungarian, Italian, Dutch, Norwegian, Portuguese, Romanian, Russian, Swedish, Turkish Language Stemmer | 1 | libstemmer |
+| RocksDB | 1 | rocksdb |
 
 You can see the binary file when build successful like so:
 
@@ -796,11 +898,11 @@ $ docker run --rm --name blast1 \
     -p 10000:10000 \
     -p 10001:10001 \
     -p 10002:10002 \
-    mosuka/blast:v0.2.0 start \
-    --bind-addr=:10000 \
-    --grpc-addr=:10001 \
-    --http-addr=:10002 \
-    --node-id=node1
+    mosuka/blast:v0.3.0 start \
+      --bind-addr=:10000 \
+      --grpc-addr=:10001 \
+      --http-addr=:10002 \
+      --node-id=node1
 ```
 
 ### Running Blast cluster on Docker Compose

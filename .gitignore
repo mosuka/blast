@@ -20,6 +20,6 @@
 .idea/
 
 # Blast
-*.log
-bin
-data
+bin/
+data/
+dist/

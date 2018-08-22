@@ -1,7 +1,7 @@
 version: '2'
 services:
   blast1:
-    image: mosuka/blast:v0.2.0
+    image: mosuka/blast:v0.3.0
     restart: always
     ports:
     - 10000:10000
@@ -15,7 +15,7 @@ services:
     command: start
 
   blast2:
-    image: mosuka/blast:v0.2.0
+    image: mosuka/blast:v0.3.0
     restart: always
     ports:
     - 11000:10000
@@ -30,7 +30,7 @@ services:
     command: start
 
   blast3:
-    image: mosuka/blast:v0.2.0
+    image: mosuka/blast:v0.3.0
     restart: always
     ports:
     - 12000:10000
