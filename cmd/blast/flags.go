@@ -16,10 +16,11 @@ package main
 
 import (
 	"math"
+	"os"
 
-	"github.com/urfave/cli"
-	"github.com/blevesearch/bleve/index/upsidedown"
 	"github.com/blevesearch/bleve/index/store/boltdb"
+	"github.com/blevesearch/bleve/index/upsidedown"
+	"github.com/urfave/cli"
 )
 
 var (
@@ -44,7 +45,7 @@ var (
 
 	flNodeID = cli.StringFlag{
 		Name:   "node-id",
-		Value:  "node0",
+		Value:  "node1",
 		Usage:  "Node ID",
 		EnvVar: "BLAST_NODE_ID",
 	}
@@ -93,7 +94,7 @@ var (
 	}
 	flIndexKvstore = cli.StringFlag{
 		Name:   "index-kvstore",
-		Value: boltdb.Name,
+		Value:  boltdb.Name,
 		Usage:  "Index Key-Value store",
 		EnvVar: "BLAST_INDEX_KVSTORE",
 	}
@@ -126,11 +127,11 @@ var (
 		Usage:  "Log level",
 		EnvVar: "BLAST_LOG_LEVEL",
 	}
-	flLogFilename = cli.StringFlag{
-		Name:   "log-filename",
-		Value:  "",
-		Usage:  "Log filename",
-		EnvVar: "BLAST_LOG_FILENAME",
+	flLogFile = cli.StringFlag{
+		Name:   "log-file",
+		Value:  os.Stdout.Name(),
+		Usage:  "Log file",
+		EnvVar: "BLAST_LOG_FILE",
 	}
 	flLogMaxSize = cli.IntFlag{
 		Name:   "log-max-size",
@@ -156,11 +157,11 @@ var (
 		EnvVar: "BLAST_LOG_COMPRESS",
 	}
 
-	flHTTPAccessLogFilename = cli.StringFlag{
-		Name:   "http-access-log-filename",
-		Value:  "",
-		Usage:  "HTTP access log filename",
-		EnvVar: "BLAST_HTTP_ACCESS_LOG_FILENAME",
+	flHTTPAccessLogFile = cli.StringFlag{
+		Name:   "http-access-log-file",
+		Value:  os.Stdout.Name(),
+		Usage:  "HTTP access log file",
+		EnvVar: "BLAST_HTTP_ACCESS_LOG_FILE",
 	}
 	flHTTPAccessLogMaxSize = cli.IntFlag{
 		Name:   "http-access-log-max-size",

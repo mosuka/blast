@@ -48,12 +48,12 @@ init-deps:
 
 .PHONY: install-deps
 install-deps:
-	@echo ">> initialize dependencies"
+	@echo ">> install dependencies"
 	dep ensure
 
 .PHONY: update-deps
 update-deps:
-	@echo ">> initialize dependencies"
+	@echo ">> update dependencies"
 	dep ensure -update
 
 .PHONY: protoc
