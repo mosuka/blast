@@ -16,11 +16,11 @@ package main
 
 import (
 	"math"
+	"os"
 
 	"github.com/blevesearch/bleve/index/store/boltdb"
 	"github.com/blevesearch/bleve/index/upsidedown"
 	"github.com/urfave/cli"
-	"os"
 )
 
 var (
