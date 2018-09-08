@@ -1,7 +1,7 @@
 version: '2'
 services:
   blast1:
-    image: mosuka/blast:v0.3.0
+    image: mosuka/blast:latest
     restart: always
     ports:
     - 10000:10000
@@ -11,11 +11,11 @@ services:
       BLAST_BIND_ADDR: blast1:10000
       BLAST_GRPC_ADDR: blast1:10001
       BLAST_HTTP_ADDR: blast1:10002
-      BLAST_NODE_ID: node1
+      BLAST_RAFT_NODE_ID: node1
     command: start
 
   blast2:
-    image: mosuka/blast:v0.3.0
+    image: mosuka/blast:latest
     restart: always
     ports:
     - 11000:10000
@@ -25,12 +25,12 @@ services:
       BLAST_BIND_ADDR: blast2:10000
       BLAST_GRPC_ADDR: blast2:10001
       BLAST_HTTP_ADDR: blast2:10002
-      BLAST_NODE_ID: node2
+      BLAST_RAFT_NODE_ID: node2
       BLAST_PEER_GRPC_ADDR: blast1:10001
     command: start
 
   blast3:
-    image: mosuka/blast:v0.3.0
+    image: mosuka/blast:latest
     restart: always
     ports:
     - 12000:10000
@@ -40,6 +40,6 @@ services:
       BLAST_BIND_ADDR: blast3:10000
       BLAST_GRPC_ADDR: blast3:10001
       BLAST_HTTP_ADDR: blast3:10002
-      BLAST_NODE_ID: node3
+      BLAST_RAFT_NODE_ID: node3
       BLAST_PEER_GRPC_ADDR: blast1:10001
     command: start

@@ -20,21 +20,30 @@ import (
 	"github.com/hashicorp/raft"
 )
 
+const (
+	DefaultDir           = "./data/raft"
+	DefaultSnapshotCount = 1
+	DefaultTimeout       = "10s"
+	DefaultNodeID        = "node1"
+)
+
 type RaftConfig struct {
-	Path                string        `json:"path,omitempty"`
-	RetainSnapshotCount int           `json:"retain_snapshot_count,omitempty"`
-	Timeout             time.Duration `json:"timeout,omitempty"`
-	Config              *raft.Config  `json:"config,omitempty"`
+	Dir           string        `json:"dir,omitempty"`
+	SnapshotCount int           `json:"snapshot_count,omitempty"`
+	Timeout       time.Duration `json:"timeout,omitempty"`
+	Config        *raft.Config  `json:"config,omitempty"`
 }
 
-func DefaultConfig() *RaftConfig {
+func DefaultRaftConfig() *RaftConfig {
 	config := raft.DefaultConfig()
-	config.LocalID = "node0"
+	config.LocalID = DefaultNodeID
+
+	timeoutDuration, _ := time.ParseDuration(DefaultTimeout)
 
 	return &RaftConfig{
-		Path:                "./data/raft",
-		RetainSnapshotCount: 2,
-		Timeout:             10 * time.Second,
-		Config:              config,
+		Dir:           DefaultDir,
+		SnapshotCount: DefaultSnapshotCount,
+		Timeout:       timeoutDuration,
+		Config:        config,
 	}
 }

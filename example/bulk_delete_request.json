@@ -2,41 +2,217 @@
   {
     "type": "DELETE",
     "document": {
-      "id": "enwiki_doc1",
-      "fields": {
-        "title_en": "Search engine (computing)",
-        "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload.",
-        "contributor": "unknown",
-        "timestamp": "2018-07-04T05:41:00Z",
-        "_type": "enwiki"
-      }
+      "id": "arwiki_1"
     }
   },
   {
     "type": "DELETE",
     "document": {
-      "id": "ptwiki_doc1",
-      "fields": {
-        "title_pt": "Motor de busca",
-        "text_pt": "Motor de pesquisa (português europeu) ou ferramenta de busca (português brasileiro) ou buscador (em inglês: search engine) é um programa desenhado para procurar palavras-chave fornecidas pelo utilizador em documentos e bases de dados. No contexto da internet, um motor de pesquisa permite procurar palavras-chave em documentos alojados na world wide web, como aqueles que se encontram armazenados em websites.",
-        "contributor": "unknown",
-        "timestamp": "2018-07-04T05:41:00Z",
-        "_type": "ptwiki"
-      }
-
+      "id": "bgwiki_1"
     }
   },
   {
     "type": "DELETE",
     "document": {
-      "id": "jawiki_doc1",
-      "fields": {
-        "title_ja": "検索エンジン",
-        "text_ja": "検索エンジン（けんさくエンジン、英語: search engine）は、狭義にはインターネットに存在する情報（ウェブページ、ウェブサイト、画像ファイル、ネットニュースなど）を検索する機能およびそのプログラム。インターネットの普及初期には、検索としての機能のみを提供していたウェブサイトそのものを検索エンジンと呼んだが、現在では様々なサービスが加わったポータルサイト化が進んだため、検索をサービスの一つとして提供するウェブサイトを単に検索サイトと呼ぶことはなくなっている。広義には、インターネットに限定せず情報を検索するシステム全般を含む。",
-        "contributor": "unknown",
-        "timestamp": "2018-05-30T00:52:00Z",
-        "_type": "jawiki"
-      }
+      "id": "cawiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "cswiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "dawiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "dewiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "elwiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "enwiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "eswiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "fawiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "fiwiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "frwiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "gawiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "glwiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "guwiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "hiwiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "huwiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "hywiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "idwiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "itwiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "jawiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "knwiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "kowiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "mlwiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "nlwiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "nowiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "pswiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "ptwiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "rowiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "ruwiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "svwiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "tawiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "tewiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "thwiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "trwiki_1"
+    }
+  },
+  {
+    "type": "DELETE",
+    "document": {
+      "id": "zhwiki_1"
     }
   }
 ]

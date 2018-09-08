@@ -28,17 +28,13 @@ import (
 func leave(c *cli.Context) {
 	nodeID := c.String("node-id")
 	bindAddr := c.String("bind-addr")
-
 	peerGRPCAddr := c.String("peer-grpc-addr")
-	maxSendMsgSize := c.Int("max-send-msg-size")
-	maxRecvMsgSize := c.Int("max-recv-msg-size")
-
 	prettyPrint := c.Bool("pretty-print")
 
 	var err error
 
 	var grpcClient *client.GRPCClient
-	if grpcClient, err = client.NewGRPCClient(peerGRPCAddr, maxSendMsgSize, maxRecvMsgSize); err != nil {
+	if grpcClient, err = client.NewGRPCClient(peerGRPCAddr); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return
 	}

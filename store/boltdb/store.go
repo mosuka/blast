@@ -27,18 +27,21 @@ import (
 const (
 	Filename = "boltdb.db"
 	Bucket   = "DB"
+
+	DefaultDir  = "./data/store"
+	DefaultMode = os.FileMode(0600)
 )
 
 type StoreConfig struct {
-	Path    string        `json:"path,omitempty"`
+	Dir     string        `json:"dir,omitempty"`
 	Mode    os.FileMode   `json:"mode,omitempty"`
 	Options *bolt.Options `json:"options,omitempty"`
 }
 
-func DefaultConfig() *StoreConfig {
+func DefaultStoreConfig() *StoreConfig {
 	return &StoreConfig{
-		Path:    "./data/store",
-		Mode:    os.FileMode(0600),
+		Dir:     DefaultDir,
+		Mode:    DefaultMode,
 		Options: bolt.DefaultOptions,
 	}
 }
@@ -52,13 +55,13 @@ func NewStore(config *StoreConfig) (*Store, error) {
 	var err error
 
 	// Create directory
-	if err := os.MkdirAll(config.Path, 0755); err != nil && !os.IsExist(err) {
+	if err := os.MkdirAll(config.Dir, 0755); err != nil && !os.IsExist(err) {
 		return nil, fmt.Errorf("store path not accessible: %v", err)
 	}
 
 	// Open boltdb
 	var db *bolt.DB
-	if db, err = bolt.Open(filepath.Join(config.Path, Filename), config.Mode, config.Options); err != nil {
+	if db, err = bolt.Open(filepath.Join(config.Dir, Filename), config.Mode, config.Options); err != nil {
 		return nil, err
 	}
 

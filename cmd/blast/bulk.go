@@ -27,11 +27,7 @@ import (
 
 func bulk(c *cli.Context) {
 	grpcAddr := c.String("grpc-addr")
-	maxSendMsgSize := c.Int("max-send-msg-size")
-	maxRecvMsgSize := c.Int("max-recv-msg-size")
-
 	batchSize := c.Int("batch-size")
-
 	prettyPrint := c.Bool("pretty-print")
 
 	updateRequestsBytes := []byte(c.Args().Get(0))
@@ -45,7 +41,7 @@ func bulk(c *cli.Context) {
 	}
 
 	var grpcClient *client.GRPCClient
-	if grpcClient, err = client.NewGRPCClient(grpcAddr, maxSendMsgSize, maxRecvMsgSize); err != nil {
+	if grpcClient, err = client.NewGRPCClient(grpcAddr); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return
 	}

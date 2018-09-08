@@ -21,13 +21,13 @@ import (
 )
 
 func TestStore_Reader(t *testing.T) {
-	config := DefaultConfig()
+	config := DefaultStoreConfig()
 
 	tmpDir, err := ioutil.TempDir("/tmp", "blast")
 	if err != nil {
 		t.Fatalf("unexpected error. %v", err)
 	}
-	config.Path = tmpDir
+	config.Dir = tmpDir
 
 	defer os.RemoveAll(tmpDir)
 
@@ -61,13 +61,13 @@ func TestStore_Reader(t *testing.T) {
 }
 
 func TestStore_Writer(t *testing.T) {
-	config := DefaultConfig()
+	config := DefaultStoreConfig()
 
 	tmpDir, err := ioutil.TempDir("/tmp", "blast")
 	if err != nil {
 		t.Fatalf("unexpected error. %v", err)
 	}
-	config.Path = tmpDir
+	config.Dir = tmpDir
 
 	defer os.RemoveAll(tmpDir)
 
@@ -101,13 +101,13 @@ func TestStore_Writer(t *testing.T) {
 }
 
 func TestStore_Iterator(t *testing.T) {
-	config := DefaultConfig()
+	config := DefaultStoreConfig()
 
 	tmpDir, err := ioutil.TempDir("/tmp", "blast")
 	if err != nil {
 		t.Fatalf("unexpected error. %v", err)
 	}
-	config.Path = tmpDir
+	config.Dir = tmpDir
 
 	defer os.RemoveAll(tmpDir)
 
@@ -145,13 +145,13 @@ func TestStore_Iterator(t *testing.T) {
 }
 
 func TestStore_Bulker(t *testing.T) {
-	config := DefaultConfig()
+	config := DefaultStoreConfig()
 
 	tmpDir, err := ioutil.TempDir("/tmp", "blast")
 	if err != nil {
 		t.Fatalf("unexpected error. %v", err)
 	}
-	config.Path = tmpDir
+	config.Dir = tmpDir
 
 	defer os.RemoveAll(tmpDir)
 

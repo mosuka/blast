@@ -27,15 +27,12 @@ import (
 
 func snapshot(c *cli.Context) {
 	grpcAddr := c.String("grpc-addr")
-	maxSendMsgSize := c.Int("max-send-msg-size")
-	maxRecvMsgSize := c.Int("max-recv-msg-size")
-
 	prettyPrint := c.Bool("pretty-print")
 
 	var err error
 
 	var grpcClient *client.GRPCClient
-	if grpcClient, err = client.NewGRPCClient(grpcAddr, maxSendMsgSize, maxRecvMsgSize); err != nil {
+	if grpcClient, err = client.NewGRPCClient(grpcAddr); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return
 	}

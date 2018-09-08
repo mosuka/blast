@@ -17,12 +17,12 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
 
-	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/mosuka/blast/grpc/client"
 	"github.com/mosuka/blast/http/metrics"

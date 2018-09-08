@@ -15,11 +15,11 @@
 package main
 
 import (
-	"math"
 	"os"
 
-	"github.com/blevesearch/bleve/index/store/boltdb"
-	"github.com/blevesearch/bleve/index/upsidedown"
+	"github.com/mosuka/blast/index/bleve"
+	"github.com/mosuka/blast/raft"
+	"github.com/mosuka/blast/store/boltdb"
 	"github.com/urfave/cli"
 )
 
@@ -43,82 +43,67 @@ var (
 		EnvVar: "BLAST_HTTP_ADDR",
 	}
 
-	flNodeID = cli.StringFlag{
-		Name:   "node-id",
-		Value:  "node1",
+	flRaftNodeID = cli.StringFlag{
+		Name:   "raft-node-id",
+		Value:  raft.DefaultNodeID,
 		Usage:  "Node ID",
 		EnvVar: "BLAST_NODE_ID",
 	}
 	flRaftDir = cli.StringFlag{
 		Name:   "raft-dir",
-		Value:  "./data/raft",
+		Value:  raft.DefaultDir,
 		Usage:  "Raft data directory",
 		EnvVar: "BLAST_RAFT_DIR",
 	}
 	flRaftSnapshotCount = cli.IntFlag{
 		Name:   "raft-snapshot-count",
-		Value:  2,
+		Value:  raft.DefaultSnapshotCount,
 		Usage:  "Raft snapshot count",
 		EnvVar: "BLAST_RAFT_SNAPSHOT_COUNT",
 	}
 	flRaftTimeout = cli.StringFlag{
 		Name:   "raft-timeout",
-		Value:  "10s",
+		Value:  raft.DefaultTimeout,
 		Usage:  "Raft timeout",
 		EnvVar: "BLAST_RAFT_TIMEOUT",
 	}
 
 	flStoreDir = cli.StringFlag{
 		Name:   "store-dir",
-		Value:  "./data/store",
+		Value:  boltdb.DefaultDir,
 		Usage:  "Store data directory",
 		EnvVar: "BLAST_STORE_DIR",
 	}
 
 	flIndexDir = cli.StringFlag{
 		Name:   "index-dir",
-		Value:  "./data/index",
+		Value:  bleve.DefaultDir,
 		Usage:  "Index data directory",
 		EnvVar: "BLAST_INDEX_DIR",
 	}
-	flIndexMapping = cli.StringFlag{
-		Name:   "index-mapping",
-		Usage:  "Index mapping path",
-		EnvVar: "BLAST_INDEX_MAPPING",
+	flIndexMappingFile = cli.StringFlag{
+		Name:   "index-mapping-file",
+		Value:  bleve.DefaultIndexMappingFile,
+		Usage:  "Index mapping file",
+		EnvVar: "BLAST_INDEX_MAPPING_FILE",
 	}
 	flIndexType = cli.StringFlag{
 		Name:   "index-type",
-		Value:  upsidedown.Name,
+		Value:  bleve.DefaultIndexType,
 		Usage:  "Index type",
 		EnvVar: "BLAST_INDEX_TYPE",
 	}
 	flIndexKvstore = cli.StringFlag{
 		Name:   "index-kvstore",
-		Value:  boltdb.Name,
+		Value:  bleve.DefaultKvstore,
 		Usage:  "Index Key-Value store",
 		EnvVar: "BLAST_INDEX_KVSTORE",
-	}
-	flIndexKvconfig = cli.StringFlag{
-		Name:   "index-kvconfig",
-		Usage:  "Index Key-Value config",
-		EnvVar: "BLAST_INDEX_KVCONFIG",
 	}
 
 	flPeerGRPCAddr = cli.StringFlag{
 		Name:   "peer-grpc-addr",
 		Usage:  "Peer gRPC address to connect on for join the cluster",
 		EnvVar: "BLAST_PEER_GRPC_ADDR",
-	}
-
-	flMaxSendMsgSize = cli.IntFlag{
-		Name:  "max-send-msg-size",
-		Value: math.MaxInt32,
-		Usage: "Max size of send message via gRPC",
-	}
-	flMaxRecvMsgSize = cli.IntFlag{
-		Name:  "max-recv-msg-size",
-		Value: math.MaxInt32,
-		Usage: "Max size of receive message via gRPC",
 	}
 
 	flLogLevel = cli.StringFlag{

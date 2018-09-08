@@ -15,16 +15,13 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/blevesearch/bleve/mapping"
 	"github.com/hashicorp/raft"
 	"github.com/mosuka/blast/grpc/client"
 	grpcserver "github.com/mosuka/blast/grpc/server"
@@ -41,11 +38,11 @@ import (
 )
 
 var logo = `
-  ____  _           _   
- | __ )| | __ _ ___| |_ 
- |  _ \| |/ _' / __| __|  The lightweight distributed
- | |_) | | (_| \__ \ |_   indexing and search server.
- |____/|_|\__,_|___/\__|  version ` + version.Version + `
+    ____   __              __ 
+   / __ ) / /____ _ _____ / /_
+  / __ \ / // __ '// ___// __/  The lightweight distributed
+ / /_/ // // /_/ /(__  )/ /_    indexing and search server.
+/_.___//_/ \__,_//____/ \__/    version ` + version.Version + `
 `
 
 func start(c *cli.Context) {
@@ -56,30 +53,28 @@ func start(c *cli.Context) {
 	grpcAddr := c.String("grpc-addr")
 	httpAddr := c.String("http-addr")
 
-	nodeID := c.String("node-id")
+	nodeID := c.String("raft-node-id")
 	raftDir := c.String("raft-dir")
-	retainSnapshotCount := c.Int("retain-snapshot-count")
+	snapshotCount := c.Int("raft-snapshot-count")
 	raftTimeout := c.String("raft-timeout")
 
 	storeDir := c.String("store-dir")
 
 	indexDir := c.String("index-dir")
-	indexMapping := c.String("index-mapping")
+	indexMappingFile := c.String("index-mapping-file")
 	indexType := c.String("index-type")
 	indexKvstore := c.String("index-kvstore")
 
 	peerGRPCAddr := c.String("peer-grpc-addr")
-	maxSendMsgSize := c.Int("max-send-msg-size")
-	maxRecvMsgSize := c.Int("max-recv-msg-size")
 
 	logLevel := c.String("log-level")
-	logFilename := c.String("log-filename")
+	logFilename := c.String("log-file")
 	logMaxSize := c.Int("log-max-size")
 	logMaxBackups := c.Int("log-max-backups")
 	logMaxAge := c.Int("log-max-age")
 	logCompress := c.Bool("log-compress")
 
-	httpAccessLogFilename := c.String("http-access-log-filename")
+	httpAccessLogFilename := c.String("http-access-log-file")
 	httpAccessLogMaxSize := c.Int("http-access-log-max-size")
 	httpAccessLogMaxBackups := c.Int("http-access-log-max-backups")
 	httpAccessLogMaxAge := c.Int("http-access-log-max-age")
@@ -88,60 +83,31 @@ func start(c *cli.Context) {
 	var err error
 
 	// Raft config
-	raftConfig := braft.DefaultConfig()
-	if nodeID != "" {
-		raftConfig.Config.LocalID = raft.ServerID(nodeID)
-	}
-	if raftDir != "" {
-		raftConfig.Path = raftDir
-	}
-	if retainSnapshotCount > 0 {
-		raftConfig.RetainSnapshotCount = retainSnapshotCount
-	}
-	if raftTimeout != "" {
-		if raftConfig.Timeout, err = time.ParseDuration(raftTimeout); err != nil {
-			fmt.Fprint(os.Stderr, errors.Wrap(err, "Failed to parse raft timeout"))
-			return
-		}
+	raftConfig := braft.DefaultRaftConfig()
+	raftConfig.Config.LocalID = raft.ServerID(nodeID)
+	raftConfig.Dir = raftDir
+	raftConfig.SnapshotCount = snapshotCount
+	raftConfig.Timeout, err = time.ParseDuration(raftTimeout)
+	if err != nil {
+		fmt.Fprint(os.Stderr, errors.Wrap(err, "Failed to parse raft timeout"))
+		return
 	}
 
 	// Store config
-	storeConfig := boltdb.DefaultConfig()
-	if storeDir != "" {
-		storeConfig.Path = storeDir
-	}
+	storeConfig := boltdb.DefaultStoreConfig()
+	storeConfig.Dir = storeDir
 
 	// Index config
-	indexConfig := bleve.DefaultConfig()
-	if indexDir != "" {
-		indexConfig.Path = indexDir
-	}
-	if indexMapping != "" {
-		var imf *os.File
-		if imf, err = os.Open(indexMapping); err != nil {
-			fmt.Fprint(os.Stderr, errors.Wrap(err, "Failed to open index mapping"))
+	indexConfig := bleve.DefaultIndexConfig()
+	indexConfig.Dir = indexDir
+	indexConfig.IndexType = indexType
+	indexConfig.Kvstore = indexKvstore
+	if indexMappingFile != "" {
+		err = indexConfig.SetIndexMapping(indexMappingFile)
+		if err != nil {
+			fmt.Fprint(os.Stderr, errors.Wrap(err, "Failed to read index mapping file"))
 			return
 		}
-		defer imf.Close()
-
-		var imb []byte
-		if imb, err = ioutil.ReadAll(imf); err != nil {
-			fmt.Fprintln(os.Stderr, errors.Wrap(err, "Failed to read index mapping"))
-			return
-		}
-
-		im := mapping.NewIndexMapping()
-		if err = json.Unmarshal(imb, &im); err != nil {
-			fmt.Fprintln(os.Stderr, errors.Wrap(err, "Failed to unmarshal index mapping"))
-			return
-		}
-		indexConfig.IndexMapping = im
-	}
-	if indexType != "" {
-		indexConfig.IndexType = indexType
-	}
-	if indexKvstore != "" {
-		indexConfig.Kvstore = indexKvstore
 	}
 
 	// Create logger
@@ -157,37 +123,36 @@ func start(c *cli.Context) {
 	)
 
 	// Check bootstrap node
-	var bootstrap bool
-	bootstrap = peerGRPCAddr == "" || peerGRPCAddr == grpcAddr
+	bootstrap := peerGRPCAddr == "" || peerGRPCAddr == grpcAddr
 
 	// Create Service
-	var svc *service.KVSService
-	if svc, err = service.NewKVSService(bindAddr, raftConfig, bootstrap, storeConfig, indexConfig); err != nil {
+	svc, err := service.NewKVSService(bindAddr, raftConfig, bootstrap, storeConfig, indexConfig)
+	if err != nil {
 		fmt.Fprintln(os.Stderr, errors.Wrap(err, "Failed to create service"))
 		return
 	}
 	svc.SetLogger(logger)
 
 	// Start service
-	if err = svc.Start(); err != nil {
+	err = svc.Start()
+	defer svc.Stop()
+	if err != nil {
 		fmt.Fprintln(os.Stderr, errors.Wrap(err, "Failed to start service"))
 		return
 	}
-	defer svc.Stop()
 
 	// Create gRPC server
-	var grpcServer *grpcserver.GRPCServer
-	if grpcServer, err = grpcserver.NewGRPCServer(grpcAddr, svc); err != nil {
+	grpcServer, err := grpcserver.NewGRPCServer(grpcAddr, svc)
+	if err != nil {
 		fmt.Fprintln(os.Stderr, errors.Wrap(err, "Failed to create gRPC Server"))
 		return
 	}
-	defer grpcServer.Stop()
 	grpcServer.SetLogger(logger)
-	grpcServer.SetMaxSendMessageSize(maxSendMsgSize)
-	grpcServer.SetMaxReceiveMessageSize(maxRecvMsgSize)
 
 	// Start gRPC server
-	if err = grpcServer.Start(); err != nil {
+	err = grpcServer.Start()
+	defer grpcServer.Stop()
+	if err != nil {
 		fmt.Fprintln(os.Stderr, errors.Wrap(err, "Failed to start gRPC Server"))
 		return
 	}
@@ -202,27 +167,25 @@ func start(c *cli.Context) {
 	)
 
 	// Create HTTP server
-	var httpServer *httpserver.HTTPServer
-	if httpServer, err = httpserver.NewHTTPServer(httpAddr, grpcAddr); err != nil {
+	httpServer, err := httpserver.NewHTTPServer(httpAddr, grpcAddr)
+	if err != nil {
 		fmt.Fprintln(os.Stderr, errors.Wrap(err, "Failed to initialize HTTP Server"))
 		return
 	}
-	defer httpServer.Stop()
 
 	// Setup HTTP server
 	httpServer.SetLogger(logger)
 	httpServer.SetHTTPAccessLogger(httpAccessLogger)
-	httpServer.SetMaxSendMessageSize(maxSendMsgSize)
-	httpServer.SetMaxReceiveMessageSize(maxRecvMsgSize)
 
 	// Start HTTP server
-	if err = httpServer.Start(); err != nil {
+	err = httpServer.Start()
+	defer httpServer.Stop()
+	if err != nil {
 		fmt.Fprintln(os.Stderr, errors.Wrap(err, "Failed to start HTTP Server"))
 		return
 	}
 
-	var joinReq *protobuf.JoinRequest
-	joinReq = &protobuf.JoinRequest{
+	joinReq := &protobuf.JoinRequest{
 		NodeId:  nodeID,
 		Address: bindAddr,
 		Metadata: &protobuf.Metadata{
@@ -234,7 +197,8 @@ func start(c *cli.Context) {
 	if bootstrap {
 		// If node is bootstrap, put metadata into service.
 		// Wait for leader detected
-		if _, err = svc.WaitForLeader(60 * time.Second); err != nil {
+		_, err = svc.WaitForLeader(60 * time.Second)
+		if err != nil {
 			fmt.Fprintln(os.Stderr, errors.Wrap(err, "Failed to detect leader node"))
 			return
 		}
@@ -243,12 +207,12 @@ func start(c *cli.Context) {
 		svc.PutMetadata(joinReq)
 	} else {
 		// If node is not bootstrap, make the join request.
-		var grpcClient *client.GRPCClient
-		if grpcClient, err = client.NewGRPCClient(peerGRPCAddr, maxSendMsgSize, maxRecvMsgSize); err != nil {
+		grpcClient, err := client.NewGRPCClient(peerGRPCAddr)
+		defer grpcClient.Close()
+		if err != nil {
 			fmt.Fprintln(os.Stderr, errors.New(err.Error()))
 			return
 		}
-		defer grpcClient.Close()
 
 		grpcClient.Join(joinReq)
 	}

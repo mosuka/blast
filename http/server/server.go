@@ -16,7 +16,6 @@ package server
 
 import (
 	"log"
-	"math"
 	"net"
 	"net/http"
 
@@ -33,22 +32,18 @@ type HTTPServer struct {
 	listener         net.Listener
 	httpAccessLogger *log.Logger
 
-	grpcAddress           string
-	grpcClient            *client.GRPCClient
-	maxSendMessageSize    int
-	maxReceiveMessageSize int
+	grpcAddress string
+	grpcClient  *client.GRPCClient
 
 	logger *log.Logger
 }
 
 func NewHTTPServer(httpAddress string, grpcAddress string) (*HTTPServer, error) {
 	return &HTTPServer{
-		httpAddress:           httpAddress,
-		grpcAddress:           grpcAddress,
-		maxSendMessageSize:    math.MaxInt32,
-		maxReceiveMessageSize: math.MaxInt32,
-		logger:                logging.DefaultLogger(),
-		httpAccessLogger:      logging.DefaultLogger(),
+		httpAddress:      httpAddress,
+		grpcAddress:      grpcAddress,
+		logger:           logging.DefaultLogger(),
+		httpAccessLogger: logging.DefaultLogger(),
 	}, nil
 }
 
@@ -62,20 +57,10 @@ func (s *HTTPServer) SetHTTPAccessLogger(logger *log.Logger) {
 	return
 }
 
-func (s *HTTPServer) SetMaxSendMessageSize(maxSendMessageSize int) {
-	s.maxSendMessageSize = maxSendMessageSize
-	return
-}
-
-func (s *HTTPServer) SetMaxReceiveMessageSize(maxReceiveMessageSize int) {
-	s.maxReceiveMessageSize = maxReceiveMessageSize
-	return
-}
-
 func (s *HTTPServer) Start() error {
 	var err error
 
-	if s.grpcClient, err = client.NewGRPCClient(s.grpcAddress, s.maxSendMessageSize, s.maxReceiveMessageSize); err != nil {
+	if s.grpcClient, err = client.NewGRPCClient(s.grpcAddress); err != nil {
 		s.logger.Printf("[ERR] server: Failed to create gRPC client: %s", err.Error())
 		return err
 	}
