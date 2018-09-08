@@ -15,6 +15,8 @@
 package bleve
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"log"
 	"os"
 
@@ -25,25 +27,82 @@ import (
 	"github.com/mosuka/blast/logging"
 )
 
+const (
+	DefaultDir              = "./data/index"
+	DefaultIndexMappingFile = ""
+	DefaultIndexType        = upsidedown.Name
+	DefaultKvstore          = boltdb.Name
+)
+
 type IndexConfig struct {
-	Path         string                    `json:"path,omitempty"`
+	Dir          string                    `json:"dir,omitempty"`
 	IndexMapping *mapping.IndexMappingImpl `json:"index_mapping,omitempty"`
 	IndexType    string                    `json:"index_type,omitempty"`
 	Kvstore      string                    `json:"kvstore,omitempty"`
 	Kvconfig     map[string]interface{}    `json:"kvconfig,omitempty"`
 }
 
-func DefaultConfig() *IndexConfig {
+func DefaultIndexConfig() *IndexConfig {
 	return &IndexConfig{
-		Path:         "./data/index",
+		Dir:          DefaultDir,
 		IndexMapping: mapping.NewIndexMapping(),
-		IndexType:    upsidedown.Name,
-		Kvstore:      boltdb.Name,
+		IndexType:    DefaultIndexType,
+		Kvstore:      DefaultKvstore,
 		Kvconfig: map[string]interface{}{
 			"create_if_missing": true,
-			"error_if_exists":   false,
+			"error_if_exists":   true,
 		},
 	}
+}
+
+func (c *IndexConfig) SetIndexMapping(indexMappingFile string) error {
+	var err error
+
+	f, err := os.Open(indexMappingFile)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	b, err := ioutil.ReadAll(f)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(b, c.IndexMapping)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func NewIndexMapping(file string) (*mapping.IndexMappingImpl, error) {
+	var err error
+
+	m := mapping.NewIndexMapping()
+
+	if file == "" {
+		return m, nil
+	}
+
+	f, err := os.Open(file)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	b, err := ioutil.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(b, m)
+	if err != nil {
+		return nil, err
+	}
+
+	return m, nil
 }
 
 type Index struct {
@@ -55,12 +114,12 @@ func NewIndex(config *IndexConfig) (*Index, error) {
 	var err error
 
 	var idx bleve.Index
-	if _, err = os.Stat(config.Path); os.IsNotExist(err) {
-		if idx, err = bleve.NewUsing(config.Path, config.IndexMapping, config.IndexType, config.Kvstore, config.Kvconfig); err != nil {
+	if _, err = os.Stat(config.Dir); os.IsNotExist(err) {
+		if idx, err = bleve.NewUsing(config.Dir, config.IndexMapping, config.IndexType, config.Kvstore, config.Kvconfig); err != nil {
 			return nil, err
 		}
 	} else {
-		if idx, err = bleve.OpenUsing(config.Path, config.Kvconfig); err != nil {
+		if idx, err = bleve.OpenUsing(config.Dir, config.Kvconfig); err != nil {
 			return nil, err
 		}
 	}

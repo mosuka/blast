@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math"
 	"net"
 	"path/filepath"
 	"sync"
@@ -53,9 +52,6 @@ type KVSService struct {
 	indexConfig *bleve.IndexConfig
 	index       *bleve.Index
 
-	maxSendMessageSize    int
-	maxReceiveMessageSize int
-
 	mutex sync.Mutex
 
 	metadata map[string]*protobuf.Metadata
@@ -71,9 +67,6 @@ func NewKVSService(peerAddress string, raftConfig *braft.RaftConfig, bootstrap b
 
 		storeConfig: storeConfig,
 		indexConfig: indexConfig,
-
-		maxSendMessageSize:    math.MaxInt32,
-		maxReceiveMessageSize: math.MaxInt32,
 
 		metadata: make(map[string]*protobuf.Metadata, 0),
 
@@ -125,14 +118,14 @@ func (s *KVSService) Start() error {
 
 	// Create the snapshot store. This allows the Raft to truncate the log.
 	var snapshots *raft.FileSnapshotStore
-	if snapshots, err = raft.NewFileSnapshotStoreWithLogger(s.raftConfig.Path, s.raftConfig.RetainSnapshotCount, s.logger); err != nil {
-		s.logger.Printf("[ERR] service: Failed to create snapshot store at %s: %v", s.raftConfig.Path, err)
+	if snapshots, err = raft.NewFileSnapshotStoreWithLogger(s.raftConfig.Dir, s.raftConfig.SnapshotCount, s.logger); err != nil {
+		s.logger.Printf("[ERR] service: Failed to create snapshot store at %s: %v", s.raftConfig.Dir, err)
 		return err
 	}
-	s.logger.Printf("[INFO] service: Snapshot store has been created at %s", s.raftConfig.Path)
+	s.logger.Printf("[INFO] service: Snapshot store has been created at %s", s.raftConfig.Dir)
 
 	// Create the log store and stable store.
-	raftLogStore := filepath.Join(s.raftConfig.Path, "raft_log.db")
+	raftLogStore := filepath.Join(s.raftConfig.Dir, "raft_log.db")
 	var logStore *raftboltdb.BoltStore
 	if logStore, err = raftboltdb.NewBoltStore(raftLogStore); err != nil {
 		s.logger.Printf("[ERR] service: Failed to create log store at %s: %v", raftLogStore, err)
@@ -330,7 +323,7 @@ func (s *KVSService) Join(ctx context.Context, req *protobuf.JoinRequest) (*prot
 		leaderGRPCAddress = s.metadata[leaderID].GrpcAddress
 
 		var grpcClient *client.GRPCClient
-		if grpcClient, err = client.NewGRPCClient(leaderGRPCAddress, s.maxSendMessageSize, s.maxReceiveMessageSize); err != nil {
+		if grpcClient, err = client.NewGRPCClient(leaderGRPCAddress); err != nil {
 			message := fmt.Sprintf("Failed to create gRPC client for %s", leaderGRPCAddress)
 			s.logger.Printf("[ERR] service: %s: %v", message, err)
 			resp.Success = false
@@ -447,7 +440,7 @@ func (s *KVSService) Leave(ctx context.Context, req *protobuf.LeaveRequest) (*pr
 		leaderGRPCAddress = s.metadata[leaderID].GrpcAddress
 
 		var grpcClient *client.GRPCClient
-		if grpcClient, err = client.NewGRPCClient(leaderGRPCAddress, s.maxSendMessageSize, s.maxReceiveMessageSize); err != nil {
+		if grpcClient, err = client.NewGRPCClient(leaderGRPCAddress); err != nil {
 			message := "Failed to create gRPC client"
 			s.logger.Printf("[ERR] service: %s: %v", message, err)
 			resp.Success = false
@@ -675,7 +668,7 @@ func (s *KVSService) Put(ctx context.Context, req *protobuf.PutRequest) (*protob
 		leaderGRPCAddress = s.metadata[leaderID].GrpcAddress
 
 		var grpcClient *client.GRPCClient
-		if grpcClient, err = client.NewGRPCClient(leaderGRPCAddress, s.maxSendMessageSize, s.maxReceiveMessageSize); err != nil {
+		if grpcClient, err = client.NewGRPCClient(leaderGRPCAddress); err != nil {
 			message := "Failed to create gRPC client"
 			s.logger.Printf("[ERR] service: %s: %v", message, err)
 			resp.Success = false
@@ -761,7 +754,7 @@ func (s *KVSService) Delete(ctx context.Context, req *protobuf.DeleteRequest) (*
 		leaderGRPCAddress = s.metadata[leaderID].GrpcAddress
 
 		var grpcClient *client.GRPCClient
-		if grpcClient, err = client.NewGRPCClient(leaderGRPCAddress, s.maxSendMessageSize, s.maxReceiveMessageSize); err != nil {
+		if grpcClient, err = client.NewGRPCClient(leaderGRPCAddress); err != nil {
 			message := "Failed to create gRPC client"
 			s.logger.Printf("[ERR] service: %s: %v", message, err)
 			resp.Success = false
@@ -847,7 +840,7 @@ func (s *KVSService) Bulk(ctx context.Context, req *protobuf.BulkRequest) (*prot
 		leaderGRPCAddress = s.metadata[leaderID].GrpcAddress
 
 		var grpcClient *client.GRPCClient
-		if grpcClient, err = client.NewGRPCClient(leaderGRPCAddress, s.maxSendMessageSize, s.maxReceiveMessageSize); err != nil {
+		if grpcClient, err = client.NewGRPCClient(leaderGRPCAddress); err != nil {
 			message := "Failed to create gRPC client"
 			s.logger.Printf("[ERR] service: %s: %v", message, err)
 			resp.Success = false

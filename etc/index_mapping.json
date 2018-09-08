@@ -1,0 +1,2984 @@
+{
+  "types": {
+    "arwiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_ar": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "ar",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "ar"
+        },
+        "text_ar": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "ar",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "ar"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "ar"
+    },
+    "bgwiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_bg": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "bg",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "bg"
+        },
+        "text_bg": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "bg",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "bg"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "bg"
+    },
+    "cawiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_ca": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "ca",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "ca"
+        },
+        "text_ca": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "ca",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "ca"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "ca"
+    },
+    "cswiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_cs": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "cs",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "cs"
+        },
+        "text_cs": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "cs",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "cs"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "cs"
+    },
+    "dawiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_da": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "da",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "da"
+        },
+        "text_da": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "da",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "da"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "da"
+    },
+    "dewiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_de": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "de",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "de"
+        },
+        "text_de": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "de",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "de"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "de"
+    },
+    "elwiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_el": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "el",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "el"
+        },
+        "text_el": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "el",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "el"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "el"
+    },
+    "enwiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_en": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "en",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "en"
+        },
+        "text_en": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "en",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "en"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "en"
+    },
+    "eswiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_es": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "es",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "es"
+        },
+        "text_es": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "es",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "es"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "es"
+    },
+    "fawiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_fa": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "fa",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "fa"
+        },
+        "text_fa": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "fa",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "fa"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "fa"
+    },
+    "fiwiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_fi": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "fi",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "fi"
+        },
+        "text_fi": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "fi",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "fi"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "fi"
+    },
+    "frwiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_fr": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "fr",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "fr"
+        },
+        "text_fr": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "fr",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "fr"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "fr"
+    },
+    "gawiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_ga": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "ga",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "ga"
+        },
+        "text_ga": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "ga",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "ga"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "ga"
+    },
+    "glwiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_gl": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "gl",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "gl"
+        },
+        "text_gl": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "gl",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "gl"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "gl"
+    },
+    "guwiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_gu": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "in",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "in"
+        },
+        "text_gl": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "in",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "in"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "in"
+    },
+    "hiwiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_hi": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "hi",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "hi"
+        },
+        "text_hi": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "hi",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "hi"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "hi"
+    },
+    "huwiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_hu": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "hu",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "hu"
+        },
+        "text_hu": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "hu",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "hu"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "hu"
+    },
+    "hywiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_hy": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "hy",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "hy"
+        },
+        "text_hy": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "hy",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "hy"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "hy"
+    },
+    "idwiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_id": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "id",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "id"
+        },
+        "text_id": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "id",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "id"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "id"
+    },
+    "itwiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_it": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "it",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "it"
+        },
+        "text_it": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "it",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "it"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "it"
+    },
+    "jawiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_ja": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "ja",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "ja"
+        },
+        "text_ja": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "ja",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "ja"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "ja"
+    },
+    "knwiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_kn": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "in",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "in"
+        },
+        "text_kn": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "in",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "in"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "in"
+    },
+    "kowiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_ko": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "cjk",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "cjk"
+        },
+        "text_ko": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "cjk",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "cjk"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "cjk"
+    },
+    "mlwiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_ml": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "in",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "in"
+        },
+        "text_ml": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "in",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "in"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "in"
+    },
+    "nlwiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_nl": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "nl",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "nl"
+        },
+        "text_nl": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "nl",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "nl"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "nl"
+    },
+    "nowiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_no": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "no",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "no"
+        },
+        "text_no": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "no",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "no"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "no"
+    },
+    "pswiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_ps": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "ckb",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "ckb"
+        },
+        "text_ps": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "ckb",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "ckb"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "ckb"
+    },
+    "ptwiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_pt": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "pt",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "pt"
+        },
+        "text_pt": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "pt",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "pt"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "pt"
+    },
+    "rowiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_ro": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "ro",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "ro"
+        },
+        "text_ro": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "ro",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "ro"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "ro"
+    },
+    "ruwiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_ru": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "ru",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "ru"
+        },
+        "text_ru": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "ru",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "ru"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "ru"
+    },
+    "svwiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_sv": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "sv",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "sv"
+        },
+        "text_sv": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "sv",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "sv"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "sv"
+    },
+    "tawiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_ta": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "in",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "in"
+        },
+        "text_ta": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "in",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "in"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "in"
+    },
+    "tewiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_te": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "in",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "in"
+        },
+        "text_te": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "in",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "in"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "in"
+    },
+    "thwiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_th": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "th",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "th"
+        },
+        "text_th": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "th",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "th"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "th"
+    },
+    "trwiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_tr": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "tr",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "tr"
+        },
+        "text_tr": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "tr",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "tr"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "tr"
+    },
+    "zhwiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_zh": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "cjk",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "cjk"
+        },
+        "text_zh": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "cjk",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "cjk"
+        },
+        "contributor": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "cjk"
+    }
+  },
+  "default_mapping": {
+    "enabled": true,
+    "dynamic": true,
+    "default_analyzer": "standard"
+  },
+  "type_field": "_type",
+  "default_type": "_default",
+  "default_analyzer": "standard",
+  "default_datetime_parser": "dateTimeOptional",
+  "default_field": "_all",
+  "store_dynamic": true,
+  "index_dynamic": true,
+  "analysis": {
+    "analyzers": {
+      "bg": {
+        "type": "custom",
+        "char_filters": [],
+        "tokenizer": "unicode",
+        "token_filters": [
+          "stop_bg"
+        ]
+      },
+      "ca": {
+        "type": "custom",
+        "char_filters": [],
+        "tokenizer": "unicode",
+        "token_filters": [
+          "stop_ca"
+        ]
+      },
+      "cs": {
+        "type": "custom",
+        "char_filters": [],
+        "tokenizer": "unicode",
+        "token_filters": [
+          "stop_cs"
+        ]
+      },
+      "el": {
+        "type": "custom",
+        "char_filters": [],
+        "tokenizer": "unicode",
+        "token_filters": [
+          "stop_el"
+        ]
+      },
+      "ga": {
+        "type": "custom",
+        "char_filters": [],
+        "tokenizer": "unicode",
+        "token_filters": [
+          "stop_ga"
+        ]
+      },
+      "gl": {
+        "type": "custom",
+        "char_filters": [],
+        "tokenizer": "unicode",
+        "token_filters": [
+          "stop_gl"
+        ]
+      },
+      "in": {
+        "type": "custom",
+        "char_filters": [],
+        "tokenizer": "unicode",
+        "token_filters": [
+          "normalize_in"
+        ]
+      },
+      "hy": {
+        "type": "custom",
+        "char_filters": [],
+        "tokenizer": "unicode",
+        "token_filters": [
+          "stop_hy"
+        ]
+      },
+      "id": {
+        "type": "custom",
+        "char_filters": [],
+        "tokenizer": "unicode",
+        "token_filters": [
+          "stop_id"
+        ]
+      }
+    },
+    "char_filters": {},
+    "tokenizers": {},
+    "token_filters": {},
+    "token_maps": {
+      "hw": {
+        "type": "custom",
+        "tokens": [
+          "hello",
+          "there"
+        ]
+      }
+    }
+  }
+}

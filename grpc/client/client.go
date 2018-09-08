@@ -16,6 +16,7 @@ package client
 
 import (
 	"context"
+	"math"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/mosuka/blast/protobuf"
@@ -23,15 +24,13 @@ import (
 )
 
 type GRPCClient struct {
-	ctx                context.Context
-	cancel             context.CancelFunc
-	conn               *grpc.ClientConn
-	client             protobuf.KVSClient
-	maxCallSendMsgSize int
-	maxCallRecvMsgSize int
+	ctx    context.Context
+	cancel context.CancelFunc
+	conn   *grpc.ClientConn
+	client protobuf.KVSClient
 }
 
-func NewGRPCClient(address string, maxCallSendMsgSize int, maxCallRecvMsgSize int) (*GRPCClient, error) {
+func NewGRPCClient(address string) (*GRPCClient, error) {
 	var err error
 
 	// Connect context
@@ -42,8 +41,8 @@ func NewGRPCClient(address string, maxCallSendMsgSize int, maxCallRecvMsgSize in
 	dialOpts := []grpc.DialOption{
 		grpc.WithInsecure(),
 		grpc.WithDefaultCallOptions(
-			grpc.MaxCallSendMsgSize(maxCallSendMsgSize),
-			grpc.MaxCallRecvMsgSize(maxCallRecvMsgSize),
+			grpc.MaxCallSendMsgSize(math.MaxInt32),
+			grpc.MaxCallRecvMsgSize(math.MaxInt32),
 		),
 	}
 

@@ -16,7 +16,6 @@ package server
 
 import (
 	"log"
-	"math"
 	"net"
 
 	"github.com/mosuka/blast/logging"
@@ -28,9 +27,6 @@ import (
 type GRPCServer struct {
 	grpcAddress string
 
-	maxSendMessageSize    int
-	maxReceiveMessageSize int
-
 	logger *log.Logger
 
 	server   *grpc.Server
@@ -40,26 +36,14 @@ type GRPCServer struct {
 
 func NewGRPCServer(gRPCAddress string, service *service.KVSService) (*GRPCServer, error) {
 	return &GRPCServer{
-		grpcAddress:           gRPCAddress,
-		service:               service,
-		maxSendMessageSize:    math.MaxInt32,
-		maxReceiveMessageSize: math.MaxInt32,
-		logger:                logging.DefaultLogger(),
+		grpcAddress: gRPCAddress,
+		service:     service,
+		logger:      logging.DefaultLogger(),
 	}, nil
 }
 
 func (s *GRPCServer) SetLogger(logger *log.Logger) {
 	s.logger = logger
-	return
-}
-
-func (s *GRPCServer) SetMaxSendMessageSize(maxSendMessageSize int) {
-	s.maxSendMessageSize = maxSendMessageSize
-	return
-}
-
-func (s *GRPCServer) SetMaxReceiveMessageSize(maxReceiveMessageSize int) {
-	s.maxReceiveMessageSize = maxReceiveMessageSize
 	return
 }
 

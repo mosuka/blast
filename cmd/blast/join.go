@@ -30,17 +30,13 @@ func join(c *cli.Context) {
 	bindAddr := c.String("bind-addr")
 	grpcAddr := c.String("grpc-addr")
 	httpAddr := c.String("http-addr")
-
 	peerGRPCAddr := c.String("peer-grpc-addr")
-	maxSendMsgSize := c.Int("max-send-msg-size")
-	maxRecvMsgSize := c.Int("max-recv-msg-size")
-
 	prettyPrint := c.Bool("pretty-print")
 
 	var err error
 
 	var grpcClient *client.GRPCClient
-	if grpcClient, err = client.NewGRPCClient(peerGRPCAddr, maxSendMsgSize, maxRecvMsgSize); err != nil {
+	if grpcClient, err = client.NewGRPCClient(peerGRPCAddr); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return
 	}
