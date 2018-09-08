@@ -47,7 +47,7 @@ var (
 		Name:   "raft-node-id",
 		Value:  raft.DefaultNodeID,
 		Usage:  "Node ID",
-		EnvVar: "BLAST_NODE_ID",
+		EnvVar: "BLAST_RAFT_NODE_ID",
 	}
 	flRaftDir = cli.StringFlag{
 		Name:   "raft-dir",
