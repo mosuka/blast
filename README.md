@@ -1,3 +1,22 @@
+<!--
+ Copyright (c) 2018 Minoru Osuka
+
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
 Blast
 ======
 
@@ -29,19 +48,20 @@ Blast requires Bleve and [Bleve Extensions](https://github.com/blevesearch/bleve
 ### Ubuntu 18.10
 
 ```
-$ sudo apt-get install -y libicu-dev \
-                          libleveldb-dev \
-                          libstemmer-dev \
-                          libgflags-dev \
-                          libsnappy-dev \
-                          zlib1g-dev \
-                          libbz2-dev \
-                          liblz4-dev \
-                          libzstd-dev \
-                          librocksdb-dev \
-                          gcc-4.8 \
-                          g++-4.8 \
-                          build-essential
+$ sudo apt-get install -y \
+    libicu-dev \
+    libleveldb-dev \
+    libstemmer-dev \
+    libgflags-dev \
+    libsnappy-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    liblz4-dev \
+    libzstd-dev \
+    librocksdb-dev \
+    gcc-4.8 \
+    g++-4.8 \
+    build-essential
 
 $ sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80
 $ sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 80
@@ -60,14 +80,15 @@ $ sudo cp *.so /usr/local/lib
 ### macOS High Sierra Version 10.13.6
 
 ```bash
-$ brew install icu4c \
-               leveldb \
-               rocksdb \
-               zstd
+$ brew install \
+    icu4c \
+    leveldb \
+    rocksdb \
+    zstd
 
 $ CGO_LDFLAGS="-L/usr/local/opt/icu4c/lib" \
-  CGO_CFLAGS="-I/usr/local/opt/icu4c/include" \
-  go get -u -v github.com/blevesearch/cld2
+    CGO_CFLAGS="-I/usr/local/opt/icu4c/include" \
+    go get -u -v github.com/blevesearch/cld2
 $ cd ${GOPATH}/src/github.com/blevesearch/cld2
 $ git clone https://github.com/CLD2Owners/cld2.git
 $ cd cld2/internal
@@ -90,36 +111,36 @@ If you want to build for other platform, set `GOOS`, `GOARCH`. For example, buil
 
 ```bash
 $ GOOS=darwin \
-  make build
+    make build
 ```
 
 If you want to build Blast with Bleve and Bleve Extentions (blevex), please set `CGO_LDFLAGS`, `CGO_CFLAGS`, `CGO_ENABLED` and `BUILD_TAGS`. For example, enable Japanese Language Analyzer like following:
 
 ```bash
 $ BUILD_TAGS=kagome \
-  make build
+    make build
 ```
 
 You can enable all Bleve Extensions for macOS like following:
 
 ```bash
 $ GOOS=darwin \
-  CGO_LDFLAGS="-L/usr/local/opt/icu4c/lib -L/usr/local/opt/rocksdb/lib -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz4 -lzstd" \
-  CGO_CFLAGS="-I/usr/local/opt/icu4c/include -I/usr/local/opt/rocksdb/include" \
-  CGO_ENABLED=1 \
-  BUILD_TAGS="full" \
-  make build
+    CGO_LDFLAGS="-L/usr/local/opt/icu4c/lib -L/usr/local/opt/rocksdb/lib -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz4 -lzstd" \
+    CGO_CFLAGS="-I/usr/local/opt/icu4c/include -I/usr/local/opt/rocksdb/include" \
+    CGO_ENABLED=1 \
+    BUILD_TAGS="full" \
+    make build
 ```
 
 Also, you can enable all Bleve Extensions for Linux like following:
 
 ```bash
 $ GOOS=linux \
-  CGO_LDFLAGS="-L/usr/lib -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz4 -lzstd" \
-  CGO_CFLAGS="-I/usr/include/rocksdb" \
-  CGO_ENABLED=1 \
-  BUILD_TAGS=full \
-  make build
+    CGO_LDFLAGS="-L/usr/lib -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz4 -lzstd" \
+    CGO_CFLAGS="-I/usr/include/rocksdb" \
+    CGO_ENABLED=1 \
+    BUILD_TAGS=full \
+    make build
 ```
 
 Please refer to the following table for details of Bleve Extensions:
@@ -139,6 +160,7 @@ You can see the binary file when build successful like so:
 ```bash
 $ ls ./bin
 blast
+blastd
 ```
 
 ## Running Blast node
@@ -146,14 +168,15 @@ blast
 Running a Blast node is easy. Start Blast node like so:
 
 ```bash
-$ ./bin/blast start --bind-addr=localhost:10000 \
-                    --grpc-addr=localhost:10001 \
-                    --http-addr=localhost:10002 \
-                    --raft-node-id=node1 \
-                    --raft-dir=/tmp/blast/node1/raft \
-                    --store-dir=/tmp/blast/node1/store \
-                    --index-dir=/tmp/blast/node1/index \
-                    --index-mapping-file=./etc/index_mapping.json
+$ ./bin/blastd start \
+    --bind-addr=localhost:10000 \
+    --grpc-addr=localhost:10001 \
+    --http-addr=localhost:10002 \
+    --raft-node-id=node1 \
+    --raft-dir=/tmp/blast/node1/raft \
+    --store-dir=/tmp/blast/node1/store \
+    --index-dir=/tmp/blast/node1/index \
+    --index-mapping-file=./etc/index_mapping.json
 ```
 
 ## Using Blast CLI
@@ -1136,24 +1159,26 @@ You can see the result in JSON format. The result of the above request is:
 Blast is easy to bring up the cluster. Blast node is already running, but that is not fault tolerant. If you need to increase the fault tolerance, bring up 2 more nodes like so:
 
 ```bash
-$ ./bin/blast start --bind-addr=localhost:11000 \
-                    --grpc-addr=localhost:11001 \
-                    --http-addr=localhost:11002 \
-                    --raft-node-id=node2 \
-                    --raft-dir=/tmp/blast/node2/raft \
-                    --store-dir=/tmp/blast/node2/store \
-                    --index-dir=/tmp/blast/node2/index \
-                    --peer-grpc-addr=localhost:10001 \
-                    --index-mapping-file=./etc/index_mapping.json
-$ ./bin/blast start --bind-addr=localhost:12000 \
-                    --grpc-addr=localhost:12001 \
-                    --http-addr=localhost:12002 \
-                    --raft-node-id=node3 \
-                    --raft-dir=/tmp/blast/node3/raft \
-                    --store-dir=/tmp/blast/node3/store \
-                    --index-dir=/tmp/blast/node3/index \
-                    --peer-grpc-addr=localhost:10001 \
-                    --index-mapping-file=./etc/index_mapping.json
+$ ./bin/blastd start \
+    --bind-addr=localhost:11000 \
+    --grpc-addr=localhost:11001 \
+    --http-addr=localhost:11002 \
+    --raft-node-id=node2 \
+    --raft-dir=/tmp/blast/node2/raft \
+    --store-dir=/tmp/blast/node2/store \
+    --index-dir=/tmp/blast/node2/index \
+    --peer-grpc-addr=localhost:10001 \
+    --index-mapping-file=./etc/index_mapping.json
+$ ./bin/blastd start \
+    --bind-addr=localhost:12000 \
+    --grpc-addr=localhost:12001 \
+    --http-addr=localhost:12002 \
+    --raft-node-id=node3 \
+    --raft-dir=/tmp/blast/node3/raft \
+    --store-dir=/tmp/blast/node3/store \
+    --index-dir=/tmp/blast/node3/index \
+    --peer-grpc-addr=localhost:10001 \
+    --index-mapping-file=./etc/index_mapping.json
 ```
 
 _Above example shows each Blast node running on the same host, so each node must listen on different ports. This would not be necessary if each node ran on a different host._
@@ -1312,7 +1337,7 @@ $ docker run --rm --name blast1 \
     -p 10000:10000 \
     -p 10001:10001 \
     -p 10002:10002 \
-    mosuka/blast:latest start \
+    mosuka/blast:latest blastd start \
       --bind-addr=:10000 \
       --grpc-addr=:10001 \
       --http-addr=:10002 \
