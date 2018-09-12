@@ -26,10 +26,10 @@ import (
 )
 
 func join(c *cli.Context) {
-	nodeID := c.String("node-id")
 	bindAddr := c.String("bind-addr")
 	grpcAddr := c.String("grpc-addr")
 	httpAddr := c.String("http-addr")
+	nodeID := c.String("raft-node-id")
 	peerGRPCAddr := c.String("peer-grpc-addr")
 	prettyPrint := c.Bool("pretty-print")
 

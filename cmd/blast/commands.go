@@ -19,37 +19,6 @@ import "github.com/urfave/cli"
 var (
 	commands = []cli.Command{
 		{
-			Name:  "start",
-			Usage: "Start a node",
-			Flags: []cli.Flag{
-				flBindAddr,
-				flGRPCAddr,
-				flHTTPAddr,
-				flRaftNodeID,
-				flRaftDir,
-				flRaftSnapshotCount,
-				flRaftTimeout,
-				flStoreDir,
-				flIndexDir,
-				flIndexMappingFile,
-				flIndexType,
-				flIndexKvstore,
-				flPeerGRPCAddr,
-				flLogLevel,
-				flLogFile,
-				flLogMaxSize,
-				flLogMaxBackups,
-				flLogMaxAge,
-				flLogCompress,
-				flHTTPAccessLogFile,
-				flHTTPAccessLogMaxSize,
-				flHTTPAccessLogMaxBackups,
-				flHTTPAccessLogMaxAge,
-				flHTTPAccessLogCompress,
-			},
-			Action: start,
-		},
-		{
 			Name:  "get",
 			Usage: "Get a document",
 			Flags: []cli.Flag{

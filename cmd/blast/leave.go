@@ -26,8 +26,8 @@ import (
 )
 
 func leave(c *cli.Context) {
-	nodeID := c.String("node-id")
 	bindAddr := c.String("bind-addr")
+	nodeID := c.String("raft-node-id")
 	peerGRPCAddr := c.String("peer-grpc-addr")
 	prettyPrint := c.Bool("pretty-print")
 
