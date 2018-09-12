@@ -14,9 +14,9 @@
 
 FROM ubuntu:18.10
 
-ARG VERSION=
+ARG VERSION
 
-ENV GOPATH=/go
+ENV GOPATH /go
 
 COPY . ${GOPATH}/src/github.com/mosuka/blast
 
