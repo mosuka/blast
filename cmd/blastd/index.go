@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Minoru Osuka
+// Copyright (c) 2018 Minoru Osuka
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/mosuka/blast/version"
 	"log"
 	"os"
 	"os/signal"
@@ -32,7 +33,6 @@ import (
 	braft "github.com/mosuka/blast/raft"
 	"github.com/mosuka/blast/service"
 	"github.com/mosuka/blast/store/boltdb"
-	"github.com/mosuka/blast/version"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
@@ -45,7 +45,7 @@ var logo = `
 /_.___//_/ \__,_//____/ \__/    version ` + version.Version + `
 `
 
-func start(c *cli.Context) {
+func index(c *cli.Context) {
 	// Display logo.
 	fmt.Println(logo)
 

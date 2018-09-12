@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Minoru Osuka
+// Copyright (c) 2018 Minoru Osuka
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import "github.com/urfave/cli"
 var (
 	commands = []cli.Command{
 		{
-			Name:  "start",
-			Usage: "Start a node",
+			Name:  "index",
+			Usage: "Start an index node",
 			Flags: []cli.Flag{
 				flBindAddr,
 				flGRPCAddr,
@@ -47,7 +47,7 @@ var (
 				flHTTPAccessLogMaxAge,
 				flHTTPAccessLogCompress,
 			},
-			Action: start,
+			Action: index,
 		},
 	}
 )
