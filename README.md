@@ -163,12 +163,12 @@ blast
 blastd
 ```
 
-## Running Blast node
+## Running Blast index node
 
-Running a Blast node is easy. Start Blast node like so:
+Running a Blast index node is easy. Start Blast index node like so:
 
 ```bash
-$ ./bin/blastd start \
+$ ./bin/blastd index \
     --bind-addr=localhost:10000 \
     --grpc-addr=localhost:10001 \
     --http-addr=localhost:10002 \
@@ -1159,7 +1159,7 @@ You can see the result in JSON format. The result of the above request is:
 Blast is easy to bring up the cluster. Blast node is already running, but that is not fault tolerant. If you need to increase the fault tolerance, bring up 2 more nodes like so:
 
 ```bash
-$ ./bin/blastd start \
+$ ./bin/blastd index \
     --bind-addr=localhost:11000 \
     --grpc-addr=localhost:11001 \
     --http-addr=localhost:11002 \
@@ -1169,7 +1169,7 @@ $ ./bin/blastd start \
     --index-dir=/tmp/blast/node2/index \
     --peer-grpc-addr=localhost:10001 \
     --index-mapping-file=./etc/index_mapping.json
-$ ./bin/blastd start \
+$ ./bin/blastd index \
     --bind-addr=localhost:12000 \
     --grpc-addr=localhost:12001 \
     --http-addr=localhost:12002 \
@@ -1328,16 +1328,16 @@ $ docker pull mosuka/blast:latest
 
 See https://hub.docker.com/r/mosuka/blast/tags/
 
-### Running Blast node on Docker
+### Running Blast index node on Docker
 
-Running a Blast node on Docker. Start Blast node like so:
+Running a Blast index node on Docker. Start Blast index node like so:
 
 ```bash
 $ docker run --rm --name blast1 \
     -p 10000:10000 \
     -p 10001:10001 \
     -p 10002:10002 \
-    mosuka/blast:latest blastd start \
+    mosuka/blast:latest blastd index \
       --bind-addr=:10000 \
       --grpc-addr=:10001 \
       --http-addr=:10002 \

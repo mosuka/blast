@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Minoru Osuka
+// Copyright (c) 2018 Minoru Osuka
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ var (
 	flRaftNodeID = cli.StringFlag{
 		Name:   "raft-node-id",
 		Value:  raft.DefaultNodeID,
-		Usage:  "Node ID",
+		Usage:  "Raft node ID",
 		EnvVar: "BLAST_RAFT_NODE_ID",
 	}
 	flRaftDir = cli.StringFlag{
