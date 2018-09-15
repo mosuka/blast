@@ -45,7 +45,7 @@ var logo = `
 /_.___//_/ \__,_//____/ \__/    version ` + version.Version + `
 `
 
-func index(c *cli.Context) {
+func data(c *cli.Context) {
 	// Display logo.
 	fmt.Println(logo)
 

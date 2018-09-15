@@ -26,7 +26,7 @@ services:
       BLAST_GRPC_ADDR: blast1:10001
       BLAST_HTTP_ADDR: blast1:10002
       BLAST_RAFT_NODE_ID: node1
-    command: blastd index
+    command: blastd data
 
   blast2:
     image: mosuka/blast:latest
@@ -41,7 +41,7 @@ services:
       BLAST_HTTP_ADDR: blast2:10002
       BLAST_RAFT_NODE_ID: node2
       BLAST_PEER_GRPC_ADDR: blast1:10001
-    command: blastd index
+    command: blastd data
 
   blast3:
     image: mosuka/blast:latest
@@ -56,4 +56,4 @@ services:
       BLAST_HTTP_ADDR: blast3:10002
       BLAST_RAFT_NODE_ID: node3
       BLAST_PEER_GRPC_ADDR: blast1:10001
-    command: blastd index
+    command: blastd data
