@@ -19,8 +19,8 @@ import "github.com/urfave/cli"
 var (
 	commands = []cli.Command{
 		{
-			Name:  "index",
-			Usage: "Start an index node",
+			Name:  "data",
+			Usage: "Start a data node",
 			Flags: []cli.Flag{
 				flBindAddr,
 				flGRPCAddr,
@@ -47,7 +47,7 @@ var (
 				flHTTPAccessLogMaxAge,
 				flHTTPAccessLogCompress,
 			},
-			Action: index,
+			Action: data,
 		},
 	}
 )
