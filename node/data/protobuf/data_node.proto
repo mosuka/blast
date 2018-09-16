@@ -1,0 +1,171 @@
+//  Copyright (c) 2018 Minoru Osuka
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 		http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+import "google/protobuf/empty.proto";
+
+package protobuf;
+
+option go_package = "protobuf";
+
+service DataNode {
+    rpc Join (JoinRequest) returns (JoinResponse) {}
+    rpc Leave (LeaveRequest) returns (LeaveResponse) {}
+    rpc Peers (google.protobuf.Empty) returns (PeersResponse) {}
+
+    rpc Snapshot (google.protobuf.Empty) returns (SnapshotResponse) {}
+
+    rpc Get (GetRequest) returns (GetResponse) {}
+    rpc Put (PutRequest) returns (PutResponse) {}
+    rpc Delete (DeleteRequest) returns (DeleteResponse) {}
+    rpc Bulk(BulkRequest) returns (BulkResponse) {}
+
+    rpc Search (SearchRequest) returns (SearchResponse) {}
+}
+
+// ----------------------------------------
+
+message Metadata {
+    string grpc_address = 2;
+    string http_address = 3;
+}
+
+message JoinRequest {
+    string node_id = 1;
+    string address = 2;
+    Metadata metadata = 3;
+}
+
+message JoinResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message LeaveRequest {
+    string node_id = 1;
+    string address = 2;
+}
+
+message LeaveResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message Peer {
+    string node_id = 1;
+    string address = 2;
+    bool leader = 3;
+    Metadata metadata = 4;
+}
+
+message PeersResponse {
+    repeated Peer peers = 1;
+    bool success = 2;
+    string message = 3;
+}
+
+message SnapshotResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+// ----------------------------------------
+
+message GetRequest {
+    string id = 1;
+}
+
+message GetResponse {
+    string id = 1;
+    google.protobuf.Any fields = 2;
+    bool success = 3;
+    string message = 4;
+}
+
+message PutRequest {
+    string id = 1;
+    google.protobuf.Any fields = 2;
+}
+
+message PutResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message DeleteRequest {
+    string id = 1;
+}
+
+message DeleteResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+// ----------------------------------------
+
+message Document {
+    string id = 1;
+    google.protobuf.Any fields = 2;
+}
+
+message UpdateRequest {
+    enum Type {
+        NOOP = 0;
+        PUT = 1;
+        DELETE = 2;
+    }
+    Type type = 1;
+    Document document = 2;
+}
+
+message BulkRequest {
+    int32 batch_size = 1;
+    repeated UpdateRequest update_requests = 2;
+}
+
+message BulkResponse {
+    int32 put_count = 1;
+    int32 delete_count = 2;
+    bool success = 3;
+    string message = 4;
+}
+
+// ----------------------------------------
+
+message SearchRequest {
+    google.protobuf.Any search_request = 1;
+}
+
+message SearchResponse {
+    google.protobuf.Any search_result = 1;
+    bool success = 2;
+    string message = 3;
+}
+
+// ----------------------------------------
+
+message Proposal {
+    enum Type {
+        NOOP = 0;
+        PUT = 1;
+        DELETE = 2;
+        BULK = 3;
+        JOIN = 4;
+        LEAVE = 5;
+    }
+    Type type = 1;
+    google.protobuf.Any data = 2;
+}

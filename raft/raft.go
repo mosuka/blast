@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	DefaultDir           = "./data/raft"
+	DefaultDir           = "/tmp/blast/data/raft"
 	DefaultSnapshotCount = 1
 	DefaultTimeout       = "10s"
 	DefaultNodeID        = "node1"

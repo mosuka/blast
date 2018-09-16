@@ -227,7 +227,7 @@ You can see the result in JSON format. The result of the above command is:
 
 Deleting a document is as following:
 
-```
+```bash
 $ ./bin/blast delete --grpc-addr=localhost:10001 --pretty-print enwiki_1
 ```
 
@@ -243,7 +243,7 @@ You can see the result in JSON format. The result of the above command is:
 
 Bulk update is as following:
 
-```
+```bash
 $ cat ./example/bulk_put_request.json | xargs -0 ./bin/blast bulk --pretty-print
 ```
 
@@ -731,7 +731,7 @@ You can see the result in JSON format. The result of the above request is:
 
 Bulk update is as following:
 
-```
+```bash
 $ curl -X POST 'http://localhost:10002/rest/_bulk?pretty-print=true' -d @./example/bulk_put_request.json
 ```
 

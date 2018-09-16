@@ -17,9 +17,9 @@ package main
 import (
 	"os"
 
-	"github.com/mosuka/blast/index/bleve"
+	"github.com/mosuka/blast/index"
 	"github.com/mosuka/blast/raft"
-	"github.com/mosuka/blast/store/boltdb"
+	"github.com/mosuka/blast/store"
 	"github.com/urfave/cli"
 )
 
@@ -70,32 +70,32 @@ var (
 
 	flStoreDir = cli.StringFlag{
 		Name:   "store-dir",
-		Value:  boltdb.DefaultDir,
+		Value:  store.DefaultDir,
 		Usage:  "Store data directory",
 		EnvVar: "BLAST_STORE_DIR",
 	}
 
 	flIndexDir = cli.StringFlag{
 		Name:   "index-dir",
-		Value:  bleve.DefaultDir,
+		Value:  index.DefaultDir,
 		Usage:  "Index data directory",
 		EnvVar: "BLAST_INDEX_DIR",
 	}
 	flIndexMappingFile = cli.StringFlag{
 		Name:   "index-mapping-file",
-		Value:  bleve.DefaultIndexMappingFile,
+		Value:  index.DefaultIndexMappingFile,
 		Usage:  "Index mapping file",
 		EnvVar: "BLAST_INDEX_MAPPING_FILE",
 	}
 	flIndexType = cli.StringFlag{
 		Name:   "index-type",
-		Value:  bleve.DefaultIndexType,
+		Value:  index.DefaultIndexType,
 		Usage:  "Index type",
 		EnvVar: "BLAST_INDEX_TYPE",
 	}
 	flIndexKvstore = cli.StringFlag{
 		Name:   "index-kvstore",
-		Value:  bleve.DefaultKvstore,
+		Value:  index.DefaultKvstore,
 		Usage:  "Index Key-Value store",
 		EnvVar: "BLAST_INDEX_KVSTORE",
 	}
