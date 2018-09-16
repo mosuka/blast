@@ -196,7 +196,7 @@ func data(c *cli.Context) {
 	if bootstrap {
 		// If node is bootstrap, put metadata into service.
 		// Wait for leader detected
-		_, err = svc.WaitForLeader(60 * time.Second)
+		err = svc.WaitDetectLeader(60 * time.Second)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, errors.Wrap(err, "Failed to detect leader node"))
 			return
