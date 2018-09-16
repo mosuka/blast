@@ -27,7 +27,7 @@ type GRPCClient struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 	conn   *grpc.ClientConn
-	client protobuf.DataNodeClient
+	client protobuf.DataClient
 }
 
 func NewGRPCClient(address string) (*GRPCClient, error) {
@@ -57,7 +57,7 @@ func NewGRPCClient(address string) (*GRPCClient, error) {
 		ctx:    ctx,
 		cancel: cancel,
 		conn:   conn,
-		client: protobuf.NewDataNodeClient(conn),
+		client: protobuf.NewDataClient(conn),
 	}, nil
 }
 

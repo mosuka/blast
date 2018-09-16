@@ -21,7 +21,7 @@ package protobuf;
 
 option go_package = "protobuf";
 
-service DataNode {
+service Data {
     rpc Join (JoinRequest) returns (JoinResponse) {}
     rpc Leave (LeaveRequest) returns (LeaveResponse) {}
     rpc Peers (google.protobuf.Empty) returns (PeersResponse) {}

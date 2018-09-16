@@ -55,7 +55,7 @@ func (s *GRPCServer) Start() error {
 	s.logger.Print("[INFO] server: New gRPC server has been created")
 
 	// Register service to gRPC server
-	protobuf.RegisterDataNodeServer(s.server, s.service)
+	protobuf.RegisterDataServer(s.server, s.service)
 	s.logger.Print("[INFO] server: Service has been registered to gRPC server")
 
 	// Create listener
