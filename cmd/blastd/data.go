@@ -24,15 +24,14 @@ import (
 	"time"
 
 	"github.com/hashicorp/raft"
-	"github.com/mosuka/blast/grpc/client"
-	grpcserver "github.com/mosuka/blast/grpc/server"
-	httpserver "github.com/mosuka/blast/http/server"
-	"github.com/mosuka/blast/index/bleve"
-	"github.com/mosuka/blast/logging"
-	"github.com/mosuka/blast/protobuf"
-	braft "github.com/mosuka/blast/raft"
-	"github.com/mosuka/blast/service"
-	"github.com/mosuka/blast/store/boltdb"
+	"github.com/mosuka/blast/index"
+	blastlog "github.com/mosuka/blast/log"
+	"github.com/mosuka/blast/node/data/client"
+	"github.com/mosuka/blast/node/data/protobuf"
+	"github.com/mosuka/blast/node/data/server"
+	"github.com/mosuka/blast/node/data/service"
+	blastraft "github.com/mosuka/blast/raft"
+	"github.com/mosuka/blast/store"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
@@ -83,7 +82,7 @@ func data(c *cli.Context) {
 	var err error
 
 	// Raft config
-	raftConfig := braft.DefaultRaftConfig()
+	raftConfig := blastraft.DefaultRaftConfig()
 	raftConfig.Config.LocalID = raft.ServerID(nodeID)
 	raftConfig.Dir = raftDir
 	raftConfig.SnapshotCount = snapshotCount
@@ -94,11 +93,11 @@ func data(c *cli.Context) {
 	}
 
 	// Store config
-	storeConfig := boltdb.DefaultStoreConfig()
+	storeConfig := store.DefaultStoreConfig()
 	storeConfig.Dir = storeDir
 
 	// Index config
-	indexConfig := bleve.DefaultIndexConfig()
+	indexConfig := index.DefaultIndexConfig()
 	indexConfig.Dir = indexDir
 	indexConfig.IndexType = indexType
 	indexConfig.Kvstore = indexKvstore
@@ -111,7 +110,7 @@ func data(c *cli.Context) {
 	}
 
 	// Create logger
-	logger := logging.Logger(
+	logger := blastlog.Logger(
 		logLevel,
 		"",
 		log.LstdFlags|log.Lmicroseconds|log.LUTC,
@@ -126,7 +125,7 @@ func data(c *cli.Context) {
 	bootstrap := peerGRPCAddr == "" || peerGRPCAddr == grpcAddr
 
 	// Create Service
-	svc, err := service.NewKVSService(bindAddr, raftConfig, bootstrap, storeConfig, indexConfig)
+	svc, err := service.NewService(bindAddr, raftConfig, bootstrap, storeConfig, indexConfig)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, errors.Wrap(err, "Failed to create service"))
 		return
@@ -141,24 +140,24 @@ func data(c *cli.Context) {
 		return
 	}
 
-	// Create gRPC server
-	grpcServer, err := grpcserver.NewGRPCServer(grpcAddr, svc)
+	// Create data server
+	dataGRPCServer, err := server.NewGRPCServer(grpcAddr, svc)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, errors.Wrap(err, "Failed to create gRPC Server"))
 		return
 	}
-	grpcServer.SetLogger(logger)
+	dataGRPCServer.SetLogger(logger)
 
 	// Start gRPC server
-	err = grpcServer.Start()
-	defer grpcServer.Stop()
+	err = dataGRPCServer.Start()
+	defer dataGRPCServer.Stop()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, errors.Wrap(err, "Failed to start gRPC Server"))
 		return
 	}
 
 	// Create HTTP access logger
-	httpAccessLogger := logging.HTTPAccessLogger(
+	httpAccessLogger := blastlog.HTTPAccessLogger(
 		httpAccessLogFilename,
 		httpAccessLogMaxSize,
 		httpAccessLogMaxBackups,
@@ -167,7 +166,7 @@ func data(c *cli.Context) {
 	)
 
 	// Create HTTP server
-	httpServer, err := httpserver.NewHTTPServer(httpAddr, grpcAddr)
+	httpServer, err := server.NewHTTPServer(httpAddr, grpcAddr)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, errors.Wrap(err, "Failed to initialize HTTP Server"))
 		return
@@ -207,14 +206,14 @@ func data(c *cli.Context) {
 		svc.PutMetadata(joinReq)
 	} else {
 		// If node is not bootstrap, make the join request.
-		grpcClient, err := client.NewGRPCClient(peerGRPCAddr)
-		defer grpcClient.Close()
+		dataClient, err := client.NewGRPCClient(peerGRPCAddr)
+		defer dataClient.Close()
 		if err != nil {
 			fmt.Fprintln(os.Stderr, errors.New(err.Error()))
 			return
 		}
 
-		grpcClient.Join(joinReq)
+		dataClient.Join(joinReq)
 	}
 
 	// Wait signal

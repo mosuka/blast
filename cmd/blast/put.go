@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Minoru Osuka
+// Copyright (c) 2018 Minoru Osuka
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import (
 	"os"
 
 	"github.com/golang/protobuf/ptypes/any"
-	"github.com/mosuka/blast/grpc/client"
-	"github.com/mosuka/blast/protobuf"
+	"github.com/mosuka/blast/node/data/client"
+	"github.com/mosuka/blast/node/data/protobuf"
 	"github.com/urfave/cli"
 )
 
@@ -47,12 +47,12 @@ func put(c *cli.Context) {
 		return
 	}
 
-	var grpcClient *client.GRPCClient
-	if grpcClient, err = client.NewGRPCClient(grpcAddr); err != nil {
+	var dataClient *client.GRPCClient
+	if dataClient, err = client.NewGRPCClient(grpcAddr); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return
 	}
-	defer grpcClient.Close()
+	defer dataClient.Close()
 
 	var fieldsMap map[string]interface{}
 	if fields != nil {
@@ -75,7 +75,7 @@ func put(c *cli.Context) {
 	}
 
 	var resp *protobuf.PutResponse
-	if resp, err = grpcClient.Put(req); err != nil {
+	if resp, err = dataClient.Put(req); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return
 	}

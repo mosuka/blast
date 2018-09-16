@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Minoru Osuka
+// Copyright (c) 2018 Minoru Osuka
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mosuka/blast/grpc/client"
-	"github.com/mosuka/blast/protobuf"
+	"github.com/mosuka/blast/node/data/client"
+	"github.com/mosuka/blast/node/data/protobuf"
 	"github.com/urfave/cli"
 )
 
@@ -31,15 +31,15 @@ func snapshot(c *cli.Context) {
 
 	var err error
 
-	var grpcClient *client.GRPCClient
-	if grpcClient, err = client.NewGRPCClient(grpcAddr); err != nil {
+	var dataClient *client.GRPCClient
+	if dataClient, err = client.NewGRPCClient(grpcAddr); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return
 	}
-	defer grpcClient.Close()
+	defer dataClient.Close()
 
 	var resp *protobuf.SnapshotResponse
-	if resp, err = grpcClient.Snapshot(); err != nil {
+	if resp, err = dataClient.Snapshot(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return
 	}
