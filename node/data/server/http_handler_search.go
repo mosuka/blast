@@ -15,14 +15,17 @@
 package server
 
 import (
-	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strconv"
+	"os"
 	"time"
 
+	"github.com/blevesearch/bleve"
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/mosuka/blast/node/data/client"
 	"github.com/mosuka/blast/node/data/protobuf"
 )
@@ -40,56 +43,94 @@ func NewSearchHandler(logger *log.Logger, client *client.GRPCClient) *SearchHand
 }
 
 func (h *SearchHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var err error
-
 	start := time.Now()
 	status := http.StatusOK
 	defer HTTPMetrics(start, status, w, r, h.logger)
 
-	prettyPrint, err := strconv.ParseBool(r.URL.Query().Get("pretty-print"))
+	var err error
 
-	searchRequestBytes := make([]byte, 0)
-	if searchRequestBytes, err = ioutil.ReadAll(r.Body); err != nil {
-		h.logger.Printf("[ERR] handler: Failed to read request body: %s", err.Error())
+	searchRequestBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		h.logger.Printf("[ERR] %v", err)
 		status = http.StatusInternalServerError
-	}
-
-	req := &protobuf.SearchRequest{}
-	if err = req.SetBytes(searchRequestBytes); err != nil {
-		h.logger.Printf("[ERR] handler: Failed to create search request: %s", err.Error())
-		status = http.StatusInternalServerError
-	}
-
-	var resp *protobuf.SearchResponse
-	if resp, err = h.client.Search(req); err != nil {
-		status = http.StatusNotFound
-	} else if err != nil {
-		h.logger.Printf("[ERR] handler: Failed to search documents: %s", err.Error())
-		status = http.StatusInternalServerError
-	}
-
-	content := make([]byte, 0)
-	if content, err = resp.GetBytes(); err != nil {
-		h.logger.Printf("[ERR] handler: Failed to marshalling content: %s", err.Error())
-		status = http.StatusInternalServerError
-	}
-
-	if prettyPrint {
-		var buff bytes.Buffer
-		if err = json.Indent(&buff, content, "", "  "); err != nil {
-			h.logger.Printf("[ERR] handler: Failed to indent content: %s", err.Error())
-			status = http.StatusInternalServerError
+		errContent, err := NewContent(err.Error())
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
 		}
-		content = buff.Bytes()
+		WriteResponse(w, errContent, status, h.logger)
+		return
 	}
 
-	// Write response
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Content-Length", strconv.FormatInt(int64(len(content)), 10))
-	w.WriteHeader(status)
-	if _, err = w.Write(content); err != nil {
-		h.logger.Printf("[ERR] handler: Failed to write content: %s", err.Error())
+	if len(searchRequestBytes) <= 0 {
+		err := errors.New("search request must be set")
+		status = http.StatusBadRequest
+		errContent, err := NewContent(err.Error())
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+		WriteResponse(w, errContent, status, h.logger)
+		return
 	}
+
+	searchRequest := bleve.NewSearchRequest(nil)
+	if searchRequestBytes != nil {
+		err = json.Unmarshal(searchRequestBytes, searchRequest)
+		if err != nil {
+			status = http.StatusBadRequest
+			errContent, err := NewContent(err.Error())
+			if err != nil {
+				h.logger.Printf("[ERR] %v", err)
+			}
+			WriteResponse(w, errContent, status, h.logger)
+			return
+		}
+	}
+
+	searchRequestAny := &any.Any{}
+	err = protobuf.UnmarshalAny(searchRequest, searchRequestAny)
+	if err != nil {
+		status = http.StatusInternalServerError
+		errContent, err := NewContent(err.Error())
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+		WriteResponse(w, errContent, status, h.logger)
+		return
+	}
+
+	req := &protobuf.SearchDocumentsRequest{
+		SearchRequest: searchRequestAny,
+	}
+
+	resp, err := h.client.SearchDocuments(req)
+	if err != nil {
+		status = http.StatusInternalServerError
+		errContent, err := NewContent(err.Error())
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+		WriteResponse(w, errContent, status, h.logger)
+		return
+	}
+
+	searchResultInstance, err := protobuf.MarshalAny(resp.SearchResult)
+	if err != nil {
+		status = http.StatusInternalServerError
+		errContent, err := NewContent(err.Error())
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+		WriteResponse(w, errContent, status, h.logger)
+		return
+	}
+
+	content, err := json.MarshalIndent(searchResultInstance, "", "  ")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return
+	}
+
+	WriteResponse(w, content, status, h.logger)
 
 	return
 }

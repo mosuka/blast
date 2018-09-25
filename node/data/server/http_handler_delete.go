@@ -15,11 +15,10 @@
 package server
 
 import (
-	"bytes"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -40,49 +39,56 @@ func NewDeleteHandler(logger *log.Logger, client *client.GRPCClient) *DeleteHand
 }
 
 func (h *DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var err error
-
 	start := time.Now()
 	status := http.StatusOK
 	defer HTTPMetrics(start, status, w, r, h.logger)
 
+	var err error
+
 	vars := mux.Vars(r)
+
 	id := vars["id"]
+	if id == "" {
+		err := errors.New("update requests argument must be set")
+		h.logger.Printf("[ERR] %v", err)
+		status = http.StatusBadRequest
+		errContent, err := NewContent(err.Error())
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+		WriteResponse(w, errContent, status, h.logger)
+		return
+	}
 
-	prettyPrint, err := strconv.ParseBool(r.URL.Query().Get("pretty-print"))
-
-	req := &protobuf.DeleteRequest{
+	req := &protobuf.DeleteDocumentRequest{
 		Id: id,
 	}
 
-	var resp *protobuf.DeleteResponse
-	if resp, err = h.client.Delete(req); err != nil {
-		h.logger.Printf("[ERR] handler: Failed to delete document: %s", err.Error())
+	resp, err := h.client.DeleteDocument(req)
+	if err != nil {
+		h.logger.Printf("[ERR] %v", err)
 		status = http.StatusInternalServerError
-	}
-
-	content := make([]byte, 0)
-	if content, err = resp.GetBytes(); err != nil {
-		h.logger.Printf("[ERR] handler: Failed to marshalling content: %s", err.Error())
-		status = http.StatusInternalServerError
-	}
-
-	if prettyPrint {
-		var buff bytes.Buffer
-		if err = json.Indent(&buff, content, "", "  "); err != nil {
-			h.logger.Printf("[ERR] handler: Failed to indent content: %s", err.Error())
-			status = http.StatusInternalServerError
+		errContent, err := NewContent(err.Error())
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
 		}
-		content = buff.Bytes()
+		WriteResponse(w, errContent, status, h.logger)
+		return
 	}
 
-	// Write response
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Content-Length", strconv.FormatInt(int64(len(content)), 10))
-	w.WriteHeader(status)
-	if _, err = w.Write(content); err != nil {
-		h.logger.Printf("[ERR] handler: Failed to write content: %s", err.Error())
+	content, err := json.MarshalIndent(resp, "", "  ")
+	if err != nil {
+		h.logger.Printf("[ERR] %v", err)
+		status = http.StatusInternalServerError
+		errContent, err := NewContent(err.Error())
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+		WriteResponse(w, errContent, status, h.logger)
+		return
 	}
+
+	WriteResponse(w, content, status, h.logger)
 
 	return
 }

@@ -15,7 +15,6 @@
 package index
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/blevesearch/bleve"
@@ -31,31 +30,33 @@ func NewSearcher(index *Index) (*Searcher, error) {
 	}, nil
 }
 
-func (s *Searcher) Search(request []byte) ([]byte, error) {
+func (s *Searcher) Search(request *bleve.SearchRequest) (*bleve.SearchResult, error) {
 	var err error
 
 	start := time.Now()
 	defer Metrics(start, "Searcher", "Search")
 
-	var searchRequest *bleve.SearchRequest
-	if err = json.Unmarshal(request, &searchRequest); err != nil {
-		s.index.logger.Printf("[ERR] bleve: Failed to unmarshaling request: %v: %v", request, err)
+	//var searchRequest *bleve.SearchRequest
+	//if err = json.Unmarshal(request, &searchRequest); err != nil {
+	//	s.index.logger.Printf("[ERR] bleve: Failed to unmarshaling request: %v: %v", request, err)
+	//	return nil, err
+	//}
+
+	//var searchResult *bleve.SearchResult
+	result, err := s.index.index.Search(request)
+	if err != nil {
+		s.index.logger.Printf("[ERR] bleve: Failed to search index: %v: %v", request, err)
 		return nil, err
 	}
 
-	var searchResult *bleve.SearchResult
-	if searchResult, err = s.index.index.Search(searchRequest); err != nil {
-		s.index.logger.Printf("[ERR] bleve: Failed to search index: %v: %v", searchRequest, err)
-		return nil, err
-	}
+	//var result []byte
+	//if result, err = json.Marshal(searchResult); err != nil {
+	//	s.index.logger.Printf("[ERR] bleve: Failed to marshaling search result: %v: %v", searchResult, err)
+	//	return nil, err
+	//}
 
-	var result []byte
-	if result, err = json.Marshal(searchResult); err != nil {
-		s.index.logger.Printf("[ERR] bleve: Failed to marshaling search result: %v: %v", searchResult, err)
-		return nil, err
-	}
+	s.index.logger.Printf("[DEBUG] bleve: Documents has been searched: %v", result)
 
-	s.index.logger.Printf("[DEBUG] bleve: Documents has been searched: %v: %v", searchResult, searchResult)
 	return result, nil
 }
 

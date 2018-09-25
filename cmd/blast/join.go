@@ -15,63 +15,35 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"os"
-
 	"github.com/mosuka/blast/node/data/client"
 	"github.com/mosuka/blast/node/data/protobuf"
 	"github.com/urfave/cli"
 )
 
-func join(c *cli.Context) {
-	bindAddr := c.String("bind-addr")
+func join(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
-	httpAddr := c.String("http-addr")
-	nodeID := c.String("raft-node-id")
-	peerGRPCAddr := c.String("peer-grpc-addr")
-	prettyPrint := c.Bool("pretty-print")
+	targetRaftNodeID := c.String("target-raft-node-id")
+	targetRaftAddr := c.String("target-raft-addr")
+	targetGrpcAddr := c.String("target-grpc-addr")
+	targetHttpAddr := c.String("target-http-addr")
 
-	var err error
-
-	var dataClient *client.GRPCClient
-	if dataClient, err = client.NewGRPCClient(peerGRPCAddr); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
+	dataClient, err := client.NewGRPCClient(grpcAddr)
+	if err != nil {
+		return err
 	}
 	defer dataClient.Close()
 
-	req := &protobuf.JoinRequest{
-		NodeId:  nodeID,
-		Address: bindAddr,
-		Metadata: &protobuf.Metadata{
-			GrpcAddress: grpcAddr,
-			HttpAddress: httpAddr,
-		},
+	req := &protobuf.PutNodeRequest{
+		Id:       targetRaftNodeID,
+		RaftAddr: targetRaftAddr,
+		GrpcAddr: targetGrpcAddr,
+		HttpAddr: targetHttpAddr,
 	}
 
-	var resp *protobuf.JoinResponse
-	if resp, err = dataClient.Join(req); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
+	_, err = dataClient.PutNode(req)
+	if err != nil {
+		return err
 	}
 
-	var jsonBytes []byte
-	if jsonBytes, err = resp.GetBytes(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
-	}
-
-	if prettyPrint {
-		var buff bytes.Buffer
-		if err = json.Indent(&buff, jsonBytes, "", "  "); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return
-		}
-		jsonBytes = buff.Bytes()
-	}
-
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("%s", string(jsonBytes)))
-	return
+	return nil
 }

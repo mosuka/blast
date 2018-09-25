@@ -15,41 +15,32 @@
 package main
 
 import (
-	"github.com/mosuka/blast/raft"
 	"github.com/urfave/cli"
 )
 
 var (
-	flBindAddr = cli.StringFlag{
-		Name:   "bind-addr",
-		Value:  "127.0.0.1:10000",
-		Usage:  "Address to listen on for peer traffic",
-		EnvVar: "BLAST_BIND_ADDR",
-	}
 	flGRPCAddr = cli.StringFlag{
 		Name:   "grpc-addr",
-		Value:  "127.0.0.1:10001",
-		Usage:  "Address to listen on for client traffic via gRPC",
+		Value:  ":10001",
+		Usage:  "gRPC address to connect to",
 		EnvVar: "BLAST_GRPC_ADDR",
 	}
-	flHTTPAddr = cli.StringFlag{
-		Name:   "http-addr",
-		Value:  "127.0.0.1:10002",
-		Usage:  "Address to listen on for client traffic via HTTP",
-		EnvVar: "BLAST_HTTP_ADDR",
-	}
 
-	flRaftNodeID = cli.StringFlag{
-		Name:   "raft-node-id",
-		Value:  raft.DefaultNodeID,
-		Usage:  "Node ID",
-		EnvVar: "BLAST_RAFT_NODE_ID",
+	flTargetRaftNodeID = cli.StringFlag{
+		Name:  "target-raft-node-id",
+		Usage: "Target node ID",
 	}
-
-	flPeerGRPCAddr = cli.StringFlag{
-		Name:   "peer-grpc-addr",
-		Usage:  "Peer gRPC address to connect on for join the cluster",
-		EnvVar: "BLAST_PEER_GRPC_ADDR",
+	flTargetRaftAddr = cli.StringFlag{
+		Name:  "target-raft-addr",
+		Usage: "Target raft address",
+	}
+	flTargetGRPCAddr = cli.StringFlag{
+		Name:  "target-grpc-addr",
+		Usage: "Target gRPC address",
+	}
+	flTargetHTTPAddr = cli.StringFlag{
+		Name:  "target-http-addr",
+		Usage: "Target HTTP address",
 	}
 
 	flBatchSize = cli.IntFlag{
@@ -57,11 +48,5 @@ var (
 		Value:  1000,
 		Usage:  "Batch size for bulk update",
 		EnvVar: "BLAST_BATCH_SIZE",
-	}
-
-	flPrettyPrint = cli.BoolFlag{
-		Name:   "pretty-print",
-		Usage:  "Pretty print JSON",
-		EnvVar: "BLAST_PRETTY_PRINT",
 	}
 )

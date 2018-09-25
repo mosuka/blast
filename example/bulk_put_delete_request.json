@@ -1,6 +1,6 @@
 [
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "arwiki_1",
       "fields": {
@@ -13,7 +13,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "bgwiki_1",
       "fields": {
@@ -26,7 +26,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "cawiki_1",
       "fields": {
@@ -39,7 +39,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "cswiki_1",
       "fields": {
@@ -52,7 +52,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "dawiki_1",
       "fields": {
@@ -65,7 +65,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "dewiki_1",
       "fields": {
@@ -78,7 +78,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "elwiki_1",
       "fields": {
@@ -91,7 +91,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "enwiki_1",
       "fields": {
@@ -104,7 +104,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "eswiki_1",
       "fields": {
@@ -117,7 +117,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "fawiki_1",
       "fields": {
@@ -130,7 +130,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "fiwiki_1",
       "fields": {
@@ -143,7 +143,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "frwiki_1",
       "fields": {
@@ -156,7 +156,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "gawiki_1",
       "fields": {
@@ -169,7 +169,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "glwiki_1",
       "fields": {
@@ -182,7 +182,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "guwiki_1",
       "fields": {
@@ -195,7 +195,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "hiwiki_1",
       "fields": {
@@ -208,7 +208,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "huwiki_1",
       "fields": {
@@ -221,7 +221,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "hywiki_1",
       "fields": {
@@ -234,7 +234,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "idwiki_1",
       "fields": {
@@ -247,7 +247,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "itwiki_1",
       "fields": {
@@ -260,7 +260,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "jawiki_1",
       "fields": {
@@ -273,7 +273,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "knwiki_1",
       "fields": {
@@ -286,7 +286,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "kowiki_1",
       "fields": {
@@ -299,7 +299,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "mlwiki_1",
       "fields": {
@@ -312,7 +312,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "nlwiki_1",
       "fields": {
@@ -325,7 +325,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "nowiki_1",
       "fields": {
@@ -338,7 +338,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "pswiki_1",
       "fields": {
@@ -351,7 +351,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "ptwiki_1",
       "fields": {
@@ -364,7 +364,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "rowiki_1",
       "fields": {
@@ -377,7 +377,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "ruwiki_1",
       "fields": {
@@ -390,7 +390,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "svwiki_1",
       "fields": {
@@ -403,7 +403,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "tawiki_1",
       "fields": {
@@ -416,7 +416,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "tewiki_1",
       "fields": {
@@ -429,7 +429,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "thwiki_1",
       "fields": {
@@ -442,7 +442,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "trwiki_1",
       "fields": {
@@ -455,7 +455,7 @@
     }
   },
   {
-    "type": "PUT",
+    "command": "PUT",
     "document": {
       "id": "zhwiki_1",
       "fields": {
@@ -468,217 +468,211 @@
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "arwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "bgwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "cawiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "cswiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "dawiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "dewiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "elwiki_1"
     }
   },
   {
-    "type": "DELETE",
-    "document": {
-      "id": "enwiki_1"
-    }
-  },
-  {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "eswiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "fawiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "fiwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "frwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "gawiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "glwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "guwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "hiwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "huwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "hywiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "idwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "itwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "jawiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "knwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "kowiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "mlwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "nlwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "nowiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "pswiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "ptwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "rowiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "ruwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "svwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "tawiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "tewiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "thwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "trwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "zhwiki_1"
     }

@@ -15,7 +15,7 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"os"
 	"path"
 
@@ -49,6 +49,6 @@ func main() {
 	app.Commands = commands
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
+		fmt.Fprintln(os.Stderr, err)
 	}
 }

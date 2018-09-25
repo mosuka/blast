@@ -16,7 +16,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/mosuka/blast/version"
 	"log"
 	"os"
 	"os/signal"
@@ -32,7 +31,7 @@ import (
 	"github.com/mosuka/blast/node/data/service"
 	blastraft "github.com/mosuka/blast/raft"
 	"github.com/mosuka/blast/store"
-	"github.com/pkg/errors"
+	"github.com/mosuka/blast/version"
 	"github.com/urfave/cli"
 )
 
@@ -44,15 +43,15 @@ var logo = `
 /_.___//_/ \__,_//____/ \__/    version ` + version.Version + `
 `
 
-func data(c *cli.Context) {
+func data(c *cli.Context) error {
 	// Display logo.
 	fmt.Println(logo)
 
-	bindAddr := c.String("bind-addr")
+	raftAddr := c.String("raft-addr")
 	grpcAddr := c.String("grpc-addr")
 	httpAddr := c.String("http-addr")
 
-	nodeID := c.String("raft-node-id")
+	raftNodeId := c.String("raft-node-id")
 	raftDir := c.String("raft-dir")
 	snapshotCount := c.Int("raft-snapshot-count")
 	raftTimeout := c.String("raft-timeout")
@@ -83,13 +82,12 @@ func data(c *cli.Context) {
 
 	// Raft config
 	raftConfig := blastraft.DefaultRaftConfig()
-	raftConfig.Config.LocalID = raft.ServerID(nodeID)
+	raftConfig.Config.LocalID = raft.ServerID(raftNodeId)
 	raftConfig.Dir = raftDir
 	raftConfig.SnapshotCount = snapshotCount
 	raftConfig.Timeout, err = time.ParseDuration(raftTimeout)
 	if err != nil {
-		fmt.Fprint(os.Stderr, errors.Wrap(err, "Failed to parse raft timeout"))
-		return
+		return err
 	}
 
 	// Store config
@@ -104,8 +102,7 @@ func data(c *cli.Context) {
 	if indexMappingFile != "" {
 		err = indexConfig.SetIndexMapping(indexMappingFile)
 		if err != nil {
-			fmt.Fprint(os.Stderr, errors.Wrap(err, "Failed to read index mapping file"))
-			return
+			return err
 		}
 	}
 
@@ -125,10 +122,9 @@ func data(c *cli.Context) {
 	bootstrap := peerGRPCAddr == "" || peerGRPCAddr == grpcAddr
 
 	// Create Service
-	svc, err := service.NewService(bindAddr, raftConfig, bootstrap, storeConfig, indexConfig)
+	svc, err := service.NewService(raftAddr, raftConfig, bootstrap, storeConfig, indexConfig)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, errors.Wrap(err, "Failed to create service"))
-		return
+		return err
 	}
 	svc.SetLogger(logger)
 
@@ -136,15 +132,13 @@ func data(c *cli.Context) {
 	err = svc.Start()
 	defer svc.Stop()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, errors.Wrap(err, "Failed to start service"))
-		return
+		return err
 	}
 
 	// Create data server
 	dataGRPCServer, err := server.NewGRPCServer(grpcAddr, svc)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, errors.Wrap(err, "Failed to create gRPC Server"))
-		return
+		return err
 	}
 	dataGRPCServer.SetLogger(logger)
 
@@ -152,8 +146,7 @@ func data(c *cli.Context) {
 	err = dataGRPCServer.Start()
 	defer dataGRPCServer.Stop()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, errors.Wrap(err, "Failed to start gRPC Server"))
-		return
+		return err
 	}
 
 	// Create HTTP access logger
@@ -168,8 +161,7 @@ func data(c *cli.Context) {
 	// Create HTTP server
 	httpServer, err := server.NewHTTPServer(httpAddr, grpcAddr)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, errors.Wrap(err, "Failed to initialize HTTP Server"))
-		return
+		return err
 	}
 
 	// Setup HTTP server
@@ -180,17 +172,7 @@ func data(c *cli.Context) {
 	err = httpServer.Start()
 	defer httpServer.Stop()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, errors.Wrap(err, "Failed to start HTTP Server"))
-		return
-	}
-
-	joinReq := &protobuf.JoinRequest{
-		NodeId:  nodeID,
-		Address: bindAddr,
-		Metadata: &protobuf.Metadata{
-			GrpcAddress: grpcAddr,
-			HttpAddress: httpAddr,
-		},
+		return err
 	}
 
 	if bootstrap {
@@ -198,22 +180,35 @@ func data(c *cli.Context) {
 		// Wait for leader detected
 		err = svc.WaitDetectLeader(60 * time.Second)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, errors.Wrap(err, "Failed to detect leader node"))
-			return
+			return err
+		}
+
+		metadata := &protobuf.Metadata{
+			Id:       raftNodeId,
+			RaftAddr: raftAddr,
+			GrpcAddr: grpcAddr,
+			HttpAddr: httpAddr,
 		}
 
 		// Put a metadata of bootstrap node
-		svc.PutMetadata(joinReq)
+		svc.PutMetadata(metadata)
 	} else {
 		// If node is not bootstrap, make the join request.
 		dataClient, err := client.NewGRPCClient(peerGRPCAddr)
 		defer dataClient.Close()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, errors.New(err.Error()))
-			return
+			return err
 		}
 
-		dataClient.Join(joinReq)
+		joinReq := &protobuf.PutNodeRequest{
+			Id:       raftNodeId,
+			RaftAddr: raftAddr,
+			GrpcAddr: grpcAddr,
+			HttpAddr: httpAddr,
+		}
+
+		// Put a node to cluster
+		dataClient.PutNode(joinReq)
 	}
 
 	// Wait signal
@@ -226,5 +221,5 @@ func data(c *cli.Context) {
 
 	_ = <-signalChan
 
-	return
+	return nil
 }

@@ -15,50 +15,27 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/mosuka/blast/node/data/client"
-	"github.com/mosuka/blast/node/data/protobuf"
 	"github.com/urfave/cli"
 )
 
-func snapshot(c *cli.Context) {
+func snapshot(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
-	prettyPrint := c.Bool("pretty-print")
 
-	var err error
-
-	var dataClient *client.GRPCClient
-	if dataClient, err = client.NewGRPCClient(grpcAddr); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
+	dataClient, err := client.NewGRPCClient(grpcAddr)
+	if err != nil {
+		return err
 	}
 	defer dataClient.Close()
 
-	var resp *protobuf.SnapshotResponse
-	if resp, err = dataClient.Snapshot(); err != nil {
+	_, err = dataClient.Snapshot()
+	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		return
+		return err
 	}
 
-	var jsonBytes []byte
-	if jsonBytes, err = resp.GetBytes(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
-	}
-
-	if prettyPrint {
-		var buff bytes.Buffer
-		if err = json.Indent(&buff, jsonBytes, "", "  "); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return
-		}
-		jsonBytes = buff.Bytes()
-	}
-
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("%s", string(jsonBytes)))
-	return
+	return nil
 }

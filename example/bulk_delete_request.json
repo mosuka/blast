@@ -1,216 +1,216 @@
 [
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "arwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "bgwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "cawiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "cswiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "dawiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "dewiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "elwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "enwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "eswiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "fawiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "fiwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "frwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "gawiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "glwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "guwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "hiwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "huwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "hywiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "idwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "itwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "jawiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "knwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "kowiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "mlwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "nlwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "nowiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "pswiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "ptwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "rowiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "ruwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "svwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "tawiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "tewiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "thwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "trwiki_1"
     }
   },
   {
-    "type": "DELETE",
+    "command": "DELETE",
     "document": {
       "id": "zhwiki_1"
     }

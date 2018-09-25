@@ -23,11 +23,11 @@ type TypeRegistry map[string]reflect.Type
 
 var Types = make(TypeRegistry, 0)
 
-func RegisterType(name string, t reflect.Type) {
+func RegisterType(name string, typ reflect.Type) {
 	if _, exists := Types[name]; exists {
 		panic(fmt.Errorf("attempted to register duplicate index: %s", name))
 	}
-	Types[name] = t
+	Types[name] = typ
 }
 
 func TypeByName(name string) reflect.Type {
@@ -35,7 +35,12 @@ func TypeByName(name string) reflect.Type {
 }
 
 func TypeNameByInstance(instance interface{}) string {
-	return reflect.TypeOf(instance).Elem().String()
+	switch ins := instance.(type) {
+	case map[string]interface{}:
+		return reflect.TypeOf(ins).String()
+	default:
+		return reflect.TypeOf(ins).Elem().String()
+	}
 }
 
 func TypeInstanceByName(name string) interface{} {

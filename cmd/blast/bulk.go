@@ -15,82 +15,92 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/mosuka/blast/node/data/client"
 	"github.com/mosuka/blast/node/data/protobuf"
 	"github.com/urfave/cli"
 )
 
-func bulk(c *cli.Context) {
+func bulk(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 	batchSize := c.Int("batch-size")
-	prettyPrint := c.Bool("pretty-print")
 
-	updateRequestsBytes := []byte(c.Args().Get(0))
-
-	var err error
+	updatesBytes := []byte(c.Args().Get(0))
 
 	// Check bulk request length
-	if len(updateRequestsBytes) <= 0 {
-		fmt.Fprintln(os.Stderr, "update requests argument must be set")
-		return
+	if len(updatesBytes) <= 0 {
+		err := errors.New("update requests argument must be set")
+		return err
 	}
 
-	var dataClient *client.GRPCClient
-	if dataClient, err = client.NewGRPCClient(grpcAddr); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
+	updateMapSlice := make([]map[string]interface{}, 0)
+	err := json.Unmarshal(updatesBytes, &updateMapSlice)
+	if err != nil {
+		return err
+	}
+
+	updates := make([]*protobuf.BulkUpdateRequest_Update, 0)
+	for _, updateMap := range updateMapSlice {
+		update := &protobuf.BulkUpdateRequest_Update{}
+
+		update.Command = protobuf.BulkUpdateRequest_Update_Command(protobuf.BulkUpdateRequest_Update_Command_value[updateMap["command"].(string)])
+
+		documentMap, exist := updateMap["document"].(map[string]interface{})
+		if !exist {
+			err := errors.New("document does not exist")
+			return err
+		}
+
+		document := &protobuf.Document{}
+
+		documentId, exist := documentMap["id"].(string)
+		if !exist {
+			err := errors.New("document id does not exist")
+			return err
+		}
+		document.Id = documentId
+
+		fieldsMap, exist := documentMap["fields"].(map[string]interface{})
+		if exist {
+			fieldsAny := &any.Any{}
+			if err = protobuf.UnmarshalAny(fieldsMap, fieldsAny); err != nil {
+				return err
+			}
+			document.Fields = fieldsAny
+		}
+
+		update.Document = document
+
+		updates = append(updates, update)
+	}
+
+	req := &protobuf.BulkUpdateRequest{
+		Updates:   updates,
+		BatchSize: int32(batchSize),
+	}
+
+	dataClient, err := client.NewGRPCClient(grpcAddr)
+	if err != nil {
+		return err
 	}
 	defer dataClient.Close()
 
-	updateRequestSlice := make([]map[string]interface{}, 0)
-	if err = json.Unmarshal(updateRequestsBytes, &updateRequestSlice); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
+	resp, err := dataClient.BulkUpdate(req)
+	if err != nil {
+		return err
 	}
 
-	updateRequests := make([]*protobuf.UpdateRequest, 0)
-	for _, updateRequestMap := range updateRequestSlice {
-
-		updateRequest := &protobuf.UpdateRequest{}
-		if err = updateRequest.SetMap(updateRequestMap); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return
-		}
-
-		updateRequests = append(updateRequests, updateRequest)
-	}
-
-	req := &protobuf.BulkRequest{
-		UpdateRequests: updateRequests,
-		BatchSize:      int32(batchSize),
-	}
-
-	var resp *protobuf.BulkResponse
-	if resp, err = dataClient.Bulk(req); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
-	}
-
-	var jsonBytes []byte
-	if jsonBytes, err = resp.GetBytes(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
-	}
-
-	if prettyPrint {
-		var buff bytes.Buffer
-		if err = json.Indent(&buff, jsonBytes, "", "  "); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return
-		}
-		jsonBytes = buff.Bytes()
+	jsonBytes, err := json.MarshalIndent(resp, "", "  ")
+	if err != nil {
+		return err
 	}
 
 	fmt.Fprintln(os.Stdout, fmt.Sprintf("%s", string(jsonBytes)))
-	return
+
+	return nil
 }

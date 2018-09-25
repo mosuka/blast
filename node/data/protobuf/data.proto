@@ -22,96 +22,90 @@ package protobuf;
 option go_package = "protobuf";
 
 service Data {
-    rpc Join (JoinRequest) returns (JoinResponse) {}
-    rpc Leave (LeaveRequest) returns (LeaveResponse) {}
-    rpc Peers (google.protobuf.Empty) returns (PeersResponse) {}
+    rpc PutNode (PutNodeRequest) returns (google.protobuf.Empty) {}
+    rpc GetNode (GetNodeRequest) returns (GetNodeResponse) {}
+    rpc DeleteNode (DeleteNodeRequest) returns (google.protobuf.Empty) {}
 
-    rpc Snapshot (google.protobuf.Empty) returns (SnapshotResponse) {}
+    rpc GetCluster (google.protobuf.Empty) returns (GetClusterResponse) {}
 
-    rpc Get (GetRequest) returns (GetResponse) {}
-    rpc Put (PutRequest) returns (PutResponse) {}
-    rpc Delete (DeleteRequest) returns (DeleteResponse) {}
-    rpc Bulk(BulkRequest) returns (BulkResponse) {}
+    rpc Snapshot (google.protobuf.Empty) returns (google.protobuf.Empty) {}
 
-    rpc Search (SearchRequest) returns (SearchResponse) {}
+    rpc PutDocument (PutDocumentRequest) returns (google.protobuf.Empty) {}
+    rpc GetDocument (GetDocumentRequest) returns (GetDocumentResponse) {}
+    rpc DeleteDocument (DeleteDocumentRequest) returns (google.protobuf.Empty) {}
+
+    rpc BulkUpdate(BulkUpdateRequest) returns (BulkUpdateResponse) {}
+
+    rpc SearchDocuments (SearchDocumentsRequest) returns (SearchDocumentsResponse) {}
 }
 
 // ----------------------------------------
 
 message Metadata {
-    string grpc_address = 2;
-    string http_address = 3;
-}
-
-message JoinRequest {
-    string node_id = 1;
-    string address = 2;
-    Metadata metadata = 3;
-}
-
-message JoinResponse {
-    bool success = 1;
-    string message = 2;
-}
-
-message LeaveRequest {
-    string node_id = 1;
-    string address = 2;
-}
-
-message LeaveResponse {
-    bool success = 1;
-    string message = 2;
-}
-
-message Peer {
-    string node_id = 1;
-    string address = 2;
-    bool leader = 3;
-    Metadata metadata = 4;
-}
-
-message PeersResponse {
-    repeated Peer peers = 1;
-    bool success = 2;
-    string message = 3;
-}
-
-message SnapshotResponse {
-    bool success = 1;
-    string message = 2;
+    string id = 1;
+    string raft_addr = 2;
+    string grpc_addr = 3;
+    string http_addr = 4;
 }
 
 // ----------------------------------------
 
-message GetRequest {
+message Node {
+    enum Activity {
+        UNKNOWN_ACTIVITY = 0;
+        ACTIVE = 1;
+        INACTIVE = 2;
+    }
+    enum Health {
+        UNKNOWN_HEALTH = 0;
+        HEALTHY = 1;
+        UNHEALTHY = 2;
+    }
+    string id = 1;
+    string raft_addr = 2;
+    string grpc_addr = 3;
+    string http_addr = 4;
+    bool leader = 5;
+    Activity activity = 6;
+    Health health = 7;
+}
+
+message Cluster {
+    enum Health {
+        UNKNOWN_HEALTH = 0;
+        HEALTHY = 1;
+        UNHEALTHY = 2;
+    }
+    repeated Node nodes = 1;
+    Health health = 2;
+}
+
+// ----------------------------------------
+
+message PutNodeRequest {
+    string id = 1;
+    string raft_addr = 2;
+    string grpc_addr = 3;
+    string http_addr = 4;
+}
+
+message GetNodeRequest {
     string id = 1;
 }
 
-message GetResponse {
+message GetNodeResponse {
+    Node node = 1;
+}
+
+message DeleteNodeRequest {
     string id = 1;
-    google.protobuf.Any fields = 2;
-    bool success = 3;
-    string message = 4;
+    string raft_addr = 2;
 }
 
-message PutRequest {
-    string id = 1;
-    google.protobuf.Any fields = 2;
-}
+// ----------------------------------------
 
-message PutResponse {
-    bool success = 1;
-    string message = 2;
-}
-
-message DeleteRequest {
-    string id = 1;
-}
-
-message DeleteResponse {
-    bool success = 1;
-    string message = 2;
+message GetClusterResponse {
+    Cluster cluster = 1;
 }
 
 // ----------------------------------------
@@ -121,50 +115,66 @@ message Document {
     google.protobuf.Any fields = 2;
 }
 
-message UpdateRequest {
-    enum Type {
-        NOOP = 0;
-        PUT = 1;
-        DELETE = 2;
-    }
-    Type type = 1;
-    Document document = 2;
+// ----------------------------------------
+
+message PutDocumentRequest {
+    string id = 1;
+    google.protobuf.Any fields = 2;
 }
 
-message BulkRequest {
-    int32 batch_size = 1;
-    repeated UpdateRequest update_requests = 2;
+message GetDocumentRequest {
+    string id = 1;
 }
 
-message BulkResponse {
-    int32 put_count = 1;
-    int32 delete_count = 2;
-    bool success = 3;
-    string message = 4;
+message GetDocumentResponse {
+    Document document = 1;
+}
+
+message DeleteDocumentRequest {
+    string id = 1;
 }
 
 // ----------------------------------------
 
-message SearchRequest {
+message BulkUpdateRequest {
+    message Update {
+        enum Command {
+            UNKNOWN = 0;
+            PUT = 1;
+            DELETE = 2;
+        }
+        Command command = 1;
+        Document document = 2;
+    }
+    int32 batch_size = 1;
+    repeated Update updates = 2;
+}
+
+message BulkUpdateResponse {
+    int32 put_count = 1;
+    int32 delete_count = 2;
+}
+
+// ----------------------------------------
+
+message SearchDocumentsRequest {
     google.protobuf.Any search_request = 1;
 }
 
-message SearchResponse {
+message SearchDocumentsResponse {
     google.protobuf.Any search_result = 1;
-    bool success = 2;
-    string message = 3;
 }
 
 // ----------------------------------------
 
 message Proposal {
     enum Type {
-        NOOP = 0;
-        PUT = 1;
-        DELETE = 2;
-        BULK = 3;
-        JOIN = 4;
-        LEAVE = 5;
+        UNKNOWN_PROPOSAL = 0;
+        PUT_METADATA = 1;
+        DELETE_METADATA = 2;
+        PUT_DOCUMENT = 3;
+        DELETE_DOCUMENT = 4;
+        BULK_UPDATE = 5;
     }
     Type type = 1;
     google.protobuf.Any data = 2;
