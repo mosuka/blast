@@ -15,63 +15,71 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
 
+	"errors"
+	"github.com/blevesearch/bleve"
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/mosuka/blast/node/data/client"
 	"github.com/mosuka/blast/node/data/protobuf"
 	"github.com/urfave/cli"
 )
 
-func search(c *cli.Context) {
+func search(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
-	prettyPrint := c.Bool("pretty-print")
-
-	searchRequest := []byte(c.Args().Get(0))
 
 	var err error
 
-	if len(searchRequest) <= 0 {
-		fmt.Fprintln(os.Stderr, "search request must be set")
-		return
+	searchRequestBytes := []byte(c.Args().Get(0))
+
+	if len(searchRequestBytes) <= 0 {
+		err := errors.New("search request must be set")
+		return err
 	}
 
-	var dataClient *client.GRPCClient
-	if dataClient, err = client.NewGRPCClient(grpcAddr); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
+	searchRequest := bleve.NewSearchRequest(nil)
+	if searchRequestBytes != nil {
+		err = json.Unmarshal(searchRequestBytes, searchRequest)
+		if err != nil {
+			return err
+		}
+	}
+
+	searchRequestAny := &any.Any{}
+	err = protobuf.UnmarshalAny(searchRequest, searchRequestAny)
+	if err != nil {
+		return err
+	}
+
+	dataClient, err := client.NewGRPCClient(grpcAddr)
+	if err != nil {
+		return err
 	}
 	defer dataClient.Close()
 
-	req := &protobuf.SearchRequest{}
-	if err = req.SetBytes(searchRequest); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
+	// Create request message
+	req := &protobuf.SearchDocumentsRequest{
+		SearchRequest: searchRequestAny,
 	}
 
-	var resp *protobuf.SearchResponse
-	if resp, err = dataClient.Search(req); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
+	resp, err := dataClient.SearchDocuments(req)
+	if err != nil {
+		return err
 	}
 
-	var jsonBytes []byte
-	if jsonBytes, err = resp.GetBytes(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
+	searchResultInstance, err := protobuf.MarshalAny(resp.SearchResult)
+	if err != nil {
+		return err
 	}
 
-	if prettyPrint {
-		var buff bytes.Buffer
-		if err = json.Indent(&buff, jsonBytes, "", "  "); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return
-		}
-		jsonBytes = buff.Bytes()
+	jsonBytes, err := json.MarshalIndent(searchResultInstance, "", "  ")
+	if err != nil {
+		return err
 	}
 
 	fmt.Fprintln(os.Stdout, fmt.Sprintf("%s", string(jsonBytes)))
-	return
+
+	return nil
 }

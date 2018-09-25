@@ -24,22 +24,22 @@ import (
 )
 
 var (
-	flBindAddr = cli.StringFlag{
-		Name:   "bind-addr",
-		Value:  "127.0.0.1:10000",
-		Usage:  "Address to listen on for peer traffic",
-		EnvVar: "BLAST_BIND_ADDR",
+	flRaftAddr = cli.StringFlag{
+		Name:   "raft-addr",
+		Value:  ":10000",
+		Usage:  "Raft address to listen on for peer traffic",
+		EnvVar: "BLAST_RAFT_ADDR",
 	}
 	flGRPCAddr = cli.StringFlag{
 		Name:   "grpc-addr",
-		Value:  "127.0.0.1:10001",
-		Usage:  "Address to listen on for client traffic via gRPC",
+		Value:  ":10001",
+		Usage:  "gRPC address to listen on for client traffic",
 		EnvVar: "BLAST_GRPC_ADDR",
 	}
 	flHTTPAddr = cli.StringFlag{
 		Name:   "http-addr",
-		Value:  "127.0.0.1:10002",
-		Usage:  "Address to listen on for client traffic via HTTP",
+		Value:  ":10002",
+		Usage:  "HTTP address to listen on for client traffic",
 		EnvVar: "BLAST_HTTP_ADDR",
 	}
 

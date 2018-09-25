@@ -15,14 +15,15 @@
 package server
 
 import (
-	"bytes"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/mosuka/blast/node/data/client"
 	"github.com/mosuka/blast/node/data/protobuf"
 )
@@ -40,73 +41,153 @@ func NewBulkHandler(logger *log.Logger, client *client.GRPCClient) *BulkHandler 
 }
 
 func (h *BulkHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var err error
-
 	start := time.Now()
 	status := http.StatusOK
+
 	defer HTTPMetrics(start, status, w, r, h.logger)
 
-	batchSize, err := strconv.ParseInt(r.URL.Query().Get("batch-size"), 10, 32)
-	prettyPrint, err := strconv.ParseBool(r.URL.Query().Get("pretty-print"))
+	var err error
 
-	updateRequestsBytes := make([]byte, 0)
-	if updateRequestsBytes, err = ioutil.ReadAll(r.Body); err != nil {
-		h.logger.Printf("[ERR] handler: Failed to read request body: %s", err.Error())
-		status = http.StatusInternalServerError
+	batchSize := int64(1000)
+	batchSizeStr := r.URL.Query().Get("batch-size")
+	if batchSizeStr != "" {
+		batchSize, err = strconv.ParseInt(batchSizeStr, 10, 32)
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+			status = http.StatusBadRequest
+			errContent, err := NewContent(err.Error())
+			if err != nil {
+				h.logger.Printf("[ERR] %v", err)
+			}
+			WriteResponse(w, errContent, status, h.logger)
+			return
+		}
 	}
 
-	updateRequestSlice := make([]map[string]interface{}, 0)
-	if err = json.Unmarshal(updateRequestsBytes, &updateRequestSlice); err != nil {
-		h.logger.Printf("[ERR] handler: Failed to unmarshal update requests to slice: %s", err.Error())
+	updatesBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		h.logger.Printf("[ERR] %v", err)
 		status = http.StatusInternalServerError
+		errContent, err := NewContent(err.Error())
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+		WriteResponse(w, errContent, status, h.logger)
+		return
 	}
 
-	updateRequests := make([]*protobuf.UpdateRequest, 0)
-	for _, updateRequestMap := range updateRequestSlice {
+	// Check bulk request length
+	if len(updatesBytes) <= 0 {
+		err := errors.New("update requests argument must be set")
+		h.logger.Printf("[ERR] %v", err)
+		status = http.StatusBadRequest
+		errContent, err := NewContent(err.Error())
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+		WriteResponse(w, errContent, status, h.logger)
+		return
+	}
 
-		updateRequest := &protobuf.UpdateRequest{}
-		if err = updateRequest.SetMap(updateRequestMap); err != nil {
-			h.logger.Printf("[ERR] handler: Failed to get update request from map: %s", err.Error())
-			status = http.StatusInternalServerError
-			break
+	updateMapSlice := make([]map[string]interface{}, 0)
+	err = json.Unmarshal(updatesBytes, &updateMapSlice)
+	if err != nil {
+		h.logger.Printf("[ERR] %v", err)
+		status = http.StatusInternalServerError
+		errContent, err := NewContent(err.Error())
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+		WriteResponse(w, errContent, status, h.logger)
+		return
+	}
+
+	updates := make([]*protobuf.BulkUpdateRequest_Update, 0)
+	for _, updateMap := range updateMapSlice {
+		update := &protobuf.BulkUpdateRequest_Update{}
+
+		update.Command = protobuf.BulkUpdateRequest_Update_Command(protobuf.BulkUpdateRequest_Update_Command_value[updateMap["command"].(string)])
+
+		documentMap, exist := updateMap["document"].(map[string]interface{})
+		if !exist {
+			err := errors.New("document does not exist")
+			h.logger.Printf("[ERR] %v", err)
+			status = http.StatusBadRequest
+			errContent, err := NewContent(err.Error())
+			if err != nil {
+				h.logger.Printf("[ERR] %v", err)
+			}
+			WriteResponse(w, errContent, status, h.logger)
+			return
 		}
 
-		updateRequests = append(updateRequests, updateRequest)
-	}
+		document := &protobuf.Document{}
 
-	req := &protobuf.BulkRequest{
-		UpdateRequests: updateRequests,
-		BatchSize:      int32(batchSize),
-	}
-
-	var resp *protobuf.BulkResponse
-	if resp, err = h.client.Bulk(req); err != nil {
-		h.logger.Printf("[ERR] handler: Failed to update in bulk: %s", err.Error())
-		status = http.StatusInternalServerError
-	}
-
-	content := make([]byte, 0)
-	if content, err = resp.GetBytes(); err != nil {
-		h.logger.Printf("[ERR] handler: Failed to marshalling content: %s", err.Error())
-		status = http.StatusInternalServerError
-	}
-
-	if prettyPrint {
-		var buff bytes.Buffer
-		if err = json.Indent(&buff, content, "", "  "); err != nil {
-			h.logger.Printf("[ERR] handler: Failed to indent content: %s", err.Error())
-			status = http.StatusInternalServerError
+		documentId, exist := documentMap["id"].(string)
+		if !exist {
+			err := errors.New("document id does not exist")
+			h.logger.Printf("[ERR] %v", err)
+			status = http.StatusBadRequest
+			errContent, err := NewContent(err.Error())
+			if err != nil {
+				h.logger.Printf("[ERR] %v", err)
+			}
+			WriteResponse(w, errContent, status, h.logger)
+			return
 		}
-		content = buff.Bytes()
+		document.Id = documentId
+
+		fieldsMap, exist := documentMap["fields"].(map[string]interface{})
+		if exist {
+			fieldsAny := &any.Any{}
+			if err = protobuf.UnmarshalAny(fieldsMap, fieldsAny); err != nil {
+				h.logger.Printf("[ERR] %v", err)
+				status = http.StatusInternalServerError
+				errContent, err := NewContent(err.Error())
+				if err != nil {
+					h.logger.Printf("[ERR] %v", err)
+				}
+				WriteResponse(w, errContent, status, h.logger)
+				return
+			}
+			document.Fields = fieldsAny
+		}
+
+		update.Document = document
+
+		updates = append(updates, update)
 	}
 
-	// Write response
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Content-Length", strconv.FormatInt(int64(len(content)), 10))
-	w.WriteHeader(status)
-	if _, err = w.Write(content); err != nil {
-		h.logger.Printf("[ERR] handler: Failed to write content: %s", err.Error())
+	req := &protobuf.BulkUpdateRequest{
+		Updates:   updates,
+		BatchSize: int32(batchSize),
 	}
+
+	resp, err := h.client.BulkUpdate(req)
+	if err != nil {
+		h.logger.Printf("[ERR] %v", err)
+		status = http.StatusInternalServerError
+		errContent, err := NewContent(err.Error())
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+		WriteResponse(w, errContent, status, h.logger)
+		return
+	}
+
+	content, err := json.MarshalIndent(resp, "", "  ")
+	if err != nil {
+		h.logger.Printf("[ERR] %v", err)
+		status = http.StatusInternalServerError
+		errContent, err := NewContent(err.Error())
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+		WriteResponse(w, errContent, status, h.logger)
+		return
+	}
+
+	WriteResponse(w, content, status, h.logger)
 
 	return
 }

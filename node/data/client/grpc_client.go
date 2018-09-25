@@ -70,99 +70,90 @@ func (c *GRPCClient) Close() error {
 	return c.ctx.Err()
 }
 
-func (c *GRPCClient) Get(req *protobuf.GetRequest, opts ...grpc.CallOption) (*protobuf.GetResponse, error) {
-	var err error
-
-	var resp *protobuf.GetResponse
-	if resp, err = c.client.Get(c.ctx, req, opts...); err != nil {
-		return nil, err
-	}
-
-	return resp, nil
-}
-
-func (c *GRPCClient) Put(req *protobuf.PutRequest, opts ...grpc.CallOption) (*protobuf.PutResponse, error) {
-	var err error
-
-	var resp *protobuf.PutResponse
-	if resp, err = c.client.Put(c.ctx, req, opts...); err != nil {
+func (c *GRPCClient) PutDocument(req *protobuf.PutDocumentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	resp, err := c.client.PutDocument(c.ctx, req, opts...)
+	if err != nil {
 		return resp, err
 	}
 
 	return resp, nil
 }
 
-func (c *GRPCClient) Delete(req *protobuf.DeleteRequest, opts ...grpc.CallOption) (*protobuf.DeleteResponse, error) {
-	var err error
+func (c *GRPCClient) GetDocument(req *protobuf.GetDocumentRequest, opts ...grpc.CallOption) (*protobuf.GetDocumentResponse, error) {
+	resp, err := c.client.GetDocument(c.ctx, req, opts...)
+	if err != nil {
+		return nil, err
+	}
 
-	var resp *protobuf.DeleteResponse
-	if resp, err = c.client.Delete(c.ctx, req, opts...); err != nil {
+	return resp, nil
+}
+
+func (c *GRPCClient) DeleteDocument(req *protobuf.DeleteDocumentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	resp, err := c.client.DeleteDocument(c.ctx, req, opts...)
+	if err != nil {
 		return resp, err
 	}
 
 	return resp, nil
 }
 
-func (c *GRPCClient) Bulk(req *protobuf.BulkRequest, opts ...grpc.CallOption) (*protobuf.BulkResponse, error) {
-	var err error
-
-	var resp *protobuf.BulkResponse
-	if resp, err = c.client.Bulk(c.ctx, req, opts...); err != nil {
+func (c *GRPCClient) BulkUpdate(req *protobuf.BulkUpdateRequest, opts ...grpc.CallOption) (*protobuf.BulkUpdateResponse, error) {
+	resp, err := c.client.BulkUpdate(c.ctx, req, opts...)
+	if err != nil {
 		return nil, err
 	}
 
 	return resp, nil
 }
 
-func (c *GRPCClient) Search(req *protobuf.SearchRequest, opts ...grpc.CallOption) (*protobuf.SearchResponse, error) {
-	var err error
-
-	var resp *protobuf.SearchResponse
-	if resp, err = c.client.Search(c.ctx, req, opts...); err != nil {
+func (c *GRPCClient) SearchDocuments(req *protobuf.SearchDocumentsRequest, opts ...grpc.CallOption) (*protobuf.SearchDocumentsResponse, error) {
+	resp, err := c.client.SearchDocuments(c.ctx, req, opts...)
+	if err != nil {
 		return nil, err
 	}
 
 	return resp, nil
 }
 
-func (c *GRPCClient) Join(req *protobuf.JoinRequest, opts ...grpc.CallOption) (*protobuf.JoinResponse, error) {
-	var err error
-
-	var resp *protobuf.JoinResponse
-	if resp, err = c.client.Join(c.ctx, req, opts...); err != nil {
+func (c *GRPCClient) PutNode(req *protobuf.PutNodeRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	resp, err := c.client.PutNode(c.ctx, req, opts...)
+	if err != nil {
 		return nil, err
 	}
 
 	return resp, nil
 }
 
-func (c *GRPCClient) Leave(req *protobuf.LeaveRequest, opts ...grpc.CallOption) (*protobuf.LeaveResponse, error) {
-	var err error
-
-	var resp *protobuf.LeaveResponse
-	if resp, err = c.client.Leave(c.ctx, req, opts...); err != nil {
+func (c *GRPCClient) GetNode(req *protobuf.GetNodeRequest, opts ...grpc.CallOption) (*protobuf.GetNodeResponse, error) {
+	resp, err := c.client.GetNode(c.ctx, req, opts...)
+	if err != nil {
 		return nil, err
 	}
 
 	return resp, nil
 }
 
-func (c *GRPCClient) Peers(opts ...grpc.CallOption) (*protobuf.PeersResponse, error) {
-	var err error
-
-	var resp *protobuf.PeersResponse
-	if resp, err = c.client.Peers(c.ctx, &empty.Empty{}, opts...); err != nil {
+func (c *GRPCClient) DeleteNode(req *protobuf.DeleteNodeRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	resp, err := c.client.DeleteNode(c.ctx, req, opts...)
+	if err != nil {
 		return nil, err
 	}
 
 	return resp, nil
 }
 
-func (c *GRPCClient) Snapshot(opts ...grpc.CallOption) (*protobuf.SnapshotResponse, error) {
-	var err error
+func (c *GRPCClient) GetCluster(opts ...grpc.CallOption) (*protobuf.GetClusterResponse, error) {
+	resp, err := c.client.GetCluster(c.ctx, &empty.Empty{}, opts...)
+	if err != nil {
+		return nil, err
+	}
 
-	var resp *protobuf.SnapshotResponse
-	if resp, err = c.client.Snapshot(c.ctx, &empty.Empty{}); err != nil {
+	return resp, nil
+}
+
+func (c *GRPCClient) Snapshot(opts ...grpc.CallOption) (*empty.Empty, error) {
+	resp, err := c.client.Snapshot(c.ctx, &empty.Empty{})
+	if err != nil {
 		return nil, err
 	}
 

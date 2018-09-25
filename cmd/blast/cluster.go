@@ -15,50 +15,34 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/mosuka/blast/node/data/client"
-	"github.com/mosuka/blast/node/data/protobuf"
 	"github.com/urfave/cli"
 )
 
-func peers(c *cli.Context) {
+func cluster(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
-	prettyPrint := c.Bool("pretty-print")
 
-	var err error
-
-	var dataClient *client.GRPCClient
-	if dataClient, err = client.NewGRPCClient(grpcAddr); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
+	dataClient, err := client.NewGRPCClient(grpcAddr)
+	if err != nil {
+		return err
 	}
 	defer dataClient.Close()
 
-	var resp *protobuf.PeersResponse
-	if resp, err = dataClient.Peers(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
+	resp, err := dataClient.GetCluster()
+	if err != nil {
+		return err
 	}
 
-	var jsonBytes []byte
-	if jsonBytes, err = resp.GetBytes(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
-	}
-
-	if prettyPrint {
-		var buff bytes.Buffer
-		if err = json.Indent(&buff, jsonBytes, "", "  "); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return
-		}
-		jsonBytes = buff.Bytes()
+	jsonBytes, err := json.MarshalIndent(resp.Cluster, "", "  ")
+	if err != nil {
+		return err
 	}
 
 	fmt.Fprintln(os.Stdout, fmt.Sprintf("%s", string(jsonBytes)))
-	return
+
+	return nil
 }

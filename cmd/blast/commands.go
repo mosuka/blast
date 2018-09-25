@@ -23,7 +23,6 @@ var (
 			Usage: "Get a document",
 			Flags: []cli.Flag{
 				flGRPCAddr,
-				flPrettyPrint,
 			},
 			ArgsUsage: "[id]",
 			Action:    get,
@@ -33,7 +32,6 @@ var (
 			Usage: "Put a document",
 			Flags: []cli.Flag{
 				flGRPCAddr,
-				flPrettyPrint,
 			},
 			ArgsUsage: "[id] [fields]",
 			Action:    put,
@@ -43,7 +41,6 @@ var (
 			Usage: "Delete a document",
 			Flags: []cli.Flag{
 				flGRPCAddr,
-				flPrettyPrint,
 			},
 			ArgsUsage: "[id]",
 			Action:    delete,
@@ -53,7 +50,6 @@ var (
 			Usage: "Update documents in bulk",
 			Flags: []cli.Flag{
 				flGRPCAddr,
-				flPrettyPrint,
 				flBatchSize,
 			},
 			ArgsUsage: "[update requests]",
@@ -64,7 +60,6 @@ var (
 			Usage: "Search documents",
 			Flags: []cli.Flag{
 				flGRPCAddr,
-				flPrettyPrint,
 			},
 			ArgsUsage: "[search request]",
 			Action:    search,
@@ -73,12 +68,11 @@ var (
 			Name:  "join",
 			Usage: "Join a node to the cluster",
 			Flags: []cli.Flag{
-				flRaftNodeID,
-				flBindAddr,
 				flGRPCAddr,
-				flHTTPAddr,
-				flPeerGRPCAddr,
-				flPrettyPrint,
+				flTargetRaftNodeID,
+				flTargetRaftAddr,
+				flTargetGRPCAddr,
+				flTargetHTTPAddr,
 			},
 			Action: join,
 		},
@@ -86,28 +80,25 @@ var (
 			Name:  "leave",
 			Usage: "Leave a node from the cluster",
 			Flags: []cli.Flag{
-				flRaftNodeID,
-				flBindAddr,
-				flPeerGRPCAddr,
-				flPrettyPrint,
+				flGRPCAddr,
+				flTargetRaftNodeID,
+				flTargetRaftAddr,
 			},
 			Action: leave,
 		},
 		{
-			Name:  "peers",
+			Name:  "cluster",
 			Usage: "Shows a list of peers in a cluster",
 			Flags: []cli.Flag{
 				flGRPCAddr,
-				flPrettyPrint,
 			},
-			Action: peers,
+			Action: cluster,
 		},
 		{
 			Name:  "snapshot",
 			Usage: "Create snapshot",
 			Flags: []cli.Flag{
-				flBindAddr,
-				flPrettyPrint,
+				flGRPCAddr,
 			},
 			Action: snapshot,
 		},

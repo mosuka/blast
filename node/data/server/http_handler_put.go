@@ -15,12 +15,11 @@
 package server
 
 import (
-	"bytes"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/any"
@@ -42,70 +41,108 @@ func NewPutHandler(logger *log.Logger, client *client.GRPCClient) *PutHandler {
 }
 
 func (h *PutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var err error
-
 	start := time.Now()
 	status := http.StatusOK
 	defer HTTPMetrics(start, status, w, r, h.logger)
 
+	var err error
+
 	vars := mux.Vars(r)
+
 	id := vars["id"]
+	if id == "" {
+		err := errors.New("update requests argument must be set")
+		h.logger.Printf("[ERR] %v", err)
+		status = http.StatusBadRequest
+		errContent, err := NewContent(err.Error())
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+		WriteResponse(w, errContent, status, h.logger)
+		return
+	}
 
-	prettyPrint, err := strconv.ParseBool(r.URL.Query().Get("pretty-print"))
-
-	fieldsBytes := make([]byte, 0)
-	if fieldsBytes, err = ioutil.ReadAll(r.Body); err != nil {
-		h.logger.Printf("[ERR] handler: Failed to read request body: %s", err.Error())
+	fieldsBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		h.logger.Printf("[ERR] %v", err)
 		status = http.StatusInternalServerError
+		errContent, err := NewContent(err.Error())
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+		WriteResponse(w, errContent, status, h.logger)
+		return
+	}
+
+	// Check field length
+	if len(fieldsBytes) <= 0 {
+		err := errors.New("fields argument must be set")
+		status = http.StatusBadRequest
+		errContent, err := NewContent(err.Error())
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+		WriteResponse(w, errContent, status, h.logger)
+		return
 	}
 
 	var fieldsMap map[string]interface{}
 	if fieldsBytes != nil {
-		if err = json.Unmarshal(fieldsBytes, &fieldsMap); err != nil {
-			h.logger.Printf("[ERR] handler: Failed to unmarshal fields to map: %s", err.Error())
-			status = http.StatusInternalServerError
+		err = json.Unmarshal(fieldsBytes, &fieldsMap)
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+			status = http.StatusBadRequest
+			errContent, err := NewContent(err.Error())
+			if err != nil {
+				h.logger.Printf("[ERR] %v", err)
+			}
+			WriteResponse(w, errContent, status, h.logger)
+			return
 		}
 	}
 
 	fieldsAny := &any.Any{}
 	if err = protobuf.UnmarshalAny(fieldsMap, fieldsAny); err != nil {
-		h.logger.Printf("[ERR] handler: Failed to unmarshal fields to any: %s", err.Error())
+		h.logger.Printf("[ERR] %v", err)
 		status = http.StatusInternalServerError
+		errContent, err := NewContent(err.Error())
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+		WriteResponse(w, errContent, status, h.logger)
+		return
 	}
 
-	req := &protobuf.PutRequest{
+	req := &protobuf.PutDocumentRequest{
 		Id:     id,
 		Fields: fieldsAny,
 	}
 
-	var resp *protobuf.PutResponse
-	if resp, err = h.client.Put(req); err != nil {
-		h.logger.Printf("[ERR] handler: Failed to put document: %s", err.Error())
+	resp, err := h.client.PutDocument(req)
+	if err != nil {
+		h.logger.Printf("[ERR] %v", err)
 		status = http.StatusInternalServerError
-	}
-
-	content := make([]byte, 0)
-	if content, err = resp.GetBytes(); err != nil {
-		h.logger.Printf("[ERR] handler: Failed to marshalling content: %s", err.Error())
-		status = http.StatusInternalServerError
-	}
-
-	if prettyPrint {
-		var buff bytes.Buffer
-		if err = json.Indent(&buff, content, "", "  "); err != nil {
-			h.logger.Printf("[ERR] handler: Failed to indent content: %s", err.Error())
-			status = http.StatusInternalServerError
+		errContent, err := NewContent(err.Error())
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
 		}
-		content = buff.Bytes()
+		WriteResponse(w, errContent, status, h.logger)
+		return
 	}
 
-	// Write response
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Content-Length", strconv.FormatInt(int64(len(content)), 10))
-	w.WriteHeader(status)
-	if _, err = w.Write(content); err != nil {
-		h.logger.Printf("[ERR] handler: Failed to write content: %s", err.Error())
+	content, err := json.MarshalIndent(resp, "", "  ")
+	if err != nil {
+		h.logger.Printf("[ERR] %v", err)
+		status = http.StatusInternalServerError
+		errContent, err := NewContent(err.Error())
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+		WriteResponse(w, errContent, status, h.logger)
+		return
 	}
+
+	WriteResponse(w, content, status, h.logger)
 
 	return
 }

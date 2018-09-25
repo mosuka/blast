@@ -22,7 +22,7 @@ var (
 			Name:  "data",
 			Usage: "Start a data node",
 			Flags: []cli.Flag{
-				flBindAddr,
+				flRaftAddr,
 				flGRPCAddr,
 				flHTTPAddr,
 				flRaftNodeID,

@@ -15,57 +15,31 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"os"
-
 	"github.com/mosuka/blast/node/data/client"
 	"github.com/mosuka/blast/node/data/protobuf"
 	"github.com/urfave/cli"
 )
 
-func leave(c *cli.Context) {
-	bindAddr := c.String("bind-addr")
-	nodeID := c.String("raft-node-id")
-	peerGRPCAddr := c.String("peer-grpc-addr")
-	prettyPrint := c.Bool("pretty-print")
+func leave(c *cli.Context) error {
+	grpcAddr := c.String("grpc-addr")
+	targetRaftNodeID := c.String("target-raft-node-id")
+	targetRaftAddr := c.String("target-raft-addr")
 
-	var err error
-
-	var dataClient *client.GRPCClient
-	if dataClient, err = client.NewGRPCClient(peerGRPCAddr); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
+	dataClient, err := client.NewGRPCClient(grpcAddr)
+	if err != nil {
+		return err
 	}
 	defer dataClient.Close()
 
-	req := &protobuf.LeaveRequest{
-		NodeId:  nodeID,
-		Address: bindAddr,
+	req := &protobuf.DeleteNodeRequest{
+		Id:       targetRaftNodeID,
+		RaftAddr: targetRaftAddr,
 	}
 
-	var resp *protobuf.LeaveResponse
-	if resp, err = dataClient.Leave(req); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
+	_, err = dataClient.DeleteNode(req)
+	if err != nil {
+		return err
 	}
 
-	var jsonBytes []byte
-	if jsonBytes, err = resp.GetBytes(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
-	}
-
-	if prettyPrint {
-		var buff bytes.Buffer
-		if err = json.Indent(&buff, jsonBytes, "", "  "); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return
-		}
-		jsonBytes = buff.Bytes()
-	}
-
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("%s", string(jsonBytes)))
-	return
+	return nil
 }

@@ -25,12 +25,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/blevesearch/bleve"
 	_ "github.com/blevesearch/bleve/config"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/hashicorp/raft"
 	"github.com/hashicorp/raft-boltdb"
+	_ "github.com/mosuka/blast/encoding"
 	"github.com/mosuka/blast/index"
 	blastlog "github.com/mosuka/blast/log"
 	"github.com/mosuka/blast/node/data/client"
@@ -41,7 +43,7 @@ import (
 )
 
 type Service struct {
-	peerAddress string
+	raftAddress string
 	raftConfig  *blastraft.RaftConfig
 	bootstrap   bool
 	raft        *raft.Raft
@@ -54,21 +56,27 @@ type Service struct {
 
 	mutex sync.Mutex
 
-	metadata map[string]*protobuf.Metadata
+	metadataMap map[string]*protobuf.Metadata
+	//metadata map[string]map[string]interface{}
+	//cluster *protobuf.Cluster
 
 	logger *log.Logger
 }
 
-func NewService(peerAddress string, raftConfig *blastraft.RaftConfig, bootstrap bool, storeConfig *store.StoreConfig, indexConfig *index.IndexConfig) (*Service, error) {
+func NewService(raftAddress string, raftConfig *blastraft.RaftConfig, bootstrap bool, storeConfig *store.StoreConfig, indexConfig *index.IndexConfig) (*Service, error) {
 	return &Service{
-		peerAddress: peerAddress,
+		raftAddress: raftAddress,
 		raftConfig:  raftConfig,
 		bootstrap:   bootstrap,
 
 		storeConfig: storeConfig,
 		indexConfig: indexConfig,
 
-		metadata: make(map[string]*protobuf.Metadata, 0),
+		metadataMap: make(map[string]*protobuf.Metadata, 0),
+		//metadata: make(map[string]map[string]interface{}, 0),
+		//cluster: &protobuf.Cluster{
+		//	Nodes: make([]*protobuf.Node, 0),
+		//},
 
 		logger: blastlog.DefaultLogger(),
 	}, nil
@@ -103,12 +111,12 @@ func (s *Service) Start() error {
 	config.Logger = s.logger
 
 	// Setup Raft communication.
-	peerAddr, err := net.ResolveTCPAddr("tcp", s.peerAddress)
+	peerAddr, err := net.ResolveTCPAddr("tcp", s.raftAddress)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return err
 	}
-	transport, err := raft.NewTCPTransportWithLogger(s.peerAddress, peerAddr, 3, s.raftConfig.Timeout, s.logger)
+	transport, err := raft.NewTCPTransportWithLogger(s.raftAddress, peerAddr, 3, s.raftConfig.Timeout, s.logger)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return err
@@ -145,13 +153,11 @@ func (s *Service) Start() error {
 				},
 			},
 		}
-		future := s.raft.BootstrapCluster(configuration)
-		err = future.Error()
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return err
-		}
+		s.raft.BootstrapCluster(configuration)
 	}
+
+	// TODO
+	// start connection monitoring
 
 	return nil
 }
@@ -220,23 +226,9 @@ func (s *Service) WaitDetectLeader(timeout time.Duration) error {
 	return nil
 }
 
-func (s *Service) GetMetadata(id string) (*protobuf.Metadata, error) {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
-	_, exist := s.metadata[id]
-	if !exist {
-		err := fmt.Errorf("%s does not exist in metadata", id)
-		s.logger.Printf("[ERR] %v", err)
-		return nil, err
-	}
-
-	return s.metadata[id], nil
-}
-
-func (s *Service) PutMetadata(req *protobuf.JoinRequest) error {
+func (s *Service) PutMetadata(metadata *protobuf.Metadata) error {
 	data := &any.Any{}
-	err := protobuf.UnmarshalAny(req, data)
+	err := protobuf.UnmarshalAny(metadata, data)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return err
@@ -244,7 +236,7 @@ func (s *Service) PutMetadata(req *protobuf.JoinRequest) error {
 
 	proposalBytes, err := proto.Marshal(
 		&protobuf.Proposal{
-			Type: protobuf.Proposal_JOIN,
+			Type: protobuf.Proposal_PUT_METADATA,
 			Data: data,
 		},
 	)
@@ -263,9 +255,23 @@ func (s *Service) PutMetadata(req *protobuf.JoinRequest) error {
 	return nil
 }
 
-func (s *Service) DeleteMetadata(req *protobuf.LeaveRequest) error {
+func (s *Service) GetMetadata(id string) (*protobuf.Metadata, error) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	values, exist := s.metadataMap[id]
+	if !exist {
+		err := fmt.Errorf("%s does not exist in metadata", id)
+		s.logger.Printf("[ERR] %v", err)
+		return nil, err
+	}
+
+	return values, nil
+}
+
+func (s *Service) DeleteMetadata(metadata *protobuf.Metadata) error {
 	data := &any.Any{}
-	err := protobuf.UnmarshalAny(req, data)
+	err := protobuf.UnmarshalAny(metadata, data)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return err
@@ -273,7 +279,7 @@ func (s *Service) DeleteMetadata(req *protobuf.LeaveRequest) error {
 
 	proposalBytes, err := proto.Marshal(
 		&protobuf.Proposal{
-			Type: protobuf.Proposal_LEAVE,
+			Type: protobuf.Proposal_DELETE_METADATA,
 			Data: data,
 		},
 	)
@@ -292,50 +298,38 @@ func (s *Service) DeleteMetadata(req *protobuf.LeaveRequest) error {
 	return nil
 }
 
-func (s *Service) Join(ctx context.Context, req *protobuf.JoinRequest) (*protobuf.JoinResponse, error) {
+func (s *Service) PutNode(ctx context.Context, req *protobuf.PutNodeRequest) (*empty.Empty, error) {
 	start := time.Now()
-	defer Metrics(start, "Join")
+	defer Metrics(start, "PutNode")
 
-	resp := &protobuf.JoinResponse{}
+	resp := &empty.Empty{}
 
 	if s.raft.State() != raft.Leader {
-		s.logger.Print("[DEBUG] Not a leader")
-
 		leaderID, err := s.LeaderID(60 * time.Second)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
-			resp.Success = false
-			resp.Message = err.Error()
 			return resp, err
 		}
 
 		leaderMetadata, err := s.GetMetadata(string(leaderID))
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
-			resp.Success = false
-			resp.Message = err.Error()
 			return resp, err
 		}
 
-		leaderGRPCAddress := leaderMetadata.GrpcAddress
-
-		grpcClient, err := client.NewGRPCClient(leaderGRPCAddress)
+		grpcClient, err := client.NewGRPCClient(leaderMetadata.GrpcAddr)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
-			resp.Success = false
-			resp.Message = err.Error()
 			return resp, err
 		}
 		defer grpcClient.Close()
 
-		return grpcClient.Join(req)
+		return grpcClient.PutNode(req)
 	}
 
-	peerAddr, err := net.ResolveTCPAddr("tcp", req.Address)
+	peerAddr, err := net.ResolveTCPAddr("tcp", req.RaftAddr)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 
@@ -343,23 +337,19 @@ func (s *Service) Join(ctx context.Context, req *protobuf.JoinRequest) (*protobu
 	err = configFuture.Error()
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 
 	for _, srv := range configFuture.Configuration().Servers {
 		// If a node already exists with either the joining node's ID or address,
 		// that node may need to be removed from the config first.
-		if srv.ID == raft.ServerID(req.NodeId) || srv.Address == raft.ServerAddress(peerAddr.String()) {
+		if srv.ID == raft.ServerID(req.Id) || srv.Address == raft.ServerAddress(peerAddr.String()) {
 			// However if *both* the ID and the address are the same, then nothing -- not even
 			// a join operation -- is needed.
-			if srv.ID == raft.ServerID(req.NodeId) && srv.Address == raft.ServerAddress(peerAddr.String()) {
-				message := fmt.Sprintf("%s (%s) already exists in cluster, ignoring join request", req.NodeId, srv.Address)
+			if srv.ID == raft.ServerID(req.Id) && srv.Address == raft.ServerAddress(peerAddr.String()) {
+				message := fmt.Sprintf("%s (%s) already exists in cluster, ignoring join request", req.Id, srv.Address)
 				s.logger.Printf("[DEBUG] %s", message)
-				resp.Success = true
-				resp.Message = message
-				return resp, nil
+				return &empty.Empty{}, nil
 			}
 
 			// If either the ID or the address matches, need to remove the corresponding node by the ID.
@@ -367,276 +357,239 @@ func (s *Service) Join(ctx context.Context, req *protobuf.JoinRequest) (*protobu
 			err = future.Error()
 			if err != nil {
 				s.logger.Print(fmt.Sprintf("[ERR] %v", err))
-				resp.Success = false
-				resp.Message = err.Error()
-				return resp, err
+				return &empty.Empty{}, err
 			}
 		}
 	}
 
-	future := s.raft.AddVoter(raft.ServerID(req.NodeId), raft.ServerAddress(peerAddr.String()), 0, 0)
+	future := s.raft.AddVoter(raft.ServerID(req.Id), raft.ServerAddress(peerAddr.String()), 0, 0)
 	err = future.Error()
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 
-	err = s.PutMetadata(req)
+	err = s.PutMetadata(
+		&protobuf.Metadata{
+			Id:       req.Id,
+			RaftAddr: req.RaftAddr,
+			GrpcAddr: req.GrpcAddr,
+			HttpAddr: req.HttpAddr,
+		},
+	)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
-
-	resp.Success = true
 
 	return resp, nil
 }
 
-func (s *Service) Leave(ctx context.Context, req *protobuf.LeaveRequest) (*protobuf.LeaveResponse, error) {
+func (s *Service) GetNode(ctx context.Context, req *protobuf.GetNodeRequest) (*protobuf.GetNodeResponse, error) {
 	start := time.Now()
-	defer Metrics(start, "Leave")
+	defer Metrics(start, "GetNode")
 
-	resp := &protobuf.LeaveResponse{}
-
-	if s.raft.State() != raft.Leader {
-		s.logger.Print("[DEBUG] Not a leader")
-
-		leaderID, err := s.LeaderID(60 * time.Second)
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			resp.Success = false
-			resp.Message = err.Error()
-			return resp, err
-		}
-
-		leaderMetadata, err := s.GetMetadata(string(leaderID))
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			resp.Success = false
-			resp.Message = err.Error()
-			return resp, err
-		}
-
-		leaderGRPCAddress := leaderMetadata.GrpcAddress
-
-		grpcClient, err := client.NewGRPCClient(leaderGRPCAddress)
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			resp.Success = false
-			resp.Message = err.Error()
-			return resp, err
-		}
-		defer grpcClient.Close()
-
-		return grpcClient.Leave(req)
-	}
-
-	peerAddr, err := net.ResolveTCPAddr("tcp", req.Address)
-	if err != nil {
-		s.logger.Print(fmt.Sprintf("[ERR] %v", err))
-		resp.Success = false
-		resp.Message = err.Error()
-		return resp, err
-	}
-
-	configFuture := s.raft.GetConfiguration()
-	err = configFuture.Error()
-	if err != nil {
-		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
-		return resp, err
-	}
-
-	for _, srv := range configFuture.Configuration().Servers {
-		if srv.ID == raft.ServerID(req.NodeId) && srv.Address == raft.ServerAddress(peerAddr.String()) {
-			future := s.raft.RemoveServer(srv.ID, 0, 0)
-			err = future.Error()
-			if err != nil {
-				s.logger.Printf("[ERR] %v", err)
-				resp.Success = false
-				resp.Message = err.Error()
-				return resp, err
-			}
-		}
-	}
-
-	future := s.raft.DemoteVoter(raft.ServerID(req.NodeId), 0, 0)
-	err = future.Error()
-	if err != nil {
-		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
-		return resp, err
-
-	}
-
-	err = s.DeleteMetadata(req)
-	if err != nil {
-		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
-		return resp, err
-	}
-
-	resp.Success = true
-
-	return resp, nil
-}
-
-func (s *Service) Peers(ctx context.Context, req *empty.Empty) (*protobuf.PeersResponse, error) {
-	start := time.Now()
-	defer Metrics(start, "Peers")
-
-	resp := &protobuf.PeersResponse{}
+	resp := &protobuf.GetNodeResponse{}
 
 	configFuture := s.raft.GetConfiguration()
 	err := configFuture.Error()
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 
 	leaderAddr, err := s.LeaderAddress(60 * time.Second)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 
-	resp.Peers = make([]*protobuf.Peer, 0)
+	node := &protobuf.Node{}
 	for _, srv := range configFuture.Configuration().Servers {
-		peer := &protobuf.Peer{}
-		peer.NodeId = string(srv.ID)
-		peer.Address = string(srv.Address)
-		peer.Leader = srv.Address == leaderAddr
-		peer.Metadata, err = s.GetMetadata(string(srv.ID))
-		if err != nil {
-			s.logger.Printf("[WARN] %v", err)
+		if srv.ID == raft.ServerID(req.Id) {
+			metadata, err := s.GetMetadata(string(srv.ID))
+			if err != nil {
+				s.logger.Printf("[ERR] %v", err)
+				return resp, err
+			}
+
+			node.Id = string(srv.ID)
+			node.RaftAddr = string(srv.Address)
+			node.GrpcAddr = metadata.GrpcAddr
+			node.HttpAddr = metadata.HttpAddr
+			node.Leader = srv.Address == leaderAddr
+			break
 		}
-		resp.Peers = append(resp.Peers, peer)
 	}
 
-	resp.Success = true
+	resp.Node = node
 
 	return resp, nil
 }
 
-func (s *Service) Snapshot(ctx context.Context, req *empty.Empty) (*protobuf.SnapshotResponse, error) {
+func (s *Service) DeleteNode(ctx context.Context, req *protobuf.DeleteNodeRequest) (*empty.Empty, error) {
 	start := time.Now()
-	defer Metrics(start, "Snapshot")
+	defer Metrics(start, "DeleteNode")
 
-	resp := &protobuf.SnapshotResponse{}
-
-	future := s.raft.Snapshot()
-	err := future.Error()
-	if err != nil {
-		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
-		return resp, err
-	}
-
-	resp.Success = true
-
-	return resp, nil
-}
-
-func (s *Service) Get(ctx context.Context, req *protobuf.GetRequest) (*protobuf.GetResponse, error) {
-	start := time.Now()
-	defer Metrics(start, "Get")
-
-	resp := &protobuf.GetResponse{}
-
-	reader, err := s.store.Reader()
-	if err != nil {
-		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
-		return resp, err
-	}
-	defer reader.Close()
-
-	fieldsBytes, err := reader.Get([]byte(req.Id))
-	if err != nil {
-		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
-		return resp, err
-	}
-
-	if fieldsBytes != nil {
-		var fieldsMap map[string]interface{}
-		err = json.Unmarshal(fieldsBytes, &fieldsMap)
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			resp.Success = false
-			resp.Message = err.Error()
-			return resp, err
-		}
-
-		fieldsAny := &any.Any{}
-		err = protobuf.UnmarshalAny(fieldsMap, fieldsAny)
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			resp.Success = false
-			resp.Message = err.Error()
-			return resp, err
-		}
-
-		resp.Fields = fieldsAny
-	}
-
-	resp.Id = req.Id
-	resp.Success = true
-
-	return resp, nil
-}
-
-func (s *Service) Put(ctx context.Context, req *protobuf.PutRequest) (*protobuf.PutResponse, error) {
-	start := time.Now()
-	defer Metrics(start, "Put")
-
-	resp := &protobuf.PutResponse{}
+	resp := &empty.Empty{}
 
 	if s.raft.State() != raft.Leader {
-		s.logger.Print("[DEBUG] Not a leader")
-
 		leaderID, err := s.LeaderID(60 * time.Second)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
-			resp.Success = false
-			resp.Message = err.Error()
 			return resp, err
 		}
 
 		leaderMetadata, err := s.GetMetadata(string(leaderID))
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
-			resp.Success = false
-			resp.Message = err.Error()
 			return resp, err
 		}
 
-		leaderGRPCAddress := leaderMetadata.GrpcAddress
-
-		grpcClient, err := client.NewGRPCClient(leaderGRPCAddress)
+		grpcClient, err := client.NewGRPCClient(leaderMetadata.GrpcAddr)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
-			resp.Success = false
-			resp.Message = err.Error()
 			return resp, err
 		}
 		defer grpcClient.Close()
 
-		return grpcClient.Put(req)
+		return grpcClient.DeleteNode(req)
+	}
+
+	configFuture := s.raft.GetConfiguration()
+	err := configFuture.Error()
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return resp, err
+	}
+
+	peerAddr, err := net.ResolveTCPAddr("tcp", req.RaftAddr)
+	if err != nil {
+		s.logger.Print(fmt.Sprintf("[ERR] %v", err))
+		return resp, err
+	}
+
+	for _, srv := range configFuture.Configuration().Servers {
+		if srv.ID == raft.ServerID(req.Id) || srv.Address == raft.ServerAddress(peerAddr.String()) {
+			future := s.raft.RemoveServer(srv.ID, 0, 0)
+			err = future.Error()
+			if err != nil {
+				s.logger.Printf("[ERR] %v", err)
+				return resp, err
+			}
+		}
+	}
+
+	future := s.raft.DemoteVoter(raft.ServerID(req.Id), 0, 0)
+	err = future.Error()
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return resp, err
+
+	}
+
+	err = s.DeleteMetadata(
+		&protobuf.Metadata{
+			Id:       req.Id,
+			RaftAddr: req.RaftAddr,
+		},
+	)
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return resp, err
+	}
+
+	return resp, nil
+}
+
+func (s *Service) GetCluster(ctx context.Context, req *empty.Empty) (*protobuf.GetClusterResponse, error) {
+	start := time.Now()
+	defer Metrics(start, "GetCluster")
+
+	resp := &protobuf.GetClusterResponse{}
+
+	configFuture := s.raft.GetConfiguration()
+	err := configFuture.Error()
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return resp, err
+	}
+
+	leaderAddr, err := s.LeaderAddress(60 * time.Second)
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return resp, err
+	}
+
+	cluster := &protobuf.Cluster{
+		Nodes:  make([]*protobuf.Node, 0),
+		Health: protobuf.Cluster_UNKNOWN_HEALTH,
+	}
+
+	for _, srv := range configFuture.Configuration().Servers {
+		metadata, err := s.GetMetadata(string(srv.ID))
+		if err != nil {
+			return resp, err
+		}
+
+		node := &protobuf.Node{
+			Id:       string(srv.ID),
+			RaftAddr: string(srv.Address),
+			GrpcAddr: metadata.GrpcAddr,
+			HttpAddr: metadata.HttpAddr,
+			Leader:   srv.Address == leaderAddr,
+		}
+		cluster.Nodes = append(cluster.Nodes, node)
+	}
+
+	resp.Cluster = cluster
+
+	return resp, nil
+}
+
+func (s *Service) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
+	start := time.Now()
+	defer Metrics(start, "Snapshot")
+
+	resp := &empty.Empty{}
+
+	future := s.raft.Snapshot()
+	err := future.Error()
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return resp, err
+	}
+
+	return resp, nil
+}
+
+func (s *Service) PutDocument(ctx context.Context, req *protobuf.PutDocumentRequest) (*empty.Empty, error) {
+	start := time.Now()
+	defer Metrics(start, "PutDocument")
+
+	resp := &empty.Empty{}
+
+	if s.raft.State() != raft.Leader {
+		leaderID, err := s.LeaderID(60 * time.Second)
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			return resp, err
+		}
+
+		leaderMetadata, err := s.GetMetadata(string(leaderID))
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			return resp, err
+		}
+
+		grpcClient, err := client.NewGRPCClient(leaderMetadata.GrpcAddr)
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			return resp, err
+		}
+		defer grpcClient.Close()
+
+		return grpcClient.PutDocument(req)
 	}
 
 	// PutRequest to Any
@@ -644,21 +597,17 @@ func (s *Service) Put(ctx context.Context, req *protobuf.PutRequest) (*protobuf.
 	err := protobuf.UnmarshalAny(req, data)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 
 	proposalBytes, err := proto.Marshal(
 		&protobuf.Proposal{
-			Type: protobuf.Proposal_PUT,
+			Type: protobuf.Proposal_PUT_DOCUMENT,
 			Data: data,
 		},
 	)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 
@@ -666,53 +615,87 @@ func (s *Service) Put(ctx context.Context, req *protobuf.PutRequest) (*protobuf.
 	err = future.Error()
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 
-	resp = future.Response().(*protobuf.PutResponse)
+	resp = future.Response().(*empty.Empty)
 
 	return resp, nil
 }
 
-func (s *Service) Delete(ctx context.Context, req *protobuf.DeleteRequest) (*protobuf.DeleteResponse, error) {
+func (s *Service) GetDocument(ctx context.Context, req *protobuf.GetDocumentRequest) (*protobuf.GetDocumentResponse, error) {
 	start := time.Now()
-	defer Metrics(start, "Delete")
+	defer Metrics(start, "Get")
 
-	resp := &protobuf.DeleteResponse{}
+	resp := &protobuf.GetDocumentResponse{}
+
+	reader, err := s.store.Reader()
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return resp, err
+	}
+	defer reader.Close()
+
+	fieldsBytes, err := reader.Get([]byte(req.Id))
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return resp, err
+	}
+
+	// document does not exist
+	if fieldsBytes == nil {
+		return resp, nil
+	}
+
+	var fieldsMap map[string]interface{}
+	err = json.Unmarshal(fieldsBytes, &fieldsMap)
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return resp, err
+	}
+
+	fieldsAny := &any.Any{}
+	err = protobuf.UnmarshalAny(fieldsMap, fieldsAny)
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return resp, err
+	}
+
+	resp.Document = &protobuf.Document{
+		Id:     req.Id,
+		Fields: fieldsAny,
+	}
+
+	return resp, nil
+}
+
+func (s *Service) DeleteDocument(ctx context.Context, req *protobuf.DeleteDocumentRequest) (*empty.Empty, error) {
+	start := time.Now()
+	defer Metrics(start, "DeleteDocument")
+
+	resp := &empty.Empty{}
 
 	if s.raft.State() != raft.Leader {
-		s.logger.Print("[DEBUG] Not a leader")
-
 		leaderID, err := s.LeaderID(60 * time.Second)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
-			resp.Success = false
-			resp.Message = err.Error()
 			return resp, err
 		}
 
 		leaderMetadata, err := s.GetMetadata(string(leaderID))
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
-			resp.Success = false
-			resp.Message = err.Error()
 			return resp, err
 		}
 
-		leaderGRPCAddress := leaderMetadata.GrpcAddress
-
-		grpcClient, err := client.NewGRPCClient(leaderGRPCAddress)
+		grpcClient, err := client.NewGRPCClient(leaderMetadata.GrpcAddr)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
-			resp.Success = false
-			resp.Message = err.Error()
 			return resp, err
 		}
 		defer grpcClient.Close()
 
-		return grpcClient.Delete(req)
+		return grpcClient.DeleteDocument(req)
 	}
 
 	// DeleteRequest to Any
@@ -720,21 +703,17 @@ func (s *Service) Delete(ctx context.Context, req *protobuf.DeleteRequest) (*pro
 	err := protobuf.UnmarshalAny(req, data)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 
 	proposalBytes, err := proto.Marshal(
 		&protobuf.Proposal{
-			Type: protobuf.Proposal_DELETE,
+			Type: protobuf.Proposal_DELETE_DOCUMENT,
 			Data: data,
 		},
 	)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 
@@ -742,53 +721,41 @@ func (s *Service) Delete(ctx context.Context, req *protobuf.DeleteRequest) (*pro
 	err = future.Error()
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 
-	resp = future.Response().(*protobuf.DeleteResponse)
+	resp = future.Response().(*empty.Empty)
 
 	return resp, nil
 }
 
-func (s *Service) Bulk(ctx context.Context, req *protobuf.BulkRequest) (*protobuf.BulkResponse, error) {
+func (s *Service) BulkUpdate(ctx context.Context, req *protobuf.BulkUpdateRequest) (*protobuf.BulkUpdateResponse, error) {
 	start := time.Now()
-	defer Metrics(start, "Bulk")
+	defer Metrics(start, "BulkUpdate")
 
-	resp := &protobuf.BulkResponse{}
+	resp := &protobuf.BulkUpdateResponse{}
 
 	if s.raft.State() != raft.Leader {
-		s.logger.Print("[DEBUG] Not a leader")
-
 		leaderID, err := s.LeaderID(60 * time.Second)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
-			resp.Success = false
-			resp.Message = err.Error()
 			return resp, err
 		}
 
 		leaderMetadata, err := s.GetMetadata(string(leaderID))
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
-			resp.Success = false
-			resp.Message = err.Error()
 			return resp, err
 		}
 
-		leaderGRPCAddress := leaderMetadata.GrpcAddress
-
-		grpcClient, err := client.NewGRPCClient(leaderGRPCAddress)
+		grpcClient, err := client.NewGRPCClient(leaderMetadata.GrpcAddr)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
-			resp.Success = false
-			resp.Message = err.Error()
 			return resp, err
 		}
 		defer grpcClient.Close()
 
-		return grpcClient.Bulk(req)
+		return grpcClient.BulkUpdate(req)
 	}
 
 	// BulkRequest to Any
@@ -796,21 +763,17 @@ func (s *Service) Bulk(ctx context.Context, req *protobuf.BulkRequest) (*protobu
 	err := protobuf.UnmarshalAny(req, data)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 
 	proposalBytes, err := proto.Marshal(
 		&protobuf.Proposal{
-			Type: protobuf.Proposal_BULK,
+			Type: protobuf.Proposal_BULK_UPDATE,
 			Data: data,
 		},
 	)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 
@@ -818,27 +781,23 @@ func (s *Service) Bulk(ctx context.Context, req *protobuf.BulkRequest) (*protobu
 	err = future.Error()
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 
-	resp = future.Response().(*protobuf.BulkResponse)
+	resp = future.Response().(*protobuf.BulkUpdateResponse)
 
 	return resp, nil
 }
 
-func (s *Service) Search(ctx context.Context, req *protobuf.SearchRequest) (*protobuf.SearchResponse, error) {
+func (s *Service) SearchDocuments(ctx context.Context, req *protobuf.SearchDocumentsRequest) (*protobuf.SearchDocumentsResponse, error) {
 	start := time.Now()
-	defer Metrics(start, "Search")
+	defer Metrics(start, "SearchDocuments")
 
-	resp := &protobuf.SearchResponse{}
+	resp := &protobuf.SearchDocumentsResponse{}
 
 	searcher, err := s.index.Searcher()
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 	defer searcher.Close()
@@ -846,33 +805,12 @@ func (s *Service) Search(ctx context.Context, req *protobuf.SearchRequest) (*pro
 	searchRequest, err := protobuf.MarshalAny(req.SearchRequest)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 
-	searchRequestBytes, err := json.Marshal(searchRequest.(*map[string]interface{}))
+	searchResult, err := searcher.Search(searchRequest.(*bleve.SearchRequest))
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
-		return resp, err
-	}
-
-	searchResultBytes, err := searcher.Search(searchRequestBytes)
-	if err != nil {
-		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
-		return resp, err
-	}
-
-	var searchResult map[string]interface{}
-	err = json.Unmarshal(searchResultBytes, &searchResult)
-	if err != nil {
-		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 
@@ -880,13 +818,10 @@ func (s *Service) Search(ctx context.Context, req *protobuf.SearchRequest) (*pro
 	err = protobuf.UnmarshalAny(searchResult, searchResultAny)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 
 	resp.SearchResult = searchResultAny
-	resp.Success = true
 
 	return resp, nil
 }
@@ -914,26 +849,36 @@ func (f *fsm) Apply(l *raft.Log) interface{} {
 	}
 
 	switch proposal.Type {
-	case protobuf.Proposal_PUT:
-		var resp interface{}
-		resp, err = f.applyPut(data.(*protobuf.PutRequest))
-		return resp.(*protobuf.PutResponse)
-	case protobuf.Proposal_DELETE:
-		var resp interface{}
-		resp, err = f.applyDelete(data.(*protobuf.DeleteRequest))
-		return resp.(*protobuf.DeleteResponse)
-	case protobuf.Proposal_BULK:
-		var resp interface{}
-		resp, err = f.applyBulk(data.(*protobuf.BulkRequest))
-		return resp.(*protobuf.BulkResponse)
-	case protobuf.Proposal_JOIN:
-		var resp interface{}
-		resp, err = f.applyJoin(data.(*protobuf.JoinRequest))
-		return resp.(*protobuf.JoinResponse)
-	case protobuf.Proposal_LEAVE:
-		var resp interface{}
-		resp, err = f.applyLeave(data.(*protobuf.LeaveRequest))
-		return resp.(*protobuf.LeaveResponse)
+	case protobuf.Proposal_PUT_METADATA:
+		resp, err := f.applyPutMetadata(data.(*protobuf.Metadata))
+		if err != nil {
+			return err
+		}
+		return resp.(*empty.Empty)
+	case protobuf.Proposal_DELETE_METADATA:
+		resp, err := f.applyDeleteMetadata(data.(*protobuf.Metadata))
+		if err != nil {
+			return err
+		}
+		return resp.(*empty.Empty)
+	case protobuf.Proposal_PUT_DOCUMENT:
+		resp, err := f.applyPutDocument(data.(*protobuf.PutDocumentRequest))
+		if err != nil {
+			return err
+		}
+		return resp.(*empty.Empty)
+	case protobuf.Proposal_DELETE_DOCUMENT:
+		resp, err := f.applyDeleteDocument(data.(*protobuf.DeleteDocumentRequest))
+		if err != nil {
+			return err
+		}
+		return resp.(*empty.Empty)
+	case protobuf.Proposal_BULK_UPDATE:
+		resp, err := f.applyBulkUpdate(data.(*protobuf.BulkUpdateRequest))
+		if err != nil {
+			return err
+		}
+		return resp.(*protobuf.BulkUpdateResponse)
 	default:
 		err = errors.New("unsupported proposal type")
 		f.logger.Printf("[ERR] %v", err)
@@ -1019,38 +964,94 @@ func (f *fsm) Restore(rc io.ReadCloser) error {
 	return nil
 }
 
-func (f *fsm) applyPut(req *protobuf.PutRequest) (interface{}, error) {
+func (f *fsm) applyPutMetadata(metadata *protobuf.Metadata) (interface{}, error) {
 	start := time.Now()
-	defer Metrics(start, "applyPut")
-
-	resp := &protobuf.PutResponse{}
+	defer Metrics(start, "applyPutMetadata")
 
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
+
+	resp := &empty.Empty{}
+
+	for i, v := range f.metadataMap {
+		// If a node already exists with either the putting node's ID or address,
+		// that node may need to be removed from the metadata first.
+		if v.Id == metadata.Id || v.RaftAddr == metadata.RaftAddr {
+			delete(f.metadataMap, i)
+			continue
+		}
+	}
+
+	f.metadataMap[metadata.Id] = metadata
+
+	f.logger.Printf("[DEBUG] Metadata = %v", f.metadataMap)
+
+	return resp, nil
+}
+
+func (f *fsm) applyDeleteMetadata(metadata *protobuf.Metadata) (interface{}, error) {
+	start := time.Now()
+	defer Metrics(start, "applyDeleteMetadata")
+
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	resp := &empty.Empty{}
+
+	for i, v := range f.metadataMap {
+		// If a node already exists with either the putting node's ID or address,
+		// that node may need to be removed from the metadata first.
+		if v.Id == metadata.Id || v.RaftAddr == metadata.RaftAddr {
+			delete(f.metadataMap, i)
+			continue
+		}
+	}
+
+	f.logger.Printf("[DEBUG] Metadata = %v", f.metadataMap)
+
+	return resp, nil
+}
+
+func (f *fsm) applyPutDocument(req *protobuf.PutDocumentRequest) (interface{}, error) {
+	start := time.Now()
+	defer Metrics(start, "applyPutDocument")
+
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	resp := &empty.Empty{}
+
+	fieldsInstance, err := protobuf.MarshalAny(req.Fields)
+	if err != nil {
+		f.logger.Printf("[ERR] %v", err)
+		return resp, err
+	}
+
+	if fieldsInstance == nil {
+		err := errors.New("Fields is nil")
+		f.logger.Printf("[ERR] %v", err)
+		return resp, err
+	}
+
+	fieldsMap := *fieldsInstance.(*map[string]interface{})
+
+	fieldsBytes, err := json.Marshal(fieldsMap)
+	if err != nil {
+		f.logger.Printf("[ERR] %v", err)
+		return resp, err
+	}
 
 	// Put into store
 	writer, err := f.store.Writer()
 	if err != nil {
 		f.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 	defer writer.Close()
 
-	fieldsBytes, err := req.GetFieldsBytes()
-	if err != nil {
-		f.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
-		return resp, err
-	}
-
 	err = writer.Put([]byte(req.Id), fieldsBytes)
 	if err != nil {
 		f.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 
@@ -1058,48 +1059,32 @@ func (f *fsm) applyPut(req *protobuf.PutRequest) (interface{}, error) {
 	indexer, err := f.index.Indexer()
 	if err != nil {
 		f.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 	defer indexer.Close()
 
-	fieldsMap, err := req.GetFieldsMap()
-	if err != nil {
-		f.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
-		return resp, err
-	}
-
 	err = indexer.Index(req.Id, fieldsMap)
 	if err != nil {
 		f.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
-
-	resp.Success = true
 
 	return resp, nil
 }
 
-func (f *fsm) applyDelete(req *protobuf.DeleteRequest) (interface{}, error) {
+func (f *fsm) applyDeleteDocument(req *protobuf.DeleteDocumentRequest) (interface{}, error) {
 	start := time.Now()
-	defer Metrics(start, "applyDelete")
-
-	resp := &protobuf.DeleteResponse{}
+	defer Metrics(start, "applyDeleteDocument")
 
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
+
+	resp := &empty.Empty{}
 
 	// Delete from store
 	writer, err := f.store.Writer()
 	if err != nil {
 		f.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 	defer writer.Close()
@@ -1107,8 +1092,6 @@ func (f *fsm) applyDelete(req *protobuf.DeleteRequest) (interface{}, error) {
 	err = writer.Delete([]byte(req.Id))
 	if err != nil {
 		f.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 
@@ -1116,8 +1099,6 @@ func (f *fsm) applyDelete(req *protobuf.DeleteRequest) (interface{}, error) {
 	indexer, err := f.index.Indexer()
 	if err != nil {
 		f.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 	defer indexer.Close()
@@ -1125,21 +1106,17 @@ func (f *fsm) applyDelete(req *protobuf.DeleteRequest) (interface{}, error) {
 	err = indexer.Delete(req.Id)
 	if err != nil {
 		f.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
-
-	resp.Success = true
 
 	return resp, nil
 }
 
-func (f *fsm) applyBulk(req *protobuf.BulkRequest) (interface{}, error) {
+func (f *fsm) applyBulkUpdate(req *protobuf.BulkUpdateRequest) (interface{}, error) {
 	start := time.Now()
-	defer Metrics(start, "applyBulk")
+	defer Metrics(start, "applyBulkUpdate")
 
-	resp := &protobuf.BulkResponse{}
+	resp := &protobuf.BulkUpdateResponse{}
 
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
@@ -1148,8 +1125,6 @@ func (f *fsm) applyBulk(req *protobuf.BulkRequest) (interface{}, error) {
 	writer, err := f.store.Bulker(int(req.BatchSize))
 	if err != nil {
 		f.logger.Print(fmt.Sprintf("[ERR] %v", err))
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 	defer writer.Close()
@@ -1158,8 +1133,6 @@ func (f *fsm) applyBulk(req *protobuf.BulkRequest) (interface{}, error) {
 	indexer, err := f.index.Bulker(int(req.BatchSize))
 	if err != nil {
 		f.logger.Printf("[ERR] %v", err)
-		resp.Success = false
-		resp.Message = err.Error()
 		return resp, err
 	}
 	defer indexer.Close()
@@ -1169,22 +1142,29 @@ func (f *fsm) applyBulk(req *protobuf.BulkRequest) (interface{}, error) {
 		deleteCnt int
 	)
 
-	for _, updateRequest := range req.UpdateRequests {
-		switch updateRequest.Type {
-		case protobuf.UpdateRequest_PUT:
-			fieldsBytes, err := updateRequest.Document.GetFieldsBytes()
+	for _, updateRequest := range req.Updates {
+		switch updateRequest.Command {
+		case protobuf.BulkUpdateRequest_Update_PUT:
+			fieldsInstance, err := protobuf.MarshalAny(updateRequest.Document.Fields)
 			if err != nil {
-				f.logger.Printf("[WARN] %v", err)
-				continue
+				f.logger.Printf("[ERR] %v", err)
+			}
+
+			if fieldsInstance == nil {
+				err := errors.New("Fields is nil")
+				f.logger.Printf("[ERR] %v", err)
+				return resp, err
+			}
+
+			fieldsMap := *fieldsInstance.(*map[string]interface{})
+
+			fieldsBytes, err := json.Marshal(fieldsMap)
+			if err != nil {
+				f.logger.Printf("[ERR] %v", err)
+				return resp, err
 			}
 
 			err = writer.Put([]byte(updateRequest.Document.Id), fieldsBytes)
-			if err != nil {
-				f.logger.Printf("[WARN] %v", err)
-				continue
-			}
-
-			fieldsMap, err := updateRequest.Document.GetFieldsMap()
 			if err != nil {
 				f.logger.Printf("[WARN] %v", err)
 				continue
@@ -1197,11 +1177,11 @@ func (f *fsm) applyBulk(req *protobuf.BulkRequest) (interface{}, error) {
 			}
 
 			putCnt++
-		case protobuf.UpdateRequest_DELETE:
+		case protobuf.BulkUpdateRequest_Update_DELETE:
 			err = writer.Delete([]byte(updateRequest.Document.Id))
 			if err != nil {
-				f.logger.Printf("[WARN] %v", err)
-				continue
+				f.logger.Printf("[ERR] %v", err)
+				return resp, err
 			}
 
 			err = indexer.Delete(updateRequest.Document.Id)
@@ -1212,58 +1192,13 @@ func (f *fsm) applyBulk(req *protobuf.BulkRequest) (interface{}, error) {
 
 			deleteCnt++
 		default:
-			f.logger.Printf("[WARN] Skip bulk operation: %s", updateRequest.Type.String())
+			f.logger.Printf("[WARN] Unknown command: %s", updateRequest.Command.String())
 			continue
 		}
 	}
 
 	resp.PutCount = int32(putCnt)
 	resp.DeleteCount = int32(deleteCnt)
-	resp.Success = true
-
-	return resp, nil
-}
-
-func (f *fsm) applyJoin(req *protobuf.JoinRequest) (interface{}, error) {
-	start := time.Now()
-	defer Metrics(start, "applyJoin")
-
-	resp := &protobuf.JoinResponse{}
-
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	_, exist := f.metadata[req.NodeId]
-	if exist {
-		f.logger.Printf("[INFO] %s already exist in metadata", req.NodeId)
-	} else {
-		f.logger.Printf("[INFO] Put %s in metadata", req.NodeId)
-		f.metadata[req.NodeId] = req.Metadata
-	}
-
-	resp.Success = true
-
-	return resp, nil
-}
-
-func (f *fsm) applyLeave(req *protobuf.LeaveRequest) (interface{}, error) {
-	start := time.Now()
-	defer Metrics(start, "applyLeave")
-
-	resp := &protobuf.LeaveResponse{}
-
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	_, exist := f.metadata[req.NodeId]
-	if exist {
-		f.logger.Printf("[INFO] Delete %s from metadata", req.NodeId)
-		delete(f.metadata, req.NodeId)
-	} else {
-		f.logger.Printf("[INFO] %s does not exist in metadata", req.NodeId)
-	}
-
-	resp.Success = true
 
 	return resp, nil
 }

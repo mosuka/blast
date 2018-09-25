@@ -15,8 +15,8 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 
@@ -25,51 +25,55 @@ import (
 	"github.com/urfave/cli"
 )
 
-func get(c *cli.Context) {
+func get(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
-	prettyPrint := c.Bool("pretty-print")
 
 	id := c.Args().Get(0)
 
-	var err error
-
 	if id == "" {
-		fmt.Fprintln(os.Stderr, "id argument must be set")
-		return
+		err := errors.New("id argument must be set")
+		return err
 	}
 
-	var dataClient *client.GRPCClient
-	if dataClient, err = client.NewGRPCClient(grpcAddr); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
+	dataClient, err := client.NewGRPCClient(grpcAddr)
+	if err != nil {
+		return err
 	}
 	defer dataClient.Close()
 
-	req := &protobuf.GetRequest{
+	req := &protobuf.GetDocumentRequest{
 		Id: id,
 	}
 
-	var resp *protobuf.GetResponse
-	if resp, err = dataClient.Get(req); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
+	resp, err := dataClient.GetDocument(req)
+	if err != nil {
+		return err
 	}
 
-	var jsonBytes []byte
-	if jsonBytes, err = resp.GetBytes(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
+	// Document does not exist
+	if resp.Document == nil {
+		return nil
 	}
 
-	if prettyPrint {
-		var buff bytes.Buffer
-		if err = json.Indent(&buff, jsonBytes, "", "  "); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return
-		}
-		jsonBytes = buff.Bytes()
+	fieldsInstance, err := protobuf.MarshalAny(resp.Document.Fields)
+	if err != nil {
+		return err
 	}
 
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("%s", string(jsonBytes)))
-	return
+	document := struct {
+		Id     string                 `json:"id,omitempty"`
+		Fields map[string]interface{} `json:"fields,omitempty"`
+	}{
+		Id:     resp.Document.Id,
+		Fields: *fieldsInstance.(*map[string]interface{}),
+	}
+
+	jsonBytes, err := json.MarshalIndent(&document, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", string(jsonBytes)))
+
+	return nil
 }

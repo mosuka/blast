@@ -15,12 +15,10 @@
 package server
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -41,60 +39,86 @@ func NewGetHandler(logger *log.Logger, client *client.GRPCClient) *GetHandler {
 }
 
 func (h *GetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var err error
-
 	start := time.Now()
 	status := http.StatusOK
 	defer HTTPMetrics(start, status, w, r, h.logger)
 
+	var err error
+
 	vars := mux.Vars(r)
+
 	id := vars["id"]
+	if id == "" {
+		err := errors.New("update requests argument must be set")
+		h.logger.Printf("[ERR] %v", err)
+		status = http.StatusBadRequest
+		errContent, err := NewContent(err.Error())
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+		WriteResponse(w, errContent, status, h.logger)
+		return
+	}
 
-	prettyPrint, err := strconv.ParseBool(r.URL.Query().Get("pretty-print"))
-
-	req := &protobuf.GetRequest{
+	req := &protobuf.GetDocumentRequest{
 		Id: id,
 	}
 
-	var resp *protobuf.GetResponse
-	if resp, err = h.client.Get(req); err != nil {
-		status = http.StatusNotFound
-	} else if err != nil {
-		message := fmt.Sprintf("Failed to get fields: %s", err.Error())
-		h.logger.Print(fmt.Sprintf("[ERR] %s", message))
-		resp.Success = false
-		resp.Message = message
+	resp, err := h.client.GetDocument(req)
+	if err != nil {
+		h.logger.Printf("[ERR] %v", err)
 		status = http.StatusInternalServerError
-	}
-
-	content := make([]byte, 0)
-	if content, err = resp.GetBytes(); err != nil {
-		message := fmt.Sprintf("Failed to marshalling get response: %s", err.Error())
-		h.logger.Print(fmt.Sprintf("[ERR] %s", message))
-		resp.Success = false
-		resp.Message = message
-		status = http.StatusInternalServerError
-	}
-
-	if prettyPrint {
-		var buff bytes.Buffer
-		if err = json.Indent(&buff, content, "", "  "); err != nil {
-			message := fmt.Sprintf("Failed to indent content: %s", err.Error())
-			h.logger.Print(fmt.Sprintf("[ERR] %s", message))
-			resp.Success = false
-			resp.Message = message
-			status = http.StatusInternalServerError
+		errContent, err := NewContent(err.Error())
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
 		}
-		content = buff.Bytes()
+		WriteResponse(w, errContent, status, h.logger)
+		return
 	}
 
-	// Write response
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Content-Length", strconv.FormatInt(int64(len(content)), 10))
-	w.WriteHeader(status)
-	if _, err = w.Write(content); err != nil {
-		h.logger.Printf("[ERR] handler: Failed to write content: %s", err.Error())
+	// Document does not exist
+	if resp.Document == nil {
+		status = http.StatusNotFound
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+		WriteResponse(w, make([]byte, 0), status, h.logger)
+		return
 	}
+
+	fieldsInstance, err := protobuf.MarshalAny(resp.Document.Fields)
+	if err != nil {
+		h.logger.Printf("[ERR] %v", err)
+		status = http.StatusInternalServerError
+		errContent, err := NewContent(err.Error())
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+		WriteResponse(w, errContent, status, h.logger)
+		return
+	}
+
+	document := struct {
+		Id     string                 `json:"id,omitempty"`
+		Fields map[string]interface{} `json:"fields,omitempty"`
+	}{
+		Id:     resp.Document.Id,
+		Fields: *fieldsInstance.(*map[string]interface{}),
+	}
+
+	content, err := json.MarshalIndent(&document, "", "  ")
+	if err != nil {
+		h.logger.Printf("[ERR] %v", err)
+		status = http.StatusInternalServerError
+		errContent, err := NewContent(err.Error())
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+		WriteResponse(w, errContent, status, h.logger)
+		return
+	}
+
+	WriteResponse(w, content, status, h.logger)
 
 	return
 }
