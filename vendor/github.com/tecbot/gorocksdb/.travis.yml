@@ -1,6 +1,6 @@
 language: go
 go:
-  - 1.7
+  - 1.11
   - tip
 
 before_install:
@@ -18,7 +18,7 @@ install:
   - git clone https://github.com/facebook/rocksdb.git /tmp/rocksdb
   - pushd /tmp/rocksdb
   - make clean
-  - make shared_lib
+  - make shared_lib -j`nproc`
   - sudo cp --preserve=links ./librocksdb.* /usr/lib/
   - sudo cp -r ./include/rocksdb/ /usr/include/
   - popd

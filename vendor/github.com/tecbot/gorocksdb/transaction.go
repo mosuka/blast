@@ -63,6 +63,23 @@ func (transaction *Transaction) Get(opts *ReadOptions, key []byte) (*Slice, erro
 	return NewSlice(cValue, cValLen), nil
 }
 
+// GetForUpdate queries the data associated with the key and puts an exclusive lock on the key from the database given this transaction.
+func (transaction *Transaction) GetForUpdate(opts *ReadOptions, key []byte) (*Slice, error) {
+	var (
+		cErr    *C.char
+		cValLen C.size_t
+		cKey    = byteToChar(key)
+	)
+	cValue := C.rocksdb_transaction_get_for_update(
+		transaction.c, opts.c, cKey, C.size_t(len(key)), &cValLen, C.uchar(byte(1)) /*exclusive*/, &cErr,
+	)
+	if cErr != nil {
+		defer C.free(unsafe.Pointer(cErr))
+		return nil, errors.New(C.GoString(cErr))
+	}
+	return NewSlice(cValue, cValLen), nil
+}
+
 // Put writes data associated with a key to the transaction.
 func (transaction *Transaction) Put(key, value []byte) error {
 	var (

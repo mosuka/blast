@@ -109,6 +109,15 @@ func (opts *ReadOptions) SetPinData(value bool) {
 	C.rocksdb_readoptions_set_pin_data(opts.c, boolToChar(value))
 }
 
+// SetReadaheadSize specifies the value of "readahead_size".
+// If non-zero, NewIterator will create a new table reader which
+// performs reads of the given size. Using a large size (> 2MB) can
+// improve the performance of forward iteration on spinning disks.
+// Default: 0
+func (opts *ReadOptions) SetReadaheadSize(value uint64) {
+	C.rocksdb_readoptions_set_readahead_size(opts.c, C.size_t(value))
+}
+
 // Destroy deallocates the ReadOptions object.
 func (opts *ReadOptions) Destroy() {
 	C.rocksdb_readoptions_destroy(opts.c)

@@ -4,7 +4,7 @@
 
 ## Install
 
-You'll need to build [RocksDB](https://github.com/facebook/rocksdb) v5.5+ on your machine.
+You'll need to build [RocksDB](https://github.com/facebook/rocksdb) v5.16+ on your machine.
 
 After that, you can install gorocksdb using the following command:
 

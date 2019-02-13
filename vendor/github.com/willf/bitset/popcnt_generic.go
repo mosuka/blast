@@ -1,4 +1,3 @@
-// +build !go1.9
 // +build !amd64 appengine
 
 package bitset

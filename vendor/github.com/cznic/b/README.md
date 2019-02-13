@@ -1,10 +1,5 @@
-b
-=
+`github.com/cznic/b` has moved to [`modernc.org/b`](https://godoc.org/modernc.org/b) ([vcs](https://gitlab.com/cznic/b)).
 
-Package b implements a B+tree.
+Please update your import paths to `modernc.org/b`.
 
-Installation:
-
-    $ go get github.com/cznic/b
-
-Documentation: [godoc.org/github.com/cznic/b](http://godoc.org/github.com/cznic/b)
+This repo is now archived.

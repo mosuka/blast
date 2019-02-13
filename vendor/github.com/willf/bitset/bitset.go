@@ -9,7 +9,7 @@ individual integers.
 But it also provides set intersection, union, difference,
 complement, and symmetric operations, as well as tests to
 check whether any, all, or no bits are set, and querying a
-bitset's current length and number of positive bits.
+bitset's current length and number of postive bits.
 
 BitSets are expanded to the size of the largest set bit; the
 memory allocation is approximately Max bits, where Max is
@@ -46,7 +46,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"strconv"
 )
 
 // the wordSize of a bit set
@@ -54,9 +53,6 @@ const wordSize = uint(64)
 
 // log2WordSize is lg(wordSize)
 const log2WordSize = uint(6)
-
-// allBits has every bit set
-const allBits uint64 = 0xffffffffffffffff
 
 // A BitSet is a set of bits. The zero value of a BitSet is an empty set of length 0.
 type BitSet struct {
@@ -87,32 +83,18 @@ func (b *BitSet) Bytes() []uint64 {
 
 // wordsNeeded calculates the number of words needed for i bits
 func wordsNeeded(i uint) int {
-	if i > (Cap() - wordSize + 1) {
-		return int(Cap() >> log2WordSize)
+	if i > ((^uint(0)) - wordSize + 1) {
+		return int((^uint(0)) >> log2WordSize)
 	}
 	return int((i + (wordSize - 1)) >> log2WordSize)
 }
 
 // New creates a new BitSet with a hint that length bits will be required
-func New(length uint) (bset *BitSet) {
-	defer func() {
-		if r := recover(); r != nil {
-			bset = &BitSet{
-				0,
-				make([]uint64, 0),
-			}
-		}
-	}()
-
-	bset = &BitSet{
-		length,
-		make([]uint64, wordsNeeded(length)),
-	}
-
-	return bset
+func New(length uint) *BitSet {
+	return &BitSet{length, make([]uint64, wordsNeeded(length))}
 }
 
-// Cap returns the total possible capacity, or number of bits
+// Cap returns the total possible capicity, or number of bits
 func Cap() uint {
 	return ^uint(0)
 }
@@ -128,10 +110,8 @@ func (b *BitSet) extendSetMaybe(i uint) {
 		nsize := wordsNeeded(i + 1)
 		if b.set == nil {
 			b.set = make([]uint64, nsize)
-		} else if cap(b.set) >= nsize {
-			b.set = b.set[:nsize] // fast resize
 		} else if len(b.set) < nsize {
-			newset := make([]uint64, nsize, 2*nsize) // increase capacity 2x
+			newset := make([]uint64, nsize)
 			copy(newset, b.set)
 			b.set = newset
 		}
@@ -180,31 +160,6 @@ func (b *BitSet) Flip(i uint) *BitSet {
 	return b
 }
 
-// String creates a string representation of the Bitmap
-func (b *BitSet) String() string {
-	// follows code from https://github.com/RoaringBitmap/roaring
-	var buffer bytes.Buffer
-	start := []byte("{")
-	buffer.Write(start)
-	counter := 0
-	i, e := b.NextSet(0)
-	for e {
-		counter = counter + 1
-		// to avoid exhausting the memory
-		if counter > 0x40000 {
-			buffer.WriteString("...")
-			break
-		}
-		buffer.WriteString(strconv.FormatInt(int64(i), 10))
-		i, e = b.NextSet(i + 1)
-		if e {
-			buffer.WriteString(",")
-		}
-	}
-	buffer.WriteString("}")
-	return buffer.String()
-}
-
 // NextSet returns the next bit set from the specified index,
 // including possibly the current index
 // along with an error code (true = valid, false = no set bit found)
@@ -230,32 +185,6 @@ func (b *BitSet) NextSet(i uint) (uint, bool) {
 	return 0, false
 }
 
-// NextClear returns the next clear bit from the specified index,
-// including possibly the current index
-// along with an error code (true = valid, false = no bit found i.e. all bits are set)
-func (b *BitSet) NextClear(i uint) (uint, bool) {
-	x := int(i >> log2WordSize)
-	if x >= len(b.set) {
-		return 0, false
-	}
-	w := b.set[x]
-	w = w >> (i & (wordSize - 1))
-	wA := allBits >> (i & (wordSize - 1))
-	index := i + trailingZeroes64(^w)
-	if w != wA && index < b.length {
-		return index, true
-	}
-	x++
-	for x < len(b.set) {
-		index = uint(x)*wordSize + trailingZeroes64(^b.set[x])
-		if b.set[x] != allBits && index < b.length {
-			return index, true
-		}
-		x++
-	}
-	return 0, false
-}
-
 // ClearAll clears the entire BitSet
 func (b *BitSet) ClearAll() *BitSet {
 	if b != nil && b.set != nil {
@@ -268,7 +197,7 @@ func (b *BitSet) ClearAll() *BitSet {
 
 // wordCount returns the number of words used in a bit set
 func (b *BitSet) wordCount() int {
-	return len(b.set)
+	return wordsNeeded(b.length)
 }
 
 // Clone this BitSet
@@ -303,6 +232,17 @@ func (b *BitSet) Count() uint {
 		return uint(popcntSlice(b.set))
 	}
 	return 0
+}
+
+var deBruijn = [...]byte{
+	0, 1, 56, 2, 57, 49, 28, 3, 61, 58, 42, 50, 38, 29, 17, 4,
+	62, 47, 59, 36, 45, 43, 51, 22, 53, 39, 33, 30, 24, 18, 12, 5,
+	63, 55, 48, 27, 60, 41, 37, 16, 46, 35, 44, 21, 52, 32, 23, 11,
+	54, 26, 40, 15, 34, 20, 31, 10, 25, 14, 19, 9, 13, 8, 7, 6,
+}
+
+func trailingZeroes64(v uint64) uint {
+	return uint(deBruijn[((v&-v)*0x03f79d71b4ca8b09)>>58])
 }
 
 // Equal tests the equvalence of two BitSets.
@@ -430,6 +370,7 @@ func (b *BitSet) InPlaceIntersection(compare *BitSet) {
 	if compare.length > 0 {
 		b.extendSetMaybe(compare.length - 1)
 	}
+	return
 }
 
 // Union of base set and other set
@@ -529,14 +470,16 @@ func (b *BitSet) InPlaceSymmetricDifference(compare *BitSet) {
 }
 
 // Is the length an exact multiple of word sizes?
-func (b *BitSet) isLenExactMultiple() bool {
+func (b *BitSet) isEven() bool {
 	return b.length%wordSize == 0
 }
 
 // Clean last word by setting unused bits to 0
 func (b *BitSet) cleanLastWord() {
-	if !b.isLenExactMultiple() {
-		b.set[len(b.set)-1] &= allBits >> (wordSize - b.length%wordSize)
+	if !b.isEven() {
+		// Mask for cleaning last word
+		const allBits uint64 = 0xffffffffffffffff
+		b.set[wordsNeeded(b.length)-1] &= allBits >> (wordSize - b.length%wordSize)
 	}
 }
 
@@ -551,15 +494,13 @@ func (b *BitSet) Complement() (result *BitSet) {
 	return
 }
 
-// All returns true if all bits are set, false otherwise. Returns true for
-// empty sets.
+// All returns true if all bits are set, false otherwise
 func (b *BitSet) All() bool {
 	panicIfNull(b)
 	return b.Count() == b.length
 }
 
-// None returns true if no bit is set, false otherwise. Retursn true for
-// empty sets.
+// None returns true if no bit is set, false otherwise
 func (b *BitSet) None() bool {
 	panicIfNull(b)
 	if b != nil && b.set != nil {

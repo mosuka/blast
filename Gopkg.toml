@@ -1,6 +1,6 @@
 # Gopkg.toml example
 #
-# Refer to https://github.com/golang/dep/blob/master/docs/Gopkg.toml.md
+# Refer to https://golang.github.io/dep/docs/Gopkg.toml.html
 # for detailed Gopkg.toml documentation.
 #
 # required = ["github.com/user/thing/cmd/thing"]
@@ -35,15 +35,15 @@
 
 [[constraint]]
   name = "github.com/golang/protobuf"
-  version = "1.1.0"
+  version = "1.2.0"
 
 [[constraint]]
   name = "github.com/gorilla/mux"
   version = "1.6.2"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/hashicorp/logutils"
+  version = "1.0.0"
 
 [[constraint]]
   name = "github.com/hashicorp/raft"
@@ -67,27 +67,35 @@
 
 [[constraint]]
   name = "github.com/prometheus/client_golang"
-  version = "0.8.0"
+  version = "0.9.1"
 
 [[constraint]]
   name = "github.com/urfave/cli"
   version = "1.20.0"
 
 [[constraint]]
+  name = "google.golang.org/grpc"
+  version = "1.16.0"
+
+[[override]]
+  branch = "master"
+  name = "github.com/couchbase/moss"
+
+[[override]]
+  branch = "master"
+  name = "github.com/couchbase/ghistogram"
+
+[[override]]
+  branch = "master"
+  name = "google.golang.org/grpc"
+
+[[override]]
   branch = "master"
   name = "golang.org/x/net"
 
-[[constraint]]
-  name = "google.golang.org/grpc"
-  version = "1.14.0"
-
 [[override]]
-  name = "github.com/couchbase/moss"
   branch = "master"
-
-[[override]]
-  name = "github.com/couchbase/ghistogram"
-  branch = "master"
+  name = "github.com/tecbot/gorocksdb"
 
 [prune]
   go-tests = true
