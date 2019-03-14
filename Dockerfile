@@ -25,15 +25,7 @@ RUN apt-get update && \
       git \
       golang \
       libicu-dev \
-      libleveldb-dev \
       libstemmer-dev \
-      libgflags-dev \
-      libsnappy-dev \
-      zlib1g-dev \
-      libbz2-dev \
-      liblz4-dev \
-      libzstd-dev \
-      librocksdb-dev \
       gcc-4.8 \
       g++-4.8 \
       build-essential && \
@@ -52,9 +44,7 @@ RUN apt-get update && \
     GOOS=linux \
       GOARCH=amd64 \
       CGO_ENABLED=1 \
-      CGO_CFLAGS="-I/usr/include/rocksdb" \
-      CGO_LDFLAGS="-L/usr/lib -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz4 -lzstd" \
-      BUILD_TAGS="full" \
+      BUILD_TAGS="kagome icu libstemmer cld2" \
       VERSION="${VERSION}" \
       make build
 
@@ -65,22 +55,14 @@ MAINTAINER Minoru Osuka "minoru.osuka@gmail.com"
 RUN apt-get update && \
     apt-get install -y \
       libicu-dev \
-      libleveldb-dev \
-      libstemmer-dev \
-      libgflags-dev \
-      libsnappy-dev \
-      zlib1g-dev \
-      libbz2-dev \
-      liblz4-dev \
-      libzstd-dev \
-      librocksdb-dev && \
+      libstemmer-dev && \
     apt-get clean
 
 COPY --from=0 /go/src/github.com/blevesearch/cld2/cld2/internal/*.so /usr/local/lib/
 COPY --from=0 /go/src/github.com/mosuka/blast/bin/* /usr/bin/
 COPY --from=0 /go/src/github.com/mosuka/blast/docker-entrypoint.sh /usr/bin/
 
-EXPOSE 10000 10001 10002
+EXPOSE 5050 6060 8080
 
 ENTRYPOINT [ "/usr/bin/docker-entrypoint.sh" ]
-CMD        [ "blastd", "--help" ]
+CMD        [ "blast-index", "--help" ]

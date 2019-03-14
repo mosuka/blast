@@ -12,6 +12,7 @@
 package moss
 
 import (
+	"math"
 	"sync/atomic"
 	"time"
 )
@@ -51,6 +52,16 @@ func (m *collection) runMerger() {
 
 		atomic.AddUint64(&m.stats.TotMergerEnd, 1)
 	}()
+
+	maxPreMergerBatches := m.options.MaxPreMergerBatches
+	if maxPreMergerBatches <= 0 {
+		maxPreMergerBatches =
+			DefaultCollectionOptions.MaxPreMergerBatches
+	}
+
+	if maxPreMergerBatches >= math.MaxInt32 {
+		return // Way to disable merger.
+	}
 
 	pings := []ping{}
 

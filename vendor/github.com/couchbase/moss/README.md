@@ -46,6 +46,7 @@ Example
     import github.com/couchbase/moss
 
     c, err := moss.NewCollection(moss.CollectionOptions{})
+    c.Start()
     defer c.Close()
 
     batch, err := c.NewBatch(0, 0)

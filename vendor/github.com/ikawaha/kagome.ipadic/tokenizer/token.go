@@ -63,24 +63,36 @@ type Token struct {
 }
 
 // Features returns contents of a token.
-func (t Token) Features() (features []string) {
+func (t Token) Features() []string {
 	switch lattice.NodeClass(t.Class) {
 	case lattice.DUMMY:
-		return
+		return nil
 	case lattice.KNOWN:
-		features = t.dic.POSTable.GetPOSName(t.dic.POSTable.POSs[t.ID])
+		var c int
+		if t.dic.Contents != nil {
+			c = len(t.dic.Contents[t.ID])
+		}
+		features := make([]string, 0, len(t.dic.POSTable.POSs[t.ID])+c)
+		for _, id := range t.dic.POSTable.POSs[t.ID] {
+			features = append(features, t.dic.POSTable.NameList[id])
+		}
 		if t.dic.Contents != nil {
 			features = append(features, t.dic.Contents[t.ID]...)
 		}
+		return features
 	case lattice.UNKNOWN:
-		features = t.dic.UnkContents[t.ID]
+		features := make([]string, len(t.dic.UnkContents[t.ID]))
+		for i := range t.dic.UnkContents[t.ID] {
+			features[i] = t.dic.UnkContents[t.ID][i]
+		}
+		return features
 	case lattice.USER:
 		pos := t.udic.Contents[t.ID].Pos
 		tokens := strings.Join(t.udic.Contents[t.ID].Tokens, "/")
 		yomi := strings.Join(t.udic.Contents[t.ID].Yomi, "/")
-		features = append(features, pos, tokens, yomi)
+		return []string{pos, tokens, yomi}
 	}
-	return
+	return nil
 }
 
 // Pos returns the first element of features.

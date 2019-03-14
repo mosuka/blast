@@ -59,7 +59,7 @@ func (db *DB) releaseSnapshot(se *snapshotElement) {
 	}
 }
 
-// Gets minimum sequence that not being snapshoted.
+// Gets minimum sequence that not being snapshotted.
 func (db *DB) minSeq() uint64 {
 	db.snapsMu.Lock()
 	defer db.snapsMu.Unlock()
@@ -131,7 +131,7 @@ func (snap *Snapshot) Has(key []byte, ro *opt.ReadOptions) (ret bool, err error)
 }
 
 // NewIterator returns an iterator for the snapshot of the underlying DB.
-// The returned iterator is not goroutine-safe, but it is safe to use
+// The returned iterator is not safe for concurrent use, but it is safe to use
 // multiple iterators concurrently, with each in a dedicated goroutine.
 // It is also safe to use an iterator concurrently with modifying its
 // underlying DB. The resultant key/value pairs are guaranteed to be
@@ -141,6 +141,10 @@ func (snap *Snapshot) Has(key []byte, ro *opt.ReadOptions) (ret bool, err error)
 // range. A nil Range.Start is treated as a key before all keys in the
 // DB. And a nil Range.Limit is treated as a key after all keys in
 // the DB.
+//
+// WARNING: Any slice returned by interator (e.g. slice returned by calling
+// Iterator.Key() or Iterator.Value() methods), its content should not be
+// modified unless noted otherwise.
 //
 // The iterator must be released after use, by calling Release method.
 // Releasing the snapshot doesn't mean releasing the iterator too, the

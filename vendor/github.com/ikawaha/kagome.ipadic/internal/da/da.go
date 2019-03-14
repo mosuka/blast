@@ -96,6 +96,9 @@ func (d DoubleArray) CommonPrefixSearch(input string) (ids, lens []int) {
 	var p, q int
 	bufLen := len(d)
 	for i, size := 0, len(input); i < size; i++ {
+		if input[i] == terminator {
+			return
+		}
 		p = q
 		q = int(d[p].Base) + int(input[i])
 		if q >= bufLen || int(d[q].Check) != p {
@@ -116,6 +119,9 @@ func (d DoubleArray) CommonPrefixSearchCallback(input string, callback func(id, 
 	var p, q int
 	bufLen := len(d)
 	for i := 0; i < len(input); i++ {
+		if input[i] == terminator {
+			return
+		}
 		p = q
 		q = int(d[p].Base) + int(input[i])
 		if q >= bufLen || int(d[q].Check) != p {
@@ -134,6 +140,9 @@ func (d DoubleArray) PrefixSearch(input string) (id int, ok bool) {
 	var p, q, i int
 	bufLen := len(d)
 	for size := len(input); i < size; i++ {
+		if input[i] == terminator {
+			return
+		}
 		p = q
 		q = int(d[p].Base) + int(input[i])
 		if q >= bufLen || int(d[q].Check) != p {
@@ -279,6 +288,9 @@ func (d *DoubleArray) search(input string) (p, q, i int, ok bool) {
 	bufLen := len(*d)
 	inpLen := len(input)
 	for i = 0; i < inpLen; i++ {
+		if input[i] == terminator {
+			return
+		}
 		p = q
 		q = int((*d)[p].Base) + int(input[i])
 		if q >= bufLen || int((*d)[q].Check) != p {

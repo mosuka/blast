@@ -284,6 +284,15 @@ func (m *collection) NewBatch(totalOps, totalKeyValBytes int) (
 	return newBatch(m, BatchOptions{totalOps, totalKeyValBytes})
 }
 
+func (m *collection) ResetStackDirtyTop() error {
+	m.m.Lock()
+	stackDirtyTopPrev := m.stackDirtyTop
+	m.stackDirtyTop = nil
+	m.m.Unlock()
+	stackDirtyTopPrev.Close()
+	return nil
+}
+
 // ExecuteBatch atomically incorporates the provided Batch into the
 // collection.  The Batch instance should not be reused after
 // ExecuteBatch() returns.

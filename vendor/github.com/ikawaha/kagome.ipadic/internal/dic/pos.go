@@ -32,15 +32,6 @@ type POSID int16
 // POS represents a vector of part of speech.
 type POS []POSID
 
-// String returns a vector of part of speech name.
-func (p POSTable) GetPOSName(pos POS) []string {
-	ret := make([]string, 0, len(pos))
-	for _, id := range pos {
-		ret = append(ret, p.NameList[id])
-	}
-	return ret
-}
-
 // WriteTo saves a POS table.
 func (p POSTable) WriteTo(w io.Writer) (int64, error) {
 	var b bytes.Buffer

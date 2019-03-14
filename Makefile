@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Minoru Osuka
+# Copyright (c) 2019 Minoru Osuka
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ CGO_CFLAGS ?=
 CGO_LDFLAGS ?=
 GO15VENDOREXPERIMENT ?= 1
 BIN_EXT ?=
+DOCKER_REPOSITORY ?= mosuka
 
 GO := CGO_ENABLED=$(CGO_ENABLED) GO15VENDOREXPERIMENT=$(CGO_ENABLED) go
 
@@ -41,25 +42,25 @@ endif
 
 .DEFAULT_GOAL := build
 
-.PHONY: init-deps
-init-deps:
+.PHONY: dep-init
+dep-init:
 	@echo ">> initialize dependencies"
 	dep init
 
-.PHONY: install-deps
-install-deps:
+.PHONY: dep-ensure
+dep-ensure:
 	@echo ">> install dependencies"
 	dep ensure
 
-.PHONY: update-deps
-update-deps:
+.PHONY: dep-update
+dep-update:
 	@echo ">> update dependencies"
 	dep ensure -update
 
 .PHONY: protoc
 protoc:
 	@echo ">> generating proto3 code"
-	@for proto_dir in $(PROTOBUFS); do echo $$proto_dir; protoc --proto_path=$$proto_dir --proto_path=./vendor/ --go_out=plugins=grpc:$$proto_dir $$proto_dir/*.proto || exit 1; done
+	@for proto_dir in $(PROTOBUFS); do echo $$proto_dir; protoc --proto_path=. --proto_path=$$proto_dir --proto_path=./vendor/ --go_out=plugins=grpc:$(GOPATH)/src $$proto_dir/*.proto || exit 1; done
 
 .PHONY: format
 format:
@@ -114,12 +115,21 @@ dist:
 	@for target_pkg in $(TARGET_PACKAGES); do echo $$target_pkg; $(GO) build -tags="$(BUILD_TAGS)" $(LDFLAGS) -o ./dist/$(GOOS)-$(GOARCH)/bin/`basename $$target_pkg`$(BIN_EXT) $$target_pkg || exit 1; done
 	(cd ./dist/$(GOOS)-$(GOARCH); tar zcfv ../blast-${VERSION}.$(GOOS)-$(GOARCH).tar.gz .)
 
-.PHONY: docker
-docker:
+.PHONY: docker-build
+docker-build:
 	@echo ">> building docker container image"
-	@echo "   VERSION     = $(VERSION)"
-	docker build -t mosuka/blast:latest --build-arg VERSION=${VERSION} .
-	docker tag mosuka/blast:latest mosuka/blast:v${VERSION}
+	@echo "   DOCKER_REPOSITORY = $(DOCKER_REPOSITORY)"
+	@echo "   VERSION           = $(VERSION)"
+	docker build -t $(DOCKER_REPOSITORY)/blast:latest --build-arg VERSION=$(VERSION) .
+	docker tag mosuka/blast:latest $(DOCKER_REPOSITORY)/blast:v$(VERSION)
+
+.PHONY: docker-push
+docker-push:
+	@echo ">> pushing docker container image"
+	@echo "   DOCKER_REPOSITORY = $(DOCKER_REPOSITORY)"
+	@echo "   VERSION           = $(VERSION)"
+	docker push $(DOCKER_REPOSITORY)/blast:latest
+	docker push $(DOCKER_REPOSITORY)/blast:v$(VERSION)
 
 .PHONY: clean
 clean:

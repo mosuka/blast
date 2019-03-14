@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Minoru Osuka
+// Copyright (c) 2019 Minoru Osuka
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,11 +20,9 @@ import (
 	"os"
 	"path"
 	"runtime"
-	"strconv"
 	"strings"
 
 	"github.com/hashicorp/logutils"
-	"github.com/mash/go-accesslog"
 	"github.com/natefinch/lumberjack"
 )
 
@@ -60,10 +58,13 @@ func getCallerInfo() *callerInfo {
 	packageName := ""
 	funcName := parts[pl-1]
 
-	if parts[pl-2][0] == '(' {
-		funcName = parts[pl-2] + "." + funcName
-		packageName = strings.Join(parts[0:pl-2], ".")
-	} else {
+	for i, part := range parts[0 : pl-1] {
+		if part[0] == '(' {
+			packageName = strings.Join(parts[0:i], ".")
+			break
+		}
+	}
+	if packageName == "" {
 		packageName = strings.Join(parts[0:pl-1], ".")
 	}
 
@@ -134,11 +135,11 @@ func NewLogLevelFilter(logLevel string, writer io.Writer) io.Writer {
 	return filter
 }
 
-func DefaultLogger() *log.Logger {
-	return Logger("DEBUG", "", log.LstdFlags|log.Lmicroseconds|log.LUTC, "", 0, 0, 0, false)
-}
+//func DefaultLogger() *log.Logger {
+//	return NewLogger("DEBUG", "", log.LstdFlags|log.Lmicroseconds|log.LUTC, "", 0, 0, 0, false)
+//}
 
-func Logger(logLevel string, prefix string, flag int, filename string, maxSize int, maxBackups int, maxAge int, compress bool) *log.Logger {
+func NewLogger(logLevel string, prefix string, flag int, filename string, maxSize int, maxBackups int, maxAge int, compress bool) *log.Logger {
 	fileWriter := NewFileWriter(filename, maxSize, maxBackups, maxAge, compress)
 
 	callerWriter := NewCallerWriter(fileWriter, prefix, flag)
@@ -148,48 +149,4 @@ func Logger(logLevel string, prefix string, flag int, filename string, maxSize i
 	logger := log.New(logLevelFilter, "", 0)
 
 	return logger
-}
-
-func HTTPAccessLogger(filename string, maxSize int, maxBackups int, maxAge int, compress bool) *log.Logger {
-	writer := NewFileWriter(filename, maxSize, maxBackups, maxAge, compress)
-
-	logger := log.New(writer, "", 0)
-
-	return logger
-}
-
-type ApacheCombinedLogger struct {
-	Logger *log.Logger
-}
-
-func (l ApacheCombinedLogger) Log(record accesslog.LogRecord) {
-	// Output log that formatted Apache combined.
-	size := "-"
-	if record.Size > 0 {
-		size = strconv.FormatInt(record.Size, 10)
-	}
-
-	referer := "-"
-	if record.RequestHeader.Get("Referer") != "" {
-		referer = record.RequestHeader.Get("Referer")
-	}
-
-	userAgent := "-"
-	if record.RequestHeader.Get("User-Agent") != "" {
-		userAgent = record.RequestHeader.Get("User-Agent")
-	}
-
-	l.Logger.Printf(
-		"%s - %s [%s] \"%s %s %s\" %d %s \"%s\" \"%s\"",
-		record.Ip,
-		record.Username,
-		record.Time.Format("02/Jan/2006 03:04:05 +0000"),
-		record.Method,
-		record.Uri,
-		record.Protocol,
-		record.Status,
-		size,
-		referer,
-		userAgent,
-	)
 }
