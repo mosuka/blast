@@ -541,6 +541,15 @@ $ docker pull mosuka/blast:latest
 See https://hub.docker.com/r/mosuka/blast/tags/
 
 
+### Pulling Docker container image from docker.io
+
+You can also use the Docker container image already registered in docker.io like so:
+
+```bash
+$ docker pull mosuka/blast:latest
+```
+
+
 ### Running Blast index node on Docker
 
 Running a Blast data node on Docker. Start Blast data node like so:
