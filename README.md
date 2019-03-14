@@ -560,12 +560,14 @@ $ docker run --rm --name blast-index1 \
     -p 5050:5050 \
     -p 6060:6060 \
     -p 8080:8080 \
+    -v $(pwd)/example:/opt/blast/example \
     mosuka/blast:latest blast-index start \
       --node-id=blast-index1 \
       --bind-addr=:6060 \
       --grpc-addr=:5050 \
       --http-addr=:8080 \
-      --data-dir=/tmp/blast/index1
+      --data-dir=/tmp/blast/index1 \
+      --index-mapping-file=/opt/blast/example/index_mapping.json
 ```
 
 You can execute the command in docker container as follows:
