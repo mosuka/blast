@@ -161,6 +161,12 @@ Running a Blast index node is easy. Start Blast data node like so:
 $ ./bin/blast-index start --node-id=index1 --data-dir=/tmp/blast/index1 --bind-addr=:6060 --grpc-addr=:5050 --http-addr=:8080 --index-mapping-file ./example/index_mapping.json
 ```
 
+Please refer to following document for details of index mapping:
+- http://blevesearch.com/docs/Terminology/
+- http://blevesearch.com/docs/Text-Analysis/
+- http://blevesearch.com/docs/Index-Mapping/
+- https://github.com/blevesearch/bleve/blob/master/mapping/index.go#L43
+
 You can now put, get, search and delete the documents via CLI.  
 
 
@@ -357,6 +363,13 @@ You can see the result in JSON format. The result of the above command is:
   }
 }
 ```
+
+Please refer to following document for details of search request and result:
+- http://blevesearch.com/docs/Query/
+- http://blevesearch.com/docs/Query-String-Query/
+- http://blevesearch.com/docs/Sorting/
+- https://github.com/blevesearch/bleve/blob/master/search.go#L267
+- https://github.com/blevesearch/bleve/blob/master/search.go#L443
 
 
 ### Deleting a document via CLI
