@@ -35,6 +35,7 @@ Blast makes it easy for programmers to develop search applications with advanced
 - Index replication
 - An easy-to-use HTTP API
 - CLI is also available
+- Docker container image is available
 
 
 ## Installing dependencies
