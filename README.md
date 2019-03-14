@@ -528,7 +528,7 @@ You can see the result in JSON format. The result of the above command is:
 You can build the Docker container image like so:
 
 ```bash
-$ make docker
+$ make docker-build
 ```
 
 ### Pulling Docker container image from docker.io
