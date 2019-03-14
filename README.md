@@ -518,3 +518,48 @@ You can see the result in JSON format. The result of the above command is:
   }
 }
 ```
+
+
+## Blast on Docker
+
+### Building Docker container image on localhost
+
+You can build the Docker container image like so:
+
+```bash
+$ make docker
+```
+
+### Pulling Docker container image from docker.io
+
+You can also use the Docker container image already registered in docker.io like so:
+
+```bash
+$ docker pull mosuka/blast:latest
+```
+
+See https://hub.docker.com/r/mosuka/blast/tags/
+
+
+### Running Blast index node on Docker
+
+Running a Blast data node on Docker. Start Blast data node like so:
+
+```bash
+$ docker run --rm --name blast-index1 \
+    -p 5050:5050 \
+    -p 6060:6060 \
+    -p 8080:8080 \
+    mosuka/blast:latest blast-index start \
+      --node-id=blast-index1 \
+      --bind-addr=:6060 \
+      --grpc-addr=:5050 \
+      --http-addr=:8080 \
+      --data-dir=/tmp/blast/index1
+```
+
+You can execute the command in docker container as follows:
+
+```bash
+$ docker exec -it blast-index1 blast-index node --grpc-addr=:5050
+```
