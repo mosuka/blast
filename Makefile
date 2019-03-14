@@ -21,6 +21,7 @@ CGO_CFLAGS ?=
 CGO_LDFLAGS ?=
 GO15VENDOREXPERIMENT ?= 1
 BIN_EXT ?=
+DOCKER_REPOSITORY ?= mosuka
 
 GO := CGO_ENABLED=$(CGO_ENABLED) GO15VENDOREXPERIMENT=$(CGO_ENABLED) go
 
@@ -114,12 +115,21 @@ dist:
 	@for target_pkg in $(TARGET_PACKAGES); do echo $$target_pkg; $(GO) build -tags="$(BUILD_TAGS)" $(LDFLAGS) -o ./dist/$(GOOS)-$(GOARCH)/bin/`basename $$target_pkg`$(BIN_EXT) $$target_pkg || exit 1; done
 	(cd ./dist/$(GOOS)-$(GOARCH); tar zcfv ../blast-${VERSION}.$(GOOS)-$(GOARCH).tar.gz .)
 
-.PHONY: docker
-docker:
+.PHONY: docker-build
+docker-build:
 	@echo ">> building docker container image"
-	@echo "   VERSION     = $(VERSION)"
-	docker build -t mosuka/blast:latest --build-arg VERSION=${VERSION} .
-	docker tag mosuka/blast:latest mosuka/blast:v${VERSION}
+	@echo "   DOCKER_REPOSITORY = $(DOCKER_REPOSITORY)"
+	@echo "   VERSION           = $(VERSION)"
+	docker build -t $(DOCKER_REPOSITORY)/blast:latest --build-arg VERSION=$(VERSION) .
+	docker tag mosuka/blast:latest $(DOCKER_REPOSITORY)/blast:v$(VERSION)
+
+.PHONY: docker-push
+docker-push:
+	@echo ">> pushing docker container image"
+	@echo "   DOCKER_REPOSITORY = $(DOCKER_REPOSITORY)"
+	@echo "   VERSION           = $(VERSION)"
+	docker push $(DOCKER_REPOSITORY)/blast:latest
+	docker push $(DOCKER_REPOSITORY)/blast:v$(VERSION)
 
 .PHONY: clean
 clean:
