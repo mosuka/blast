@@ -1,3 +1,5 @@
+[![GoDoc](https://godoc.org/github.com/jmhdoges/levigo?status.svg)](https://godoc.org/github.com/jmhdoges/levigo)
+
 # levigo
 
 levigo is a Go wrapper for LevelDB.

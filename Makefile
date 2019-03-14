@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Minoru Osuka
+# Copyright (c) 2019 Minoru Osuka
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -41,25 +41,25 @@ endif
 
 .DEFAULT_GOAL := build
 
-.PHONY: init-deps
-init-deps:
+.PHONY: dep-init
+dep-init:
 	@echo ">> initialize dependencies"
 	dep init
 
-.PHONY: install-deps
-install-deps:
+.PHONY: dep-ensure
+dep-ensure:
 	@echo ">> install dependencies"
 	dep ensure
 
-.PHONY: update-deps
-update-deps:
+.PHONY: dep-update
+dep-update:
 	@echo ">> update dependencies"
 	dep ensure -update
 
 .PHONY: protoc
 protoc:
 	@echo ">> generating proto3 code"
-	@for proto_dir in $(PROTOBUFS); do echo $$proto_dir; protoc --proto_path=$$proto_dir --proto_path=./vendor/ --go_out=plugins=grpc:$$proto_dir $$proto_dir/*.proto || exit 1; done
+	@for proto_dir in $(PROTOBUFS); do echo $$proto_dir; protoc --proto_path=. --proto_path=$$proto_dir --proto_path=./vendor/ --go_out=plugins=grpc:$(GOPATH)/src $$proto_dir/*.proto || exit 1; done
 
 .PHONY: format
 format:

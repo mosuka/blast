@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Minoru Osuka
+// Copyright (c) 2019 Minoru Osuka
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,166 +16,212 @@ package index
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"os"
+	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve/index/store/boltdb"
-	"github.com/blevesearch/bleve/index/upsidedown"
 	"github.com/blevesearch/bleve/mapping"
-	blastlog "github.com/mosuka/blast/log"
+	"github.com/golang/protobuf/ptypes/any"
+	blasterrors "github.com/mosuka/blast/errors"
+	"github.com/mosuka/blast/protobuf"
+	pbindex "github.com/mosuka/blast/protobuf/index"
 )
-
-const (
-	DefaultDir              = "/tmp/blast/data/index"
-	DefaultIndexMappingFile = ""
-	DefaultIndexType        = upsidedown.Name
-	DefaultKvstore          = boltdb.Name
-)
-
-type IndexConfig struct {
-	Dir          string                    `json:"dir,omitempty"`
-	IndexMapping *mapping.IndexMappingImpl `json:"index_mapping,omitempty"`
-	IndexType    string                    `json:"index_type,omitempty"`
-	Kvstore      string                    `json:"kvstore,omitempty"`
-	Kvconfig     map[string]interface{}    `json:"kvconfig,omitempty"`
-}
-
-func DefaultIndexConfig() *IndexConfig {
-	return &IndexConfig{
-		Dir:          DefaultDir,
-		IndexMapping: mapping.NewIndexMapping(),
-		IndexType:    DefaultIndexType,
-		Kvstore:      DefaultKvstore,
-		Kvconfig: map[string]interface{}{
-			"create_if_missing": true,
-			"error_if_exists":   true,
-		},
-	}
-}
-
-func (c *IndexConfig) SetIndexMapping(indexMappingFile string) error {
-	var err error
-
-	f, err := os.Open(indexMappingFile)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	b, err := ioutil.ReadAll(f)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(b, c.IndexMapping)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func NewIndexMapping(file string) (*mapping.IndexMappingImpl, error) {
-	var err error
-
-	m := mapping.NewIndexMapping()
-
-	if file == "" {
-		return m, nil
-	}
-
-	f, err := os.Open(file)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	b, err := ioutil.ReadAll(f)
-	if err != nil {
-		return nil, err
-	}
-
-	err = json.Unmarshal(b, m)
-	if err != nil {
-		return nil, err
-	}
-
-	return m, nil
-}
 
 type Index struct {
 	index  bleve.Index
 	logger *log.Logger
 }
 
-func NewIndex(config *IndexConfig) (*Index, error) {
-	var err error
+func NewIndex(dir string, indexMapping *mapping.IndexMappingImpl, logger *log.Logger) (*Index, error) {
+	bleve.SetLog(logger)
 
-	var idx bleve.Index
-	if _, err = os.Stat(config.Dir); os.IsNotExist(err) {
-		if idx, err = bleve.NewUsing(config.Dir, config.IndexMapping, config.IndexType, config.Kvstore, config.Kvconfig); err != nil {
+	var index bleve.Index
+	_, err := os.Stat(dir)
+	if os.IsNotExist(err) {
+		// create new index
+		index, err = bleve.NewUsing(dir, indexMapping, bleve.Config.DefaultIndexType, bleve.Config.DefaultKVStore, nil)
+		if err != nil {
 			return nil, err
 		}
 	} else {
-		if idx, err = bleve.OpenUsing(config.Dir, config.Kvconfig); err != nil {
+		// open existing index
+		index, err = bleve.OpenUsing(dir, map[string]interface{}{
+			"create_if_missing": false,
+			"error_if_exists":   false,
+		})
+		if err != nil {
 			return nil, err
 		}
 	}
 
 	return &Index{
-		index:  idx,
-		logger: blastlog.DefaultLogger(),
+		index:  index,
+		logger: logger,
 	}, nil
 }
 
-func (i *Index) SetLogger(logger *log.Logger) {
-	i.logger = logger
-	return
-}
-
-func (i *Index) Searcher() (*Searcher, error) {
-	var err error
-
-	var searcher *Searcher
-	if searcher, err = NewSearcher(i); err != nil {
-		i.logger.Printf("[ERR] bleve: Failed to create searcher: %s", err.Error())
-		return nil, err
-	}
-
-	return searcher, nil
-}
-
-func (i *Index) Indexer() (*Indexer, error) {
-	var err error
-
-	var indexer *Indexer
-	if indexer, err = NewIndexer(i); err != nil {
-		i.logger.Printf("[ERR] bleve: Failed to create indexer: %s", err.Error())
-		return nil, err
-	}
-
-	return indexer, nil
-}
-
-func (i *Index) Bulker(batchSize int) (*Bulker, error) {
-	var err error
-
-	var bulker *Bulker
-	if bulker, err = NewBulker(i, batchSize); err != nil {
-		i.logger.Printf("[ERR] bleve: Failed to create bulker: %v", err)
-		return nil, err
-	}
-
-	return bulker, nil
-}
-
-func (i *Index) Close() error {
-	if err := i.index.Close(); err != nil {
-		i.logger.Printf("[ERR] bleve: Failed to close index: %s", err.Error())
+func (b *Index) Close() error {
+	err := b.index.Close()
+	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (b *Index) Get(id string) (map[string]interface{}, error) {
+	start := time.Now()
+	defer func() {
+		b.logger.Printf("[DEBUG] get %s %f", id, float64(time.Since(start))/float64(time.Second))
+	}()
+
+	fieldsBytes, err := b.index.GetInternal([]byte(id))
+	if err != nil {
+		return nil, err
+	}
+	if len(fieldsBytes) <= 0 {
+		return nil, blasterrors.ErrNotFound
+	}
+
+	// bytes -> map[string]interface{}
+	var fieldsMap map[string]interface{}
+	err = json.Unmarshal(fieldsBytes, &fieldsMap)
+	if err != nil {
+		return nil, err
+	}
+
+	return fieldsMap, nil
+}
+
+func (b *Index) Search(request *bleve.SearchRequest) (*bleve.SearchResult, error) {
+	start := time.Now()
+	defer func() {
+		rb, _ := json.Marshal(request)
+		b.logger.Printf("[DEBUG] search %s %f", rb, float64(time.Since(start))/float64(time.Second))
+	}()
+
+	result, err := b.index.Search(request)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (b *Index) Index(id string, fields map[string]interface{}) error {
+	start := time.Now()
+	defer func() {
+		b.logger.Printf("[DEBUG] index %s %v %f", id, fields, float64(time.Since(start))/float64(time.Second))
+	}()
+
+	// index
+	err := b.index.Index(id, fields)
+	if err != nil {
+		return err
+	}
+
+	// map[string]interface{} -> bytes
+	fieldsBytes, err := json.Marshal(fields)
+	if err != nil {
+		return err
+	}
+
+	// set original document
+	err = b.index.SetInternal([]byte(id), fieldsBytes)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (b *Index) Delete(id string) error {
+	start := time.Now()
+	defer func() {
+		b.logger.Printf("[DEBUG] delete %s %f", id, float64(time.Since(start))/float64(time.Second))
+	}()
+
+	err := b.index.Delete(id)
+	if err != nil {
+		return err
+	}
+
+	// delete original document
+	err = b.index.SetInternal([]byte(id), nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (b *Index) SnapshotItems() <-chan *pbindex.Document {
+	ch := make(chan *pbindex.Document, 1024)
+
+	go func() {
+		i, _, err := b.index.Advanced()
+		if err != nil {
+			b.logger.Printf("[ERR] %v", err)
+			return
+		}
+
+		r, err := i.Reader()
+		if err != nil {
+			b.logger.Printf("[ERR] %v", err)
+			return
+		}
+
+		docCount := 0
+
+		dr, err := r.DocIDReaderAll()
+		for {
+			id, err := dr.Next()
+			if id == nil {
+				b.logger.Print("[DEBUG] finished to read all document ids")
+				break
+			} else if err != nil {
+				b.logger.Printf("[WARN] %v", err)
+				continue
+			}
+
+			// get original document
+			fieldsBytes, err := b.index.GetInternal(id)
+
+			// bytes -> map[string]interface{}
+			var fieldsMap map[string]interface{}
+			err = json.Unmarshal([]byte(fieldsBytes), &fieldsMap)
+			if err != nil {
+				b.logger.Printf("[ERR] %v", err)
+				break
+			}
+			b.logger.Printf("[DEBUG] %v", fieldsMap)
+
+			// map[string]interface{} -> Any
+			fieldsAny := &any.Any{}
+			err = protobuf.UnmarshalAny(fieldsMap, fieldsAny)
+			if err != nil {
+				b.logger.Printf("[ERR] %v", err)
+				break
+			}
+
+			doc := &pbindex.Document{
+				Id:     string(id),
+				Fields: fieldsAny,
+			}
+
+			ch <- doc
+
+			docCount = docCount + 1
+		}
+
+		b.logger.Print("[DEBUG] finished to write all documents to channel")
+		ch <- nil
+
+		b.logger.Printf("[INFO] snapshot total %d documents", docCount)
+
+		return
+	}()
+
+	return ch
 }

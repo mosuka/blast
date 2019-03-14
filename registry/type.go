@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Minoru Osuka
+// Copyright (c) 2019 Minoru Osuka
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 package registry
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 )
@@ -25,7 +26,7 @@ var Types = make(TypeRegistry, 0)
 
 func RegisterType(name string, typ reflect.Type) {
 	if _, exists := Types[name]; exists {
-		panic(fmt.Errorf("attempted to register duplicate index: %s", name))
+		panic(errors.New(fmt.Sprintf("attempted to register duplicate index: %s", name)))
 	}
 	Types[name] = typ
 }

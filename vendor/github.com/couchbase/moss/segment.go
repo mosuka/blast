@@ -588,8 +588,15 @@ func (a *segment) doSort() {
 	// concurrent reads.
 	sort.Sort(a)
 
-	go a.rootCollection.updateStats(a)
+	if !SkipStats {
+		go a.rootCollection.updateStats(a)
+	}
 }
+
+// SkipStats allows advanced applications that don't care about
+// correct stats to avoid some stats maintenance overhead.  Defaults
+// to false (stats are correctly maintained).
+var SkipStats bool
 
 // ------------------------------------------------------
 
