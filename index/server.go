@@ -41,7 +41,7 @@ type Server struct {
 	httpLogger *log.Logger
 }
 
-func NewServer(nodeId string, bindAddr string, grpcAddr string, httpAddr string, dataDir string, joinAddr string, indexMappingPath string, logger *log.Logger, httpLogger *log.Logger) *Server {
+func NewServer(nodeId string, bindAddr string, grpcAddr string, httpAddr string, dataDir string, joinAddr string, indexMappingPath string, logger *log.Logger, httpLogger *log.Logger) (*Server, error) {
 	var err error
 
 	server := &Server{
@@ -61,8 +61,7 @@ func NewServer(nodeId string, bindAddr string, grpcAddr string, httpAddr string,
 			// read index mapping file
 			indexMappingFile, err := os.Open(indexMappingPath)
 			if err != nil {
-				server.logger.Printf("[ERR] %v", err)
-				return nil
+				return nil, err
 			}
 			defer func() {
 				err = indexMappingFile.Close()
@@ -73,18 +72,15 @@ func NewServer(nodeId string, bindAddr string, grpcAddr string, httpAddr string,
 
 			b, err := ioutil.ReadAll(indexMappingFile)
 			if err != nil {
-				server.logger.Printf("[ERR] %v", err)
-				return nil
+				return nil, err
 			}
 
 			err = json.Unmarshal(b, indexMapping)
 			if err != nil {
-				server.logger.Printf("[ERR] %v", err)
-				return nil
+				return nil, err
 			}
 		} else if os.IsNotExist(err) {
-			server.logger.Printf("[ERR] %v", err)
-			return nil
+			return nil, err
 		}
 	}
 
@@ -100,39 +96,34 @@ func NewServer(nodeId string, bindAddr string, grpcAddr string, httpAddr string,
 	// create raft server
 	server.raftServer, err = NewRaftServer(server.node, server.bootstrap, indexMapping, server.logger)
 	if err != nil {
-		server.logger.Printf("[ERR] %v", err)
-		return nil
+		return nil, err
 	}
 
 	// create gRPC service
 	server.grpcService, err = NewGRPCService(server.raftServer, server.logger)
 	if err != nil {
-		server.logger.Printf("[ERR] %v", err)
-		return nil
+		return nil, err
 	}
 
 	// create gRPC server
 	server.grpcServer, err = NewGRPCServer(grpcAddr, server.grpcService, server.logger)
 	if err != nil {
-		server.logger.Printf("[ERR] %v", err)
-		return nil
+		return nil, err
 	}
 
 	// create gRPC client for HTTP server
 	server.grpcClient, err = NewGRPCClient(grpcAddr)
 	if err != nil {
-		server.logger.Printf("[ERR] %v", err)
-		return nil
+		return nil, err
 	}
 
 	// create HTTP server
 	server.httpServer, err = NewHTTPServer(httpAddr, server.grpcClient, server.logger, server.httpLogger)
 	if err != nil {
-		server.logger.Printf("[ERR] %v", err)
-		return nil
+		return nil, err
 	}
 
-	return server
+	return server, nil
 }
 
 func (s *Server) Start() {

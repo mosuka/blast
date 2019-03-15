@@ -70,7 +70,10 @@ func execStart(c *cli.Context) error {
 		httpAccessLogCompress,
 	)
 
-	svr := index.NewServer(nodeId, bindAddr, grpcAddr, httpAddr, dataDir, joinAddr, indexMappingFile, logger, httpAccessLogger)
+	svr, err := index.NewServer(nodeId, bindAddr, grpcAddr, httpAddr, dataDir, joinAddr, indexMappingFile, logger, httpAccessLogger)
+	if err != nil {
+		return err
+	}
 
 	quitCh := make(chan os.Signal, 1)
 	signal.Notify(quitCh, os.Kill, os.Interrupt, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
