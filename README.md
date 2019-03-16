@@ -509,14 +509,11 @@ You can see the result in JSON format. The result of the above command is:
 
 ```json
 {
-  "id": "enwiki_1",
-  "fields": {
-    "_type": "enwiki",
-    "contributor": "unknown",
-    "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
-    "timestamp": "2018-07-04T05:41:00Z",
-    "title_en": "Search engine (computing)"
-  }
+  "_type": "enwiki",
+  "contributor": "unknown",
+  "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
+  "timestamp": "2018-07-04T05:41:00Z",
+  "title_en": "Search engine (computing)"
 }
 ```
 
