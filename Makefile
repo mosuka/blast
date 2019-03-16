@@ -32,7 +32,7 @@ PROTOBUFS = $(shell find . -name '*.proto' -print0 | xargs -0 -n1 dirname | sort
 TARGET_PACKAGES = $(shell find . -name 'main.go' -print0 | xargs -0 -n1 dirname | sort --unique | grep -v /vendor/)
 
 ifeq ($(VERSION),)
-  VERSION = $(shell cat ./Versionfile)
+  VERSION = latest
 endif
 LDFLAGS = -ldflags "-X \"github.com/mosuka/blast/version.Version=$(VERSION)\""
 
@@ -115,13 +115,24 @@ dist:
 	@for target_pkg in $(TARGET_PACKAGES); do echo $$target_pkg; $(GO) build -tags="$(BUILD_TAGS)" $(LDFLAGS) -o ./dist/$(GOOS)-$(GOARCH)/bin/`basename $$target_pkg`$(BIN_EXT) $$target_pkg || exit 1; done
 	(cd ./dist/$(GOOS)-$(GOARCH); tar zcfv ../blast-${VERSION}.$(GOOS)-$(GOARCH).tar.gz .)
 
+.PHONY: git-tag
+git-tag:
+	@echo ">> tagging github"
+	@echo "   VERSION     = $(VERSION)"
+ifeq ($(VERSION),$(filter $(VERSION),latest master ""))
+	@echo "please specify VERSION"
+else
+	git tag -a $(VERSION) -m "Release $(VERSION)"
+	git push origin $(VERSION)
+endif
+
 .PHONY: docker-build
 docker-build:
 	@echo ">> building docker container image"
 	@echo "   DOCKER_REPOSITORY = $(DOCKER_REPOSITORY)"
 	@echo "   VERSION           = $(VERSION)"
 	docker build -t $(DOCKER_REPOSITORY)/blast:latest --build-arg VERSION=$(VERSION) .
-	docker tag mosuka/blast:latest $(DOCKER_REPOSITORY)/blast:v$(VERSION)
+	docker tag $(DOCKER_REPOSITORY)/blast:latest $(DOCKER_REPOSITORY)/blast:$(VERSION)
 
 .PHONY: docker-push
 docker-push:
@@ -129,7 +140,7 @@ docker-push:
 	@echo "   DOCKER_REPOSITORY = $(DOCKER_REPOSITORY)"
 	@echo "   VERSION           = $(VERSION)"
 	docker push $(DOCKER_REPOSITORY)/blast:latest
-	docker push $(DOCKER_REPOSITORY)/blast:v$(VERSION)
+	docker push $(DOCKER_REPOSITORY)/blast:$(VERSION)
 
 .PHONY: clean
 clean:
