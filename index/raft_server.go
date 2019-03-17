@@ -504,6 +504,8 @@ func (s *RaftServer) Search(request *bleve.SearchRequest) (*bleve.SearchResult, 
 }
 
 func (s *RaftServer) Index(doc *index.Document) error {
+	s.logger.Printf("[DEBUG] index %v", doc)
+
 	if s.raft.State() != raft.Leader {
 		// forward to leader node
 		leaderId, err := s.LeaderID(60 * time.Second)
