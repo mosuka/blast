@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Add Wikipedia example #35
 - Support cznicb and leveldb #34
 - Add CHANGES.md #29
 - Add error handling for server startup #28.

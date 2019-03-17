@@ -578,3 +578,46 @@ You can execute the command in docker container as follows:
 ```bash
 $ docker exec -it blast-index1 blast-index node --grpc-addr=:5050
 ```
+
+
+## Wikipedia example
+
+This section explain how to index Wikipedia dump to Blast.
+
+
+### Download wikipedia dump
+
+```bash
+$ curl -o ~/tmp/enwiki-20190101-pages-articles.xml.bz2 https://dumps.wikimedia.org/enwiki/20190101/enwiki-20190101-pages-articles.xml.bz2
+```
+
+
+### Install wikiextractor
+
+```bash
+$ cd ${HOME}
+$ git clone git@github.com:attardi/wikiextractor.git
+```
+
+
+### Parsing wikipedia dump
+
+```bash
+$ cd wikiextractor
+$ ./WikiExtractor.py -o ~/tmp/enwiki --json ~/tmp/enwiki-20190101-pages-articles.xml.bz2
+```
+
+
+### Indexing wikipedia dump
+
+```bash
+$ for FILE in $(find ~/tmp/enwiki -type f -name '*' | sort)
+  do
+    cat ${FILE} | while read -r LINE; do
+      TIMESTAMP=$(date -u "+%Y-%m-%dT%H:%M:%SZ")
+      ID=$(echo ${LINE} | jq -r .id)
+      FIELDS=$(echo ${LINE} | jq -c -r '{url: .url, title_en: .title, text_en: .text, timestamp: "'${TIMESTAMP}'"}')
+      curl -X PUT "http://127.0.0.1:8080/documents/${ID}" -d "${FIELDS}"
+    done
+  done
+```
