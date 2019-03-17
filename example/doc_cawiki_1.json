@@ -1,7 +1,6 @@
 {
   "title_ca": "Motor de cerca",
   "text_ca": "Un motor de cerca o de recerca o bé cercador és un programa informàtic dissenyat per ajudar a trobar informació emmagatzemada en un sistema informàtic com ara una xarxa, Internet, un servidor o un ordinador personal. L'objectiu principal és el de trobar altres programes informàtics, pàgines web i documents, entre d'altres. A partir d'una determinada paraula o paraules o una determinada frase l'usuari demana un contingut sota un criteri determinat i retorna una llista de referències que compleixin aquest criteri. El procés es realitza a través de les metadades, vies per comunicar informació que utilitzen els motors per cada cerca. Els índex que utilitzen els cercadors sempre estan actualitzats a través d'un robot web per generar rapidesa i eficàcia en la recerca. Els directoris, en canvi, són gestionats per editors humans.",
-  "contributor": "unknown",
   "timestamp": "2018-07-09T18:07:00Z",
   "_type": "cawiki"
 }

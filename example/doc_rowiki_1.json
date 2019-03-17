@@ -1,7 +1,6 @@
 {
   "title_ro": "Motor de căutare",
   "text_ro": "Un motor de căutare este un program apelabil căutător, care accesează Internetul în mod automat și frecvent și care stochează titlul, cuvinte cheie și, parțial, chiar conținutul paginilor web într-o bază de date. În momentul în care un utilizator apelează la un motor de căutare pentru a găsi o informație, o anumită frază sau un cuvânt, motorul de căutare se va uita în această bază de date și, în funcție de anumite criterii de prioritate, va crea și afișa o listă de rezultate (engleză: hit list ).",
-  "contributor": "unknown",
   "timestamp": "2018-06-12T08:59:00Z",
   "_type": "rowiki"
 }

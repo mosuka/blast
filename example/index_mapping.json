@@ -34,7 +34,7 @@
           ],
           "default_analyzer": "ar"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -114,7 +114,7 @@
           ],
           "default_analyzer": "bg"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -194,7 +194,7 @@
           ],
           "default_analyzer": "ca"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -274,7 +274,7 @@
           ],
           "default_analyzer": "cs"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -354,7 +354,7 @@
           ],
           "default_analyzer": "da"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -434,7 +434,7 @@
           ],
           "default_analyzer": "de"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -514,7 +514,7 @@
           ],
           "default_analyzer": "el"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -594,7 +594,7 @@
           ],
           "default_analyzer": "en"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -674,7 +674,7 @@
           ],
           "default_analyzer": "es"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -754,7 +754,7 @@
           ],
           "default_analyzer": "fa"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -834,7 +834,7 @@
           ],
           "default_analyzer": "fi"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -914,7 +914,7 @@
           ],
           "default_analyzer": "fr"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -994,7 +994,7 @@
           ],
           "default_analyzer": "ga"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -1074,7 +1074,7 @@
           ],
           "default_analyzer": "gl"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -1154,7 +1154,7 @@
           ],
           "default_analyzer": "in"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -1234,7 +1234,7 @@
           ],
           "default_analyzer": "hi"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -1314,7 +1314,7 @@
           ],
           "default_analyzer": "hu"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -1394,7 +1394,7 @@
           ],
           "default_analyzer": "hy"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -1474,7 +1474,7 @@
           ],
           "default_analyzer": "id"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -1554,7 +1554,7 @@
           ],
           "default_analyzer": "it"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -1634,7 +1634,7 @@
           ],
           "default_analyzer": "ja"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -1714,7 +1714,7 @@
           ],
           "default_analyzer": "in"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -1794,7 +1794,7 @@
           ],
           "default_analyzer": "cjk"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -1874,7 +1874,7 @@
           ],
           "default_analyzer": "in"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -1954,7 +1954,7 @@
           ],
           "default_analyzer": "nl"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -2034,7 +2034,7 @@
           ],
           "default_analyzer": "no"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -2114,7 +2114,7 @@
           ],
           "default_analyzer": "ckb"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -2194,7 +2194,7 @@
           ],
           "default_analyzer": "pt"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -2274,7 +2274,7 @@
           ],
           "default_analyzer": "ro"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -2354,7 +2354,7 @@
           ],
           "default_analyzer": "ru"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -2434,7 +2434,7 @@
           ],
           "default_analyzer": "sv"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -2514,7 +2514,7 @@
           ],
           "default_analyzer": "in"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -2594,7 +2594,7 @@
           ],
           "default_analyzer": "in"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -2674,7 +2674,7 @@
           ],
           "default_analyzer": "th"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -2754,7 +2754,7 @@
           ],
           "default_analyzer": "tr"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [
@@ -2834,7 +2834,7 @@
           ],
           "default_analyzer": "cjk"
         },
-        "contributor": {
+        "url": {
           "enabled": true,
           "dynamic": true,
           "fields": [

@@ -1,7 +1,6 @@
 {
   "title_de": "Suchmaschine",
   "text_de": "Eine Suchmaschine ist ein Programm zur Recherche von Dokumenten, die in einem Computer oder einem Computernetzwerk wie z. B. dem World Wide Web gespeichert sind. Internet-Suchmaschinen haben ihren Ursprung in Information-Retrieval-Systemen. Sie erstellen einen Schlüsselwort-Index für die Dokumentbasis, um Suchanfragen über Schlüsselwörter mit einer nach Relevanz geordneten Trefferliste zu beantworten. Nach Eingabe eines Suchbegriffs liefert eine Suchmaschine eine Liste von Verweisen auf möglicherweise relevante Dokumente, meistens dargestellt mit Titel und einem kurzen Auszug des jeweiligen Dokuments. Dabei können verschiedene Suchverfahren Anwendung finden.",
-  "contributor": "unknown",
   "timestamp": "2017-09-04T01:54:00Z",
   "_type": "dewiki"
 }

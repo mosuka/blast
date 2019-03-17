@@ -1,7 +1,6 @@
 {
   "title_es": "Motor de búsqueda",
   "text_es": "Un motor de búsqueda o buscador es un sistema informático que busca archivos almacenados en servidores web gracias a su spider (también llamado araña web). Un ejemplo son los buscadores de Internet (algunos buscan únicamente en la web, pero otros lo hacen además en noticias, servicios como Gopher, FTP, etc.) cuando se pide información sobre algún tema. Las búsquedas se hacen con palabras clave o con árboles jerárquicos por temas; el resultado de la búsqueda «Página de resultados del buscador» es un listado de direcciones web en los que se mencionan temas relacionados con las palabras clave buscadas. Como operan de forma automática, los motores de búsqueda contienen generalmente más información que los directorios. Sin embargo, estos últimos también han de construirse a partir de búsquedas (no automatizadas) o bien a partir de avisos dados por los creadores de páginas.",
-  "contributor": "unknown",
   "timestamp": "2018-08-30T11:30:00Z",
   "_type": "eswiki"
 }
