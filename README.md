@@ -49,6 +49,7 @@ Blast requires some C/C++ libraries. The following sections are instructions for
 $ sudo apt-get install -y \
     libicu-dev \
     libstemmer-dev \
+    libleveldb-dev \
     gcc-4.8 \
     g++-4.8 \
     build-essential
@@ -72,7 +73,8 @@ $ sudo cp *.so /usr/local/lib
 
 ```bash
 $ brew install \
-    icu4c
+    icu4c \
+    leveldb
 
 $ go get -u -v github.com/blevesearch/cld2
 $ cd ${GOPATH}/src/github.com/blevesearch/cld2
@@ -118,7 +120,7 @@ You can enable supported Bleve Extensions for like following:
 ```bash
 $ make \
     GOOS=linux \
-    BUILD_TAGS="kagome icu libstemmer cld2" \
+    BUILD_TAGS="kagome icu libstemmer cld2 cznicb leveldb" \
     CGO_ENABLED=1 \
     build
 ```
@@ -129,7 +131,7 @@ $ make \
 ```bash
 $ make GOOS=darwin \
     GOOS=darwin \
-    BUILD_TAGS="kagome icu libstemmer cld2" \
+    BUILD_TAGS="kagome icu libstemmer cld2 cznicb leveldb" \
     CGO_ENABLED=1 \
     CGO_LDFLAGS="-L/usr/local/opt/icu4c/lib" \
     CGO_CFLAGS="-I/usr/local/opt/icu4c/include" \
@@ -145,6 +147,9 @@ Please refer to the following table for details of Bleve Extensions:
 | kagome                     | 0           | Enable Japanese Language Analyser            |
 | icu                        | 1           | Enable ICU Tokenizer, Thai Language Analyser |
 | libstemmer                 | 1           | Enable Language Stemmer (Danish, German, English, Spanish, Finnish, French, Hungarian, Italian, Dutch, Norwegian, Portuguese, Romanian, Russian, Swedish, Turkish) |
+| cznicb                     | 0           | Enable cznicb KV store                       |
+| leveldb                    | 1           | Enable LevelDB                               |
+
 
 You can see the binary file when build successful like so:
 
@@ -564,7 +569,8 @@ $ docker run --rm --name blast-index1 \
       --grpc-addr=:5050 \
       --http-addr=:8080 \
       --data-dir=/tmp/blast/index1 \
-      --index-mapping-file=/opt/blast/example/index_mapping.json
+      --index-mapping-file=/opt/blast/example/index_mapping.json \
+      --index-storage-type=leveldb
 ```
 
 You can execute the command in docker container as follows:

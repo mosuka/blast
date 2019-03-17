@@ -38,8 +38,8 @@ type RaftFSM struct {
 	logger *log.Logger
 }
 
-func NewRaftFSM(path string, indexMapping *mapping.IndexMappingImpl, logger *log.Logger) (*RaftFSM, error) {
-	index, err := NewIndex(path, indexMapping, logger)
+func NewRaftFSM(path string, indexMapping *mapping.IndexMappingImpl, indexStorageType string, logger *log.Logger) (*RaftFSM, error) {
+	index, err := NewIndex(path, indexMapping, indexStorageType, logger)
 	if err != nil {
 		return nil, err
 	}

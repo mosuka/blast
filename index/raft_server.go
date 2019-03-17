@@ -43,8 +43,8 @@ type RaftServer struct {
 	logger *log.Logger
 }
 
-func NewRaftServer(node *blastraft.Node, bootstrap bool, indexMapping *mapping.IndexMappingImpl, logger *log.Logger) (*RaftServer, error) {
-	fsm, err := NewRaftFSM(filepath.Join(node.DataDir, "index"), indexMapping, logger)
+func NewRaftServer(node *blastraft.Node, bootstrap bool, indexMapping *mapping.IndexMappingImpl, indexStorageType string, logger *log.Logger) (*RaftServer, error) {
+	fsm, err := NewRaftFSM(filepath.Join(node.DataDir, "index"), indexMapping, indexStorageType, logger)
 	if err != nil {
 		return nil, err
 	}

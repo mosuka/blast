@@ -75,6 +75,11 @@ func main() {
 					Usage: "Path to a file containing a JSON representation of an index mapping to use",
 				},
 				cli.StringFlag{
+					Name:  "index-storage-type, s",
+					Value: "boltdb",
+					Usage: "Index storage type to use",
+				},
+				cli.StringFlag{
 					Name:  "log-level, L",
 					Value: "INFO",
 					Usage: "Log level",
