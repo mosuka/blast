@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Minoru Osuka
+# Copyright (c) 2019 Minoru Osuka
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ RUN apt-get update && \
       golang \
       libicu-dev \
       libstemmer-dev \
+      libleveldb-dev \
       gcc-4.8 \
       g++-4.8 \
       build-essential && \
@@ -44,7 +45,7 @@ RUN apt-get update && \
     GOOS=linux \
       GOARCH=amd64 \
       CGO_ENABLED=1 \
-      BUILD_TAGS="kagome icu libstemmer cld2" \
+      BUILD_TAGS="kagome icu libstemmer cld2 cznicb leveldb" \
       VERSION="${VERSION}" \
       make build
 
@@ -55,7 +56,8 @@ MAINTAINER Minoru Osuka "minoru.osuka@gmail.com"
 RUN apt-get update && \
     apt-get install -y \
       libicu-dev \
-      libstemmer-dev && \
+      libstemmer-dev \
+      libleveldb-dev && \
     apt-get clean
 
 COPY --from=0 /go/src/github.com/blevesearch/cld2/cld2/internal/*.so /usr/local/lib/

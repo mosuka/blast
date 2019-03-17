@@ -35,6 +35,7 @@ func execStart(c *cli.Context) error {
 	joinAddr := c.String("join-addr")
 
 	indexMappingFile := c.String("index-mapping-file")
+	indexStorageType := c.String("index-storage-type")
 
 	logLevel := c.String("log-level")
 	logFilename := c.String("log-file")
@@ -70,7 +71,7 @@ func execStart(c *cli.Context) error {
 		httpAccessLogCompress,
 	)
 
-	svr, err := index.NewServer(nodeId, bindAddr, grpcAddr, httpAddr, dataDir, joinAddr, indexMappingFile, logger, httpAccessLogger)
+	svr, err := index.NewServer(nodeId, bindAddr, grpcAddr, httpAddr, dataDir, joinAddr, indexMappingFile, indexStorageType, logger, httpAccessLogger)
 	if err != nil {
 		return err
 	}

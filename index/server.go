@@ -41,7 +41,7 @@ type Server struct {
 	httpLogger *log.Logger
 }
 
-func NewServer(nodeId string, bindAddr string, grpcAddr string, httpAddr string, dataDir string, joinAddr string, indexMappingPath string, logger *log.Logger, httpLogger *log.Logger) (*Server, error) {
+func NewServer(nodeId string, bindAddr string, grpcAddr string, httpAddr string, dataDir string, joinAddr string, indexMappingPath string, indexStorageType string, logger *log.Logger, httpLogger *log.Logger) (*Server, error) {
 	var err error
 
 	server := &Server{
@@ -94,7 +94,7 @@ func NewServer(nodeId string, bindAddr string, grpcAddr string, httpAddr string,
 	}
 
 	// create raft server
-	server.raftServer, err = NewRaftServer(server.node, server.bootstrap, indexMapping, server.logger)
+	server.raftServer, err = NewRaftServer(server.node, server.bootstrap, indexMapping, indexStorageType, server.logger)
 	if err != nil {
 		return nil, err
 	}

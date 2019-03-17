@@ -33,14 +33,14 @@ type Index struct {
 	logger *log.Logger
 }
 
-func NewIndex(dir string, indexMapping *mapping.IndexMappingImpl, logger *log.Logger) (*Index, error) {
+func NewIndex(dir string, indexMapping *mapping.IndexMappingImpl, indexStorageType string, logger *log.Logger) (*Index, error) {
 	bleve.SetLog(logger)
 
 	var index bleve.Index
 	_, err := os.Stat(dir)
 	if os.IsNotExist(err) {
 		// create new index
-		index, err = bleve.NewUsing(dir, indexMapping, bleve.Config.DefaultIndexType, bleve.Config.DefaultKVStore, nil)
+		index, err = bleve.NewUsing(dir, indexMapping, bleve.Config.DefaultIndexType, indexStorageType, nil)
 		if err != nil {
 			return nil, err
 		}
