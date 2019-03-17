@@ -116,10 +116,12 @@ func (b *Index) Index(id string, fields map[string]interface{}) error {
 	}()
 
 	// index
+	b.logger.Printf("[DEBUG] index %s, %v", id, fields)
 	err := b.index.Index(id, fields)
 	if err != nil {
 		return err
 	}
+	b.logger.Printf("[DEBUG] indexed %s, %v", id, fields)
 
 	// map[string]interface{} -> bytes
 	fieldsBytes, err := json.Marshal(fields)

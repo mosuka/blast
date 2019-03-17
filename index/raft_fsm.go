@@ -79,6 +79,8 @@ func (f *RaftFSM) Search(request *bleve.SearchRequest) (*bleve.SearchResult, err
 }
 
 func (f *RaftFSM) applyIndex(id string, fields map[string]interface{}) interface{} {
+	f.logger.Printf("[DEBUG] index %s, %v", id, fields)
+
 	err := f.index.Index(id, fields)
 	if err != nil {
 		f.logger.Printf("[ERR] %v", err)
@@ -132,6 +134,8 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 	if err != nil {
 		return err
 	}
+
+	f.logger.Printf("[DEBUG] Apply %v", c)
 
 	switch c.Type {
 	case pbindex.IndexCommand_SET_METADATA:

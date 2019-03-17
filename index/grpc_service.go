@@ -170,7 +170,7 @@ func (s *GRPCService) Index(ctx context.Context, req *index.IndexRequest) (*empt
 	start := time.Now()
 	defer RecordMetrics(start, "index")
 
-	s.logger.Printf("[INFO] index %v", req)
+	s.logger.Printf("[DEBUG] index %v", req)
 
 	resp := &empty.Empty{}
 
