@@ -1,7 +1,6 @@
 {
   "title_fi": "Hakukone",
   "text_fi": "Hakukone on web-pohjainen ohjelma, joka etsii jatkuvasti Internetistä (varsinkin Webistä) uusia sivuja eritellen ja liittäen ne hakemistoonsa erityisten hakusanojen mukaan. Näitä hyväksi käyttäen hakukone tulostaa käyttäjän syöttämiä hakusanoja lähimpänä olevat sivut. Analysointi tapahtuu käytännössä eri hakukoneissa erilaisilla menetelmillä.",
-  "contributor": "unknown",
   "timestamp": "2017-10-04T14:33:00Z",
   "_type": "fiwiki"
 }
