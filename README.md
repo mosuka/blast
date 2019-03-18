@@ -585,18 +585,18 @@ $ docker exec -it blast-index1 blast-index node --grpc-addr=:5050
 This section explain how to index Wikipedia dump to Blast.
 
 
-### Download wikipedia dump
-
-```bash
-$ curl -o ~/tmp/enwiki-20190101-pages-articles.xml.bz2 https://dumps.wikimedia.org/enwiki/20190101/enwiki-20190101-pages-articles.xml.bz2
-```
-
-
 ### Install wikiextractor
 
 ```bash
 $ cd ${HOME}
 $ git clone git@github.com:attardi/wikiextractor.git
+```
+
+
+### Download wikipedia dump
+
+```bash
+$ curl -o ~/tmp/enwiki-20190101-pages-articles.xml.bz2 https://dumps.wikimedia.org/enwiki/20190101/enwiki-20190101-pages-articles.xml.bz2
 ```
 
 
