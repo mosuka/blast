@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Add index stats #37
 - Add Wikipedia example #35
 - Support cznicb and leveldb #34
 - Add logging #33
@@ -23,7 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - update Makefile #31
 
 
-## [0.4.0] - 2019-03-13
+## [0.4.0] - 2019-03-14
 
 ### Changed
 

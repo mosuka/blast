@@ -158,6 +158,17 @@ func (b *Index) Delete(id string) error {
 	return nil
 }
 
+func (b *Index) Stats() (map[string]interface{}, error) {
+	start := time.Now()
+	defer func() {
+		b.logger.Printf("[DEBUG] stats %f", float64(time.Since(start))/float64(time.Second))
+	}()
+
+	stats := b.index.StatsMap()
+
+	return stats, nil
+}
+
 func (b *Index) SnapshotItems() <-chan *pbindex.Document {
 	ch := make(chan *pbindex.Document, 1024)
 

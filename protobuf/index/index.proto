@@ -33,11 +33,17 @@ service Index {
     rpc Search (SearchRequest) returns (SearchResponse) {}
     rpc Index (IndexRequest) returns (google.protobuf.Empty) {}
     rpc Delete (DeleteRequest) returns (google.protobuf.Empty) {}
+
+    rpc GetStats (google.protobuf.Empty) returns (GetStatsResponse) {}
 }
 
 message Document {
     string id = 1;
     google.protobuf.Any fields = 2;
+}
+
+message Stats {
+    google.protobuf.Any stats = 1;
 }
 
 message GetRequest {
@@ -64,6 +70,9 @@ message DeleteRequest {
     Document document = 1;
 }
 
+message GetStatsResponse {
+    Stats stats = 1;
+}
 
 message IndexCommand {
     enum Type {

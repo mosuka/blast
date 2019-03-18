@@ -184,7 +184,6 @@ func main() {
 					Usage: "gRPC address to connect to",
 				},
 			},
-			//ArgsUsage: "[id]",
 			Action: execCluster,
 		},
 		{
@@ -244,12 +243,24 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "grpc-addr, g",
-					Value: "gRPC :5050",
+					Value: ":5050",
 					Usage: "address to connect to",
 				},
 			},
 			ArgsUsage: "[id]",
 			Action:    execDelete,
+		},
+		{
+			Name:  "stats",
+			Usage: "Get a index stats",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "grpc-addr, g",
+					Value: ":5050",
+					Usage: "address to connect to",
+				},
+			},
+			Action: execStats,
 		},
 	}
 

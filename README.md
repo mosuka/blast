@@ -585,18 +585,18 @@ $ docker exec -it blast-index1 blast-index node --grpc-addr=:5050
 This section explain how to index Wikipedia dump to Blast.
 
 
-### Download wikipedia dump
-
-```bash
-$ curl -o ~/tmp/enwiki-20190101-pages-articles.xml.bz2 https://dumps.wikimedia.org/enwiki/20190101/enwiki-20190101-pages-articles.xml.bz2
-```
-
-
 ### Install wikiextractor
 
 ```bash
 $ cd ${HOME}
 $ git clone git@github.com:attardi/wikiextractor.git
+```
+
+
+### Download wikipedia dump
+
+```bash
+$ curl -o ~/tmp/enwiki-20190101-pages-articles.xml.bz2 https://dumps.wikimedia.org/enwiki/20190101/enwiki-20190101-pages-articles.xml.bz2
 ```
 
 
@@ -613,10 +613,12 @@ $ ./WikiExtractor.py -o ~/tmp/enwiki --json ~/tmp/enwiki-20190101-pages-articles
 ```bash
 $ for FILE in $(find ~/tmp/enwiki -type f -name '*' | sort)
   do
+    echo "${FILE}"
     cat ${FILE} | while read -r LINE; do
       TIMESTAMP=$(date -u "+%Y-%m-%dT%H:%M:%SZ")
       ID=$(echo ${LINE} | jq -r .id)
-      FIELDS=$(echo ${LINE} | jq -c -r '{url: .url, title_en: .title, text_en: .text, timestamp: "'${TIMESTAMP}'"}')
+      FIELDS=$(echo "${LINE}" | jq -c -r '{url: .url, title_en: .title, text_en: .text, timestamp: "'${TIMESTAMP}'"}')
+      echo "- ${ID} ${FIELDS}"
       curl -X PUT "http://127.0.0.1:8080/documents/${ID}" -d "${FIELDS}"
     done
   done

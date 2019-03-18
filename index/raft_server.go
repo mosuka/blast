@@ -626,3 +626,23 @@ func (s *RaftServer) Delete(doc *index.Document) error {
 
 	return nil
 }
+
+func (s *RaftServer) Stats() (*index.Stats, error) {
+	statsMap, err := s.fsm.Stats()
+	if err != nil {
+		return nil, err
+	}
+
+	// map[string]interface{} -> Any
+	statsAny := &any.Any{}
+	err = protobuf.UnmarshalAny(statsMap, statsAny)
+	if err != nil {
+		return nil, err
+	}
+
+	indexStats := &index.Stats{
+		Stats: statsAny,
+	}
+
+	return indexStats, nil
+}
