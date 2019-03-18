@@ -24,13 +24,12 @@ import (
 	blasthttp "github.com/mosuka/blast/http"
 	"github.com/mosuka/blast/protobuf/kvs"
 	"github.com/mosuka/blast/protobuf/raft"
-	"github.com/mosuka/blast/store"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 )
 
 type Server struct {
-	store *store.KeyValueStore
+	store *RaftServer
 
 	// gRPC
 	grpcListener net.Listener
@@ -54,7 +53,7 @@ func NewServer(nodeId string, bindAddr string, grpcAddr string, httpAddr string,
 	}
 
 	// store
-	server.store, err = store.NewKeyValueStore(bindAddr, dataDir, server.logger)
+	server.store, err = NewRaftServer(bindAddr, dataDir, server.logger)
 	if err != nil {
 		server.logger.Printf("[ERR] %v", err)
 		return nil

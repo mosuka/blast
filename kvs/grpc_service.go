@@ -22,17 +22,16 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/mosuka/blast/protobuf/kvs"
 	"github.com/mosuka/blast/protobuf/raft"
-	"github.com/mosuka/blast/store"
 )
 
 type Service struct {
 	// wrapper and manager for db instance
-	store *store.KeyValueStore
+	store *RaftServer
 
 	logger *log.Logger
 }
 
-func NewService(store *store.KeyValueStore, logger *log.Logger) (*Service, error) {
+func NewService(store *RaftServer, logger *log.Logger) (*Service, error) {
 	return &Service{
 		store:  store,
 		logger: logger,

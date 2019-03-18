@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package store
+package kvs
 
 import (
 	"log"
@@ -23,27 +23,27 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
-	blasterrors "github.com/mosuka/blast/errors"
+	"github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf/kvs"
 )
 
-type KeyValueStore struct {
+type RaftServer struct {
 	BindAddr string
 	DataDir  string
 
 	raft *raft.Raft
-	fsm  *KVSFSM
+	fsm  *RaftFSM
 
 	logger *log.Logger
 }
 
-func NewKeyValueStore(bindAddr string, dataDir string, logger *log.Logger) (*KeyValueStore, error) {
-	fsm, err := NewKVSFSM(filepath.Join(dataDir, "kvs"), logger)
+func NewRaftServer(bindAddr string, dataDir string, logger *log.Logger) (*RaftServer, error) {
+	fsm, err := NewRaftFSM(filepath.Join(dataDir, "kvs"), logger)
 	if err != nil {
 		return nil, err
 	}
 
-	return &KeyValueStore{
+	return &RaftServer{
 		BindAddr: bindAddr,
 		DataDir:  dataDir,
 		fsm:      fsm,
@@ -51,7 +51,7 @@ func NewKeyValueStore(bindAddr string, dataDir string, logger *log.Logger) (*Key
 	}, nil
 }
 
-func (s *KeyValueStore) Open(bootstrap bool, localID string) error {
+func (s *RaftServer) Open(bootstrap bool, localID string) error {
 	config := raft.DefaultConfig()
 	config.LocalID = raft.ServerID(localID)
 	config.SnapshotThreshold = 1024
@@ -99,7 +99,7 @@ func (s *KeyValueStore) Open(bootstrap bool, localID string) error {
 	return nil
 }
 
-func (s *KeyValueStore) Close() error {
+func (s *RaftServer) Close() error {
 	err := s.fsm.Close()
 	if err != nil {
 		return err
@@ -108,7 +108,7 @@ func (s *KeyValueStore) Close() error {
 	return nil
 }
 
-func (s *KeyValueStore) Join(nodeId string, addr string) error {
+func (s *RaftServer) Join(nodeId string, addr string) error {
 	cf := s.raft.GetConfiguration()
 	err := cf.Error()
 	if err != nil {
@@ -132,7 +132,7 @@ func (s *KeyValueStore) Join(nodeId string, addr string) error {
 	return nil
 }
 
-func (s *KeyValueStore) Leave(nodeId string) error {
+func (s *RaftServer) Leave(nodeId string) error {
 	cf := s.raft.GetConfiguration()
 	err := cf.Error()
 	if err != nil {
@@ -156,7 +156,7 @@ func (s *KeyValueStore) Leave(nodeId string) error {
 	return nil
 }
 
-func (s *KeyValueStore) Snapshot() error {
+func (s *RaftServer) Snapshot() error {
 	f := s.raft.Snapshot()
 	err := f.Error()
 	if err != nil {
@@ -166,7 +166,7 @@ func (s *KeyValueStore) Snapshot() error {
 	return nil
 }
 
-func (s *KeyValueStore) Get(key []byte) ([]byte, error) {
+func (s *RaftServer) Get(key []byte) ([]byte, error) {
 	value, err := s.fsm.Get(key)
 	if err != nil {
 		return nil, err
@@ -175,9 +175,9 @@ func (s *KeyValueStore) Get(key []byte) ([]byte, error) {
 	return value, nil
 }
 
-func (s *KeyValueStore) Set(key []byte, value []byte) error {
+func (s *RaftServer) Set(key []byte, value []byte) error {
 	if s.raft.State() != raft.Leader {
-		return blasterrors.ErrNotLeader
+		return errors.ErrNotLeader
 	}
 
 	c := &kvs.KVSCommand{
@@ -200,9 +200,9 @@ func (s *KeyValueStore) Set(key []byte, value []byte) error {
 	return nil
 }
 
-func (s *KeyValueStore) Delete(key []byte) error {
+func (s *RaftServer) Delete(key []byte) error {
 	if s.raft.State() != raft.Leader {
-		return blasterrors.ErrNotLeader
+		return errors.ErrNotLeader
 	}
 
 	c := &kvs.KVSCommand{
