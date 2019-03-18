@@ -19,10 +19,9 @@ import (
 	"log"
 	"math"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/mosuka/blast/protobuf/kvs"
 	"github.com/mosuka/blast/protobuf/raft"
-
-	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
 )
 

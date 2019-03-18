@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package store
+package kvs
 
 import (
 	"errors"
@@ -27,13 +27,13 @@ import (
 	"github.com/mosuka/blast/protobuf/kvs"
 )
 
-type KVSFSM struct {
+type RaftFSM struct {
 	kvs *KVS
 
 	logger *log.Logger
 }
 
-func NewKVSFSM(path string, logger *log.Logger) (*KVSFSM, error) {
+func NewRaftFSM(path string, logger *log.Logger) (*RaftFSM, error) {
 	// Create directory
 	err := os.MkdirAll(path, 0755)
 	if err != nil && !os.IsExist(err) {
@@ -45,13 +45,13 @@ func NewKVSFSM(path string, logger *log.Logger) (*KVSFSM, error) {
 		return nil, err
 	}
 
-	return &KVSFSM{
+	return &RaftFSM{
 		logger: logger,
 		kvs:    kvs,
 	}, nil
 }
 
-func (f *KVSFSM) Close() error {
+func (f *RaftFSM) Close() error {
 	err := f.kvs.Close()
 	if err != nil {
 		return err
@@ -60,7 +60,7 @@ func (f *KVSFSM) Close() error {
 	return nil
 }
 
-func (f *KVSFSM) Get(key []byte) ([]byte, error) {
+func (f *RaftFSM) Get(key []byte) ([]byte, error) {
 	value, err := f.kvs.Get(key)
 	if err != nil {
 		return nil, err
@@ -69,7 +69,7 @@ func (f *KVSFSM) Get(key []byte) ([]byte, error) {
 	return value, nil
 }
 
-func (f *KVSFSM) applySet(key []byte, value []byte) interface{} {
+func (f *RaftFSM) applySet(key []byte, value []byte) interface{} {
 	err := f.kvs.Set(key, value)
 	if err != nil {
 		f.logger.Printf("[ERR] %v", err)
@@ -79,7 +79,7 @@ func (f *KVSFSM) applySet(key []byte, value []byte) interface{} {
 	return nil
 }
 
-func (f *KVSFSM) applyDelete(key []byte) interface{} {
+func (f *RaftFSM) applyDelete(key []byte) interface{} {
 	err := f.kvs.Delete(key)
 	if err != nil {
 		f.logger.Printf("[ERR] %v", err)
@@ -89,7 +89,7 @@ func (f *KVSFSM) applyDelete(key []byte) interface{} {
 	return nil
 }
 
-func (f *KVSFSM) Apply(l *raft.Log) interface{} {
+func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 	var c kvs.KVSCommand
 	err := proto.Unmarshal(l.Data, &c)
 	if err != nil {
@@ -106,14 +106,14 @@ func (f *KVSFSM) Apply(l *raft.Log) interface{} {
 	}
 }
 
-func (f *KVSFSM) Snapshot() (raft.FSMSnapshot, error) {
+func (f *RaftFSM) Snapshot() (raft.FSMSnapshot, error) {
 	return &KVSFSMSnapshot{
 		kvs:    f.kvs,
 		logger: f.logger,
 	}, nil
 }
 
-func (f *KVSFSM) Restore(rc io.ReadCloser) error {
+func (f *RaftFSM) Restore(rc io.ReadCloser) error {
 	defer func() {
 		err := rc.Close()
 		if err != nil {

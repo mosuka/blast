@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package store
+package kvs
 
 import (
 	"log"
 	"time"
 
 	"github.com/dgraph-io/badger"
-	blasterrors "github.com/mosuka/blast/errors"
+	"github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf/kvs"
 )
 
@@ -79,7 +79,7 @@ func (b *KVS) Get(key []byte) ([]byte, error) {
 	})
 	if err == badger.ErrKeyNotFound {
 		b.logger.Printf("[DEBUG] %v", err)
-		return nil, blasterrors.ErrNotFound
+		return nil, errors.ErrNotFound
 	}
 	if err != nil {
 		return nil, err
