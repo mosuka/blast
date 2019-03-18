@@ -12,12 +12,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Add Wikipedia example #35
 - Support cznicb and leveldb #34
+- Add logging #33
 - Add CHANGES.md #29
 - Add error handling for server startup #28.
 
 ### Changed
 
-- Add logging #33
+- Restructure store package #36
 - Update examples #32
 - update Makefile #31
 
