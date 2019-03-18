@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Support Badger #38
 - Add index stats #37
 - Add Wikipedia example #35
 - Support cznicb and leveldb #34
