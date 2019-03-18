@@ -422,6 +422,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:fe91944cf2a46eecf510f0691eff66ba08c9152759defbc322f054ccca312e1d"
+  name = "github.com/mosuka/bbadger"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "fdf72caa1e806ce4d7d8a9ef9ea144ee2f0eff25"
+
+[[projects]]
+  branch = "master"
   digest = "1:c22fdadfe2de0e1df75987cac34f1c721157dc24f180c76b4ef66a3c9637a799"
   name = "github.com/mschoch/smat"
   packages = ["."]
@@ -681,6 +689,7 @@
     "github.com/hashicorp/raft",
     "github.com/hashicorp/raft-boltdb",
     "github.com/mash/go-accesslog",
+    "github.com/mosuka/bbadger",
     "github.com/natefinch/lumberjack",
     "github.com/prometheus/client_golang/prometheus",
     "github.com/prometheus/client_golang/prometheus/promhttp",

@@ -27,6 +27,7 @@ import (
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
+	_ "github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/index"
