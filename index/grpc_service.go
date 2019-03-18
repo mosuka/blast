@@ -198,3 +198,21 @@ func (s *GRPCService) Delete(ctx context.Context, req *index.DeleteRequest) (*em
 
 	return resp, nil
 }
+
+func (s *GRPCService) GetStats(ctx context.Context, req *empty.Empty) (*index.GetStatsResponse, error) {
+	start := time.Now()
+	defer RecordMetrics(start, "stats")
+
+	resp := &index.GetStatsResponse{}
+
+	s.logger.Printf("[INFO] stats %v", req)
+
+	stats, err := s.raftServer.Stats()
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	resp.Stats = stats
+
+	return resp, nil
+}

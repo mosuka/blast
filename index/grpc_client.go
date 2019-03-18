@@ -222,3 +222,14 @@ func (c *GRPCClient) Delete(doc *index.Document, opts ...grpc.CallOption) error 
 
 	return nil
 }
+
+func (c *GRPCClient) GetIndexStats(opts ...grpc.CallOption) (*index.Stats, error) {
+	resp, err := c.client.GetStats(c.ctx, &empty.Empty{}, opts...)
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+
+	return resp.Stats, nil
+}

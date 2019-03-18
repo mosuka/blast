@@ -202,6 +202,15 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 	}
 }
 
+func (f *RaftFSM) Stats() (map[string]interface{}, error) {
+	stats, err := f.index.Stats()
+	if err != nil {
+		return nil, err
+	}
+
+	return stats, nil
+}
+
 func (f *RaftFSM) Snapshot() (raft.FSMSnapshot, error) {
 	return &IndexFSMSnapshot{
 		index:  f.index,

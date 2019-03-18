@@ -14,8 +14,6 @@
 
 syntax = "proto3";
 
-import "google/protobuf/empty.proto";
-
 package raft;
 
 option go_package = "github.com/mosuka/blast/protobuf/raft";
