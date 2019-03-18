@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - update Makefile #31
 
 
-## [0.4.0] - 2019-03-13
+## [0.4.0] - 2019-03-14
 
 ### Changed
 
