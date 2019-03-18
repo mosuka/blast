@@ -45,7 +45,7 @@ RUN apt-get update && \
     GOOS=linux \
       GOARCH=amd64 \
       CGO_ENABLED=1 \
-      BUILD_TAGS="kagome icu libstemmer cld2 cznicb leveldb" \
+      BUILD_TAGS="kagome icu libstemmer cld2 cznicb leveldb badger" \
       VERSION="${VERSION}" \
       make build
 

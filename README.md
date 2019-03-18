@@ -120,7 +120,7 @@ You can enable supported Bleve Extensions for like following:
 ```bash
 $ make \
     GOOS=linux \
-    BUILD_TAGS="kagome icu libstemmer cld2 cznicb leveldb" \
+    BUILD_TAGS="kagome icu libstemmer cld2 cznicb leveldb badger" \
     CGO_ENABLED=1 \
     build
 ```
@@ -131,13 +131,12 @@ $ make \
 ```bash
 $ make GOOS=darwin \
     GOOS=darwin \
-    BUILD_TAGS="kagome icu libstemmer cld2 cznicb leveldb" \
+    BUILD_TAGS="kagome icu libstemmer cld2 cznicb leveldb badger" \
     CGO_ENABLED=1 \
     CGO_LDFLAGS="-L/usr/local/opt/icu4c/lib" \
     CGO_CFLAGS="-I/usr/local/opt/icu4c/include" \
     build
 ```
-
 
 Please refer to the following table for details of Bleve Extensions:
 
@@ -149,7 +148,7 @@ Please refer to the following table for details of Bleve Extensions:
 | libstemmer                 | 1           | Enable Language Stemmer (Danish, German, English, Spanish, Finnish, French, Hungarian, Italian, Dutch, Norwegian, Portuguese, Romanian, Russian, Swedish, Turkish) |
 | cznicb                     | 0           | Enable cznicb KV store                       |
 | leveldb                    | 1           | Enable LevelDB                               |
-
+| badger                     | 0           | Enable Badger                                |
 
 You can see the binary file when build successful like so:
 
@@ -164,7 +163,7 @@ blast-index
 Running a Blast index node is easy. Start Blast data node like so:
 
 ```bash
-$ ./bin/blast-index start --node-id=index1 --data-dir=/tmp/blast/index1 --bind-addr=:6060 --grpc-addr=:5050 --http-addr=:8080 --index-mapping-file ./example/index_mapping.json
+$ ./bin/blast-index start --node-id=index1 --data-dir=/tmp/blast/index1 --bind-addr=:6060 --grpc-addr=:5050 --http-addr=:8080 --index-mapping-file=./example/index_mapping.json
 ```
 
 Please refer to following document for details of index mapping:
@@ -433,8 +432,8 @@ $ curl -X DELETE 'http://127.0.0.1:8080/documents/enwiki_1'
 Blast is easy to bring up the cluster. Blast data node is already running, but that is not fault tolerant. If you need to increase the fault tolerance, bring up 2 more data nodes like so:
 
 ```bash
-$ ./bin/blast-index start --node-id=index2 --data-dir=/tmp/blast/index2 --bind-addr=:6061 --grpc-addr=:5051 --http-addr=:8081 --index-mapping-file ./example/index_mapping.json --join-addr=:5050
-$ ./bin/blast-index start --node-id=index3 --data-dir=/tmp/blast/index3 --bind-addr=:6062 --grpc-addr=:5052 --http-addr=:8082 --index-mapping-file ./example/index_mapping.json --join-addr=:5050
+$ ./bin/blast-index start --node-id=index2 --data-dir=/tmp/blast/index2 --bind-addr=:6061 --grpc-addr=:5051 --http-addr=:8081 --index-mapping-file=./example/index_mapping.json --join-addr=:5050
+$ ./bin/blast-index start --node-id=index3 --data-dir=/tmp/blast/index3 --bind-addr=:6062 --grpc-addr=:5052 --http-addr=:8082 --index-mapping-file=./example/index_mapping.json --join-addr=:5050
 ```
 
 _Above example shows each Blast node running on the same host, so each node must listen on different ports. This would not be necessary if each node ran on a different host._
