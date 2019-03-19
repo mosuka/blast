@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Fixed some badger bugs #40
 - Restructure store package #36
 - Update examples #32
 - update Makefile #31
