@@ -624,7 +624,7 @@ $ for FILE in $(find ~/tmp/enwiki -type f -name '*' | sort)
     cat ${FILE} | while read -r LINE; do
       TIMESTAMP=$(date -u "+%Y-%m-%dT%H:%M:%SZ")
       ID=$(echo ${LINE} | jq -r .id)
-      FIELDS=$(echo "${LINE}" | jq -c -r '{url: .url, title_en: .title, text_en: .text, timestamp: "'${TIMESTAMP}'"}')
+      FIELDS=$(echo "${LINE}" | jq -c -r '{url: .url, title_en: .title, text_en: .text, timestamp: "'${TIMESTAMP}'", _type: "enwiki"}')
       echo "- ${ID} ${FIELDS}"
       curl -X PUT "http://127.0.0.1:8080/documents/${ID}" -d "${FIELDS}"
     done
