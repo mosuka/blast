@@ -40,8 +40,7 @@ Blast makes it easy for programmers to develop search applications with advanced
 
 ## Installing dependencies
 
-Blast requires some C/C++ libraries. The following sections are instructions for satisfying dependencies on particular platforms.
-
+Blast requires some C/C++ libraries if you need to enable cld2, icu, libstemmer or leveldb. The following sections are instructions for satisfying dependencies on particular platforms.
 
 ### Ubuntu 18.10
 
@@ -104,15 +103,16 @@ $ make \
     build
 ```
 
-Blast supports some [Bleve Extensions (blevex)](https://github.com/blevesearch/blevex). If you want to build with them, please set `CGO_LDFLAGS`, `CGO_CFLAGS`, `CGO_ENABLED` and `BUILD_TAGS`. For example, enable Japanese Language Analyzer like following:
+Blast supports some [Bleve Extensions (blevex)](https://github.com/blevesearch/blevex). If you want to build with them, please set `CGO_LDFLAGS`, `CGO_CFLAGS`, `CGO_ENABLED` and `BUILD_TAGS`. For example, build LevelDB to be available for index storage as follows:
 
 ```bash
 $ make \
-    BUILD_TAGS=kagome \
+    BUILD_TAGS=leveldb \
+    CGO_ENABLED=1 \
     build
 ```
 
-You can enable supported Bleve Extensions for like following:
+You can enable all the Bleve extensions supported by Blast as follows:
 
 
 ###  Linux
@@ -138,6 +138,9 @@ $ make GOOS=darwin \
     build
 ```
 
+
+### Build flags
+
 Please refer to the following table for details of Bleve Extensions:
 
 | BUILD_TAGS                 | CGO_ENABLED | Description                                  |
@@ -149,6 +152,11 @@ Please refer to the following table for details of Bleve Extensions:
 | cznicb                     | 0           | Enable cznicb KV store                       |
 | leveldb                    | 1           | Enable LevelDB                               |
 | badger                     | 0           | Enable Badger                                |
+
+If you want to enable the feature whose `CGO_ENABLE` is `1`, please install it referring to the Installing dependencies section above.
+
+
+### Binaries
 
 You can see the binary file when build successful like so:
 
