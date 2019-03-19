@@ -8,6 +8,7 @@ import (
 
 // RangeIterator implements blevesearch store iterator
 type RangeIterator struct {
+	txn      *badger.Txn
 	iterator *badger.Iterator
 	start    []byte
 	stop     []byte
@@ -61,10 +62,15 @@ func (i *RangeIterator) Valid() bool {
 		return false
 	}
 	return true
+	//return i.iterator.Valid()
 }
 
 // Close closes the current iterator and commit its transaction
 func (i *RangeIterator) Close() error {
 	i.iterator.Close()
+	err := i.txn.Commit(nil)
+	if err != nil {
+		return err
+	}
 	return nil
 }

@@ -7,9 +7,8 @@ import (
 
 // Reader implements bleve/Store/Reader interface
 type Reader struct {
-	itrOpts badger.IteratorOptions
-	s       *Store
-	txn     *badger.Txn
+	s   *Store
+	txn *badger.Txn
 }
 
 // Get fetch the value of the specified key from the store
@@ -28,25 +27,27 @@ func (r *Reader) MultiGet(keys [][]byte) ([][]byte, error) {
 
 // PrefixIterator initialize a new prefix iterator
 func (r *Reader) PrefixIterator(k []byte) store.KVIterator {
-	itr := r.txn.NewIterator(r.itrOpts)
-	rv := PrefixIterator{
-		iterator: itr,
+	txn := r.s.db.NewTransaction(false)
+	rv := &PrefixIterator{
+		txn:      txn,
+		iterator: txn.NewIterator(badger.DefaultIteratorOptions),
 		prefix:   k,
 	}
 	rv.iterator.Seek(k)
-	return &rv
+	return rv
 }
 
 // RangeIterator initialize a new range iterator
 func (r *Reader) RangeIterator(start, end []byte) store.KVIterator {
-	itr := r.txn.NewIterator(r.itrOpts)
-	rv := RangeIterator{
-		iterator: itr,
+	txn := r.s.db.NewTransaction(false)
+	rv := &RangeIterator{
+		txn:      txn,
+		iterator: txn.NewIterator(badger.DefaultIteratorOptions),
 		start:    start,
 		stop:     end,
 	}
 	rv.iterator.Seek(start)
-	return &rv
+	return rv
 }
 
 // Close closes the current reader and do some cleanup

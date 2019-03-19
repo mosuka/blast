@@ -8,6 +8,7 @@ import (
 
 // PrefixIterator blevesearch prefix-iterator implementation
 type PrefixIterator struct {
+	txn      *badger.Txn
 	iterator *badger.Iterator
 	prefix   []byte
 }
@@ -53,5 +54,9 @@ func (i *PrefixIterator) Valid() bool {
 // Close closes the current iterator and commit its transaction
 func (i *PrefixIterator) Close() error {
 	i.iterator.Close()
+	err := i.txn.Commit(nil)
+	if err != nil {
+		return err
+	}
 	return nil
 }
