@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Support bulk update #41
 - Support Badger #38
 - Add index stats #37
 - Add Wikipedia example #35
