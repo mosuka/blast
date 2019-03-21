@@ -503,20 +503,18 @@ func (s *RaftServer) Search(request *bleve.SearchRequest) (*bleve.SearchResult, 
 	return result, nil
 }
 
-func (s *RaftServer) Index(doc *index.Document) error {
-	s.logger.Printf("[DEBUG] index %v", doc)
-
+func (s *RaftServer) Index(docs []*index.Document) (*index.UpdateResult, error) {
 	if s.raft.State() != raft.Leader {
 		// forward to leader node
 		leaderId, err := s.LeaderID(60 * time.Second)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		node, err := s.getMetadata(string(leaderId))
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
-			return nil
+			return nil, err
 		}
 
 		client, err := NewGRPCClient(string(node.GrpcAddr))
@@ -528,56 +526,64 @@ func (s *RaftServer) Index(doc *index.Document) error {
 		}()
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
-			return nil
+			return nil, err
 		}
 
-		err = client.Index(doc)
+		result, err := client.Index(docs)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
-			return nil
+			return nil, err
+		}
+		s.logger.Printf("[DEBUG] %v", result)
+
+		return result, nil
+	}
+
+	count := int32(0)
+	for _, doc := range docs {
+		// Document -> Any
+		docAny := &any.Any{}
+		err := protobuf.UnmarshalAny(doc, docAny)
+		if err != nil {
+			return nil, err
 		}
 
-		return nil
+		c := &index.IndexCommand{
+			Type: index.IndexCommand_INDEX_DOCUMENT,
+			Data: docAny,
+		}
+
+		msg, err := proto.Marshal(c)
+		if err != nil {
+			return nil, err
+		}
+
+		f := s.raft.Apply(msg, 10*time.Second)
+		err = f.Error()
+		if err != nil {
+			return nil, err
+		}
+
+		count++
 	}
 
-	// Document -> Any
-	docAny := &any.Any{}
-	err := protobuf.UnmarshalAny(doc, docAny)
-	if err != nil {
-		return err
-	}
-
-	c := &index.IndexCommand{
-		Type: index.IndexCommand_INDEX_DOCUMENT,
-		Data: docAny,
-	}
-
-	msg, err := proto.Marshal(c)
-	if err != nil {
-		return err
-	}
-
-	f := s.raft.Apply(msg, 10*time.Second)
-	err = f.Error()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return &index.UpdateResult{
+		Count: count,
+	}, nil
 }
 
-func (s *RaftServer) Delete(doc *index.Document) error {
+func (s *RaftServer) Delete(docs []*index.Document) (*index.UpdateResult, error) {
 	if s.raft.State() != raft.Leader {
 		// forward to leader node
 		leaderId, err := s.LeaderID(60 * time.Second)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		node, err := s.getMetadata(string(leaderId))
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
-			return nil
+			return nil, err
 		}
 
 		client, err := NewGRPCClient(string(node.GrpcAddr))
@@ -589,42 +595,50 @@ func (s *RaftServer) Delete(doc *index.Document) error {
 		}()
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
-			return nil
+			return nil, err
 		}
 
-		err = client.Delete(doc)
+		result, err := client.Delete(docs)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
-			return nil
+			return nil, err
+		}
+		s.logger.Printf("[DEBUG] %v", result)
+
+		return result, nil
+	}
+
+	count := int32(0)
+	for _, doc := range docs {
+		// Document -> Any
+		docAny := &any.Any{}
+		err := protobuf.UnmarshalAny(doc, docAny)
+		if err != nil {
+			return nil, err
 		}
 
-		return nil
+		c := &index.IndexCommand{
+			Type: index.IndexCommand_DELETE_DOCUMENT,
+			Data: docAny,
+		}
+
+		msg, err := proto.Marshal(c)
+		if err != nil {
+			return nil, err
+		}
+
+		f := s.raft.Apply(msg, 10*time.Second)
+		err = f.Error()
+		if err != nil {
+			return nil, err
+		}
+
+		count++
 	}
 
-	// Document -> Any
-	docAny := &any.Any{}
-	err := protobuf.UnmarshalAny(doc, docAny)
-	if err != nil {
-		return err
-	}
-
-	c := &index.IndexCommand{
-		Type: index.IndexCommand_DELETE_DOCUMENT,
-		Data: docAny,
-	}
-
-	msg, err := proto.Marshal(c)
-	if err != nil {
-		return err
-	}
-
-	f := s.raft.Apply(msg, 10*time.Second)
-	err = f.Error()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return &index.UpdateResult{
+		Count: count,
+	}, nil
 }
 
 func (s *RaftServer) Stats() (*index.Stats, error) {

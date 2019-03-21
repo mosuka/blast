@@ -181,19 +181,8 @@ func (c *GRPCClient) Search(searchRequest *bleve.SearchRequest, opts ...grpc.Cal
 	return searchResult, nil
 }
 
-func (c *GRPCClient) Index(doc *index.Document, opts ...grpc.CallOption) error {
-	_, err := c.client.Index(c.ctx, doc, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return errors.New(st.Message())
-	}
-
-	return nil
-}
-
-func (c *GRPCClient) BulkIndex(docs []*index.Document, opts ...grpc.CallOption) (*index.BulkResult, error) {
-	stream, err := c.client.BulkIndex(c.ctx, opts...)
+func (c *GRPCClient) Index(docs []*index.Document, opts ...grpc.CallOption) (*index.UpdateResult, error) {
+	stream, err := c.client.Index(c.ctx, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
@@ -216,19 +205,8 @@ func (c *GRPCClient) BulkIndex(docs []*index.Document, opts ...grpc.CallOption) 
 	return rep, nil
 }
 
-func (c *GRPCClient) Delete(doc *index.Document, opts ...grpc.CallOption) error {
-	_, err := c.client.Delete(c.ctx, doc, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return errors.New(st.Message())
-	}
-
-	return nil
-}
-
-func (c *GRPCClient) BulkDelete(docs []*index.Document, opts ...grpc.CallOption) (*index.BulkResult, error) {
-	stream, err := c.client.BulkDelete(c.ctx, opts...)
+func (c *GRPCClient) Delete(docs []*index.Document, opts ...grpc.CallOption) (*index.UpdateResult, error) {
+	stream, err := c.client.Delete(c.ctx, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
