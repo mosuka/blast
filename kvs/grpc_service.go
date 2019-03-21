@@ -38,11 +38,11 @@ func NewService(store *RaftServer, logger *log.Logger) (*Service, error) {
 	}, nil
 }
 
-func (s *Service) Join(ctx context.Context, req *raft.JoinRequest) (*empty.Empty, error) {
+func (s *Service) Join(ctx context.Context, req *raft.Node) (*empty.Empty, error) {
 	s.logger.Printf("[INFO] %v", req)
 
 	// join node to the cluster
-	err := s.store.Join(req.Node.Id, req.Node.BindAddr)
+	err := s.store.Join(req.Id, req.BindAddr)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return nil, err
@@ -51,11 +51,11 @@ func (s *Service) Join(ctx context.Context, req *raft.JoinRequest) (*empty.Empty
 	return &empty.Empty{}, nil
 }
 
-func (s *Service) Leave(ctx context.Context, req *raft.LeaveRequest) (*empty.Empty, error) {
+func (s *Service) Leave(ctx context.Context, req *raft.Node) (*empty.Empty, error) {
 	s.logger.Printf("[INFO] %v", req)
 
 	// leave node from the cluster
-	err := s.store.Leave(req.Node.Id)
+	err := s.store.Leave(req.Id)
 	if err != nil {
 		return nil, err
 	}

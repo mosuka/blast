@@ -86,10 +86,7 @@ func NewServer(nodeId string, bindAddr string, grpcAddr string, httpAddr string,
 			BindAddr: bindAddr,
 		}
 
-		joinReq := &raft.JoinRequest{
-			Node: node,
-		}
-		_, err = client.Join(joinReq)
+		_, err = client.Join(node)
 		if err != nil {
 			server.logger.Printf("[ERR] %v", err)
 			return nil

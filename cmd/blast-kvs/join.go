@@ -44,9 +44,6 @@ func join(c *cli.Context) error {
 		Id:       id,
 		BindAddr: addr,
 	}
-	req := &raft.JoinRequest{
-		Node: node,
-	}
 
 	client, err := kvs.NewClient(grpcAddr)
 	if err != nil {
@@ -59,7 +56,7 @@ func join(c *cli.Context) error {
 		}
 	}()
 
-	_, err = client.Join(req)
+	_, err = client.Join(node)
 	if err != nil {
 		return err
 	}

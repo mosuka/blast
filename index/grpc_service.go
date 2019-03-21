@@ -44,12 +44,12 @@ func NewGRPCService(store *RaftServer, logger *log.Logger) (*GRPCService, error)
 	}, nil
 }
 
-func (s *GRPCService) Join(ctx context.Context, req *raft.JoinRequest) (*empty.Empty, error) {
+func (s *GRPCService) Join(ctx context.Context, req *raft.Node) (*empty.Empty, error) {
 	s.logger.Printf("[INFO] join %v", req)
 
 	resp := &empty.Empty{}
 
-	err := s.raftServer.Join(req.Node)
+	err := s.raftServer.Join(req)
 	if err != nil {
 		return resp, status.Error(codes.Internal, err.Error())
 	}
@@ -57,12 +57,12 @@ func (s *GRPCService) Join(ctx context.Context, req *raft.JoinRequest) (*empty.E
 	return resp, nil
 }
 
-func (s *GRPCService) Leave(ctx context.Context, req *raft.LeaveRequest) (*empty.Empty, error) {
+func (s *GRPCService) Leave(ctx context.Context, req *raft.Node) (*empty.Empty, error) {
 	s.logger.Printf("[INFO] leave %v", req)
 
 	resp := &empty.Empty{}
 
-	err := s.raftServer.Leave(req.Node)
+	err := s.raftServer.Leave(req)
 	if err != nil {
 		return resp, status.Error(codes.Internal, err.Error())
 	}
@@ -70,14 +70,14 @@ func (s *GRPCService) Leave(ctx context.Context, req *raft.LeaveRequest) (*empty
 	return resp, nil
 }
 
-func (s *GRPCService) GetNode(ctx context.Context, req *empty.Empty) (*raft.GetNodeResponse, error) {
+func (s *GRPCService) GetNode(ctx context.Context, req *empty.Empty) (*raft.Node, error) {
 	s.logger.Printf("[INFO] get node %v", req)
 
-	resp := &raft.GetNodeResponse{}
+	resp := &raft.Node{}
 
 	var err error
 
-	resp.Node, err = s.raftServer.GetNode()
+	resp, err = s.raftServer.GetNode()
 	if err != nil {
 		return resp, status.Error(codes.Internal, err.Error())
 	}
@@ -85,14 +85,14 @@ func (s *GRPCService) GetNode(ctx context.Context, req *empty.Empty) (*raft.GetN
 	return resp, nil
 }
 
-func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*raft.GetClusterResponse, error) {
+func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*raft.Cluster, error) {
 	s.logger.Printf("[INFO] get cluster %v", req)
 
-	resp := &raft.GetClusterResponse{}
+	resp := &raft.Cluster{}
 
 	var err error
 
-	resp.Cluster, err = s.raftServer.GetCluster()
+	resp, err = s.raftServer.GetCluster()
 	if err != nil {
 		return resp, status.Error(codes.Internal, err.Error())
 	}
@@ -113,15 +113,15 @@ func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Em
 	return resp, nil
 }
 
-func (s *GRPCService) Get(ctx context.Context, req *index.GetRequest) (*index.GetResponse, error) {
+func (s *GRPCService) Get(ctx context.Context, req *index.Document) (*index.Document, error) {
 	start := time.Now()
 	defer RecordMetrics(start, "get")
 
-	resp := &index.GetResponse{}
+	resp := &index.Document{}
 
 	s.logger.Printf("[INFO] get %v", req)
 
-	doc, err := s.raftServer.Get(req.Document)
+	resp, err := s.raftServer.Get(req)
 	if err != nil {
 		switch err {
 		case errors.ErrNotFound:
@@ -130,8 +130,6 @@ func (s *GRPCService) Get(ctx context.Context, req *index.GetRequest) (*index.Ge
 			return resp, status.Error(codes.Internal, err.Error())
 		}
 	}
-
-	resp.Document = doc
 
 	return resp, nil
 }
@@ -167,7 +165,7 @@ func (s *GRPCService) Search(ctx context.Context, req *index.SearchRequest) (*in
 	return resp, nil
 }
 
-func (s *GRPCService) Index(ctx context.Context, req *index.IndexRequest) (*empty.Empty, error) {
+func (s *GRPCService) Index(ctx context.Context, req *index.Document) (*empty.Empty, error) {
 	start := time.Now()
 	defer RecordMetrics(start, "index")
 
@@ -176,7 +174,7 @@ func (s *GRPCService) Index(ctx context.Context, req *index.IndexRequest) (*empt
 	resp := &empty.Empty{}
 
 	// index
-	err := s.raftServer.Index(req.Document)
+	err := s.raftServer.Index(req)
 	if err != nil {
 		return resp, status.Error(codes.Internal, err.Error())
 	}
@@ -208,7 +206,7 @@ func (s *GRPCService) BulkIndex(stream index.Index_BulkIndexServer) error {
 	}
 }
 
-func (s *GRPCService) Delete(ctx context.Context, req *index.DeleteRequest) (*empty.Empty, error) {
+func (s *GRPCService) Delete(ctx context.Context, req *index.Document) (*empty.Empty, error) {
 	start := time.Now()
 	defer RecordMetrics(start, "delete")
 
@@ -216,7 +214,7 @@ func (s *GRPCService) Delete(ctx context.Context, req *index.DeleteRequest) (*em
 
 	s.logger.Printf("[INFO] delete %v", req)
 
-	err := s.raftServer.Delete(req.Document)
+	err := s.raftServer.Delete(req)
 	if err != nil {
 		return resp, status.Error(codes.Internal, err.Error())
 	}
@@ -248,20 +246,20 @@ func (s *GRPCService) BulkDelete(stream index.Index_BulkDeleteServer) error {
 	}
 }
 
-func (s *GRPCService) GetStats(ctx context.Context, req *empty.Empty) (*index.GetStatsResponse, error) {
+func (s *GRPCService) GetStats(ctx context.Context, req *empty.Empty) (*index.Stats, error) {
 	start := time.Now()
 	defer RecordMetrics(start, "stats")
 
-	resp := &index.GetStatsResponse{}
+	resp := &index.Stats{}
 
 	s.logger.Printf("[INFO] stats %v", req)
 
-	stats, err := s.raftServer.Stats()
+	var err error
+
+	resp, err = s.raftServer.Stats()
 	if err != nil {
 		return resp, status.Error(codes.Internal, err.Error())
 	}
-
-	resp.Stats = stats
 
 	return resp, nil
 }
