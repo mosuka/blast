@@ -207,9 +207,49 @@ func main() {
 					Value: ":5050",
 					Usage: "gRPC address to connect to",
 				},
+				cli.StringFlag{
+					Name:  "id, i",
+					Value: "",
+					Usage: "document id",
+				},
 			},
-			ArgsUsage: "[id]",
-			Action:    execGet,
+			Action: execGet,
+		},
+		{
+			Name:  "index",
+			Usage: "Index documents in bulk",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "grpc-addr, g",
+					Value: ":5050",
+					Usage: "gRPC address to connect to",
+				},
+				cli.StringFlag{
+					Name:  "id, i",
+					Value: "",
+					Usage: "document id",
+				},
+			},
+			ArgsUsage: "[documents | fields]",
+			Action:    execIndex,
+		},
+		{
+			Name:  "delete",
+			Usage: "Delete documents in bulk",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "grpc-addr, g",
+					Value: ":5050",
+					Usage: "address to connect to",
+				},
+				cli.StringFlag{
+					Name:  "id, i",
+					Value: "",
+					Usage: "document id",
+				},
+			},
+			ArgsUsage: "[documents]",
+			Action:    execDelete,
 		},
 		{
 			Name:  "search",
@@ -223,32 +263,6 @@ func main() {
 			},
 			ArgsUsage: "[search request]",
 			Action:    execSearch,
-		},
-		{
-			Name:  "index",
-			Usage: "Index a document",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "grpc-addr, g",
-					Value: ":5050",
-					Usage: "gRPC address to connect to",
-				},
-			},
-			ArgsUsage: "[id] [fields]",
-			Action:    execIndex,
-		},
-		{
-			Name:  "delete",
-			Usage: "Delete a document",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "grpc-addr, g",
-					Value: ":5050",
-					Usage: "address to connect to",
-				},
-			},
-			ArgsUsage: "[id]",
-			Action:    execDelete,
 		},
 		{
 			Name:  "stats",

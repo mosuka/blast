@@ -208,6 +208,30 @@ func (c *GRPCClient) Index(doc *index.Document, opts ...grpc.CallOption) error {
 	return nil
 }
 
+func (c *GRPCClient) BulkIndex(docs []*index.Document, opts ...grpc.CallOption) (*index.BulkResult, error) {
+	stream, err := c.client.BulkIndex(c.ctx, opts...)
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+
+	for _, doc := range docs {
+		err := stream.Send(doc)
+		if err != nil {
+			c.logger.Printf("[WARN]: %v", err)
+			break
+		}
+	}
+
+	rep, err := stream.CloseAndRecv()
+	if err != nil {
+		return nil, err
+	}
+
+	return rep, nil
+}
+
 func (c *GRPCClient) Delete(doc *index.Document, opts ...grpc.CallOption) error {
 	req := &index.DeleteRequest{
 		Document: doc,
@@ -221,6 +245,30 @@ func (c *GRPCClient) Delete(doc *index.Document, opts ...grpc.CallOption) error 
 	}
 
 	return nil
+}
+
+func (c *GRPCClient) BulkDelete(docs []*index.Document, opts ...grpc.CallOption) (*index.BulkResult, error) {
+	stream, err := c.client.BulkDelete(c.ctx, opts...)
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+
+	for _, doc := range docs {
+		err := stream.Send(doc)
+		if err != nil {
+			c.logger.Printf("[WARN]: %v", err)
+			break
+		}
+	}
+
+	rep, err := stream.CloseAndRecv()
+	if err != nil {
+		return nil, err
+	}
+
+	return rep, nil
 }
 
 func (c *GRPCClient) GetIndexStats(opts ...grpc.CallOption) (*index.Stats, error) {

@@ -1,0 +1,38 @@
+[
+  {
+    "id": "arwiki_1",
+    "fields": {
+      "title_ar": "محرك بحث",
+      "text_ar": "محرك البحث (بالإنجليزية: Search engine) هو نظام لإسترجاع المعلومات صمم للمساعدة على البحث عن المعلومات المخزنة على أي نظام حاسوبي. تعرض نتائج البحث عادة على شكل قائمة لأماكن تواجد المعلومات ومرتبة وفق معايير معينة. تسمح محركات البحث باختصار مدة البحث والتغلب على مشكلة أحجام البيانات المتصاعدة (إغراق معلوماتي).",
+      "timestamp": "2018-03-25T18:04:00Z",
+      "_type": "arwiki"
+    }
+  },
+  {
+    "id": "bgwiki_1",
+    "fields": {
+      "title_bg": "Търсачка",
+      "text_bg": "Търсачка или търсеща машина (на английски: Web search engine) е специализиран софтуер за извличане на информация, съхранена в компютърна система или мрежа. Това може да е персонален компютър, Интернет, корпоративна мрежа и т.н. Без допълнителни уточнения, най-често под търсачка се разбира уеб(-)търсачка, която търси в Интернет. Други видове търсачки са корпоративните търсачки, които търсят в интранет мрежите, личните търсачки – за индивидуалните компютри и мобилните търсачки. В търсачката потребителят (търсещият) прави запитване за съдържание, отговарящо на определен критерий (обикновено такъв, който съдържа определени думи и фрази). В резултат се получават списък от точки, които отговарят, пълно или частично, на този критерий. Търсачките обикновено използват редовно подновявани индекси, за да оперират бързо и ефикасно. Някои търсачки също търсят в информацията, която е на разположение в нюзгрупите и други големи бази данни. За разлика от Уеб директориите, които се поддържат от хора редактори, търсачките оперират алгоритмично. Повечето Интернет търсачки са притежавани от различни корпорации.",
+      "timestamp": "2018-07-11T11:03:00Z",
+      "_type": "bgwiki"
+    }
+  },
+  {
+    "id": "cawiki_1",
+    "fields": {
+      "title_ca": "Motor de cerca",
+      "text_ca": "Un motor de cerca o de recerca o bé cercador és un programa informàtic dissenyat per ajudar a trobar informació emmagatzemada en un sistema informàtic com ara una xarxa, Internet, un servidor o un ordinador personal. L'objectiu principal és el de trobar altres programes informàtics, pàgines web i documents, entre d'altres. A partir d'una determinada paraula o paraules o una determinada frase l'usuari demana un contingut sota un criteri determinat i retorna una llista de referències que compleixin aquest criteri. El procés es realitza a través de les metadades, vies per comunicar informació que utilitzen els motors per cada cerca. Els índex que utilitzen els cercadors sempre estan actualitzats a través d'un robot web per generar rapidesa i eficàcia en la recerca. Els directoris, en canvi, són gestionats per editors humans.",
+      "timestamp": "2018-07-09T18:07:00Z",
+      "_type": "cawiki"
+    }
+  },
+  {
+    "id": "zhwiki_1",
+    "fields": {
+      "title_zh": "搜索引擎",
+      "text_zh": "搜索引擎（英语：search engine）是一种信息检索系统，旨在协助搜索存储在计算机系统中的信息。搜索结果一般被称为“hits”，通常会以表单的形式列出。网络搜索引擎是最常见、公开的一种搜索引擎，其功能为搜索万维网上储存的信息.",
+      "timestamp": "2018-08-27T05:47:00Z",
+      "_type": "zhwiki"
+    }
+  }
+]

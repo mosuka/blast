@@ -129,7 +129,7 @@ $ make \
 #### macOS
 
 ```bash
-$ make GOOS=darwin \
+$ make \
     GOOS=darwin \
     BUILD_TAGS="kagome icu libstemmer cld2 cznicb leveldb badger" \
     CGO_ENABLED=1 \
@@ -166,6 +166,41 @@ blast-index
 ```
 
 
+## Testing Blast
+
+If you want to test your changes, run command like following:
+
+```bash
+$ make \
+    test
+```
+
+You can test with all the Bleve extensions supported by Blast as follows:
+
+
+###  Linux
+
+```bash
+$ make \
+    BUILD_TAGS="kagome icu libstemmer cld2 cznicb leveldb badger" \
+    CGO_ENABLED=1 \
+    test
+```
+
+
+#### macOS
+
+```bash
+$ make \
+    BUILD_TAGS="kagome icu libstemmer cld2 cznicb leveldb badger" \
+    CGO_ENABLED=1 \
+    CGO_LDFLAGS="-L/usr/local/opt/icu4c/lib" \
+    CGO_CFLAGS="-I/usr/local/opt/icu4c/include" \
+    build
+```
+
+
+
 ## Starting Blast index node
 
 Running a Blast index node is easy. Start Blast data node like so:
@@ -188,7 +223,15 @@ You can now put, get, search and delete the documents via CLI.
 For document indexing, execute the following command:
 
 ```bash
-$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast-index index --grpc-addr=:5050 enwiki_1
+$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast-index index --grpc-addr=:5050 --id=enwiki_1
+```
+
+You can see the result in JSON format. The result of the above command is:
+
+```bash
+{
+  "count": 1
+}
 ```
 
 
@@ -197,7 +240,7 @@ $ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast-index index --grpc-addr
 Getting a document is as following:
 
 ```bash
-$ ./bin/blast-index get --grpc-addr=:5050 enwiki_1
+$ ./bin/blast-index get --grpc-addr=:5050 --id=enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -390,7 +433,49 @@ Please refer to following document for details of search request and result:
 Deleting a document is as following:
 
 ```bash
-$ ./bin/blast-index delete --grpc-addr=:5050 enwiki_1
+$ ./bin/blast-index delete --grpc-addr=:5050 --id=enwiki_1
+```
+
+You can see the result in JSON format. The result of the above command is:
+
+```bash
+{
+  "count": 1
+}
+```
+
+
+### Indexing documents in bulk via CLI
+
+Indexing documents in bulk, run the following command:
+
+```bash
+$ cat ./example/docs_wiki.json | xargs -0 ./bin/blast-index index --grpc-addr=:5050
+```
+
+You can see the result in JSON format. The result of the above command is:
+
+```bash
+{
+  "count": 4
+}
+```
+
+
+### Deleting documents in bulk via CLI
+
+Deleting documents in bulk, run the following command:
+
+```bash
+$ cat ./example/docs_wiki.json | xargs -0 ./bin/blast-index delete --grpc-addr=:5050
+```
+
+You can see the result in JSON format. The result of the above command is:
+
+```bash
+{
+  "count": 4
+}
 ```
 
 
@@ -401,10 +486,10 @@ Also you can do above commands via HTTP REST API that listened port 8080.
 
 ### Indexing a document via HTTP REST API
 
-Putting a document via HTTP is as following:
+Indexing a document via HTTP is as following:
 
 ```bash
-$ curl -X PUT 'http://127.0.0.1:8080/documents/enwiki_1' -d @./example/doc_enwiki_1.json
+$ curl -s -X PUT 'http://127.0.0.1:8080/documents/enwiki_1' -d @./example/doc_enwiki_1.json
 ```
 
 
@@ -413,7 +498,7 @@ $ curl -X PUT 'http://127.0.0.1:8080/documents/enwiki_1' -d @./example/doc_enwik
 Getting a document via HTTP is as following:
 
 ```bash
-$ curl -X GET 'http://127.0.0.1:8080/documents/enwiki_1'
+$ curl -s -X GET 'http://127.0.0.1:8080/documents/enwiki_1'
 ```
 
 
@@ -432,6 +517,24 @@ Deleting a document via HTTP is as following:
 
 ```bash
 $ curl -X DELETE 'http://127.0.0.1:8080/documents/enwiki_1'
+```
+
+
+### Indexing documents in bulk via HTTP REST API
+
+Indexing documents in bulk via HTTP is as following:
+
+```bash
+$ curl -s -X PUT 'http://127.0.0.1:8080/documents' -d @./example/docs_wiki.json
+```
+
+
+### Deleting documents in bulk via HTTP REST API
+
+Deleting documents in bulk via HTTP is as following:
+
+```bash
+$ curl -X DELETE 'http://127.0.0.1:8080/documents' -d @./example/docs_wiki.json
 ```
 
 
@@ -620,13 +723,9 @@ $ ./WikiExtractor.py -o ~/tmp/enwiki --json ~/tmp/enwiki-20190101-pages-articles
 ```bash
 $ for FILE in $(find ~/tmp/enwiki -type f -name '*' | sort)
   do
-    echo "${FILE}"
-    cat ${FILE} | while read -r LINE; do
-      TIMESTAMP=$(date -u "+%Y-%m-%dT%H:%M:%SZ")
-      ID=$(echo ${LINE} | jq -r .id)
-      FIELDS=$(echo "${LINE}" | jq -c -r '{url: .url, title_en: .title, text_en: .text, timestamp: "'${TIMESTAMP}'", _type: "enwiki"}')
-      echo "- ${ID} ${FIELDS}"
-      curl -X PUT "http://127.0.0.1:8080/documents/${ID}" -d "${FIELDS}"
-    done
+    echo "Indexing ${FILE}"
+    TIMESTAMP=$(date -u "+%Y-%m-%dT%H:%M:%SZ")
+    DOCS=$(cat ${FILE} | jq -r '. + {fields: {url: .url, title_en: .title, text_en: .text, timestamp: "'${TIMESTAMP}'", _type: "enwiki"}} | del(.url) | del(.title) | del(.text) | del(.fields.id)' | jq -s)
+    curl -s -X PUT -H 'Content-Type: application/json' "http://127.0.0.1:8080/documents" -d "${DOCS}"
   done
 ```

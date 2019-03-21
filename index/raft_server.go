@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
-	_ "github.com/blevesearch/bleve/config"
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
