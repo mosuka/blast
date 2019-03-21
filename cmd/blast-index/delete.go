@@ -15,6 +15,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -26,18 +27,43 @@ import (
 
 func execDelete(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
+	id := c.String("id")
 
-	id := c.Args().Get(0)
+	// create documents
+	docs := make([]*pbindex.Document, 0)
 
 	if id == "" {
-		err := errors.New("key argument must be set")
-		return err
+		if c.NArg() == 0 {
+			err := errors.New("arguments are not correct")
+			return err
+		}
+
+		// documents
+		docsStr := c.Args().Get(0)
+
+		var docMaps []map[string]interface{}
+		err := json.Unmarshal([]byte(docsStr), &docMaps)
+		if err != nil {
+			return err
+		}
+
+		for _, docMap := range docMaps {
+			// create document
+			doc := &pbindex.Document{
+				Id: docMap["id"].(string),
+			}
+
+			docs = append(docs, doc)
+		}
+	} else {
+		doc := &pbindex.Document{
+			Id: id,
+		}
+
+		docs = append(docs, doc)
 	}
 
-	doc := &pbindex.Document{
-		Id: id,
-	}
-
+	// create client
 	client, err := index.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
@@ -49,10 +75,17 @@ func execDelete(c *cli.Context) error {
 		}
 	}()
 
-	err = client.Delete(doc)
+	result, err := client.BulkDelete(docs)
 	if err != nil {
 		return err
 	}
+
+	resultBytes, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", string(resultBytes)))
 
 	return nil
 }

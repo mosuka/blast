@@ -29,39 +29,70 @@ import (
 
 func execIndex(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
+	id := c.String("id")
 
-	id := c.Args().Get(0)
+	if c.NArg() == 0 {
+		err := errors.New("arguments are not correct")
+		return err
+	}
+
+	// create documents
+	docs := make([]*pbindex.Document, 0)
+
 	if id == "" {
-		err := errors.New("key argument must be set")
-		return err
+		// documents
+		docsStr := c.Args().Get(0)
+
+		var docMaps []map[string]interface{}
+		err := json.Unmarshal([]byte(docsStr), &docMaps)
+		if err != nil {
+			return err
+		}
+
+		for _, docMap := range docMaps {
+			// map[string]interface{} -> Any
+			fieldsAny := &any.Any{}
+			err = protobuf.UnmarshalAny(docMap["fields"], fieldsAny)
+			if err != nil {
+				return err
+			}
+
+			// create document
+			doc := &pbindex.Document{
+				Id:     docMap["id"].(string),
+				Fields: fieldsAny,
+			}
+
+			docs = append(docs, doc)
+		}
+	} else {
+		// document
+		fields := c.Args().Get(0)
+
+		// string -> map[string]interface{}
+		var fieldsMap map[string]interface{}
+		err := json.Unmarshal([]byte(fields), &fieldsMap)
+		if err != nil {
+			return err
+		}
+
+		// map[string]interface{} -> Any
+		fieldsAny := &any.Any{}
+		err = protobuf.UnmarshalAny(fieldsMap, fieldsAny)
+		if err != nil {
+			return err
+		}
+
+		// create document
+		doc := &pbindex.Document{
+			Id:     id,
+			Fields: fieldsAny,
+		}
+
+		docs = append(docs, doc)
 	}
 
-	fields := c.Args().Get(1)
-	if fields == "" {
-		err := errors.New("value argument must be set")
-		return err
-	}
-
-	// string -> map[string]interface{}
-	var fieldsMap map[string]interface{}
-	err := json.Unmarshal([]byte(fields), &fieldsMap)
-	if err != nil {
-		return err
-	}
-
-	// map[string]interface{} -> Any
-	fieldsAny := &any.Any{}
-	err = protobuf.UnmarshalAny(fieldsMap, fieldsAny)
-	if err != nil {
-		return err
-	}
-
-	// create document
-	doc := &pbindex.Document{
-		Id:     id,
-		Fields: fieldsAny,
-	}
-
+	// create gRPC client
 	client, err := index.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
@@ -73,10 +104,18 @@ func execIndex(c *cli.Context) error {
 		}
 	}()
 
-	err = client.Index(doc)
+	// index documents in bulk
+	result, err := client.BulkIndex(docs)
 	if err != nil {
 		return err
 	}
+
+	resultBytes, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", string(resultBytes)))
 
 	return nil
 }

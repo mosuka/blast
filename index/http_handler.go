@@ -21,14 +21,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/any"
-	"github.com/mosuka/blast/protobuf"
-	"github.com/mosuka/blast/protobuf/index"
-
 	"github.com/blevesearch/bleve"
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/gorilla/mux"
 	"github.com/mosuka/blast/errors"
 	blasthttp "github.com/mosuka/blast/http"
+	"github.com/mosuka/blast/protobuf"
+	"github.com/mosuka/blast/protobuf/index"
+	pbindex "github.com/mosuka/blast/protobuf/index"
 	"github.com/mosuka/blast/version"
 )
 
@@ -186,9 +186,13 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
 	}()
 
-	vars := mux.Vars(r)
+	// create documents
+	docs := make([]*index.Document, 0)
 
-	fieldsBytes, err := ioutil.ReadAll(r.Body)
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		httpStatus = http.StatusInternalServerError
 
@@ -205,11 +209,102 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// bytes -> map[sgtring]inerface{}
-	var fieldsMap map[string]interface{}
-	err = json.Unmarshal(fieldsBytes, &fieldsMap)
+	if id == "" {
+		// Indexing documents in bulk
+		var docMaps []map[string]interface{}
+		err := json.Unmarshal(bodyBytes, &docMaps)
+		if err != nil {
+			httpStatus = http.StatusBadRequest
+
+			msgMap := map[string]interface{}{
+				"message": err.Error(),
+				"status":  httpStatus,
+			}
+
+			content, err = blasthttp.NewJSONMessage(msgMap)
+			if err != nil {
+				h.logger.Printf("[ERR] %v", err)
+			}
+
+			return
+		}
+
+		for _, docMap := range docMaps {
+			fieldsAny := &any.Any{}
+			err = protobuf.UnmarshalAny(docMap["fields"], fieldsAny)
+			if err != nil {
+				httpStatus = http.StatusBadRequest
+
+				msgMap := map[string]interface{}{
+					"message": err.Error(),
+					"status":  httpStatus,
+				}
+
+				content, err = blasthttp.NewJSONMessage(msgMap)
+				if err != nil {
+					h.logger.Printf("[ERR] %v", err)
+				}
+
+				return
+			}
+
+			doc := &pbindex.Document{
+				Id:     docMap["id"].(string),
+				Fields: fieldsAny,
+			}
+
+			docs = append(docs, doc)
+		}
+	} else {
+		// Indexing a document
+		var fieldsMap map[string]interface{}
+		err := json.Unmarshal(bodyBytes, &fieldsMap)
+		if err != nil {
+			httpStatus = http.StatusBadRequest
+
+			msgMap := map[string]interface{}{
+				"message": err.Error(),
+				"status":  httpStatus,
+			}
+
+			content, err = blasthttp.NewJSONMessage(msgMap)
+			if err != nil {
+				h.logger.Printf("[ERR] %v", err)
+			}
+
+			return
+		}
+
+		fieldsAny := &any.Any{}
+		err = protobuf.UnmarshalAny(fieldsMap, fieldsAny)
+		if err != nil {
+			httpStatus = http.StatusBadRequest
+
+			msgMap := map[string]interface{}{
+				"message": err.Error(),
+				"status":  httpStatus,
+			}
+
+			content, err = blasthttp.NewJSONMessage(msgMap)
+			if err != nil {
+				h.logger.Printf("[ERR] %v", err)
+			}
+
+			return
+		}
+
+		doc := &pbindex.Document{
+			Id:     id,
+			Fields: fieldsAny,
+		}
+
+		docs = append(docs, doc)
+	}
+
+	// index documents in bulk
+	result, err := h.client.BulkIndex(docs)
 	if err != nil {
-		httpStatus = http.StatusBadRequest
+		httpStatus = http.StatusInternalServerError
 
 		msgMap := map[string]interface{}{
 			"message": err.Error(),
@@ -224,31 +319,7 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// map[string]interface{} -> Any
-	fieldsAny := &any.Any{}
-	err = protobuf.UnmarshalAny(fieldsMap, fieldsAny)
-	if err != nil {
-		httpStatus = http.StatusBadRequest
-
-		msgMap := map[string]interface{}{
-			"message": err.Error(),
-			"status":  httpStatus,
-		}
-
-		content, err = blasthttp.NewJSONMessage(msgMap)
-		if err != nil {
-			h.logger.Printf("[ERR] %v", err)
-		}
-
-		return
-	}
-
-	doc := &index.Document{
-		Id:     vars["id"],
-		Fields: fieldsAny,
-	}
-
-	err = h.client.Index(doc)
+	content, err = json.MarshalIndent(result, "", "  ")
 	if err != nil {
 		httpStatus = http.StatusInternalServerError
 
@@ -287,13 +358,84 @@ func (h *DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
 	}()
 
-	vars := mux.Vars(r)
+	// create documents
+	docs := make([]*index.Document, 0)
 
-	doc := &index.Document{
-		Id: vars["id"],
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	bodyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		httpStatus = http.StatusInternalServerError
+
+		msgMap := map[string]interface{}{
+			"message": err.Error(),
+			"status":  httpStatus,
+		}
+
+		content, err = blasthttp.NewJSONMessage(msgMap)
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+
+		return
 	}
 
-	err := h.client.Delete(doc)
+	if id == "" {
+		// Deleting documents in bulk
+		var docMaps []map[string]interface{}
+		err := json.Unmarshal(bodyBytes, &docMaps)
+		if err != nil {
+			httpStatus = http.StatusBadRequest
+
+			msgMap := map[string]interface{}{
+				"message": err.Error(),
+				"status":  httpStatus,
+			}
+
+			content, err = blasthttp.NewJSONMessage(msgMap)
+			if err != nil {
+				h.logger.Printf("[ERR] %v", err)
+			}
+
+			return
+		}
+
+		for _, docMap := range docMaps {
+			doc := &pbindex.Document{
+				Id: docMap["id"].(string),
+			}
+
+			docs = append(docs, doc)
+		}
+	} else {
+		// Deleting a document
+		doc := &pbindex.Document{
+			Id: id,
+		}
+
+		docs = append(docs, doc)
+	}
+
+	// delete documents in bulk
+	result, err := h.client.BulkDelete(docs)
+	if err != nil {
+		httpStatus = http.StatusInternalServerError
+
+		msgMap := map[string]interface{}{
+			"message": err.Error(),
+			"status":  httpStatus,
+		}
+
+		content, err = blasthttp.NewJSONMessage(msgMap)
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+
+		return
+	}
+
+	content, err = json.MarshalIndent(result, "", "  ")
 	if err != nil {
 		httpStatus = http.StatusInternalServerError
 

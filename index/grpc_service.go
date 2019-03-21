@@ -16,6 +16,7 @@ package index
 
 import (
 	"context"
+	"io"
 	"log"
 	"time"
 
@@ -183,6 +184,30 @@ func (s *GRPCService) Index(ctx context.Context, req *index.IndexRequest) (*empt
 	return resp, nil
 }
 
+func (s *GRPCService) BulkIndex(stream index.Index_BulkIndexServer) error {
+	count := int32(0)
+
+	for {
+		doc, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&index.BulkResult{
+				Count: count,
+			})
+		}
+		if err != nil {
+			return err
+		}
+
+		// index
+		err = s.raftServer.Index(doc)
+		if err != nil {
+			return err
+		}
+
+		count++
+	}
+}
+
 func (s *GRPCService) Delete(ctx context.Context, req *index.DeleteRequest) (*empty.Empty, error) {
 	start := time.Now()
 	defer RecordMetrics(start, "delete")
@@ -197,6 +222,30 @@ func (s *GRPCService) Delete(ctx context.Context, req *index.DeleteRequest) (*em
 	}
 
 	return resp, nil
+}
+
+func (s *GRPCService) BulkDelete(stream index.Index_BulkDeleteServer) error {
+	count := int32(0)
+
+	for {
+		doc, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&index.BulkResult{
+				Count: count,
+			})
+		}
+		if err != nil {
+			return err
+		}
+
+		// index
+		err = s.raftServer.Delete(doc)
+		if err != nil {
+			return err
+		}
+
+		count++
+	}
 }
 
 func (s *GRPCService) GetStats(ctx context.Context, req *empty.Empty) (*index.GetStatsResponse, error) {

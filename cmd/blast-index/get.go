@@ -20,19 +20,17 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mosuka/blast/protobuf"
-
 	"github.com/mosuka/blast/index"
+	"github.com/mosuka/blast/protobuf"
 	pbindex "github.com/mosuka/blast/protobuf/index"
 	"github.com/urfave/cli"
 )
 
 func execGet(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
-
-	id := c.Args().Get(0)
+	id := c.String("id")
 	if id == "" {
-		err := errors.New("key argument must be set")
+		err := errors.New("arguments are not correct")
 		return err
 	}
 
