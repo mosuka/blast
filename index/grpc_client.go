@@ -77,11 +77,7 @@ func (c *GRPCClient) Close() error {
 }
 
 func (c *GRPCClient) Join(node *raft.Node, opts ...grpc.CallOption) error {
-	req := &raft.JoinRequest{
-		Node: node,
-	}
-
-	_, err := c.client.Join(c.ctx, req, opts...)
+	_, err := c.client.Join(c.ctx, node, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
@@ -92,11 +88,7 @@ func (c *GRPCClient) Join(node *raft.Node, opts ...grpc.CallOption) error {
 }
 
 func (c *GRPCClient) Leave(node *raft.Node, opts ...grpc.CallOption) error {
-	req := &raft.LeaveRequest{
-		Node: node,
-	}
-
-	_, err := c.client.Leave(c.ctx, req, opts...)
+	_, err := c.client.Leave(c.ctx, node, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
@@ -107,25 +99,25 @@ func (c *GRPCClient) Leave(node *raft.Node, opts ...grpc.CallOption) error {
 }
 
 func (c *GRPCClient) GetNode(opts ...grpc.CallOption) (*raft.Node, error) {
-	resp, err := c.client.GetNode(c.ctx, &empty.Empty{}, opts...)
+	node, err := c.client.GetNode(c.ctx, &empty.Empty{}, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
 		return nil, errors.New(st.Message())
 	}
 
-	return resp.Node, nil
+	return node, nil
 }
 
 func (c *GRPCClient) GetCluster(opts ...grpc.CallOption) (*raft.Cluster, error) {
-	resp, err := c.client.GetCluster(c.ctx, &empty.Empty{}, opts...)
+	cluster, err := c.client.GetCluster(c.ctx, &empty.Empty{}, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
 		return nil, errors.New(st.Message())
 	}
 
-	return resp.Cluster, nil
+	return cluster, nil
 }
 
 func (c *GRPCClient) Snapshot(opts ...grpc.CallOption) error {
@@ -140,11 +132,7 @@ func (c *GRPCClient) Snapshot(opts ...grpc.CallOption) error {
 }
 
 func (c *GRPCClient) Get(doc *index.Document, opts ...grpc.CallOption) (*index.Document, error) {
-	req := &index.GetRequest{
-		Document: doc,
-	}
-
-	resp, err := c.client.Get(c.ctx, req, opts...)
+	retDoc, err := c.client.Get(c.ctx, doc, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
@@ -156,7 +144,7 @@ func (c *GRPCClient) Get(doc *index.Document, opts ...grpc.CallOption) (*index.D
 		}
 	}
 
-	return resp.Document, nil
+	return retDoc, nil
 }
 
 func (c *GRPCClient) Search(searchRequest *bleve.SearchRequest, opts ...grpc.CallOption) (*bleve.SearchResult, error) {
@@ -194,11 +182,7 @@ func (c *GRPCClient) Search(searchRequest *bleve.SearchRequest, opts ...grpc.Cal
 }
 
 func (c *GRPCClient) Index(doc *index.Document, opts ...grpc.CallOption) error {
-	req := &index.IndexRequest{
-		Document: doc,
-	}
-
-	_, err := c.client.Index(c.ctx, req, opts...)
+	_, err := c.client.Index(c.ctx, doc, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
@@ -233,11 +217,7 @@ func (c *GRPCClient) BulkIndex(docs []*index.Document, opts ...grpc.CallOption) 
 }
 
 func (c *GRPCClient) Delete(doc *index.Document, opts ...grpc.CallOption) error {
-	req := &index.DeleteRequest{
-		Document: doc,
-	}
-
-	_, err := c.client.Delete(c.ctx, req, opts...)
+	_, err := c.client.Delete(c.ctx, doc, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
@@ -272,12 +252,12 @@ func (c *GRPCClient) BulkDelete(docs []*index.Document, opts ...grpc.CallOption)
 }
 
 func (c *GRPCClient) GetIndexStats(opts ...grpc.CallOption) (*index.Stats, error) {
-	resp, err := c.client.GetStats(c.ctx, &empty.Empty{}, opts...)
+	stats, err := c.client.GetStats(c.ctx, &empty.Empty{}, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
 		return nil, errors.New(st.Message())
 	}
 
-	return resp.Stats, nil
+	return stats, nil
 }

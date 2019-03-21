@@ -69,7 +69,7 @@ func (c *Client) Close() error {
 	return c.ctx.Err()
 }
 
-func (c *Client) Join(req *raft.JoinRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *Client) Join(req *raft.Node, opts ...grpc.CallOption) (*empty.Empty, error) {
 	resp, err := c.client.Join(c.ctx, req, opts...)
 	if err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func (c *Client) Join(req *raft.JoinRequest, opts ...grpc.CallOption) (*empty.Em
 	return resp, nil
 }
 
-func (c *Client) Leave(req *raft.LeaveRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *Client) Leave(req *raft.Node, opts ...grpc.CallOption) (*empty.Empty, error) {
 	resp, err := c.client.Leave(c.ctx, req, opts...)
 	if err != nil {
 		return nil, err

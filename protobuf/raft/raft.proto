@@ -18,7 +18,6 @@ package raft;
 
 option go_package = "github.com/mosuka/blast/protobuf/raft";
 
-
 message Node {
     string id = 1;
     string bind_addr = 2;
@@ -30,20 +29,4 @@ message Node {
 
 message Cluster {
     repeated Node nodes = 1;
-}
-
-message JoinRequest {
-    Node node = 1;
-}
-
-message LeaveRequest {
-    Node node = 1;
-}
-
-message GetNodeResponse {
-    Node node = 1;
-}
-
-message GetClusterResponse {
-    Cluster cluster = 1;
 }

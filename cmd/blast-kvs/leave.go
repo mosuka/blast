@@ -38,10 +38,6 @@ func leave(c *cli.Context) error {
 		Id: id,
 	}
 
-	req := &raft.LeaveRequest{
-		Node: node,
-	}
-
 	client, err := kvs.NewClient(grpcAddr)
 	if err != nil {
 		return err
@@ -53,7 +49,7 @@ func leave(c *cli.Context) error {
 		}
 	}()
 
-	_, err = client.Leave(req)
+	_, err = client.Leave(node)
 	if err != nil {
 		return err
 	}

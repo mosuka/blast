@@ -22,8 +22,8 @@ package kvs;
 option go_package = "github.com/mosuka/blast/protobuf/kvs";
 
 service KVS {
-    rpc Join (raft.JoinRequest) returns (google.protobuf.Empty) {}
-    rpc Leave (raft.LeaveRequest) returns (google.protobuf.Empty) {}
+    rpc Join (raft.Node) returns (google.protobuf.Empty) {}
+    rpc Leave (raft.Node) returns (google.protobuf.Empty) {}
     rpc Snapshot (google.protobuf.Empty) returns (google.protobuf.Empty) {}
     rpc Get (GetRequest) returns (GetResponse) {}
     rpc Put (PutRequest) returns (google.protobuf.Empty) {}

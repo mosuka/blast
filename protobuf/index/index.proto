@@ -23,20 +23,20 @@ package index;
 option go_package = "github.com/mosuka/blast/protobuf/index";
 
 service Index {
-    rpc Join (raft.JoinRequest) returns (google.protobuf.Empty) {}
-    rpc Leave (raft.LeaveRequest) returns (google.protobuf.Empty) {}
-    rpc GetNode (google.protobuf.Empty) returns (raft.GetNodeResponse) {}
-    rpc GetCluster (google.protobuf.Empty) returns (raft.GetClusterResponse) {}
+    rpc Join (raft.Node) returns (google.protobuf.Empty) {}
+    rpc Leave (raft.Node) returns (google.protobuf.Empty) {}
+    rpc GetNode (google.protobuf.Empty) returns (raft.Node) {}
+    rpc GetCluster (google.protobuf.Empty) returns (raft.Cluster) {}
     rpc Snapshot (google.protobuf.Empty) returns (google.protobuf.Empty) {}
 
-    rpc Get (GetRequest) returns (GetResponse) {}
-    rpc Search (SearchRequest) returns (SearchResponse) {}
-    rpc Index (IndexRequest) returns (google.protobuf.Empty) {}
-    rpc Delete (DeleteRequest) returns (google.protobuf.Empty) {}
+    rpc Get (Document) returns (Document) {}
+    rpc Index (Document) returns (google.protobuf.Empty) {}
+    rpc Delete (Document) returns (google.protobuf.Empty) {}
     rpc BulkIndex(stream Document) returns (BulkResult) {}
     rpc BulkDelete(stream Document) returns (BulkResult) {}
+    rpc Search (SearchRequest) returns (SearchResponse) {}
 
-    rpc GetStats (google.protobuf.Empty) returns (GetStatsResponse) {}
+    rpc GetStats (google.protobuf.Empty) returns (Stats) {}
 }
 
 message Document {
@@ -52,32 +52,12 @@ message Stats {
     google.protobuf.Any stats = 1;
 }
 
-message GetRequest {
-    Document document = 1;
-}
-
-message GetResponse {
-    Document document = 1;
-}
-
 message SearchRequest {
     google.protobuf.Any search_request = 1;
 }
 
 message SearchResponse {
     google.protobuf.Any search_result = 1;
-}
-
-message IndexRequest {
-    Document document = 1;
-}
-
-message DeleteRequest {
-    Document document = 1;
-}
-
-message GetStatsResponse {
-    Stats stats = 1;
 }
 
 message IndexCommand {
