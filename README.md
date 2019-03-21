@@ -723,10 +723,9 @@ $ ./WikiExtractor.py -o ~/tmp/enwiki --json ~/tmp/enwiki-20190101-pages-articles
 ```bash
 $ for FILE in $(find ~/tmp/enwiki -type f -name '*' | sort)
   do
-    echo "${FILE}"
+    echo "Indexing ${FILE}"
     TIMESTAMP=$(date -u "+%Y-%m-%dT%H:%M:%SZ")
     DOCS=$(cat ${FILE} | jq -r '. + {fields: {url: .url, title_en: .title, text_en: .text, timestamp: "'${TIMESTAMP}'", _type: "enwiki"}} | del(.url) | del(.title) | del(.text) | del(.fields.id)' | jq -s)
-    echo "${DOCS}"
     curl -s -X PUT -H 'Content-Type: application/json' "http://127.0.0.1:8080/documents" -d "${DOCS}"
   done
 ```
