@@ -75,7 +75,7 @@ func execDelete(c *cli.Context) error {
 		}
 	}()
 
-	result, err := client.BulkDelete(docs)
+	result, err := client.Delete(docs)
 	if err != nil {
 		return err
 	}

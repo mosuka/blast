@@ -30,10 +30,8 @@ service Index {
     rpc Snapshot (google.protobuf.Empty) returns (google.protobuf.Empty) {}
 
     rpc Get (Document) returns (Document) {}
-    rpc Index (Document) returns (google.protobuf.Empty) {}
-    rpc Delete (Document) returns (google.protobuf.Empty) {}
-    rpc BulkIndex(stream Document) returns (BulkResult) {}
-    rpc BulkDelete(stream Document) returns (BulkResult) {}
+    rpc Index (stream Document) returns (UpdateResult) {}
+    rpc Delete (stream Document) returns (UpdateResult) {}
     rpc Search (SearchRequest) returns (SearchResponse) {}
 
     rpc GetStats (google.protobuf.Empty) returns (Stats) {}
@@ -44,7 +42,7 @@ message Document {
     google.protobuf.Any fields = 2;
 }
 
-message BulkResult {
+message UpdateResult {
     int32 count = 1;
 }
 

@@ -165,85 +165,52 @@ func (s *GRPCService) Search(ctx context.Context, req *index.SearchRequest) (*in
 	return resp, nil
 }
 
-func (s *GRPCService) Index(ctx context.Context, req *index.Document) (*empty.Empty, error) {
-	start := time.Now()
-	defer RecordMetrics(start, "index")
+func (s *GRPCService) Index(stream index.Index_IndexServer) error {
+	docs := make([]*index.Document, 0)
 
-	s.logger.Printf("[DEBUG] index %v", req)
+	for {
+		doc, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
 
-	resp := &empty.Empty{}
+		docs = append(docs, doc)
+	}
 
 	// index
-	err := s.raftServer.Index(req)
+	result, err := s.raftServer.Index(docs)
 	if err != nil {
-		return resp, status.Error(codes.Internal, err.Error())
+		return err
 	}
 
-	return resp, nil
+	return stream.SendAndClose(result)
 }
 
-func (s *GRPCService) BulkIndex(stream index.Index_BulkIndexServer) error {
-	count := int32(0)
+func (s *GRPCService) Delete(stream index.Index_DeleteServer) error {
+	docs := make([]*index.Document, 0)
 
 	for {
 		doc, err := stream.Recv()
 		if err == io.EOF {
-			return stream.SendAndClose(&index.BulkResult{
-				Count: count,
-			})
+			break
 		}
 		if err != nil {
 			return err
 		}
 
-		// index
-		err = s.raftServer.Index(doc)
-		if err != nil {
-			return err
-		}
-
-		count++
+		docs = append(docs, doc)
 	}
-}
 
-func (s *GRPCService) Delete(ctx context.Context, req *index.Document) (*empty.Empty, error) {
-	start := time.Now()
-	defer RecordMetrics(start, "delete")
-
-	resp := &empty.Empty{}
-
-	s.logger.Printf("[INFO] delete %v", req)
-
-	err := s.raftServer.Delete(req)
+	// index
+	result, err := s.raftServer.Delete(docs)
 	if err != nil {
-		return resp, status.Error(codes.Internal, err.Error())
+		return err
 	}
 
-	return resp, nil
-}
-
-func (s *GRPCService) BulkDelete(stream index.Index_BulkDeleteServer) error {
-	count := int32(0)
-
-	for {
-		doc, err := stream.Recv()
-		if err == io.EOF {
-			return stream.SendAndClose(&index.BulkResult{
-				Count: count,
-			})
-		}
-		if err != nil {
-			return err
-		}
-
-		// index
-		err = s.raftServer.Delete(doc)
-		if err != nil {
-			return err
-		}
-
-		count++
-	}
+	return stream.SendAndClose(result)
 }
 
 func (s *GRPCService) GetStats(ctx context.Context, req *empty.Empty) (*index.Stats, error) {

@@ -302,7 +302,7 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// index documents in bulk
-	result, err := h.client.BulkIndex(docs)
+	result, err := h.client.Index(docs)
 	if err != nil {
 		httpStatus = http.StatusInternalServerError
 
@@ -418,7 +418,7 @@ func (h *DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// delete documents in bulk
-	result, err := h.client.BulkDelete(docs)
+	result, err := h.client.Delete(docs)
 	if err != nil {
 		httpStatus = http.StatusInternalServerError
 

@@ -105,7 +105,7 @@ func execIndex(c *cli.Context) error {
 	}()
 
 	// index documents in bulk
-	result, err := client.BulkIndex(docs)
+	result, err := client.Index(docs)
 	if err != nil {
 		return err
 	}
