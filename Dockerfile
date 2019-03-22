@@ -20,9 +20,8 @@ ENV GOPATH /go
 
 COPY . ${GOPATH}/src/github.com/mosuka/blast
 
-RUN apt update && \
-    apt upgrade && \
-    apt install -y \
+RUN apt-get update && \
+    apt-get install -y \
       git \
       golang \
       libicu-dev \
@@ -31,7 +30,7 @@ RUN apt update && \
       gcc-4.8 \
       g++-4.8 \
       build-essential && \
-    apt clean && \
+    apt-get clean && \
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 && \
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 80 && \
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 90 && \
@@ -54,13 +53,12 @@ FROM ubuntu:18.10
 
 MAINTAINER Minoru Osuka "minoru.osuka@gmail.com"
 
-RUN apt update && \
-    apt upgrade && \
-    apt install -y \
+RUN apt-get update && \
+    apt-get install -y \
       libicu-dev \
       libstemmer-dev \
       libleveldb-dev && \
-    apt clean
+    apt-get clean
 
 COPY --from=0 /go/src/github.com/blevesearch/cld2/cld2/internal/*.so /usr/local/lib/
 COPY --from=0 /go/src/github.com/mosuka/blast/bin/* /usr/bin/
