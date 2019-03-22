@@ -45,7 +45,7 @@ Blast requires some C/C++ libraries if you need to enable cld2, icu, libstemmer 
 ### Ubuntu 18.10
 
 ```bash
-$ sudo apt-get install -y \
+$ sudo apt install -y \
     libicu-dev \
     libstemmer-dev \
     libleveldb-dev \
@@ -75,6 +75,7 @@ $ brew install \
     icu4c \
     leveldb
 
+$ export GOPATH=${HOME}/go
 $ go get -u -v github.com/blevesearch/cld2
 $ cd ${GOPATH}/src/github.com/blevesearch/cld2
 $ git clone https://github.com/CLD2Owners/cld2.git
@@ -90,7 +91,9 @@ $ sudo cp *.so /usr/local/lib
 When you satisfied dependencies, let's build Blast for Linux as following:
 
 ```bash
-$ git clone git@github.com:mosuka/blast.git
+$ mkdir -p ${GOPATH}/src/github.com/mosuka
+$ cd ${GOPATH}/src/github.com/mosuka
+$ git clone https://github.com/mosuka/blast.git
 $ cd blast
 $ make build
 ```

@@ -20,8 +20,9 @@ ENV GOPATH /go
 
 COPY . ${GOPATH}/src/github.com/mosuka/blast
 
-RUN apt-get update && \
-    apt-get install -y \
+RUN apt update && \
+    apt upgrade && \
+    apt install -y \
       git \
       golang \
       libicu-dev \
@@ -30,7 +31,7 @@ RUN apt-get update && \
       gcc-4.8 \
       g++-4.8 \
       build-essential && \
-    apt-get clean && \
+    apt clean && \
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 && \
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 80 && \
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 90 && \
