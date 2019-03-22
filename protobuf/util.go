@@ -21,6 +21,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/mosuka/blast/protobuf/index"
+	"github.com/mosuka/blast/protobuf/kvs"
 	"github.com/mosuka/blast/protobuf/raft"
 	"github.com/mosuka/blast/registry"
 )
@@ -29,6 +30,7 @@ func init() {
 	registry.RegisterType("map[string]interface {}", reflect.TypeOf((map[string]interface{})(nil)))
 
 	registry.RegisterType("index.Document", reflect.TypeOf(index.Document{}))
+	registry.RegisterType("kvs.KeyValuePair", reflect.TypeOf(kvs.KeyValuePair{}))
 	registry.RegisterType("raft.Node", reflect.TypeOf(raft.Node{}))
 
 	registry.RegisterType("bleve.SearchRequest", reflect.TypeOf(bleve.SearchRequest{}))

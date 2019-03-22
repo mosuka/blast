@@ -25,20 +25,19 @@ import (
 )
 
 func delete(c *cli.Context) error {
-	grpcAddr := c.String("addr")
+	grpcAddr := c.String("grpc-addr")
 
-	key := c.Args().Get(0)
-
+	key := c.String("key")
 	if key == "" {
 		err := errors.New("key argument must be set")
 		return err
 	}
 
-	req := &pbkvs.DeleteRequest{
+	req := &pbkvs.KeyValuePair{
 		Key: []byte(key),
 	}
 
-	client, err := kvs.NewClient(grpcAddr)
+	client, err := kvs.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
 	}
@@ -49,7 +48,7 @@ func delete(c *cli.Context) error {
 		}
 	}()
 
-	_, err = client.Delete(req)
+	err = client.Delete(req)
 	if err != nil {
 		return err
 	}

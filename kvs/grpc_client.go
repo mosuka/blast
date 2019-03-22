@@ -25,7 +25,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-type Client struct {
+type GRPCClient struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 	conn   *grpc.ClientConn
@@ -34,7 +34,7 @@ type Client struct {
 	logger *log.Logger
 }
 
-func NewClient(address string) (*Client, error) {
+func NewGRPCClient(address string) (*GRPCClient, error) {
 	baseCtx := context.TODO()
 	ctx, cancel := context.WithCancel(baseCtx)
 
@@ -52,7 +52,7 @@ func NewClient(address string) (*Client, error) {
 		return nil, err
 	}
 
-	return &Client{
+	return &GRPCClient{
 		ctx:    ctx,
 		cancel: cancel,
 		conn:   conn,
@@ -60,7 +60,7 @@ func NewClient(address string) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) Close() error {
+func (c *GRPCClient) Close() error {
 	c.cancel()
 	if c.conn != nil {
 		return c.conn.Close()
@@ -69,34 +69,34 @@ func (c *Client) Close() error {
 	return c.ctx.Err()
 }
 
-func (c *Client) Join(req *raft.Node, opts ...grpc.CallOption) (*empty.Empty, error) {
-	resp, err := c.client.Join(c.ctx, req, opts...)
+func (c *GRPCClient) Join(req *raft.Node, opts ...grpc.CallOption) error {
+	_, err := c.client.Join(c.ctx, req, opts...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return resp, nil
+	return nil
 }
 
-func (c *Client) Leave(req *raft.Node, opts ...grpc.CallOption) (*empty.Empty, error) {
-	resp, err := c.client.Leave(c.ctx, req, opts...)
+func (c *GRPCClient) Leave(req *raft.Node, opts ...grpc.CallOption) error {
+	_, err := c.client.Leave(c.ctx, req, opts...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return resp, nil
+	return nil
 }
 
-func (c *Client) Snapshot(opts ...grpc.CallOption) (*empty.Empty, error) {
-	resp, err := c.client.Snapshot(c.ctx, &empty.Empty{})
+func (c *GRPCClient) Snapshot(opts ...grpc.CallOption) error {
+	_, err := c.client.Snapshot(c.ctx, &empty.Empty{})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return resp, nil
+	return nil
 }
 
-func (c *Client) Get(req *kvs.GetRequest, opts ...grpc.CallOption) (*kvs.GetResponse, error) {
+func (c *GRPCClient) Get(req *kvs.KeyValuePair, opts ...grpc.CallOption) (*kvs.KeyValuePair, error) {
 	resp, err := c.client.Get(c.ctx, req, opts...)
 	if err != nil {
 		return nil, err
@@ -105,20 +105,20 @@ func (c *Client) Get(req *kvs.GetRequest, opts ...grpc.CallOption) (*kvs.GetResp
 	return resp, nil
 }
 
-func (c *Client) Put(req *kvs.PutRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	resp, err := c.client.Put(c.ctx, req, opts...)
+func (c *GRPCClient) Put(req *kvs.KeyValuePair, opts ...grpc.CallOption) error {
+	_, err := c.client.Put(c.ctx, req, opts...)
 	if err != nil {
-		return resp, err
+		return err
 	}
 
-	return resp, nil
+	return nil
 }
 
-func (c *Client) Delete(req *kvs.DeleteRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	resp, err := c.client.Delete(c.ctx, req, opts...)
+func (c *GRPCClient) Delete(req *kvs.KeyValuePair, opts ...grpc.CallOption) error {
+	_, err := c.client.Delete(c.ctx, req, opts...)
 	if err != nil {
-		return resp, err
+		return err
 	}
 
-	return resp, nil
+	return nil
 }

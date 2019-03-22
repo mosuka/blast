@@ -45,9 +45,9 @@ func NewRaftFSM(path string, indexMapping *mapping.IndexMappingImpl, indexStorag
 	}
 
 	return &RaftFSM{
-		logger:   logger,
 		metadata: make(map[string]*blastraft.Node, 0),
 		index:    index,
+		logger:   logger,
 	}, nil
 }
 
@@ -147,7 +147,6 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 		if nodeInstance == nil {
 			return errors.New("nil")
 		}
-		//metadata := *metadataInstance.(*common.Metadata)
 		metadata := nodeInstance.(*blastraft.Node)
 
 		return f.applySetMetadata(metadata.Id, metadata)

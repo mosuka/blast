@@ -19,14 +19,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mosuka/blast/protobuf/raft"
-
 	"github.com/mosuka/blast/kvs"
+	"github.com/mosuka/blast/protobuf/raft"
 	"github.com/urfave/cli"
 )
 
 func leave(c *cli.Context) error {
-	grpcAddr := c.String("addr")
+	grpcAddr := c.String("grpc-addr")
 
 	id := c.Args().Get(0)
 	if id == "" {
@@ -38,7 +37,7 @@ func leave(c *cli.Context) error {
 		Id: id,
 	}
 
-	client, err := kvs.NewClient(grpcAddr)
+	client, err := kvs.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
 	}
@@ -49,7 +48,7 @@ func leave(c *cli.Context) error {
 		}
 	}()
 
-	_, err = client.Leave(node)
+	err = client.Leave(node)
 	if err != nil {
 		return err
 	}

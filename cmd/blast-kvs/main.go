@@ -40,32 +40,32 @@ func main() {
 			Usage: "Start key value store server",
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:  "node-id",
+					Name:  "node-id, n",
 					Value: "",
 					Usage: "Node ID",
 				},
 				cli.StringFlag{
-					Name:  "bind-addr",
+					Name:  "bind-addr, b",
 					Value: ":6060",
 					Usage: "Raft bind address",
 				},
 				cli.StringFlag{
-					Name:  "grpc-addr",
+					Name:  "grpc-addr, g",
 					Value: ":5050",
 					Usage: "gRPC Server listen address",
 				},
 				cli.StringFlag{
-					Name:  "http-addr",
+					Name:  "http-addr, H",
 					Value: ":8080",
 					Usage: "HTTP server listen address",
 				},
 				cli.StringFlag{
-					Name:  "data-dir",
+					Name:  "data-dir, d",
 					Value: "./",
 					Usage: "Data directory",
 				},
 				cli.StringFlag{
-					Name:  "join-addr",
+					Name:  "join-addr, j",
 					Value: "",
 					Usage: "Existing gRPC server listen address to join to the cluster",
 				},
@@ -75,27 +75,27 @@ func main() {
 					Usage: "Log level",
 				},
 				cli.StringFlag{
-					Name:  "log-file",
+					Name:  "log-file, L",
 					Value: os.Stderr.Name(),
 					Usage: "Log file",
 				},
 				cli.IntFlag{
-					Name:  "log-max-size",
+					Name:  "log-max-size, S",
 					Value: 500,
 					Usage: "Max size of a log file (megabytes)",
 				},
 				cli.IntFlag{
-					Name:  "log-max-backups",
+					Name:  "log-max-backups, B",
 					Value: 3,
 					Usage: "Max backup count of log files",
 				},
 				cli.IntFlag{
-					Name:  "log-max-age",
+					Name:  "log-max-age, A",
 					Value: 30,
 					Usage: "Max age of a log file (days)",
 				},
 				cli.BoolFlag{
-					Name:  "log-compress",
+					Name:  "log-compress, C",
 					Usage: "Compress a log file",
 				},
 				cli.StringFlag{
@@ -130,9 +130,9 @@ func main() {
 			Usage: "Join a node to the cluster",
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:  "addr",
+					Name:  "grpc-addr, g",
 					Value: ":5050",
-					Usage: "address to connect to",
+					Usage: "gRPC address to connect to",
 				},
 			},
 			ArgsUsage: "[id] [addr]",
@@ -143,7 +143,7 @@ func main() {
 			Usage: "Leave a node from the cluster",
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:  "addr",
+					Name:  "grpc-addr, g",
 					Value: ":5050",
 					Usage: "address to connect to",
 				},
@@ -156,7 +156,7 @@ func main() {
 			Usage: "Create snapshot manually",
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:  "addr",
+					Name:  "grpc-addr, g",
 					Value: ":5050",
 					Usage: "address to connect to",
 				},
@@ -168,25 +168,34 @@ func main() {
 			Usage: "Get a value by key",
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:  "addr",
+					Name:  "grpc-addr, g",
 					Value: ":5050",
-					Usage: "address to connect to",
+					Usage: "gRPC address to connect to",
+				},
+				cli.StringFlag{
+					Name:  "key, k",
+					Value: "",
+					Usage: "key",
 				},
 			},
-			ArgsUsage: "[key]",
-			Action:    get,
+			Action: get,
 		},
 		{
 			Name:  "put",
 			Usage: "Put a value by key",
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:  "addr",
+					Name:  "grpc-addr, g",
 					Value: ":5050",
-					Usage: "address to connect to",
+					Usage: "gRPC address to connect to",
+				},
+				cli.StringFlag{
+					Name:  "key, k",
+					Value: "",
+					Usage: "key",
 				},
 			},
-			ArgsUsage: "[key] [value]",
+			ArgsUsage: "[value]",
 			Action:    put,
 		},
 		{
@@ -194,13 +203,17 @@ func main() {
 			Usage: "Delete a value by key",
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:  "addr",
+					Name:  "grpc-addr, g",
 					Value: ":5050",
-					Usage: "address to connect to",
+					Usage: "gRPC address to connect to",
+				},
+				cli.StringFlag{
+					Name:  "key, k",
+					Value: "",
+					Usage: "key",
 				},
 			},
-			ArgsUsage: "[key]",
-			Action:    delete,
+			Action: delete,
 		},
 	}
 

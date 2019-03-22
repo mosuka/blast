@@ -14,6 +14,7 @@
 
 syntax = "proto3";
 
+import "google/protobuf/any.proto";
 import "google/protobuf/empty.proto";
 import "protobuf/raft/raft.proto";
 
@@ -24,27 +25,13 @@ option go_package = "github.com/mosuka/blast/protobuf/kvs";
 service KVS {
     rpc Join (raft.Node) returns (google.protobuf.Empty) {}
     rpc Leave (raft.Node) returns (google.protobuf.Empty) {}
+    rpc GetNode (google.protobuf.Empty) returns (raft.Node) {}
+    rpc GetCluster (google.protobuf.Empty) returns (raft.Cluster) {}
     rpc Snapshot (google.protobuf.Empty) returns (google.protobuf.Empty) {}
-    rpc Get (GetRequest) returns (GetResponse) {}
-    rpc Put (PutRequest) returns (google.protobuf.Empty) {}
-    rpc Delete (DeleteRequest) returns (google.protobuf.Empty) {}
-}
 
-message GetRequest {
-    bytes key = 1;
-}
-
-message GetResponse {
-    bytes value = 1;
-}
-
-message PutRequest {
-    bytes key = 1;
-    bytes value = 2;
-}
-
-message DeleteRequest {
-    bytes key = 1;
+    rpc Get (KeyValuePair) returns (KeyValuePair) {}
+    rpc Put (KeyValuePair) returns (google.protobuf.Empty) {}
+    rpc Delete (KeyValuePair) returns (google.protobuf.Empty) {}
 }
 
 message KeyValuePair {
@@ -53,7 +40,14 @@ message KeyValuePair {
 }
 
 message KVSCommand {
-    string op = 1;
-    bytes key = 2;
-    bytes value = 3;
+    enum Type {
+        UNKNOWN_COMMAND = 0;
+        SET_METADATA = 1;
+        DELETE_METADATA = 2;
+        PUT_KEY_VALUE_PAIR = 3;
+        DELETE_KEY_VALUE_PAIR = 4;
+    }
+    Type type = 1;
+    google.protobuf.Any data = 2;
 }
+
