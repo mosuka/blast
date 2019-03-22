@@ -54,12 +54,13 @@ FROM ubuntu:18.10
 
 MAINTAINER Minoru Osuka "minoru.osuka@gmail.com"
 
-RUN apt-get update && \
-    apt-get install -y \
+RUN apt update && \
+    apt upgrade && \
+    apt install -y \
       libicu-dev \
       libstemmer-dev \
       libleveldb-dev && \
-    apt-get clean
+    apt clean
 
 COPY --from=0 /go/src/github.com/blevesearch/cld2/cld2/internal/*.so /usr/local/lib/
 COPY --from=0 /go/src/github.com/mosuka/blast/bin/* /usr/bin/
