@@ -54,6 +54,7 @@ FROM ubuntu:18.10
 MAINTAINER Minoru Osuka "minoru.osuka@gmail.com"
 
 RUN apt-get update && \
+    apt-get upgrade && \
     apt-get install -y \
       libicu-dev \
       libstemmer-dev \
