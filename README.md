@@ -143,15 +143,15 @@ $ make \
 
 Please refer to the following table for details of Bleve Extensions:
 
-| BUILD_TAGS                 | CGO_ENABLED | Description                                  |
-| -------------------------- | ----------- | -------------------------------------------- |
-| cld2                       | 1           | Enable Compact Language Detector             |
-| kagome                     | 0           | Enable Japanese Language Analyser            |
-| icu                        | 1           | Enable ICU Tokenizer, Thai Language Analyser |
-| libstemmer                 | 1           | Enable Language Stemmer (Danish, German, English, Spanish, Finnish, French, Hungarian, Italian, Dutch, Norwegian, Portuguese, Romanian, Russian, Swedish, Turkish) |
-| cznicb                     | 0           | Enable cznicb KV store                       |
-| leveldb                    | 1           | Enable LevelDB                               |
-| badger                     | 0           | Enable Badger (This feature is considered experimental) |
+| BUILD_TAGS | CGO_ENABLED | Description |
+| ---------- | ----------- | ----------- |
+| cld2       | 1           | Enable Compact Language Detector |
+| kagome     | 0           | Enable Japanese Language Analyser |
+| icu        | 1           | Enable ICU Tokenizer, Thai Language Analyser |
+| libstemmer | 1           | Enable Language Stemmer (Danish, German, English, Spanish, Finnish, French, Hungarian, Italian, Dutch, Norwegian, Portuguese, Romanian, Russian, Swedish, Turkish) |
+| cznicb     | 0           | Enable cznicb KV store |
+| leveldb    | 1           | Enable LevelDB |
+| badger     | 0           | Enable Badger (This feature is considered experimental) |
 
 If you want to enable the feature whose `CGO_ENABLE` is `1`, please install it referring to the Installing dependencies section above.
 
