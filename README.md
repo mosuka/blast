@@ -196,7 +196,33 @@ $ make \
     CGO_ENABLED=1 \
     CGO_LDFLAGS="-L/usr/local/opt/icu4c/lib" \
     CGO_CFLAGS="-I/usr/local/opt/icu4c/include" \
-    build
+    test
+```
+
+
+## Packaging Blast
+
+###  Linux
+
+```bash
+$ make \
+    GOOS=linux \
+    BUILD_TAGS="kagome icu libstemmer cld2 cznicb leveldb badger" \
+    CGO_ENABLED=1 \
+    dist
+```
+
+
+#### macOS
+
+```bash
+$ make \
+    GOOS=darwin \
+    BUILD_TAGS="kagome icu libstemmer cld2 cznicb leveldb badger" \
+    CGO_ENABLED=1 \
+    CGO_LDFLAGS="-L/usr/local/opt/icu4c/lib" \
+    CGO_CFLAGS="-I/usr/local/opt/icu4c/include" \
+    dist
 ```
 
 
