@@ -68,7 +68,10 @@ func start(c *cli.Context) error {
 		httpAccessLogCompress,
 	)
 
-	svr := kvs.NewServer(nodeId, bindAddr, grpcAddr, httpAddr, dataDir, joinAddr, logger, httpAccessLogger)
+	svr, err := kvs.NewServer(nodeId, bindAddr, grpcAddr, httpAddr, dataDir, joinAddr, logger, httpAccessLogger)
+	if err != nil {
+		return err
+	}
 
 	quitCh := make(chan os.Signal, 1)
 	signal.Notify(quitCh, os.Kill, os.Interrupt, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)

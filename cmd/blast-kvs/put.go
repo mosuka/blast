@@ -25,27 +25,27 @@ import (
 )
 
 func put(c *cli.Context) error {
-	grpcAddr := c.String("addr")
+	grpcAddr := c.String("grpc-addr")
 
-	key := c.Args().Get(0)
+	key := c.String("key")
 	if key == "" {
 		err := errors.New("key argument must be set")
 		return err
 	}
 
-	value := c.Args().Get(1)
+	value := c.Args().Get(0)
 	if value == "" {
 		err := errors.New("value argument must be set")
 		return err
 	}
 
 	// create PutRequest
-	req := &pbkvs.PutRequest{
+	req := &pbkvs.KeyValuePair{
 		Key:   []byte(key),
 		Value: []byte(value),
 	}
 
-	client, err := kvs.NewClient(grpcAddr)
+	client, err := kvs.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func put(c *cli.Context) error {
 		}
 	}()
 
-	_, err = client.Put(req)
+	err = client.Put(req)
 	if err != nil {
 		return err
 	}

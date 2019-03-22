@@ -101,9 +101,9 @@ func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*raft.C
 }
 
 func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
-	resp := &empty.Empty{}
-
 	s.logger.Printf("[INFO] %v", req)
+
+	resp := &empty.Empty{}
 
 	err := s.raftServer.Snapshot()
 	if err != nil {
@@ -117,11 +117,13 @@ func (s *GRPCService) Get(ctx context.Context, req *index.Document) (*index.Docu
 	start := time.Now()
 	defer RecordMetrics(start, "get")
 
-	resp := &index.Document{}
-
 	s.logger.Printf("[INFO] get %v", req)
 
-	resp, err := s.raftServer.Get(req)
+	resp := &index.Document{}
+
+	var err error
+
+	resp, err = s.raftServer.Get(req)
 	if err != nil {
 		switch err {
 		case errors.ErrNotFound:
@@ -138,9 +140,9 @@ func (s *GRPCService) Search(ctx context.Context, req *index.SearchRequest) (*in
 	start := time.Now()
 	defer RecordMetrics(start, "search")
 
-	resp := &index.SearchResponse{}
-
 	s.logger.Printf("[INFO] search %v", req)
+
+	resp := &index.SearchResponse{}
 
 	// Any -> bleve.SearchRequest
 	searchRequest, err := protobuf.MarshalAny(req.SearchRequest)
@@ -174,7 +176,7 @@ func (s *GRPCService) Index(stream index.Index_IndexServer) error {
 			break
 		}
 		if err != nil {
-			return err
+			return status.Error(codes.Internal, err.Error())
 		}
 
 		docs = append(docs, doc)
@@ -183,7 +185,7 @@ func (s *GRPCService) Index(stream index.Index_IndexServer) error {
 	// index
 	result, err := s.raftServer.Index(docs)
 	if err != nil {
-		return err
+		return status.Error(codes.Internal, err.Error())
 	}
 
 	return stream.SendAndClose(result)
@@ -198,16 +200,16 @@ func (s *GRPCService) Delete(stream index.Index_DeleteServer) error {
 			break
 		}
 		if err != nil {
-			return err
+			return status.Error(codes.Internal, err.Error())
 		}
 
 		docs = append(docs, doc)
 	}
 
-	// index
+	// delete
 	result, err := s.raftServer.Delete(docs)
 	if err != nil {
-		return err
+		return status.Error(codes.Internal, err.Error())
 	}
 
 	return stream.SendAndClose(result)

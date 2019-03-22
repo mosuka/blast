@@ -20,21 +20,26 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"strings"
+
+	"github.com/mosuka/blast/protobuf"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hashicorp/raft"
+	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf/kvs"
+	pbkvs "github.com/mosuka/blast/protobuf/kvs"
+	blastraft "github.com/mosuka/blast/protobuf/raft"
 )
 
 type RaftFSM struct {
 	kvs *KVS
 
+	metadata map[string]*blastraft.Node
+
 	logger *log.Logger
 }
 
 func NewRaftFSM(path string, logger *log.Logger) (*RaftFSM, error) {
-	// Create directory
 	err := os.MkdirAll(path, 0755)
 	if err != nil && !os.IsExist(err) {
 		return nil, err
@@ -46,8 +51,9 @@ func NewRaftFSM(path string, logger *log.Logger) (*RaftFSM, error) {
 	}
 
 	return &RaftFSM{
-		logger: logger,
-		kvs:    kvs,
+		metadata: make(map[string]*blastraft.Node, 0),
+		kvs:      kvs,
+		logger:   logger,
 	}, nil
 }
 
@@ -89,18 +95,92 @@ func (f *RaftFSM) applyDelete(key []byte) interface{} {
 	return nil
 }
 
+func (f *RaftFSM) GetMetadata(nodeId string) (*blastraft.Node, error) {
+	node, exists := f.metadata[nodeId]
+	if !exists {
+		return nil, blasterrors.ErrNotFound
+	}
+	if node == nil {
+		return nil, errors.New("nil")
+	}
+	value := node
+
+	return value, nil
+}
+
+func (f *RaftFSM) applySetMetadata(nodeId string, node *blastraft.Node) interface{} {
+	f.metadata[nodeId] = node
+
+	return nil
+}
+
+func (f *RaftFSM) applyDeleteMetadata(nodeId string) interface{} {
+	_, exists := f.metadata[nodeId]
+	if exists {
+		delete(f.metadata, nodeId)
+	}
+
+	return nil
+}
+
 func (f *RaftFSM) Apply(l *raft.Log) interface{} {
-	var c kvs.KVSCommand
+	var c pbkvs.KVSCommand
 	err := proto.Unmarshal(l.Data, &c)
 	if err != nil {
 		return err
 	}
 
-	switch strings.ToLower(c.Op) {
-	case "set":
-		return f.applySet(c.Key, c.Value)
-	case "delete":
-		return f.applyDelete(c.Key)
+	f.logger.Printf("[DEBUG] Apply %v", c)
+
+	switch c.Type {
+	case pbkvs.KVSCommand_SET_METADATA:
+		// Any -> Node
+		nodeInstance, err := protobuf.MarshalAny(c.Data)
+		if err != nil {
+			return err
+		}
+		if nodeInstance == nil {
+			return errors.New("nil")
+		}
+		metadata := nodeInstance.(*blastraft.Node)
+
+		return f.applySetMetadata(metadata.Id, metadata)
+	case pbkvs.KVSCommand_DELETE_METADATA:
+		// Any -> Node
+		metadataInstance, err := protobuf.MarshalAny(c.Data)
+		if err != nil {
+			return err
+		}
+		if metadataInstance == nil {
+			return errors.New("nil")
+		}
+		metadata := *metadataInstance.(*blastraft.Node)
+
+		return f.applyDeleteMetadata(metadata.Id)
+	case pbkvs.KVSCommand_PUT_KEY_VALUE_PAIR:
+		// Any -> KeyValuePair
+		kvpInstance, err := protobuf.MarshalAny(c.Data)
+		if err != nil {
+			return err
+		}
+		if kvpInstance == nil {
+			return errors.New("nil")
+		}
+		kvp := *kvpInstance.(*pbkvs.KeyValuePair)
+
+		return f.applySet(kvp.Key, kvp.Value)
+	case pbkvs.KVSCommand_DELETE_KEY_VALUE_PAIR:
+		// Any -> KeyValuePair
+		kvpInstance, err := protobuf.MarshalAny(c.Data)
+		if err != nil {
+			return err
+		}
+		if kvpInstance == nil {
+			return errors.New("nil")
+		}
+		kvp := *kvpInstance.(*pbkvs.KeyValuePair)
+
+		return f.applyDelete(kvp.Key)
 	default:
 		return errors.New("command type not support")
 	}

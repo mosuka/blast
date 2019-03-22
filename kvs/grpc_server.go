@@ -12,53 +12,51 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package kvs
 
 import (
-	"errors"
-	"fmt"
-	"os"
+	"log"
+	"net"
 
-	"github.com/mosuka/blast/kvs"
-	"github.com/mosuka/blast/protobuf/raft"
-	"github.com/urfave/cli"
+	"github.com/mosuka/blast/protobuf/kvs"
+	"google.golang.org/grpc"
 )
 
-func join(c *cli.Context) error {
-	grpcAddr := c.String("grpc-addr")
+type GRPCServer struct {
+	server   *grpc.Server
+	listener net.Listener
 
-	id := c.Args().Get(0)
-	if id == "" {
-		err := errors.New("id argument must be set")
-		return err
+	logger *log.Logger
+}
+
+func NewGRPCServer(grpcAddr string, service *GRPCService, logger *log.Logger) (*GRPCServer, error) {
+	server := grpc.NewServer()
+
+	kvs.RegisterKVSServer(server, service)
+
+	listener, err := net.Listen("tcp", grpcAddr)
+	if err != nil {
+		return nil, err
 	}
 
-	addr := c.Args().Get(1)
-	if addr == "" {
-		err := errors.New("address argument must be set")
-		return err
-	}
+	return &GRPCServer{
+		server:   server,
+		listener: listener,
+		logger:   logger,
+	}, nil
+}
 
-	node := &raft.Node{
-		Id:       id,
-		BindAddr: addr,
-	}
-
-	client, err := kvs.NewGRPCClient(grpcAddr)
+func (s *GRPCServer) Start() error {
+	err := s.server.Serve(s.listener)
 	if err != nil {
 		return err
 	}
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-		}
-	}()
 
-	err = client.Join(node)
-	if err != nil {
-		return err
-	}
+	return nil
+}
+
+func (s *GRPCServer) Stop() error {
+	s.server.GracefulStop()
 
 	return nil
 }

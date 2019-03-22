@@ -25,19 +25,19 @@ import (
 )
 
 func get(c *cli.Context) error {
-	grpcAddr := c.String("addr")
+	grpcAddr := c.String("grpc-addr")
 
-	key := c.Args().Get(0)
+	key := c.String("key")
 	if key == "" {
 		err := errors.New("key argument must be set")
 		return err
 	}
 
-	req := &pbkvs.GetRequest{
+	req := &pbkvs.KeyValuePair{
 		Key: []byte(key),
 	}
 
-	client, err := kvs.NewClient(grpcAddr)
+	client, err := kvs.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func get(c *cli.Context) error {
 		return nil
 	}
 
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", string(resp.Value)))
+	fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resp.Value)))
 
 	return nil
 }

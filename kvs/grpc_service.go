@@ -20,85 +20,119 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf/kvs"
 	"github.com/mosuka/blast/protobuf/raft"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
-type Service struct {
-	// wrapper and manager for db instance
-	store *RaftServer
+type GRPCService struct {
+	raftServer *RaftServer
 
 	logger *log.Logger
 }
 
-func NewService(store *RaftServer, logger *log.Logger) (*Service, error) {
-	return &Service{
-		store:  store,
-		logger: logger,
+func NewGRPCService(raftServer *RaftServer, logger *log.Logger) (*GRPCService, error) {
+	return &GRPCService{
+		raftServer: raftServer,
+		logger:     logger,
 	}, nil
 }
 
-func (s *Service) Join(ctx context.Context, req *raft.Node) (*empty.Empty, error) {
+func (s *GRPCService) Join(ctx context.Context, req *raft.Node) (*empty.Empty, error) {
 	s.logger.Printf("[INFO] %v", req)
 
-	// join node to the cluster
-	err := s.store.Join(req.Id, req.BindAddr)
+	resp := &empty.Empty{}
+
+	err := s.raftServer.Join(req)
 	if err != nil {
-		s.logger.Printf("[ERR] %v", err)
-		return nil, err
+		return resp, status.Error(codes.Internal, err.Error())
 	}
-
-	return &empty.Empty{}, nil
-}
-
-func (s *Service) Leave(ctx context.Context, req *raft.Node) (*empty.Empty, error) {
-	s.logger.Printf("[INFO] %v", req)
-
-	// leave node from the cluster
-	err := s.store.Leave(req.Id)
-	if err != nil {
-		return nil, err
-	}
-
-	return &empty.Empty{}, nil
-}
-
-func (s *Service) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
-	s.logger.Printf("[INFO] %v", req)
-
-	// snapshot
-	err := s.store.Snapshot()
-	if err != nil {
-		return nil, err
-	}
-
-	return &empty.Empty{}, nil
-}
-
-func (s *Service) Get(ctx context.Context, req *kvs.GetRequest) (*kvs.GetResponse, error) {
-	start := time.Now()
-	defer RecordMetrics(start, "get")
-
-	resp := &kvs.GetResponse{}
-
-	s.logger.Printf("[INFO] get %v", req)
-
-	// get value by key
-	value, err := s.store.Get(req.Key)
-	if err != nil {
-		return resp, err
-	}
-	if value == nil {
-		// key does not exist
-		return resp, nil
-	}
-
-	resp.Value = value
 
 	return resp, nil
 }
 
-func (s *Service) Put(ctx context.Context, req *kvs.PutRequest) (*empty.Empty, error) {
+func (s *GRPCService) Leave(ctx context.Context, req *raft.Node) (*empty.Empty, error) {
+	s.logger.Printf("[INFO] leave %v", req)
+
+	resp := &empty.Empty{}
+
+	err := s.raftServer.Leave(req)
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	return resp, nil
+}
+
+func (s *GRPCService) GetNode(ctx context.Context, req *empty.Empty) (*raft.Node, error) {
+	s.logger.Printf("[INFO] get node %v", req)
+
+	resp := &raft.Node{}
+
+	var err error
+
+	resp, err = s.raftServer.GetNode()
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	return resp, nil
+}
+
+func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*raft.Cluster, error) {
+	s.logger.Printf("[INFO] get cluster %v", req)
+
+	resp := &raft.Cluster{}
+
+	var err error
+
+	resp, err = s.raftServer.GetCluster()
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	return resp, nil
+}
+
+func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
+	s.logger.Printf("[INFO] %v", req)
+
+	resp := &empty.Empty{}
+
+	err := s.raftServer.Snapshot()
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	return resp, nil
+}
+
+func (s *GRPCService) Get(ctx context.Context, req *kvs.KeyValuePair) (*kvs.KeyValuePair, error) {
+	start := time.Now()
+	defer RecordMetrics(start, "get")
+
+	s.logger.Printf("[INFO] get %v", req)
+
+	resp := &kvs.KeyValuePair{}
+
+	var err error
+
+	resp, err = s.raftServer.Get(req)
+	if err != nil {
+		switch err {
+		case errors.ErrNotFound:
+			return resp, status.Error(codes.NotFound, err.Error())
+		default:
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+	}
+
+	return resp, nil
+}
+
+func (s *GRPCService) Put(ctx context.Context, req *kvs.KeyValuePair) (*empty.Empty, error) {
 	start := time.Now()
 	defer RecordMetrics(start, "put")
 
@@ -107,26 +141,26 @@ func (s *Service) Put(ctx context.Context, req *kvs.PutRequest) (*empty.Empty, e
 	s.logger.Printf("[INFO] put %v", req)
 
 	// put value by key
-	err := s.store.Set(req.Key, req.Value)
+	err := s.raftServer.Set(req)
 	if err != nil {
-		return resp, err
+		return resp, status.Error(codes.Internal, err.Error())
 	}
 
 	return resp, nil
 }
 
-func (s *Service) Delete(ctx context.Context, req *kvs.DeleteRequest) (*empty.Empty, error) {
+func (s *GRPCService) Delete(ctx context.Context, req *kvs.KeyValuePair) (*empty.Empty, error) {
 	start := time.Now()
 	defer RecordMetrics(start, "delete")
 
-	resp := &empty.Empty{}
-
 	s.logger.Printf("[INFO] delete %v", req)
 
+	resp := &empty.Empty{}
+
 	// delete value by key
-	err := s.store.Delete(req.Key)
+	err := s.raftServer.Delete(req)
 	if err != nil {
-		return resp, err
+		return resp, status.Error(codes.Internal, err.Error())
 	}
 
 	return resp, nil

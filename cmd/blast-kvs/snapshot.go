@@ -23,9 +23,9 @@ import (
 )
 
 func snapshot(c *cli.Context) error {
-	grpcAddr := c.String("addr")
+	grpcAddr := c.String("grpc-addr")
 
-	client, err := kvs.NewClient(grpcAddr)
+	client, err := kvs.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
 	}
@@ -36,7 +36,7 @@ func snapshot(c *cli.Context) error {
 		}
 	}()
 
-	_, err = client.Snapshot()
+	err = client.Snapshot()
 	if err != nil {
 		return err
 	}
