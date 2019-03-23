@@ -22,7 +22,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func snapshot(c *cli.Context) error {
+func execSnapshot(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 
 	client, err := kvs.NewGRPCClient(grpcAddr)

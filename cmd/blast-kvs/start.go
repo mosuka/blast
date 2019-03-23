@@ -26,7 +26,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func start(c *cli.Context) error {
+func execStart(c *cli.Context) error {
 	nodeId := c.String("node-id")
 	bindAddr := c.String("bind-addr")
 	grpcAddr := c.String("grpc-addr")

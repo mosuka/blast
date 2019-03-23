@@ -16,13 +16,17 @@ package kvs
 
 import (
 	"context"
+	"errors"
 	"log"
 	"math"
 
 	"github.com/golang/protobuf/ptypes/empty"
+	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf/kvs"
 	"github.com/mosuka/blast/protobuf/raft"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type GRPCClient struct {
@@ -90,7 +94,9 @@ func (c *GRPCClient) Leave(req *raft.Node, opts ...grpc.CallOption) error {
 func (c *GRPCClient) Snapshot(opts ...grpc.CallOption) error {
 	_, err := c.client.Snapshot(c.ctx, &empty.Empty{})
 	if err != nil {
-		return err
+		st, _ := status.FromError(err)
+
+		return errors.New(st.Message())
 	}
 
 	return nil
@@ -99,7 +105,14 @@ func (c *GRPCClient) Snapshot(opts ...grpc.CallOption) error {
 func (c *GRPCClient) Get(req *kvs.KeyValuePair, opts ...grpc.CallOption) (*kvs.KeyValuePair, error) {
 	resp, err := c.client.Get(c.ctx, req, opts...)
 	if err != nil {
-		return nil, err
+		st, _ := status.FromError(err)
+
+		switch st.Code() {
+		case codes.NotFound:
+			return nil, blasterrors.ErrNotFound
+		default:
+			return nil, errors.New(st.Message())
+		}
 	}
 
 	return resp, nil
@@ -108,7 +121,9 @@ func (c *GRPCClient) Get(req *kvs.KeyValuePair, opts ...grpc.CallOption) (*kvs.K
 func (c *GRPCClient) Put(req *kvs.KeyValuePair, opts ...grpc.CallOption) error {
 	_, err := c.client.Put(c.ctx, req, opts...)
 	if err != nil {
-		return err
+		st, _ := status.FromError(err)
+
+		return errors.New(st.Message())
 	}
 
 	return nil
@@ -117,7 +132,9 @@ func (c *GRPCClient) Put(req *kvs.KeyValuePair, opts ...grpc.CallOption) error {
 func (c *GRPCClient) Delete(req *kvs.KeyValuePair, opts ...grpc.CallOption) error {
 	_, err := c.client.Delete(c.ctx, req, opts...)
 	if err != nil {
-		return err
+		st, _ := status.FromError(err)
+
+		return errors.New(st.Message())
 	}
 
 	return nil

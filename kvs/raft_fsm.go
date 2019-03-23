@@ -21,11 +21,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/mosuka/blast/protobuf"
-
 	"github.com/golang/protobuf/proto"
 	"github.com/hashicorp/raft"
 	blasterrors "github.com/mosuka/blast/errors"
+	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/kvs"
 	pbkvs "github.com/mosuka/blast/protobuf/kvs"
 	blastraft "github.com/mosuka/blast/protobuf/raft"

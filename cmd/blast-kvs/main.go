@@ -123,7 +123,7 @@ func main() {
 					Usage: "Compress a HTTP access log",
 				},
 			},
-			Action: start,
+			Action: execStart,
 		},
 		{
 			Name:  "join",
@@ -136,7 +136,7 @@ func main() {
 				},
 			},
 			ArgsUsage: "[id] [addr]",
-			Action:    join,
+			Action:    execJoin,
 		},
 		{
 			Name:  "leave",
@@ -149,7 +149,7 @@ func main() {
 				},
 			},
 			ArgsUsage: "[id]",
-			Action:    leave,
+			Action:    execLeave,
 		},
 		{
 			Name:  "snapshot",
@@ -161,7 +161,7 @@ func main() {
 					Usage: "address to connect to",
 				},
 			},
-			Action: snapshot,
+			Action: execSnapshot,
 		},
 		{
 			Name:  "get",
@@ -178,7 +178,7 @@ func main() {
 					Usage: "key",
 				},
 			},
-			Action: get,
+			Action: execGet,
 		},
 		{
 			Name:  "put",
@@ -196,7 +196,7 @@ func main() {
 				},
 			},
 			ArgsUsage: "[value]",
-			Action:    put,
+			Action:    execPut,
 		},
 		{
 			Name:  "delete",
@@ -213,7 +213,7 @@ func main() {
 					Usage: "key",
 				},
 			},
-			Action: delete,
+			Action: execDelete,
 		},
 	}
 

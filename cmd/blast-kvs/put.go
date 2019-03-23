@@ -18,20 +18,26 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/mosuka/blast/kvs"
 	pbkvs "github.com/mosuka/blast/protobuf/kvs"
 	"github.com/urfave/cli"
 )
 
-func put(c *cli.Context) error {
+func execPut(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 
 	key := c.String("key")
 	if key == "" {
 		err := errors.New("key argument must be set")
 		return err
+	} else if key[:1] != "/" {
+		err := errors.New("key argument must start \"/\"")
+		return err
 	}
+
+	key, err := filepath.Abs(key)
 
 	value := c.Args().Get(0)
 	if value == "" {
