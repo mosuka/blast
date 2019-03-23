@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Add KVS HTTP handlers #46
+
 ### Changed
 
 

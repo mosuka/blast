@@ -24,7 +24,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func get(c *cli.Context) error {
+func execGet(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 
 	key := c.String("key")

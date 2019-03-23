@@ -24,7 +24,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func leave(c *cli.Context) error {
+func execLeave(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 
 	id := c.Args().Get(0)

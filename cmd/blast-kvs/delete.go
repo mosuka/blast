@@ -24,7 +24,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func delete(c *cli.Context) error {
+func execDelete(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 
 	key := c.String("key")

@@ -24,7 +24,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func join(c *cli.Context) error {
+func execJoin(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 
 	id := c.Args().Get(0)

@@ -20,13 +20,12 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/any"
-	"github.com/mosuka/blast/protobuf"
-
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
 	"github.com/mosuka/blast/errors"
+	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/kvs"
 	blastraft "github.com/mosuka/blast/protobuf/raft"
 )

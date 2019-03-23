@@ -15,11 +15,15 @@
 package kvs
 
 import (
+	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
+	"github.com/mosuka/blast/errors"
 	blasthttp "github.com/mosuka/blast/http"
+	"github.com/mosuka/blast/protobuf/kvs"
 	"github.com/mosuka/blast/version"
 )
 
@@ -50,5 +54,171 @@ func (h *RootHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	content, err := blasthttp.NewJSONMessage(msgMap)
 	if err != nil {
 		h.logger.Printf("[ERR] %v", err)
+	}
+}
+
+type GetHandler struct {
+	client *GRPCClient
+	logger *log.Logger
+}
+
+func NewGetHandler(client *GRPCClient, logger *log.Logger) *GetHandler {
+	return &GetHandler{
+		client: client,
+		logger: logger,
+	}
+}
+
+func (h *GetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+	httpStatus := http.StatusOK
+	content := make([]byte, 0)
+	defer func() {
+		blasthttp.WriteResponse(w, content, httpStatus, h.logger)
+		blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
+	}()
+
+	vars := mux.Vars(r)
+
+	key := "/" + vars["path"]
+
+	kvp := &kvs.KeyValuePair{
+		Key: []byte(key),
+	}
+
+	retKVP, err := h.client.Get(kvp)
+	if err != nil {
+		switch err {
+		case errors.ErrNotFound:
+			httpStatus = http.StatusNotFound
+		default:
+			httpStatus = http.StatusInternalServerError
+		}
+
+		msgMap := map[string]interface{}{
+			"message": err.Error(),
+			"status":  httpStatus,
+		}
+
+		content, err = blasthttp.NewJSONMessage(msgMap)
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+
+		return
+	}
+
+	content = retKVP.Value
+}
+
+type PutHandler struct {
+	client *GRPCClient
+	logger *log.Logger
+}
+
+func NewPutHandler(client *GRPCClient, logger *log.Logger) *PutHandler {
+	return &PutHandler{
+		client: client,
+		logger: logger,
+	}
+}
+
+func (h *PutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+	httpStatus := http.StatusOK
+	content := make([]byte, 0)
+	defer func() {
+		blasthttp.WriteResponse(w, content, httpStatus, h.logger)
+		blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
+	}()
+
+	vars := mux.Vars(r)
+
+	key := "/" + vars["path"]
+
+	bodyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		httpStatus = http.StatusInternalServerError
+
+		msgMap := map[string]interface{}{
+			"message": err.Error(),
+			"status":  httpStatus,
+		}
+
+		content, err = blasthttp.NewJSONMessage(msgMap)
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+
+		return
+	}
+
+	kvp := &kvs.KeyValuePair{
+		Key:   []byte(key),
+		Value: bodyBytes,
+	}
+
+	err = h.client.Put(kvp)
+	if err != nil {
+		httpStatus = http.StatusInternalServerError
+
+		msgMap := map[string]interface{}{
+			"message": err.Error(),
+			"status":  httpStatus,
+		}
+
+		content, err = blasthttp.NewJSONMessage(msgMap)
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+
+		return
+	}
+}
+
+type DeleteHandler struct {
+	client *GRPCClient
+	logger *log.Logger
+}
+
+func NewDeleteHandler(client *GRPCClient, logger *log.Logger) *DeleteHandler {
+	return &DeleteHandler{
+		client: client,
+		logger: logger,
+	}
+}
+
+func (h *DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+	httpStatus := http.StatusOK
+	content := make([]byte, 0)
+	defer func() {
+		blasthttp.WriteResponse(w, content, httpStatus, h.logger)
+		blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
+	}()
+
+	vars := mux.Vars(r)
+
+	key := "/" + vars["path"]
+
+	kvp := &kvs.KeyValuePair{
+		Key: []byte(key),
+	}
+
+	err := h.client.Delete(kvp)
+	if err != nil {
+		httpStatus = http.StatusInternalServerError
+
+		msgMap := map[string]interface{}{
+			"message": err.Error(),
+			"status":  httpStatus,
+		}
+
+		content, err = blasthttp.NewJSONMessage(msgMap)
+		if err != nil {
+			h.logger.Printf("[ERR] %v", err)
+		}
+
+		return
 	}
 }
