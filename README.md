@@ -235,7 +235,7 @@ $ make \
 Running a Blast index node is easy. Start Blast data node like so:
 
 ```bash
-$ ./bin/blast-indexer start --node-id=index1 --data-dir=/tmp/blast/index1 --bind-addr=:6060 --grpc-addr=:5050 --http-addr=:8080 --index-mapping-file=./example/index_mapping.json
+$ ./bin/blast-indexer start --node-id=indexer1 --data-dir=/tmp/blast/indexer1 --bind-addr=:6060 --grpc-addr=:5050 --http-addr=:8080 --index-mapping-file=./example/index_mapping.json
 ```
 
 Please refer to following document for details of index mapping:
@@ -572,8 +572,8 @@ $ curl -X DELETE 'http://127.0.0.1:8080/documents' -d @./example/docs_wiki.json
 Blast is easy to bring up the cluster. Blast data node is already running, but that is not fault tolerant. If you need to increase the fault tolerance, bring up 2 more data nodes like so:
 
 ```bash
-$ ./bin/blast-indexer start --node-id=index2 --data-dir=/tmp/blast/index2 --bind-addr=:6061 --grpc-addr=:5051 --http-addr=:8081 --index-mapping-file=./example/index_mapping.json --join-addr=:5050
-$ ./bin/blast-indexer start --node-id=index3 --data-dir=/tmp/blast/index3 --bind-addr=:6062 --grpc-addr=:5052 --http-addr=:8082 --index-mapping-file=./example/index_mapping.json --join-addr=:5050
+$ ./bin/blast-indexer start --node-id=indexer2 --data-dir=/tmp/blast/indexer2 --bind-addr=:6061 --grpc-addr=:5051 --http-addr=:8081 --index-mapping-file=./example/index_mapping.json --join-addr=:5050
+$ ./bin/blast-indexer start --node-id=indexer3 --data-dir=/tmp/blast/indexer3 --bind-addr=:6062 --grpc-addr=:5052 --http-addr=:8082 --index-mapping-file=./example/index_mapping.json --join-addr=:5050
 ```
 
 _Above example shows each Blast node running on the same host, so each node must listen on different ports. This would not be necessary if each node ran on a different host._
@@ -697,17 +697,17 @@ $ docker pull mosuka/blast:latest
 Running a Blast data node on Docker. Start Blast data node like so:
 
 ```bash
-$ docker run --rm --name blast-index1 \
+$ docker run --rm --name blast-indexer1 \
     -p 5050:5050 \
     -p 6060:6060 \
     -p 8080:8080 \
     -v $(pwd)/example:/opt/blast/example \
-    mosuka/blast:latest blast-index start \
-      --node-id=blast-index1 \
+    mosuka/blast:latest blast-indexer start \
+      --node-id=blast-indexer1 \
       --bind-addr=:6060 \
       --grpc-addr=:5050 \
       --http-addr=:8080 \
-      --data-dir=/tmp/blast/index1 \
+      --data-dir=/tmp/blast/indexer1 \
       --index-mapping-file=/opt/blast/example/index_mapping.json \
       --index-storage-type=leveldb
 ```
@@ -715,7 +715,7 @@ $ docker run --rm --name blast-index1 \
 You can execute the command in docker container as follows:
 
 ```bash
-$ docker exec -it blast-index1 blast-index node --grpc-addr=:5050
+$ docker exec -it blast-indexer1 blast-indexer node --grpc-addr=:5050
 ```
 
 

@@ -67,4 +67,4 @@ COPY --from=0 /go/src/github.com/mosuka/blast/docker-entrypoint.sh /usr/bin/
 EXPOSE 5050 6060 8080
 
 ENTRYPOINT [ "/usr/bin/docker-entrypoint.sh" ]
-CMD        [ "blast-index", "--help" ]
+CMD        [ "blast-indexer", "--help" ]
