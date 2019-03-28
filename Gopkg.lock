@@ -238,11 +238,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:72f8888587cda0c647cf9f9366e253aaa3219d6b0155d310e458414a38784511"
+  digest = "1:15b23730a209aa5fb9bec5a35d5413bf99a877f573b5ed2f04ccc6c777c89fb1"
   name = "github.com/couchbase/moss"
   packages = ["."]
   pruneopts = "UT"
-  revision = "ea630cf109a3fb497a132a017db671a984b77a9e"
+  revision = "a0cae174c4987cb28c071e0796e25b58834108d8"
 
 [[projects]]
   branch = "master"
@@ -281,11 +281,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:ea678afd6431e09f84a56fc6915ccab9189ddd1379fed997e1433ead9586c50b"
+  digest = "1:4f8b6d3cfd2ac1813bddcfee3b954fc5c0315e3917d8b3879d2e1cd09f9a3692"
   name = "github.com/dgryski/go-farm"
   packages = ["."]
   pruneopts = "UT"
-  revision = "3adb47b1fb0f6d9efcc5051a6c62e2e413ac85a9"
+  revision = "8198c7b169ec28630587aded52777c5e10a037c2"
 
 [[projects]]
   digest = "1:edb569dd02419a41ddd98768cc0e7aec922ef19dae139731e5ca750afcf6f4c5"
@@ -397,6 +397,14 @@
   version = "v1.0.1"
 
 [[projects]]
+  digest = "1:a0cefd27d12712af4b5018dc7046f245e1e3b5760e2e848c30b171b570708f9b"
+  name = "github.com/imdario/mergo"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "7c29201646fa3de8506f701213473dd407f19646"
+  version = "v0.3.7"
+
+[[projects]]
   digest = "1:a74b5a8e34ee5843cd6e65f698f3e75614f812ff170c2243425d75bc091e9af2"
   name = "github.com/jmhodges/levigo"
   packages = ["."]
@@ -422,11 +430,41 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:5d801c2fc18fba33f854e0310ad9283077f1f0db4fd558f75a7cdc0142cf8ab2"
+  name = "github.com/mmcloughlin/avo"
+  packages = [
+    "attr",
+    "build",
+    "buildtags",
+    "gotypes",
+    "internal/prnt",
+    "internal/stack",
+    "ir",
+    "operand",
+    "pass",
+    "printer",
+    "reg",
+    "src",
+    "x86",
+  ]
+  pruneopts = "UT"
+  revision = "7a0eb66183daac7566e9a52ee83c2c9359577f6a"
+
+[[projects]]
+  branch = "master"
   digest = "1:6088edee76eb00f903ebfd1309257ee95d97b63b98dc726cdeceda7e8bd4bd0d"
   name = "github.com/mosuka/bbadger"
   packages = ["."]
   pruneopts = "UT"
   revision = "67a91aedfe6868e18319b6b3ed3585ac435378cd"
+
+[[projects]]
+  digest = "1:47591b9064747340b2ee6b3f20da048600fb8cea6080f375e4fbe1f00137dbac"
+  name = "github.com/mosuka/maputils"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "512d394f682122f546e93937f380a998472c3173"
+  version = "v0.1.2"
 
 [[projects]]
   branch = "master"
@@ -504,7 +542,7 @@
     "xfs",
   ]
   pruneopts = "UT"
-  revision = "1ce7e0478fd3b3d90bedf551f7f8d4cab83e5c7f"
+  revision = "55ae3d9d557340b5bc24cd8aa5f6fa2c2ab31352"
 
 [[projects]]
   branch = "master"
@@ -577,7 +615,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4512c74e2c934a151fa9246cdc565d29611f53295bfb05e7a6275e80ee540a0c"
+  digest = "1:a7550c619a7f9701bc2f0b2c866668a207cfb693a2834796f723d2c78b514372"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -589,18 +627,18 @@
     "trace",
   ]
   pruneopts = "UT"
-  revision = "d196dffd7c2beec1957382065df08bcc353b9706"
+  revision = "63eda1eb0650888965ead1296efd04d0b2b61128"
 
 [[projects]]
   branch = "master"
-  digest = "1:1aa109187d52894bd8929a34a0a483ea4e57d7e32e86d81c64cea84c1978d68e"
+  digest = "1:6b3e6ddcebac95be1d690dbd53b5aa2e520715becb7e521bb526ccf3b4c53c15"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "UT"
-  revision = "6c81ef8f67ca3f42fc9cd71dfbd5f35b0c4b5771"
+  revision = "f49334f85ddcf0f08d7fb6dd7363e9e6d6b777eb"
 
 [[projects]]
   digest = "1:a2ab62866c75542dd18d2b069fec854577a20211d7c0ea6ae746072a1dccdd18"
@@ -627,14 +665,32 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:602be15842ee4665b55bd7ab7ab3cdadae56ac3b6a0cf6e796f1601f69670acb"
+  name = "golang.org/x/tools"
+  packages = [
+    "go/ast/astutil",
+    "go/gcexportdata",
+    "go/internal/gcimporter",
+    "go/internal/packagesdriver",
+    "go/packages",
+    "go/types/typeutil",
+    "internal/fastwalk",
+    "internal/gopathwalk",
+    "internal/semver",
+  ]
+  pruneopts = "UT"
+  revision = "c70d86f8b7cf4b047359c1da990de8d884ddff9a"
+
+[[projects]]
+  branch = "master"
   digest = "1:c3076e7defee87de1236f1814beb588f40a75544c60121e6eb38b3b3721783e2"
   name = "google.golang.org/genproto"
   packages = ["googleapis/rpc/status"]
   pruneopts = "UT"
-  revision = "5fe7a883aa19554f42890211544aa549836af7b7"
+  revision = "d831d65fe17df2e52bcc4316d4a9f7a418701f43"
 
 [[projects]]
-  digest = "1:cbc746de4662c66fd24a037501bd65aa0f8ad0bfca0c92576e0abb88864e3741"
+  digest = "1:c00eb80d7b152379c3e94c38d82b29deca98b1d0f53e4e20362589b7fcbffa07"
   name = "google.golang.org/grpc"
   packages = [
     ".",
@@ -670,8 +726,8 @@
     "tap",
   ]
   pruneopts = "UT"
-  revision = "2fdaae294f38ed9a121193c51ec99fecd3b13eb7"
-  version = "v1.19.0"
+  revision = "3507fb8e1a5ad030303c106fef3a47c9fdad16ad"
+  version = "v1.19.1"
 
 [solve-meta]
   analyzer-name = "dep"
@@ -680,6 +736,7 @@
     "github.com/blevesearch/bleve",
     "github.com/blevesearch/bleve/config",
     "github.com/blevesearch/bleve/mapping",
+    "github.com/blevesearch/bleve/search/query",
     "github.com/dgraph-io/badger",
     "github.com/golang/protobuf/proto",
     "github.com/golang/protobuf/ptypes/any",
@@ -690,9 +747,11 @@
     "github.com/hashicorp/raft-boltdb",
     "github.com/mash/go-accesslog",
     "github.com/mosuka/bbadger",
+    "github.com/mosuka/maputils",
     "github.com/natefinch/lumberjack",
     "github.com/prometheus/client_golang/prometheus",
     "github.com/prometheus/client_golang/prometheus/promhttp",
+    "github.com/syndtr/goleveldb/leveldb/errors",
     "github.com/urfave/cli",
     "google.golang.org/grpc",
     "google.golang.org/grpc/codes",

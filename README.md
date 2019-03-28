@@ -165,7 +165,7 @@ You can see the binary file when build successful like so:
 
 ```bash
 $ ls ./bin
-blast-index
+blast-indexer
 ```
 
 
@@ -235,7 +235,7 @@ $ make \
 Running a Blast index node is easy. Start Blast data node like so:
 
 ```bash
-$ ./bin/blast-index start --node-id=index1 --data-dir=/tmp/blast/index1 --bind-addr=:6060 --grpc-addr=:5050 --http-addr=:8080 --index-mapping-file=./example/index_mapping.json
+$ ./bin/blast-indexer start --node-id=index1 --data-dir=/tmp/blast/index1 --bind-addr=:6060 --grpc-addr=:5050 --http-addr=:8080 --index-mapping-file=./example/index_mapping.json
 ```
 
 Please refer to following document for details of index mapping:
@@ -252,7 +252,7 @@ You can now put, get, search and delete the documents via CLI.
 For document indexing, execute the following command:
 
 ```bash
-$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast-index index --grpc-addr=:5050 --id=enwiki_1
+$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast-indexer index --grpc-addr=:5050 --id=enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -269,7 +269,7 @@ You can see the result in JSON format. The result of the above command is:
 Getting a document is as following:
 
 ```bash
-$ ./bin/blast-index get --grpc-addr=:5050 --id=enwiki_1
+$ ./bin/blast-indexer get --grpc-addr=:5050 --id=enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -290,7 +290,7 @@ You can see the result in JSON format. The result of the above command is:
 Searching documents is as like following:
 
 ```bash
-$ cat ./example/search_request.json | xargs -0 ./bin/blast-index search --grpc-addr=:5050
+$ cat ./example/search_request.json | xargs -0 ./bin/blast-indexer search --grpc-addr=:5050
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -462,7 +462,7 @@ Please refer to following document for details of search request and result:
 Deleting a document is as following:
 
 ```bash
-$ ./bin/blast-index delete --grpc-addr=:5050 --id=enwiki_1
+$ ./bin/blast-indexer delete --grpc-addr=:5050 --id=enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -479,7 +479,7 @@ You can see the result in JSON format. The result of the above command is:
 Indexing documents in bulk, run the following command:
 
 ```bash
-$ cat ./example/docs_wiki.json | xargs -0 ./bin/blast-index index --grpc-addr=:5050
+$ cat ./example/docs_wiki.json | xargs -0 ./bin/blast-indexer index --grpc-addr=:5050
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -496,7 +496,7 @@ You can see the result in JSON format. The result of the above command is:
 Deleting documents in bulk, run the following command:
 
 ```bash
-$ cat ./example/docs_wiki.json | xargs -0 ./bin/blast-index delete --grpc-addr=:5050
+$ cat ./example/docs_wiki.json | xargs -0 ./bin/blast-indexer delete --grpc-addr=:5050
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -572,8 +572,8 @@ $ curl -X DELETE 'http://127.0.0.1:8080/documents' -d @./example/docs_wiki.json
 Blast is easy to bring up the cluster. Blast data node is already running, but that is not fault tolerant. If you need to increase the fault tolerance, bring up 2 more data nodes like so:
 
 ```bash
-$ ./bin/blast-index start --node-id=index2 --data-dir=/tmp/blast/index2 --bind-addr=:6061 --grpc-addr=:5051 --http-addr=:8081 --index-mapping-file=./example/index_mapping.json --join-addr=:5050
-$ ./bin/blast-index start --node-id=index3 --data-dir=/tmp/blast/index3 --bind-addr=:6062 --grpc-addr=:5052 --http-addr=:8082 --index-mapping-file=./example/index_mapping.json --join-addr=:5050
+$ ./bin/blast-indexer start --node-id=index2 --data-dir=/tmp/blast/index2 --bind-addr=:6061 --grpc-addr=:5051 --http-addr=:8081 --index-mapping-file=./example/index_mapping.json --join-addr=:5050
+$ ./bin/blast-indexer start --node-id=index3 --data-dir=/tmp/blast/index3 --bind-addr=:6062 --grpc-addr=:5052 --http-addr=:8082 --index-mapping-file=./example/index_mapping.json --join-addr=:5050
 ```
 
 _Above example shows each Blast node running on the same host, so each node must listen on different ports. This would not be necessary if each node ran on a different host._
@@ -582,7 +582,7 @@ This instructs each new node to join an existing node, each node recognizes the 
 So you have a 3-node cluster. That way you can tolerate the failure of 1 node. You can check the peers with the following command:
 
 ```bash
-$ ./bin/blast-index cluster --grpc-addr=:5050
+$ ./bin/blast-indexer cluster --grpc-addr=:5050
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -621,13 +621,13 @@ Recommend 3 or more odd number of nodes in the cluster. In failure scenarios, da
 The following command indexes documents to any node in the cluster:
 
 ```bash
-$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast-index index --grpc-addr=:5050 enwiki_1
+$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast-indexer index --grpc-addr=:5050 enwiki_1
 ```
 
 So, you can get the document from the node specified by the above command as follows:
 
 ```bash
-$ ./bin/blast-index get --grpc-addr=:5050 enwiki_1
+$ ./bin/blast-indexer get --grpc-addr=:5050 enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -645,8 +645,8 @@ You can see the result in JSON format. The result of the above command is:
 You can also get the same document from other nodes in the cluster as follows:
 
 ```bash
-$ ./bin/blast-index get --grpc-addr=:5051 enwiki_1
-$ ./bin/blast-index get --grpc-addr=:5052 enwiki_1
+$ ./bin/blast-indexer get --grpc-addr=:5051 enwiki_1
+$ ./bin/blast-indexer get --grpc-addr=:5052 enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:

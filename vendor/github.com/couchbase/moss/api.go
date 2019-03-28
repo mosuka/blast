@@ -302,8 +302,8 @@ var DefaultCollectionOptions = CollectionOptions{
 	MaxPreMergerBatches:    10,
 	MergerCancelCheckEvery: 10000,
 	MergerIdleRunTimeoutMS: 0,
-	Debug: 0,
-	Log:   nil,
+	Debug:                  0,
+	Log:                    nil,
 }
 
 // BatchOptions are provided to NewChildCollectionBatch().

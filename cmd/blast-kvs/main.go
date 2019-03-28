@@ -152,6 +152,31 @@ func main() {
 			Action:    execLeave,
 		},
 		{
+			Name:  "node",
+			Usage: "Get node",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "grpc-addr, g",
+					Value: ":5050",
+					Usage: "gRPC address to connect to",
+				},
+			},
+			ArgsUsage: "[id]",
+			Action:    execNode,
+		},
+		{
+			Name:  "cluster",
+			Usage: "Get cluster",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "grpc-addr, g",
+					Value: ":5050",
+					Usage: "gRPC address to connect to",
+				},
+			},
+			Action: execCluster,
+		},
+		{
 			Name:  "snapshot",
 			Usage: "Create snapshot manually",
 			Flags: []cli.Flag{
