@@ -91,6 +91,28 @@ func (c *GRPCClient) Leave(req *raft.Node, opts ...grpc.CallOption) error {
 	return nil
 }
 
+func (c *GRPCClient) GetNode(opts ...grpc.CallOption) (*raft.Node, error) {
+	node, err := c.client.GetNode(c.ctx, &empty.Empty{}, opts...)
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+
+	return node, nil
+}
+
+func (c *GRPCClient) GetCluster(opts ...grpc.CallOption) (*raft.Cluster, error) {
+	cluster, err := c.client.GetCluster(c.ctx, &empty.Empty{}, opts...)
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+
+	return cluster, nil
+}
+
 func (c *GRPCClient) Snapshot(opts ...grpc.CallOption) error {
 	_, err := c.client.Snapshot(c.ctx, &empty.Empty{})
 	if err != nil {

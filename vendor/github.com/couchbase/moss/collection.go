@@ -288,6 +288,7 @@ func (m *collection) ResetStackDirtyTop() error {
 	m.m.Lock()
 	stackDirtyTopPrev := m.stackDirtyTop
 	m.stackDirtyTop = nil
+	m.invalidateLatestSnapshotLOCKED()
 	m.m.Unlock()
 	stackDirtyTopPrev.Close()
 	return nil

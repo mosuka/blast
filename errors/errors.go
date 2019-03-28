@@ -18,7 +18,6 @@ import "errors"
 
 var (
 	ErrNotFoundLeader = errors.New("does not found leader")
-	ErrNotLeader      = errors.New("not leader")
 	ErrNotFound       = errors.New("not found")
 	ErrTimeout        = errors.New("timeout")
 )

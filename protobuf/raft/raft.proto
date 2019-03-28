@@ -28,5 +28,6 @@ message Node {
 }
 
 message Cluster {
-    repeated Node nodes = 1;
+    string id = 1;
+    repeated Node nodes = 2;
 }
