@@ -1,1 +1,0 @@
-This package exposes the English stemmer using libstemmer, however it is NOT required/used by the default Bleve English anayzer which uses the porter stemmer instead.

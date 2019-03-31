@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:18.10
+FROM golang:1.12.1-stretch
 
 ARG VERSION
 
@@ -20,7 +20,9 @@ ENV GOPATH /go
 
 COPY . ${GOPATH}/src/github.com/mosuka/blast
 
-RUN apt-get update && \
+RUN echo "deb http://ftp.us.debian.org/debian/ jessie main contrib non-free" >> /etc/apt/sources.list && \
+    echo "deb-src http://ftp.us.debian.org/debian/ jessie main contrib non-free" >> /etc/apt/sources.list && \
+    apt-get update && \
     apt-get install -y \
       git \
       golang \
@@ -31,8 +33,8 @@ RUN apt-get update && \
       g++-4.8 \
       build-essential && \
     apt-get clean && \
-    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 && \
-    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 80 && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 80 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 80 && \
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 90 && \
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 90 && \
     go get -u -v github.com/blevesearch/cld2 && \
@@ -42,14 +44,15 @@ RUN apt-get update && \
     ./compile_libs.sh && \
     cp *.so /usr/local/lib && \
     cd ${GOPATH}/src/github.com/mosuka/blast && \
-    GOOS=linux \
+    make \
+      GOOS=linux \
       GOARCH=amd64 \
       CGO_ENABLED=1 \
       BUILD_TAGS="kagome icu libstemmer cld2 cznicb leveldb badger" \
       VERSION="${VERSION}" \
-      make build
+      build
 
-FROM ubuntu:18.10
+FROM debian:stretch-slim
 
 MAINTAINER Minoru Osuka "minoru.osuka@gmail.com"
 

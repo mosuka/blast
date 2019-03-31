@@ -1,1 +1,0 @@
-This package exposes the Italian stemmer using libstemmer, however it is NOT required/used by the default Bleve Italian anayzer which uses the Italian light stemmer instead.
