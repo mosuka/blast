@@ -110,6 +110,7 @@ Blast supports some [Bleve Extensions (blevex)](https://github.com/blevesearch/b
 
 ```bash
 $ make \
+    GOOS=linux \
     BUILD_TAGS=leveldb \
     CGO_ENABLED=1 \
     build
@@ -185,6 +186,7 @@ You can test with all the Bleve extensions supported by Blast as follows:
 
 ```bash
 $ make \
+    GOOS=linux \
     BUILD_TAGS="kagome icu libstemmer cld2 cznicb leveldb badger" \
     CGO_ENABLED=1 \
     test
@@ -195,6 +197,7 @@ $ make \
 
 ```bash
 $ make \
+    GOOS=darwin \
     BUILD_TAGS="kagome icu libstemmer cld2 cznicb leveldb badger" \
     CGO_ENABLED=1 \
     CGO_LDFLAGS="-L/usr/local/opt/icu4c/lib" \
