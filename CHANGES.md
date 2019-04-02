@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Update http logger #51
 - Update logutils (#50)
 - Remve KVS (#49)
 
