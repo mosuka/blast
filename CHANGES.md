@@ -10,10 +10,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Add cluster manager (#48)
 - Add KVS HTTP handlers #46
 
 ### Changed
 
+- Update logutils (#50)
+- Remve KVS (#49)
 
 ## [v0.5.0] - 2019-03-22
 
