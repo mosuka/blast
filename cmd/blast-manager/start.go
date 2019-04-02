@@ -57,7 +57,7 @@ func execStart(c *cli.Context) error {
 	)
 
 	// Create HTTP access logger
-	httpAccessLogger := logutils.NewHTTPLogger(
+	httpAccessLogger := logutils.NewApacheCombinedLogger(
 		httpAccessLogFilename,
 		httpAccessLogMaxSize,
 		httpAccessLogMaxBackups,

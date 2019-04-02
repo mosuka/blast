@@ -115,6 +115,8 @@ github.com/mosuka/bbadger v0.0.0-20190319122948-67a91aedfe68 h1:LE+XIZDiXr587to+
 github.com/mosuka/bbadger v0.0.0-20190319122948-67a91aedfe68/go.mod h1:qy5KaSXSrNqdWFS/e3wWNFXZPRDnqjX79iRhOveUpfc=
 github.com/mosuka/logutils v0.1.1 h1:OUZEGdgsCfAwgtyRCpmORkP+Nl9ldoRawWCHaLB2z9k=
 github.com/mosuka/logutils v0.1.1/go.mod h1:CpJK2hcZNUSbmmVP839jPubOrj7/ANH6F3chUtyIpuM=
+github.com/mosuka/logutils v0.1.2 h1:3mTh6ulzJGDv4Cp6JG4QIIiS/kJ7fLtycdJWv0XqZN4=
+github.com/mosuka/logutils v0.1.2/go.mod h1:CpJK2hcZNUSbmmVP839jPubOrj7/ANH6F3chUtyIpuM=
 github.com/mosuka/maputils v0.1.2 h1:P71cr3V2WI3/K0dQF8CPnDSslaIWxqCT6G9jyrsiR9g=
 github.com/mosuka/maputils v0.1.2/go.mod h1:eBVvvSa8IK7aZJdGqYltLQmp7XBnqd9J1/dRBZsdHLg=
 github.com/mschoch/smat v0.0.0-20160514031455-90eadee771ae h1:VeRdUYdCw49yizlSbMEn2SZ+gT+3IUKx8BqxyQdz+BY=
