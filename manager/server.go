@@ -17,6 +17,7 @@ package manager
 import (
 	"log"
 
+	accesslog "github.com/mash/go-accesslog"
 	"github.com/mosuka/blast/protobuf/raft"
 )
 
@@ -34,10 +35,10 @@ type Server struct {
 	httpServer *HTTPServer
 
 	logger     *log.Logger
-	httpLogger *log.Logger
+	httpLogger accesslog.Logger
 }
 
-func NewServer(nodeId string, bindAddr string, grpcAddr string, httpAddr string, dataDir string, joinAddr string, logger *log.Logger, httpLogger *log.Logger) (*Server, error) {
+func NewServer(nodeId string, bindAddr string, grpcAddr string, httpAddr string, dataDir string, joinAddr string, logger *log.Logger, httpLogger accesslog.Logger) (*Server, error) {
 	var err error
 
 	server := &Server{

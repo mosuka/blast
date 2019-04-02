@@ -19,8 +19,6 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/mosuka/logutils"
-
 	"github.com/gorilla/mux"
 	accesslog "github.com/mash/go-accesslog"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -33,10 +31,10 @@ type HTTPServer struct {
 	grpcClient *GRPCClient
 
 	logger     *log.Logger
-	httpLogger *log.Logger
+	httpLogger accesslog.Logger
 }
 
-func NewHTTPServer(httpAddr string, grpcClient *GRPCClient, logger *log.Logger, httpLogger *log.Logger) (*HTTPServer, error) {
+func NewHTTPServer(httpAddr string, grpcClient *GRPCClient, logger *log.Logger, httpLogger accesslog.Logger) (*HTTPServer, error) {
 	listener, err := net.Listen("tcp", httpAddr)
 	if err != nil {
 		return nil, err
@@ -68,7 +66,7 @@ func (s *HTTPServer) Start() error {
 		s.listener,
 		accesslog.NewLoggingHandler(
 			s.router,
-			logutils.NewApacheCombinedLogger(s.httpLogger),
+			s.httpLogger,
 		),
 	)
 	if err != nil {
