@@ -19,9 +19,10 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/mosuka/logutils"
+
 	"github.com/gorilla/mux"
 	accesslog "github.com/mash/go-accesslog"
-	blasthttp "github.com/mosuka/blast/http"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -64,9 +65,7 @@ func (s *HTTPServer) Start() error {
 		s.listener,
 		accesslog.NewLoggingHandler(
 			s.router,
-			blasthttp.ApacheCombinedLogger{
-				Logger: s.httpLogger,
-			},
+			logutils.NewApacheCombinedLogger(s.httpLogger),
 		),
 	)
 	if err != nil {

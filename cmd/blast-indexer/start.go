@@ -15,14 +15,12 @@
 package main
 
 import (
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/mosuka/blast/http"
 	"github.com/mosuka/blast/indexer"
-	blastlog "github.com/mosuka/blast/log"
+	"github.com/mosuka/logutils"
 	"github.com/urfave/cli"
 )
 
@@ -51,10 +49,8 @@ func execStart(c *cli.Context) error {
 	httpAccessLogCompress := c.Bool("http-access-log-compress")
 
 	// Create logger
-	logger := blastlog.NewLogger(
+	logger := logutils.NewLogger(
 		logLevel,
-		"",
-		log.LstdFlags|log.Lmicroseconds|log.LUTC,
 		logFilename,
 		logMaxSize,
 		logMaxBackups,
@@ -63,7 +59,7 @@ func execStart(c *cli.Context) error {
 	)
 
 	// Create HTTP access logger
-	httpAccessLogger := http.NewLogger(
+	httpAccessLogger := logutils.NewHTTPLogger(
 		httpAccessLogFilename,
 		httpAccessLogMaxSize,
 		httpAccessLogMaxBackups,
