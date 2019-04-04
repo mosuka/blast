@@ -30,7 +30,7 @@ func execStart(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 	httpAddr := c.String("http-addr")
 	dataDir := c.String("data-dir")
-	joinAddr := c.String("join-addr")
+	peerAddr := c.String("peer-addr")
 
 	indexMappingFile := c.String("index-mapping-file")
 	indexStorageType := c.String("index-storage-type")
@@ -67,7 +67,7 @@ func execStart(c *cli.Context) error {
 		httpAccessLogCompress,
 	)
 
-	svr, err := indexer.NewServer(nodeId, bindAddr, grpcAddr, httpAddr, dataDir, joinAddr, indexMappingFile, indexStorageType, logger, httpAccessLogger)
+	svr, err := indexer.NewServer(nodeId, bindAddr, grpcAddr, httpAddr, dataDir, peerAddr, indexMappingFile, indexStorageType, logger, httpAccessLogger)
 	if err != nil {
 		return err
 	}

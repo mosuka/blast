@@ -31,7 +31,7 @@ func execStart(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 	httpAddr := c.String("http-addr")
 	dataDir := c.String("data-dir")
-	joinAddr := c.String("join-addr")
+	peerAddr := c.String("peer-addr")
 
 	logLevel := c.String("log-level")
 	logFilename := c.String("log-file")
@@ -65,7 +65,7 @@ func execStart(c *cli.Context) error {
 		httpAccessLogCompress,
 	)
 
-	svr, err := manager.NewServer(nodeId, bindAddr, grpcAddr, httpAddr, dataDir, joinAddr, logger, httpAccessLogger)
+	svr, err := manager.NewServer(nodeId, bindAddr, grpcAddr, httpAddr, dataDir, peerAddr, logger, httpAccessLogger)
 	if err != nil {
 		return err
 	}

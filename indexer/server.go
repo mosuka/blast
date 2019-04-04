@@ -28,7 +28,7 @@ import (
 type Server struct {
 	node      *raft.Node
 	bootstrap bool
-	joinAddr  string
+	peerAddr  string
 
 	raftServer *RaftServer
 
@@ -42,12 +42,12 @@ type Server struct {
 	httpLogger accesslog.Logger
 }
 
-func NewServer(nodeId string, bindAddr string, grpcAddr string, httpAddr string, dataDir string, joinAddr string, indexMappingPath string, indexStorageType string, logger *log.Logger, httpLogger accesslog.Logger) (*Server, error) {
+func NewServer(nodeId string, bindAddr string, grpcAddr string, httpAddr string, dataDir string, peerAddr string, indexMappingPath string, indexStorageType string, logger *log.Logger, httpLogger accesslog.Logger) (*Server, error) {
 	var err error
 
 	server := &Server{
-		bootstrap:  joinAddr == "",
-		joinAddr:   joinAddr,
+		bootstrap:  peerAddr == "",
+		peerAddr:   peerAddr,
 		logger:     logger,
 		httpLogger: httpLogger,
 	}
@@ -160,7 +160,7 @@ func (s *Server) Start() {
 
 	if !s.bootstrap {
 		// create gRPC client
-		client, err := NewGRPCClient(s.joinAddr)
+		client, err := NewGRPCClient(s.peerAddr)
 		defer func() {
 			err := client.Close()
 			if err != nil {
