@@ -18,6 +18,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"log"
 	"os"
 
 	"github.com/mosuka/blast/manager"
@@ -26,7 +28,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func execGet(c *cli.Context) error {
+func execWatch(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 
 	key := c.String("key")
@@ -50,33 +52,44 @@ func execGet(c *cli.Context) error {
 		}
 	}()
 
-	resp, err := client.Get(req)
+	watchClient, err := client.Watch(req)
 	if err != nil {
 		return err
 	}
 
-	value, err := protobuf.MarshalAny(resp.Value)
-	if err != nil {
-		return err
-	}
-	if value == nil {
-		return errors.New("nil")
-	}
+	for {
+		resp, err := watchClient.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Println(err.Error())
+			break
+		}
 
-	var valueBytes []byte
-	switch value.(type) {
-	case *map[string]interface{}:
-		valueMap := *value.(*map[string]interface{})
-		valueBytes, err = json.MarshalIndent(valueMap, "", "  ")
+		value, err := protobuf.MarshalAny(resp.Value)
 		if err != nil {
 			return err
 		}
-		fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", string(valueBytes)))
-	case *string:
-		valueStr := *value.(*string)
-		fmt.Fprintln(os.Stdout, fmt.Sprintf("%s\n", valueStr))
-	default:
-		fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", &value))
+		if value == nil {
+			return errors.New("nil")
+		}
+
+		var valueBytes []byte
+		switch value.(type) {
+		case *map[string]interface{}:
+			valueMap := *value.(*map[string]interface{})
+			valueBytes, err = json.MarshalIndent(valueMap, "", "  ")
+			if err != nil {
+				return err
+			}
+			fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", string(valueBytes)))
+		case *string:
+			valueStr := *value.(*string)
+			fmt.Fprintln(os.Stdout, fmt.Sprintf("%s\n", valueStr))
+		default:
+			fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", &value))
+		}
 	}
 
 	return nil

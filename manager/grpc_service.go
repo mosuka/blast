@@ -17,6 +17,8 @@ package manager
 import (
 	"context"
 	"log"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -29,13 +31,15 @@ import (
 
 type GRPCService struct {
 	raftServer *RaftServer
-
-	logger *log.Logger
+	chans      map[chan management.KeyValuePair]struct{}
+	logger     *log.Logger
+	mu         sync.RWMutex
 }
 
 func NewGRPCService(raftServer *RaftServer, logger *log.Logger) (*GRPCService, error) {
 	return &GRPCService{
 		raftServer: raftServer,
+		chans:      make(map[chan management.KeyValuePair]struct{}),
 		logger:     logger,
 	}, nil
 }
@@ -97,7 +101,12 @@ func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*raft.C
 }
 
 func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
-	s.logger.Printf("[INFO] %v", req)
+	start := time.Now()
+	s.mu.Lock()
+	defer func() {
+		s.mu.Unlock()
+		RecordMetrics(start, "snapshot")
+	}()
 
 	resp := &empty.Empty{}
 
@@ -111,9 +120,11 @@ func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Em
 
 func (s *GRPCService) Get(ctx context.Context, req *management.KeyValuePair) (*management.KeyValuePair, error) {
 	start := time.Now()
-	defer RecordMetrics(start, "get")
-
-	s.logger.Printf("[INFO] get %v", req)
+	s.mu.RLock()
+	defer func() {
+		s.mu.RUnlock()
+		RecordMetrics(start, "get")
+	}()
 
 	resp := &management.KeyValuePair{}
 
@@ -134,9 +145,11 @@ func (s *GRPCService) Get(ctx context.Context, req *management.KeyValuePair) (*m
 
 func (s *GRPCService) Set(ctx context.Context, req *management.KeyValuePair) (*empty.Empty, error) {
 	start := time.Now()
-	defer RecordMetrics(start, "set")
-
-	s.logger.Printf("[INFO] set %v", req)
+	s.mu.Lock()
+	defer func() {
+		s.mu.Unlock()
+		RecordMetrics(start, "set")
+	}()
 
 	resp := &empty.Empty{}
 
@@ -150,12 +163,21 @@ func (s *GRPCService) Set(ctx context.Context, req *management.KeyValuePair) (*e
 		}
 	}
 
+	// notify
+	for c := range s.chans {
+		c <- *req
+	}
+
 	return resp, nil
 }
 
 func (s *GRPCService) Delete(ctx context.Context, req *management.KeyValuePair) (*empty.Empty, error) {
 	start := time.Now()
-	defer RecordMetrics(start, "set")
+	s.mu.Lock()
+	defer func() {
+		s.mu.Unlock()
+		RecordMetrics(start, "delete")
+	}()
 
 	s.logger.Printf("[INFO] set %v", req)
 
@@ -172,4 +194,31 @@ func (s *GRPCService) Delete(ctx context.Context, req *management.KeyValuePair) 
 	}
 
 	return resp, nil
+}
+
+func (s *GRPCService) Watch(req *management.KeyValuePair, server management.Management_WatchServer) error {
+	kvpChan := make(chan management.KeyValuePair)
+
+	s.mu.Lock()
+	s.chans[kvpChan] = struct{}{}
+	s.mu.Unlock()
+
+	defer func() {
+		s.mu.Lock()
+		delete(s.chans, kvpChan)
+		s.mu.Unlock()
+		close(kvpChan)
+	}()
+
+	for kvp := range kvpChan {
+		if !strings.HasPrefix(kvp.Key, req.Key) {
+			continue
+		}
+		err := server.Send(&kvp)
+		if err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+	}
+
+	return nil
 }

@@ -15,9 +15,13 @@
 package main
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/blevesearch/bleve/mapping"
 
 	"github.com/mosuka/logutils"
 
@@ -32,6 +36,10 @@ func execStart(c *cli.Context) error {
 	httpAddr := c.String("http-addr")
 	dataDir := c.String("data-dir")
 	peerAddr := c.String("peer-addr")
+
+	indexMappingFile := c.String("index-mapping-file")
+	indexType := c.String("index-type")
+	indexStorageType := c.String("index-storage-type")
 
 	logLevel := c.String("log-level")
 	logFilename := c.String("log-file")
@@ -65,7 +73,37 @@ func execStart(c *cli.Context) error {
 		httpAccessLogCompress,
 	)
 
-	svr, err := manager.NewServer(nodeId, bindAddr, grpcAddr, httpAddr, dataDir, peerAddr, logger, httpAccessLogger)
+	// set default index mapping
+	indexMapping := mapping.NewIndexMapping()
+
+	// check index mapping file
+	if indexMappingFile != "" {
+		_, err := os.Stat(indexMappingFile)
+		if err == nil {
+			// read index mapping file
+			f, err := os.Open(indexMappingFile)
+			if err != nil {
+				return err
+			}
+			defer func() {
+				_ = f.Close()
+			}()
+
+			b, err := ioutil.ReadAll(f)
+			if err != nil {
+				return err
+			}
+
+			err = json.Unmarshal(b, indexMapping)
+			if err != nil {
+				return err
+			}
+		} else if os.IsNotExist(err) {
+			return err
+		}
+	}
+
+	svr, err := manager.NewServer(nodeId, bindAddr, grpcAddr, httpAddr, dataDir, peerAddr, indexMapping, indexType, indexStorageType, logger, httpAccessLogger)
 	if err != nil {
 		return err
 	}

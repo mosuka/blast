@@ -28,6 +28,7 @@ import (
 
 func init() {
 	registry.RegisterType("map[string]interface {}", reflect.TypeOf((map[string]interface{})(nil)))
+	registry.RegisterType("string", reflect.TypeOf(""))
 
 	registry.RegisterType("management.KeyValuePair", reflect.TypeOf(management.KeyValuePair{}))
 	registry.RegisterType("index.Document", reflect.TypeOf(index.Document{}))

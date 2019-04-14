@@ -171,3 +171,13 @@ func (c *GRPCClient) Delete(req *management.KeyValuePair, opts ...grpc.CallOptio
 
 	return nil
 }
+
+func (c *GRPCClient) Watch(req *management.KeyValuePair, opts ...grpc.CallOption) (management.Management_WatchClient, error) {
+	watchClient, err := c.client.Watch(c.ctx, req, opts...)
+	if err != nil {
+		st, _ := status.FromError(err)
+		return nil, errors.New(st.Message())
+	}
+
+	return watchClient, nil
+}

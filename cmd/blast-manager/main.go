@@ -19,6 +19,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/blevesearch/bleve"
 	"github.com/mosuka/blast/version"
 	"github.com/urfave/cli"
 )
@@ -68,6 +69,21 @@ func main() {
 					Name:  "peer-addr",
 					Value: "",
 					Usage: "Existing gRPC server listen address to join to the cluster",
+				},
+				cli.StringFlag{
+					Name:  "index-mapping-file",
+					Value: "",
+					Usage: "Path to a file containing a JSON representation of an index mapping to use",
+				},
+				cli.StringFlag{
+					Name:  "index-type",
+					Value: bleve.Config.DefaultIndexType,
+					Usage: "Index storage type to use",
+				},
+				cli.StringFlag{
+					Name:  "index-storage-type",
+					Value: bleve.Config.DefaultKVStore,
+					Usage: "Index storage type to use",
 				},
 				cli.StringFlag{
 					Name:  "log-level",
@@ -239,6 +255,23 @@ func main() {
 				},
 			},
 			Action: execDelete,
+		},
+		{
+			Name:  "watch",
+			Usage: "Watch a value by key",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "grpc-addr",
+					Value: ":15050",
+					Usage: "gRPC address to connect to",
+				},
+				cli.StringFlag{
+					Name:  "key",
+					Value: "",
+					Usage: "Key",
+				},
+			},
+			Action: execWatch,
 		},
 	}
 

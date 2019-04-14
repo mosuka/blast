@@ -15,15 +15,22 @@
 package manager
 
 import (
+	"encoding/json"
 	"log"
 	"net"
 	"path/filepath"
+	"sync"
 	"time"
+
+	"github.com/mosuka/blast/common"
+
+	"github.com/blevesearch/bleve/mapping"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
+	_ "github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/management"
@@ -40,20 +47,28 @@ type RaftServer struct {
 	raft *raft.Raft
 	fsm  *RaftFSM
 
+	indexMapping     *mapping.IndexMappingImpl
+	indexType        string
+	indexStorageType string
+
 	logger *log.Logger
+	mu     sync.RWMutex
 }
 
-func NewRaftServer(node *blastraft.Node, bootstrap bool, logger *log.Logger) (*RaftServer, error) {
-	fsm, err := NewRaftFSM(filepath.Join(node.DataDir, "kvs"), logger)
+func NewRaftServer(node *blastraft.Node, bootstrap bool, indexMapping *mapping.IndexMappingImpl, indexType string, indexStorageType string, logger *log.Logger) (*RaftServer, error) {
+	fsm, err := NewRaftFSM(filepath.Join(node.DataDir, "store"), logger)
 	if err != nil {
 		return nil, err
 	}
 
 	return &RaftServer{
-		Node:      node,
-		bootstrap: bootstrap,
-		fsm:       fsm,
-		logger:    logger,
+		Node:             node,
+		bootstrap:        bootstrap,
+		fsm:              fsm,
+		indexMapping:     indexMapping,
+		indexType:        indexType,
+		indexStorageType: indexStorageType,
+		logger:           logger,
 	}, nil
 }
 
@@ -116,6 +131,31 @@ func (s *RaftServer) Start() error {
 
 		// set metadata
 		err = s.setMetadata(s.Node.Id, s.Node)
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			return nil
+		}
+
+		indexConfig := common.NewIndexConfig()
+		indexConfig.IndexMapping = s.indexMapping
+		indexConfig.IndexType = s.indexType
+		indexConfig.IndexStorageType = s.indexStorageType
+
+		//b, err := json.Marshal(indexConfig)
+		//if err != nil {
+		//	s.logger.Printf("[ERR] %v", err)
+		//	return nil
+		//}
+		//
+		//var m map[string]interface{}
+		//err = json.Unmarshal(b, &m)
+		//if err != nil {
+		//	s.logger.Printf("[ERR] %v", err)
+		//	return nil
+		//}
+
+		// set index config
+		err = s.setIndexConfig(indexConfig)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return nil
@@ -256,6 +296,37 @@ func (s *RaftServer) deleteMetadata(nodeId string) error {
 
 	f := s.raft.Apply(msg, 10*time.Second)
 	err = f.Error()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *RaftServer) setIndexConfig(indexConfig *common.IndexConfig) error {
+	indexConfigBytes, err := json.Marshal(indexConfig)
+	if err != nil {
+		return err
+	}
+
+	var indexConfigMap map[string]interface{}
+	err = json.Unmarshal(indexConfigBytes, &indexConfigMap)
+	if err != nil {
+		return err
+	}
+
+	indexConfigAny := &any.Any{}
+	err = protobuf.UnmarshalAny(indexConfigMap, indexConfigAny)
+	if err != nil {
+		return err
+	}
+
+	kvp := &management.KeyValuePair{
+		Key:   "/index_config",
+		Value: indexConfigAny,
+	}
+
+	err = s.Set(kvp)
 	if err != nil {
 		return err
 	}
@@ -478,8 +549,6 @@ func (s *RaftServer) Get(kvp *management.KeyValuePair) (*management.KeyValuePair
 	if err != nil {
 		return nil, err
 	}
-
-	s.logger.Printf("[DEBUG] %v", value)
 
 	// map[string]interface{} -> Any
 	valueAny := &any.Any{}

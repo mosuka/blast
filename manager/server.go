@@ -17,6 +17,8 @@ package manager
 import (
 	"log"
 
+	"github.com/blevesearch/bleve/mapping"
+
 	accesslog "github.com/mash/go-accesslog"
 	"github.com/mosuka/blast/protobuf/raft"
 )
@@ -25,6 +27,10 @@ type Server struct {
 	node      *raft.Node
 	bootstrap bool
 	peerAddr  string
+
+	indexMapping     *mapping.IndexMappingImpl
+	indexType        string
+	indexStorageType string
 
 	raftServer *RaftServer
 
@@ -38,14 +44,17 @@ type Server struct {
 	httpLogger accesslog.Logger
 }
 
-func NewServer(nodeId string, bindAddr string, grpcAddr string, httpAddr string, dataDir string, peerAddr string, logger *log.Logger, httpLogger accesslog.Logger) (*Server, error) {
+func NewServer(nodeId string, bindAddr string, grpcAddr string, httpAddr string, dataDir string, peerAddr string, indexMapping *mapping.IndexMappingImpl, indexType string, indexStorageType string, logger *log.Logger, httpLogger accesslog.Logger) (*Server, error) {
 	var err error
 
 	server := &Server{
-		bootstrap:  peerAddr == "",
-		peerAddr:   peerAddr,
-		logger:     logger,
-		httpLogger: httpLogger,
+		bootstrap:        peerAddr == "",
+		peerAddr:         peerAddr,
+		indexMapping:     indexMapping,
+		indexType:        indexType,
+		indexStorageType: indexStorageType,
+		logger:           logger,
+		httpLogger:       httpLogger,
 	}
 
 	// create node information
@@ -58,7 +67,7 @@ func NewServer(nodeId string, bindAddr string, grpcAddr string, httpAddr string,
 	}
 
 	// create raft server
-	server.raftServer, err = NewRaftServer(server.node, server.bootstrap, server.logger)
+	server.raftServer, err = NewRaftServer(server.node, server.bootstrap, server.indexMapping, server.indexType, server.indexStorageType, server.logger)
 	if err != nil {
 		return nil, err
 	}

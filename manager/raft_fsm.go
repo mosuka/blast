@@ -24,25 +24,27 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/hashicorp/raft"
 	blasterrors "github.com/mosuka/blast/errors"
+	"github.com/mosuka/blast/maputils"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/management"
 	pbraft "github.com/mosuka/blast/protobuf/raft"
-	"github.com/mosuka/maputils"
 )
 
 type RaftFSM struct {
 	metadata map[string]*pbraft.Node
 
-	federation map[string]interface{}
+	data *maputils.NestedMap
 
 	logger *log.Logger
 }
 
 func NewRaftFSM(path string, logger *log.Logger) (*RaftFSM, error) {
+	data := maputils.NewNestedMap()
+
 	return &RaftFSM{
-		metadata:   make(map[string]*pbraft.Node, 0),
-		federation: make(map[string]interface{}, 0),
-		logger:     logger,
+		metadata: make(map[string]*pbraft.Node, 0),
+		data:     data,
+		logger:   logger,
 	}, nil
 }
 
@@ -79,13 +81,8 @@ func (f *RaftFSM) applyDeleteMetadata(nodeId string) interface{} {
 }
 
 func (f *RaftFSM) Get(key string) (interface{}, error) {
-	nm, err := maputils.NewNestedMap(f.federation)
-	if err != nil {
-		return nil, err
-	}
-
-	value, err := nm.Get(key)
-	if err == maputils.ErrNotFound {
+	value, err := f.data.Get(key)
+	if err == blasterrors.ErrNotFound {
 		return nil, blasterrors.ErrNotFound
 	}
 
@@ -93,12 +90,7 @@ func (f *RaftFSM) Get(key string) (interface{}, error) {
 }
 
 func (f *RaftFSM) applySet(key string, value interface{}) interface{} {
-	nm, err := maputils.NewNestedMap(f.federation)
-	if err != nil {
-		return err
-	}
-
-	err = nm.Set(key, value)
+	err := f.data.Set(key, value)
 	if err != nil {
 		return err
 	}
@@ -107,12 +99,7 @@ func (f *RaftFSM) applySet(key string, value interface{}) interface{} {
 }
 
 func (f *RaftFSM) applyDelete(key string) interface{} {
-	nm, err := maputils.NewNestedMap(f.federation)
-	if err != nil {
-		return err
-	}
-
-	err = nm.Delete(key)
+	err := f.data.Delete(key)
 	if err != nil {
 		return err
 	}
@@ -188,7 +175,7 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 
 func (f *RaftFSM) Snapshot() (raft.FSMSnapshot, error) {
 	return &KVSFSMSnapshot{
-		federation: f.federation,
+		federation: f.data,
 		logger:     f.logger,
 	}, nil
 }
@@ -207,13 +194,13 @@ func (f *RaftFSM) Restore(rc io.ReadCloser) error {
 		return err
 	}
 
-	err = json.Unmarshal(data, &f.federation)
+	err = json.Unmarshal(data, &f.data)
 	if err != nil {
 		f.logger.Printf("[ERR] %v", err)
 		return err
 	}
 
-	f.logger.Printf("[INFO] federation was restored: %v", f.federation)
+	f.logger.Printf("[INFO] federation was restored: %v", f.data)
 
 	return nil
 }
@@ -221,7 +208,7 @@ func (f *RaftFSM) Restore(rc io.ReadCloser) error {
 // ---------------------
 
 type KVSFSMSnapshot struct {
-	federation map[string]interface{}
+	federation *maputils.NestedMap
 	logger     *log.Logger
 }
 

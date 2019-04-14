@@ -32,6 +32,8 @@ service Management {
     rpc Get (KeyValuePair) returns (KeyValuePair) {}
     rpc Set (KeyValuePair) returns (google.protobuf.Empty) {}
     rpc Delete (KeyValuePair) returns (google.protobuf.Empty) {}
+
+    rpc Watch (KeyValuePair) returns (stream KeyValuePair) {}
 }
 
 message KeyValuePair {
