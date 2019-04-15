@@ -21,6 +21,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/mosuka/blast/common"
+
 	"github.com/blevesearch/bleve/mapping"
 
 	"github.com/mosuka/logutils"
@@ -103,7 +105,13 @@ func execStart(c *cli.Context) error {
 		}
 	}
 
-	svr, err := manager.NewServer(nodeId, bindAddr, grpcAddr, httpAddr, dataDir, peerAddr, indexMapping, indexType, indexStorageType, logger, httpAccessLogger)
+	indexConfig := &common.IndexConfig{
+		IndexMapping:     indexMapping,
+		IndexType:        indexType,
+		IndexStorageType: indexStorageType,
+	}
+
+	svr, err := manager.NewServer(nodeId, bindAddr, grpcAddr, httpAddr, dataDir, peerAddr, indexConfig, logger, httpAccessLogger)
 	if err != nil {
 		return err
 	}

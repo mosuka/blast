@@ -22,14 +22,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mosuka/blast/common"
-
-	"github.com/blevesearch/bleve/mapping"
-
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
+	"github.com/mosuka/blast/common"
 	_ "github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
@@ -47,28 +44,24 @@ type RaftServer struct {
 	raft *raft.Raft
 	fsm  *RaftFSM
 
-	indexMapping     *mapping.IndexMappingImpl
-	indexType        string
-	indexStorageType string
+	indexConfig *common.IndexConfig
 
 	logger *log.Logger
 	mu     sync.RWMutex
 }
 
-func NewRaftServer(node *blastraft.Node, bootstrap bool, indexMapping *mapping.IndexMappingImpl, indexType string, indexStorageType string, logger *log.Logger) (*RaftServer, error) {
+func NewRaftServer(node *blastraft.Node, bootstrap bool, indexConfig *common.IndexConfig, logger *log.Logger) (*RaftServer, error) {
 	fsm, err := NewRaftFSM(filepath.Join(node.DataDir, "store"), logger)
 	if err != nil {
 		return nil, err
 	}
 
 	return &RaftServer{
-		Node:             node,
-		bootstrap:        bootstrap,
-		fsm:              fsm,
-		indexMapping:     indexMapping,
-		indexType:        indexType,
-		indexStorageType: indexStorageType,
-		logger:           logger,
+		Node:        node,
+		bootstrap:   bootstrap,
+		fsm:         fsm,
+		indexConfig: indexConfig,
+		logger:      logger,
 	}, nil
 }
 
@@ -136,26 +129,8 @@ func (s *RaftServer) Start() error {
 			return nil
 		}
 
-		indexConfig := common.NewIndexConfig()
-		indexConfig.IndexMapping = s.indexMapping
-		indexConfig.IndexType = s.indexType
-		indexConfig.IndexStorageType = s.indexStorageType
-
-		//b, err := json.Marshal(indexConfig)
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return nil
-		//}
-		//
-		//var m map[string]interface{}
-		//err = json.Unmarshal(b, &m)
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return nil
-		//}
-
 		// set index config
-		err = s.setIndexConfig(indexConfig)
+		err = s.setIndexConfig(s.indexConfig)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return nil
