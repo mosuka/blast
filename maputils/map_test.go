@@ -178,12 +178,18 @@ func TestStructuredMap_Get(t *testing.T) {
 func TestStructuredMap_Set(t *testing.T) {
 	m := NewStructuredMap()
 
-	err := m.Set("/a", "AAA")
+	err := m.Set("/", map[string]interface{}{"a": "A", "b": "B"})
+	if err != nil {
+		t.Errorf("%v", m)
+	}
+
+	err = m.Set("/a", "AAA")
 	if err != nil {
 		t.Errorf("%v", m)
 	}
 	exp1 := objx.Map{
 		"a": "AAA",
+		"b": "B",
 	}
 	act1 := m.data
 	if !reflect.DeepEqual(exp1, act1) {

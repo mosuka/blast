@@ -78,13 +78,33 @@ func (m *StructuredMap) makeSafePath(path string) string {
 }
 
 func (m *StructuredMap) Set(path string, value interface{}) error {
-	m.data.Set(m.makeSafePath(path), value)
+	if path == "/" {
+		// convert to JSON string
+		b, err := json.Marshal(value)
+		if err != nil {
+			return err
+		}
+
+		err = m.LoadJSON(b)
+		if err != nil {
+			return err
+		}
+	} else {
+		m.data.Set(m.makeSafePath(path), value)
+	}
 
 	return nil
 }
 
 func (m *StructuredMap) Get(path string) (interface{}, error) {
-	value := m.data.Get(m.makeSafePath(path))
+	var value *objx.Value
+
+	if path == "/" {
+		value = m.data.Value()
+	} else {
+		value = m.data.Get(m.makeSafePath(path))
+	}
+
 	if value.IsBool() {
 		return value.Bool(), nil
 	} else if value.IsBoolSlice() {
