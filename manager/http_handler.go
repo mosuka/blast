@@ -112,7 +112,7 @@ func (h *GetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Any -> map[string]interface{}
+	// Any -> interface{}
 	valueInstance, err := protobuf.MarshalAny(retKVP.Value)
 	if err != nil {
 		httpStatus = http.StatusInternalServerError
@@ -144,10 +144,9 @@ func (h *GetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-	valueMap := valueInstance.(*map[string]interface{})
 
-	// map[string]interface -> []byte
-	content, err = json.MarshalIndent(valueMap, "", "  ")
+	// interface{} -> []byte
+	content, err = json.MarshalIndent(valueInstance, "", "  ")
 	if err != nil {
 		httpStatus = http.StatusInternalServerError
 

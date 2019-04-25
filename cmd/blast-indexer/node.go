@@ -37,12 +37,12 @@ func execNode(c *cli.Context) error {
 		}
 	}()
 
-	nodes, err := client.GetNode()
+	node, err := client.GetNode()
 	if err != nil {
 		return err
 	}
 
-	nodesBytes, err := json.MarshalIndent(nodes, "", "  ")
+	nodesBytes, err := json.MarshalIndent(node, "", "  ")
 	if err != nil {
 		return err
 	}

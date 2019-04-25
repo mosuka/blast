@@ -19,6 +19,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/blevesearch/bleve"
 	"github.com/mosuka/blast/version"
 	"github.com/urfave/cli"
 )
@@ -85,8 +86,13 @@ func main() {
 					Usage: "Path to a file containing a JSON representation of an index mapping to use",
 				},
 				cli.StringFlag{
+					Name:  "index-type",
+					Value: bleve.Config.DefaultIndexType,
+					Usage: "Index storage type to use",
+				},
+				cli.StringFlag{
 					Name:  "index-storage-type",
-					Value: "boltdb",
+					Value: bleve.Config.DefaultKVStore,
 					Usage: "Index storage type to use",
 				},
 				cli.StringFlag{
@@ -150,26 +156,34 @@ func main() {
 			Usage: "Join a node to the cluster",
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:  "grpc-addr",
-					Value: ":5050",
-					Usage: "gRPC address to connect to",
+					Name:  "peer-addr",
+					Value: "",
+					Usage: "Existing gRPC server listen address to join to the cluster",
 				},
-			},
-			ArgsUsage: "[id] [addr]",
-			Action:    execJoin,
-		},
-		{
-			Name:  "leave",
-			Usage: "Leave a node from the cluster",
-			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "grpc-addr",
 					Value: ":5050",
 					Usage: "gRPC address to connect to",
 				},
 			},
-			ArgsUsage: "[id]",
-			Action:    execLeave,
+			Action: execJoin,
+		},
+		{
+			Name:  "leave",
+			Usage: "Leave a node from the cluster",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "peer-addr",
+					Value: ":5050",
+					Usage: "Existing gRPC server listen address to join to the cluster",
+				},
+				cli.StringFlag{
+					Name:  "node-id",
+					Value: "",
+					Usage: "Node ID",
+				},
+			},
+			Action: execLeave,
 		},
 		{
 			Name:  "node",
@@ -181,8 +195,7 @@ func main() {
 					Usage: "gRPC address to connect to",
 				},
 			},
-			ArgsUsage: "[id]",
-			Action:    execNode,
+			Action: execNode,
 		},
 		{
 			Name:  "cluster",

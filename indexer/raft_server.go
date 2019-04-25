@@ -34,7 +34,7 @@ import (
 )
 
 type RaftServer struct {
-	Node      *blastraft.Node
+	node      *blastraft.Node
 	bootstrap bool
 
 	raft *raft.Raft
@@ -44,13 +44,13 @@ type RaftServer struct {
 }
 
 func NewRaftServer(node *blastraft.Node, bootstrap bool, indexMapping *mapping.IndexMappingImpl, indexStorageType string, logger *log.Logger) (*RaftServer, error) {
-	fsm, err := NewRaftFSM(filepath.Join(node.DataDir, "index"), indexMapping, indexStorageType, logger)
+	fsm, err := NewRaftFSM(filepath.Join(node.Metadata.DataDir, "index"), indexMapping, indexStorageType, logger)
 	if err != nil {
 		return nil, err
 	}
 
 	return &RaftServer{
-		Node:      node,
+		node:      node,
 		bootstrap: bootstrap,
 		fsm:       fsm,
 		logger:    logger,
@@ -59,29 +59,29 @@ func NewRaftServer(node *blastraft.Node, bootstrap bool, indexMapping *mapping.I
 
 func (s *RaftServer) Start() error {
 	config := raft.DefaultConfig()
-	config.LocalID = raft.ServerID(s.Node.Id)
+	config.LocalID = raft.ServerID(s.node.Id)
 	config.SnapshotThreshold = 1024
 	config.Logger = s.logger
 
-	addr, err := net.ResolveTCPAddr("tcp", s.Node.BindAddr)
+	addr, err := net.ResolveTCPAddr("tcp", s.node.Metadata.BindAddr)
 	if err != nil {
 		return err
 	}
 
 	// create transport
-	transport, err := raft.NewTCPTransportWithLogger(s.Node.BindAddr, addr, 3, 10*time.Second, s.logger)
+	transport, err := raft.NewTCPTransportWithLogger(s.node.Metadata.BindAddr, addr, 3, 10*time.Second, s.logger)
 	if err != nil {
 		return err
 	}
 
 	// create snapshot store
-	snapshotStore, err := raft.NewFileSnapshotStoreWithLogger(s.Node.DataDir, 2, s.logger)
+	snapshotStore, err := raft.NewFileSnapshotStoreWithLogger(s.node.Metadata.DataDir, 2, s.logger)
 	if err != nil {
 		return err
 	}
 
 	// create raft log store
-	raftLogStore, err := raftboltdb.NewBoltStore(filepath.Join(s.Node.DataDir, "raft.db"))
+	raftLogStore, err := raftboltdb.NewBoltStore(filepath.Join(s.node.Metadata.DataDir, "raft.db"))
 	if err != nil {
 		return err
 	}
@@ -115,7 +115,7 @@ func (s *RaftServer) Start() error {
 		}
 
 		// set metadata
-		err = s.setMetadata(s.Node.Id, s.Node)
+		err = s.setMetadata(s.node)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return nil
@@ -196,8 +196,8 @@ func (s *RaftServer) LeaderID(timeout time.Duration) (raft.ServerID, error) {
 	return "", errors.ErrNotFoundLeader
 }
 
-func (s *RaftServer) getMetadata(nodeId string) (*blastraft.Node, error) {
-	node, err := s.fsm.GetMetadata(nodeId)
+func (s *RaftServer) getMetadata(node *blastraft.Node) (*blastraft.Node, error) {
+	node, err := s.fsm.GetMetadata(node)
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +205,7 @@ func (s *RaftServer) getMetadata(nodeId string) (*blastraft.Node, error) {
 	return node, nil
 }
 
-func (s *RaftServer) setMetadata(nodeId string, node *blastraft.Node) error {
+func (s *RaftServer) setMetadata(node *blastraft.Node) error {
 	// Node -> Any
 	nodeAny := &any.Any{}
 	err := protobuf.UnmarshalAny(node, nodeAny)
@@ -271,13 +271,13 @@ func (s *RaftServer) Join(node *blastraft.Node) error {
 			return err
 		}
 
-		node, err := s.getMetadata(string(leaderId))
+		leaderNode, err := s.getMetadata(&blastraft.Node{Id: string(leaderId)})
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return nil
 		}
 
-		client, err := NewGRPCClient(string(node.GrpcAddr))
+		client, err := NewGRPCClient(leaderNode.Metadata.GrpcAddr)
 		defer func() {
 			err := client.Close()
 			if err != nil {
@@ -306,25 +306,25 @@ func (s *RaftServer) Join(node *blastraft.Node) error {
 
 	for _, server := range cf.Configuration().Servers {
 		if server.ID == raft.ServerID(node.Id) {
-			s.logger.Printf("[INFO] node %s already joined the cluster", node.Id)
+			s.logger.Printf("[INFO] node %v already joined the cluster", node)
 			return nil
 		}
 	}
 
-	f := s.raft.AddVoter(raft.ServerID(node.Id), raft.ServerAddress(node.BindAddr), 0, 0)
+	f := s.raft.AddVoter(raft.ServerID(node.Id), raft.ServerAddress(node.Metadata.BindAddr), 0, 0)
 	err = f.Error()
 	if err != nil {
 		return err
 	}
 
 	// set metadata
-	err = s.setMetadata(node.Id, node)
+	err = s.setMetadata(node)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return nil
 	}
 
-	s.logger.Printf("[INFO] node %s at %s joined successfully", node.Id, node.BindAddr)
+	s.logger.Printf("[INFO] node %v joined successfully", node)
 	return nil
 }
 
@@ -336,13 +336,13 @@ func (s *RaftServer) Leave(node *blastraft.Node) error {
 			return err
 		}
 
-		node, err := s.getMetadata(string(leaderId))
+		leaderNode, err := s.getMetadata(&blastraft.Node{Id: string(leaderId)})
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return nil
 		}
 
-		client, err := NewGRPCClient(string(node.GrpcAddr))
+		client, err := NewGRPCClient(leaderNode.Metadata.GrpcAddr)
 		defer func() {
 			err := client.Close()
 			if err != nil {
@@ -377,7 +377,7 @@ func (s *RaftServer) Leave(node *blastraft.Node) error {
 				return err
 			}
 
-			s.logger.Printf("[INFO] node %s leaved successfully", node.Id)
+			s.logger.Printf("[INFO] node %v leaved successfully", node)
 			return nil
 		}
 	}
@@ -389,7 +389,7 @@ func (s *RaftServer) Leave(node *blastraft.Node) error {
 		return nil
 	}
 
-	s.logger.Printf("[INFO] node %s does not exists in the cluster", node.Id)
+	s.logger.Printf("[INFO] node %v does not exists in the cluster", node)
 	return nil
 }
 
@@ -405,21 +405,20 @@ func (s *RaftServer) GetNode() (*blastraft.Node, error) {
 		return nil, err
 	}
 
-	node := &blastraft.Node{}
+	node := &blastraft.Node{
+		Metadata: &blastraft.Metadata{},
+	}
 	for _, server := range cf.Configuration().Servers {
-		if server.ID == raft.ServerID(s.Node.Id) {
+		if server.ID == raft.ServerID(s.node.Id) {
 			node.Id = string(server.ID)
-			node.BindAddr = string(server.Address)
 			node.Leader = server.Address == leaderAddr
 
-			nodeInfo, err := s.getMetadata(node.Id)
+			nodeInfo, err := s.getMetadata(&blastraft.Node{Id: node.Id})
 			if err != nil {
 				s.logger.Printf("[WARN] %v", err)
 				break
 			}
-			node.GrpcAddr = nodeInfo.GrpcAddr
-			node.HttpAddr = nodeInfo.HttpAddr
-			node.DataDir = nodeInfo.DataDir
+			node.Metadata = nodeInfo.Metadata
 			break
 		}
 	}
@@ -439,28 +438,27 @@ func (s *RaftServer) GetCluster() (*blastraft.Cluster, error) {
 		return nil, err
 	}
 
-	nodes := make([]*blastraft.Node, 0)
+	cluster := &blastraft.Cluster{
+		Id:    "default",
+		Nodes: make([]*blastraft.Node, 0),
+	}
+
 	for _, server := range cf.Configuration().Servers {
 		node := &blastraft.Node{}
 		node.Id = string(server.ID)
-		node.BindAddr = string(server.Address)
 		node.Leader = server.Address == leaderAddr
 
-		nodeInfo, err := s.getMetadata(node.Id)
+		nodeInfo, err := s.getMetadata(&blastraft.Node{Id: node.Id})
 		if err != nil {
 			s.logger.Printf("[WARN] %v", err)
 			continue
 		}
-		node.GrpcAddr = nodeInfo.GrpcAddr
-		node.HttpAddr = nodeInfo.HttpAddr
-		node.DataDir = nodeInfo.DataDir
+		node.Metadata = nodeInfo.Metadata
 
-		nodes = append(nodes, node)
+		cluster.Nodes = append(cluster.Nodes, node)
 	}
 
-	return &blastraft.Cluster{
-		Nodes: nodes,
-	}, nil
+	return cluster, nil
 }
 
 func (s *RaftServer) Snapshot() error {
@@ -511,13 +509,13 @@ func (s *RaftServer) Index(docs []*index.Document) (*index.UpdateResult, error) 
 			return nil, err
 		}
 
-		node, err := s.getMetadata(string(leaderId))
+		leaderNode, err := s.getMetadata(&blastraft.Node{Id: string(leaderId)})
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return nil, err
 		}
 
-		client, err := NewGRPCClient(string(node.GrpcAddr))
+		client, err := NewGRPCClient(leaderNode.Metadata.GrpcAddr)
 		defer func() {
 			err := client.Close()
 			if err != nil {
@@ -580,13 +578,13 @@ func (s *RaftServer) Delete(docs []*index.Document) (*index.UpdateResult, error)
 			return nil, err
 		}
 
-		node, err := s.getMetadata(string(leaderId))
+		leaderNode, err := s.getMetadata(&blastraft.Node{Id: string(leaderId)})
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return nil, err
 		}
 
-		client, err := NewGRPCClient(string(node.GrpcAddr))
+		client, err := NewGRPCClient(leaderNode.Metadata.GrpcAddr)
 		defer func() {
 			err := client.Close()
 			if err != nil {

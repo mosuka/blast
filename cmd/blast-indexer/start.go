@@ -15,16 +15,23 @@
 package main
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/blevesearch/bleve/mapping"
 	"github.com/mosuka/blast/indexer"
+	"github.com/mosuka/blast/protobuf/raft"
 	"github.com/mosuka/logutils"
 	"github.com/urfave/cli"
 )
 
 func execStart(c *cli.Context) error {
+	managerAddr := c.String("manager-addr")
+	clusterId := c.String("cluster-id")
+
 	nodeId := c.String("node-id")
 	bindAddr := c.String("bind-addr")
 	grpcAddr := c.String("grpc-addr")
@@ -33,6 +40,7 @@ func execStart(c *cli.Context) error {
 	peerAddr := c.String("peer-addr")
 
 	indexMappingFile := c.String("index-mapping-file")
+	indexType := c.String("index-type")
 	indexStorageType := c.String("index-storage-type")
 
 	logLevel := c.String("log-level")
@@ -67,7 +75,48 @@ func execStart(c *cli.Context) error {
 		httpAccessLogCompress,
 	)
 
-	svr, err := indexer.NewServer(nodeId, bindAddr, grpcAddr, httpAddr, dataDir, peerAddr, indexMappingFile, indexStorageType, logger, httpAccessLogger)
+	// set default index mapping
+	indexMapping := mapping.NewIndexMapping()
+
+	// check index mapping file
+	if indexMappingFile != "" {
+		_, err := os.Stat(indexMappingFile)
+		if err == nil {
+			// read index mapping file
+			f, err := os.Open(indexMappingFile)
+			if err != nil {
+				return err
+			}
+			defer func() {
+				_ = f.Close()
+			}()
+
+			b, err := ioutil.ReadAll(f)
+			if err != nil {
+				return err
+			}
+
+			err = json.Unmarshal(b, indexMapping)
+			if err != nil {
+				return err
+			}
+		} else if os.IsNotExist(err) {
+			return err
+		}
+	}
+
+	node := &raft.Node{
+		Id: nodeId,
+		Metadata: &raft.Metadata{
+			BindAddr: bindAddr,
+			GrpcAddr: grpcAddr,
+			HttpAddr: httpAddr,
+			DataDir:  dataDir,
+		},
+		Leader: false,
+	}
+
+	svr, err := indexer.NewServer(managerAddr, clusterId, node, peerAddr, indexMapping, indexType, indexStorageType, logger, httpAccessLogger)
 	if err != nil {
 		return err
 	}

@@ -18,13 +18,17 @@ package raft;
 
 option go_package = "github.com/mosuka/blast/protobuf/raft";
 
+message Metadata {
+    string bind_addr = 1;
+    string grpc_addr = 2;
+    string http_addr = 3;
+    string data_dir = 4;
+}
+
 message Node {
     string id = 1;
-    string bind_addr = 2;
-    string grpc_addr = 3;
-    string http_addr = 4;
-    bool leader = 5;
-    string data_dir = 6;
+    Metadata metadata = 2;
+    bool leader = 3;
 }
 
 message Cluster {

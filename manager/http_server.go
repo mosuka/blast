@@ -44,6 +44,9 @@ func NewHTTPServer(httpAddr string, grpcClient *GRPCClient, logger *log.Logger, 
 	router.StrictSlash(true)
 
 	router.Handle("/", NewRootHandler(logger)).Methods("GET")
+	router.Handle("/configs", NewPutHandler(grpcClient, logger)).Methods("PUT")
+	router.Handle("/configs", NewGetHandler(grpcClient, logger)).Methods("GET")
+	router.Handle("/configs", NewDeleteHandler(grpcClient, logger)).Methods("DELETE")
 	router.Handle("/configs/{path:.*}", NewPutHandler(grpcClient, logger)).Methods("PUT")
 	router.Handle("/configs/{path:.*}", NewGetHandler(grpcClient, logger)).Methods("GET")
 	router.Handle("/configs/{path:.*}", NewDeleteHandler(grpcClient, logger)).Methods("DELETE")

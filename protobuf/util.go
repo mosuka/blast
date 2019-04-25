@@ -27,8 +27,11 @@ import (
 )
 
 func init() {
+	registry.RegisterType("bool", reflect.TypeOf(false))
 	registry.RegisterType("map[string]interface {}", reflect.TypeOf((map[string]interface{})(nil)))
 	registry.RegisterType("string", reflect.TypeOf(""))
+	registry.RegisterType("[]interface {}", reflect.TypeOf(([]interface{})(nil)))
+	//registry.RegisterType("int", reflect.TypeOf(int(0)))
 
 	registry.RegisterType("management.KeyValuePair", reflect.TypeOf(management.KeyValuePair{}))
 	registry.RegisterType("index.Document", reflect.TypeOf(index.Document{}))
@@ -57,17 +60,18 @@ func MarshalAny(message *any.Any) (interface{}, error) {
 }
 
 func UnmarshalAny(instance interface{}, message *any.Any) error {
+	var err error
+
 	if instance == nil {
 		return nil
 	}
 
-	value, err := json.Marshal(instance)
+	message.TypeUrl = registry.TypeNameByInstance(instance)
+
+	message.Value, err = json.Marshal(instance)
 	if err != nil {
 		return err
 	}
-
-	message.TypeUrl = registry.TypeNameByInstance(instance)
-	message.Value = value
 
 	return nil
 }

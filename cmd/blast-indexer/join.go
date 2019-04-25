@@ -15,47 +15,45 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
 	"github.com/mosuka/blast/indexer"
-	"github.com/mosuka/blast/protobuf/raft"
 	"github.com/urfave/cli"
 )
 
 func execJoin(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
+	peerAddr := c.String("peer-addr")
 
-	id := c.Args().Get(0)
-	if id == "" {
-		err := errors.New("id argument must be set")
-		return err
-	}
-
-	addr := c.Args().Get(1)
-	if addr == "" {
-		err := errors.New("address argument must be set")
-		return err
-	}
-
-	client, err := indexer.NewGRPCClient(grpcAddr)
+	targetClient, err := indexer.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		err := client.Close()
+		err := targetClient.Close()
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 		}
 	}()
 
-	node := &raft.Node{
-		Id:       id,
-		BindAddr: addr,
+	node, err := targetClient.GetNode()
+	if err != nil {
+		return err
 	}
 
-	err = client.Join(node)
+	peerClient, err := indexer.NewGRPCClient(peerAddr)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err := targetClient.Close()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
+	}()
+
+	err = peerClient.Join(node)
 	if err != nil {
 		return err
 	}

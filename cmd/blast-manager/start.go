@@ -21,13 +21,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/mosuka/blast/common"
-
 	"github.com/blevesearch/bleve/mapping"
-
-	"github.com/mosuka/logutils"
-
 	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/protobuf/raft"
+	"github.com/mosuka/logutils"
 	"github.com/urfave/cli"
 )
 
@@ -56,7 +53,7 @@ func execStart(c *cli.Context) error {
 	httpAccessLogMaxAge := c.Int("http-access-log-max-age")
 	httpAccessLogCompress := c.Bool("http-access-log-compress")
 
-	// Create logger
+	// create logger
 	logger := logutils.NewLogger(
 		logLevel,
 		logFilename,
@@ -66,7 +63,7 @@ func execStart(c *cli.Context) error {
 		logCompress,
 	)
 
-	// Create HTTP access logger
+	// create HTTP access logger
 	httpAccessLogger := logutils.NewApacheCombinedLogger(
 		httpAccessLogFilename,
 		httpAccessLogMaxSize,
@@ -75,10 +72,8 @@ func execStart(c *cli.Context) error {
 		httpAccessLogCompress,
 	)
 
-	// set default index mapping
+	// index mapping
 	indexMapping := mapping.NewIndexMapping()
-
-	// check index mapping file
 	if indexMappingFile != "" {
 		_, err := os.Stat(indexMappingFile)
 		if err == nil {
@@ -104,14 +99,64 @@ func execStart(c *cli.Context) error {
 			return err
 		}
 	}
-
-	indexConfig := &common.IndexConfig{
-		IndexMapping:     indexMapping,
-		IndexType:        indexType,
-		IndexStorageType: indexStorageType,
+	err := indexMapping.Validate()
+	if err != nil {
+		return err
 	}
 
-	svr, err := manager.NewServer(nodeId, bindAddr, grpcAddr, httpAddr, dataDir, peerAddr, indexConfig, logger, httpAccessLogger)
+	// node
+	node := &raft.Node{
+		Id: nodeId,
+		Metadata: &raft.Metadata{
+			BindAddr: bindAddr,
+			GrpcAddr: grpcAddr,
+			HttpAddr: httpAddr,
+			DataDir:  dataDir,
+		},
+		Leader: false,
+	}
+
+	// IndexMappingImpl -> JSON
+	indexMappingJSON, err := json.Marshal(indexMapping)
+	if err != nil {
+		return err
+	}
+	// JSON -> map[string]interface{}
+	var indexMappingMap map[string]interface{}
+	err = json.Unmarshal(indexMappingJSON, &indexMappingMap)
+	if err != nil {
+		return err
+	}
+
+	indexConfig := map[string]interface{}{
+		"index_mapping":      indexMappingMap,
+		"index_type":         indexType,
+		"index_storage_type": indexStorageType,
+	}
+	//indexConfigJSON, err := json.Marshal(&mm)
+
+	// index config
+	//indexConfig := maputils.NewStructuredMap()
+	//err = indexConfig.LoadJSON(indexConfigJSON)
+	//err = indexConfig.LoadMap(map[string]interface{}{
+	//	"index_mapping":      indexMappingMap,
+	//	"index_type":         indexType,
+	//	"index_storage_type": indexStorageType,
+	//},
+	//)
+	//indexConfig := maputils.NewStructuredMap()
+	//err = indexConfig.Set("index_config",
+	//	map[string]interface{}{
+	//		"index_mapping":      indexMappingMap,
+	//		"index_type":         indexType,
+	//		"index_storage_type": indexStorageType,
+	//	},
+	//)
+	//if err != nil {
+	//	return err
+	//}
+
+	svr, err := manager.NewServer(node, peerAddr, indexConfig, logger, httpAccessLogger)
 	if err != nil {
 		return err
 	}

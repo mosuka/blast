@@ -22,9 +22,9 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf/management"
 	"github.com/mosuka/blast/protobuf/raft"
-	"github.com/syndtr/goleveldb/leveldb/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

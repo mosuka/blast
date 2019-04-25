@@ -58,7 +58,8 @@ func execSet(c *cli.Context) error {
 
 	// create PutRequest
 	req := &pbfederation.KeyValuePair{
-		Key:   key,
+		Key: key,
+		//Value: []byte(value),
 		Value: valueAny,
 	}
 

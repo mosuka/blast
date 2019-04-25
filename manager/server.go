@@ -17,8 +17,6 @@ package manager
 import (
 	"log"
 
-	"github.com/mosuka/blast/common"
-
 	accesslog "github.com/mash/go-accesslog"
 	"github.com/mosuka/blast/protobuf/raft"
 )
@@ -28,7 +26,7 @@ type Server struct {
 	bootstrap bool
 	peerAddr  string
 
-	indexConfig *common.IndexConfig
+	indexConfig map[string]interface{}
 
 	raftServer *RaftServer
 
@@ -42,24 +40,16 @@ type Server struct {
 	httpLogger accesslog.Logger
 }
 
-func NewServer(nodeId string, bindAddr string, grpcAddr string, httpAddr string, dataDir string, peerAddr string, indexConfig *common.IndexConfig, logger *log.Logger, httpLogger accesslog.Logger) (*Server, error) {
+func NewServer(node *raft.Node, peerAddr string, indexConfig map[string]interface{}, logger *log.Logger, httpLogger accesslog.Logger) (*Server, error) {
 	var err error
 
 	server := &Server{
+		node:        node,
 		bootstrap:   peerAddr == "",
 		peerAddr:    peerAddr,
 		indexConfig: indexConfig,
 		logger:      logger,
 		httpLogger:  httpLogger,
-	}
-
-	// create node information
-	server.node = &raft.Node{
-		Id:       nodeId,
-		BindAddr: bindAddr,
-		GrpcAddr: grpcAddr,
-		HttpAddr: httpAddr,
-		DataDir:  dataDir,
 	}
 
 	// create raft server
@@ -75,19 +65,19 @@ func NewServer(nodeId string, bindAddr string, grpcAddr string, httpAddr string,
 	}
 
 	// create gRPC server
-	server.grpcServer, err = NewGRPCServer(grpcAddr, server.grpcService, server.logger)
+	server.grpcServer, err = NewGRPCServer(server.node.Metadata.GrpcAddr, server.grpcService, server.logger)
 	if err != nil {
 		return nil, err
 	}
 
 	// create gRPC client for HTTP server
-	server.grpcClient, err = NewGRPCClient(grpcAddr)
+	server.grpcClient, err = NewGRPCClient(server.node.Metadata.GrpcAddr)
 	if err != nil {
 		return nil, err
 	}
 
 	// create HTTP server
-	server.httpServer, err = NewHTTPServer(httpAddr, server.grpcClient, server.logger, server.httpLogger)
+	server.httpServer, err = NewHTTPServer(server.node.Metadata.HttpAddr, server.grpcClient, server.logger, server.httpLogger)
 	if err != nil {
 		return nil, err
 	}

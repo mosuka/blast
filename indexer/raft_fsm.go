@@ -31,9 +31,9 @@ import (
 )
 
 type RaftFSM struct {
-	index *Index
+	cluster *blastraft.Cluster
 
-	metadata map[string]*blastraft.Node
+	index *Index
 
 	logger *log.Logger
 }
@@ -45,9 +45,9 @@ func NewRaftFSM(path string, indexMapping *mapping.IndexMappingImpl, indexStorag
 	}
 
 	return &RaftFSM{
-		metadata: make(map[string]*blastraft.Node, 0),
-		index:    index,
-		logger:   logger,
+		cluster: &blastraft.Cluster{Nodes: make([]*blastraft.Node, 0)},
+		index:   index,
+		logger:  logger,
 	}, nil
 }
 
@@ -58,6 +58,38 @@ func (f *RaftFSM) Close() error {
 	}
 
 	return nil
+}
+
+func (f *RaftFSM) GetMetadata(node *blastraft.Node) (*blastraft.Node, error) {
+	for _, n := range f.cluster.Nodes {
+		if n.Id == node.Id {
+			return n, nil
+		}
+	}
+
+	return nil, blasterrors.ErrNotFound
+}
+
+func (f *RaftFSM) applySetMetadata(node *blastraft.Node) interface{} {
+	for _, n := range f.cluster.Nodes {
+		if n.Id == node.Id {
+			return errors.New("already exists")
+		}
+	}
+
+	f.cluster.Nodes = append(f.cluster.Nodes, node)
+
+	return nil
+}
+
+func (f *RaftFSM) applyDeleteMetadata(node *blastraft.Node) interface{} {
+	for i, n := range f.cluster.Nodes {
+		if n.Id == node.Id {
+			return append(f.cluster.Nodes[:i], f.cluster.Nodes[i+1:]...)
+		}
+	}
+
+	return blasterrors.ErrNotFound
 }
 
 func (f *RaftFSM) Get(id string) (map[string]interface{}, error) {
@@ -100,34 +132,6 @@ func (f *RaftFSM) Search(request *bleve.SearchRequest) (*bleve.SearchResult, err
 	return result, nil
 }
 
-func (f *RaftFSM) GetMetadata(nodeId string) (*blastraft.Node, error) {
-	node, exists := f.metadata[nodeId]
-	if !exists {
-		return nil, blasterrors.ErrNotFound
-	}
-	if node == nil {
-		return nil, errors.New("nil")
-	}
-	value := node
-
-	return value, nil
-}
-
-func (f *RaftFSM) applySetMetadata(nodeId string, node *blastraft.Node) interface{} {
-	f.metadata[nodeId] = node
-
-	return nil
-}
-
-func (f *RaftFSM) applyDeleteMetadata(nodeId string) interface{} {
-	_, exists := f.metadata[nodeId]
-	if exists {
-		delete(f.metadata, nodeId)
-	}
-
-	return nil
-}
-
 func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 	var c pbindex.IndexCommand
 	err := proto.Unmarshal(l.Data, &c)
@@ -147,21 +151,21 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 		if nodeInstance == nil {
 			return errors.New("nil")
 		}
-		metadata := nodeInstance.(*blastraft.Node)
+		node := nodeInstance.(*blastraft.Node)
 
-		return f.applySetMetadata(metadata.Id, metadata)
+		return f.applySetMetadata(node)
 	case pbindex.IndexCommand_DELETE_METADATA:
 		// Any -> Node
-		metadataInstance, err := protobuf.MarshalAny(c.Data)
+		nodeInstance, err := protobuf.MarshalAny(c.Data)
 		if err != nil {
 			return err
 		}
-		if metadataInstance == nil {
+		if nodeInstance == nil {
 			return errors.New("nil")
 		}
-		metadata := *metadataInstance.(*blastraft.Node)
+		node := nodeInstance.(*blastraft.Node)
 
-		return f.applyDeleteMetadata(metadata.Id)
+		return f.applyDeleteMetadata(node)
 	case pbindex.IndexCommand_INDEX_DOCUMENT:
 		// Any -> Document
 		docInstance, err := protobuf.MarshalAny(c.Data)

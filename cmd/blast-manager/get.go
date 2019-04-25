@@ -63,21 +63,11 @@ func execGet(c *cli.Context) error {
 		return errors.New("nil")
 	}
 
-	var valueBytes []byte
-	switch value.(type) {
-	case *map[string]interface{}:
-		valueMap := *value.(*map[string]interface{})
-		valueBytes, err = json.MarshalIndent(valueMap, "", "  ")
-		if err != nil {
-			return err
-		}
-		fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", string(valueBytes)))
-	case *string:
-		valueStr := *value.(*string)
-		fmt.Fprintln(os.Stdout, fmt.Sprintf("%s\n", valueStr))
-	default:
-		fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", &value))
+	valueBytes, err := json.MarshalIndent(value, "", "  ")
+	if err != nil {
+		return err
 	}
+	fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", string(valueBytes)))
 
 	return nil
 }

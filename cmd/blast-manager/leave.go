@@ -15,7 +15,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
@@ -25,30 +24,25 @@ import (
 )
 
 func execLeave(c *cli.Context) error {
-	grpcAddr := c.String("grpc-addr")
-
-	id := c.Args().Get(0)
-	if id == "" {
-		err := errors.New("id argument must be set")
-		return err
-	}
+	peerAddr := c.String("peer-addr")
+	nodeId := c.String("node-id")
 
 	node := &raft.Node{
-		Id: id,
+		Id: nodeId,
 	}
 
-	client, err := manager.NewGRPCClient(grpcAddr)
+	peerClient, err := manager.NewGRPCClient(peerAddr)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		err := client.Close()
+		err := peerClient.Close()
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 		}
 	}()
 
-	err = client.Leave(node)
+	err = peerClient.Leave(node)
 	if err != nil {
 		return err
 	}

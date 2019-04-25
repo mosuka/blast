@@ -52,7 +52,7 @@ func main() {
 				},
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":15050",
+					Value: ":17070",
 					Usage: "gRPC Server listen address",
 				},
 				cli.StringFlag{
@@ -146,26 +146,33 @@ func main() {
 			Usage: "Join a node to the cluster",
 			Flags: []cli.Flag{
 				cli.StringFlag{
+					Name:  "peer-addr",
+					Value: "",
+					Usage: "Existing gRPC server listen address to join to the cluster",
+				},
+				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":5050",
+					Value: "",
 					Usage: "gRPC address to connect to",
 				},
 			},
-			ArgsUsage: "[id] [addr]",
-			Action:    execJoin,
+			Action: execJoin,
 		},
 		{
 			Name:  "leave",
 			Usage: "Leave a node from the cluster",
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:  "grpc-addr",
-					Value: ":15050",
-					Usage: "address to connect to",
+					Name:  "peer-addr",
+					Value: "",
+				},
+				cli.StringFlag{
+					Name:  "node-id",
+					Value: "",
+					Usage: "Node ID",
 				},
 			},
-			ArgsUsage: "[id]",
-			Action:    execLeave,
+			Action: execLeave,
 		},
 		{
 			Name:  "node",
@@ -173,12 +180,11 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":15050",
+					Value: "",
 					Usage: "gRPC address to connect to",
 				},
 			},
-			ArgsUsage: "[id]",
-			Action:    execNode,
+			Action: execNode,
 		},
 		{
 			Name:  "cluster",
@@ -186,7 +192,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":15050",
+					Value: "",
 					Usage: "gRPC address to connect to",
 				},
 			},
