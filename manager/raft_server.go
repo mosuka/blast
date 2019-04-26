@@ -118,7 +118,7 @@ func (s *RaftServer) Start() error {
 		}
 
 		// set metadata
-		err = s.setMetadata(s.node)
+		err = s.setNode(s.node)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return nil
@@ -206,8 +206,8 @@ func (s *RaftServer) LeaderID(timeout time.Duration) (raft.ServerID, error) {
 	return "", errors.ErrNotFoundLeader
 }
 
-func (s *RaftServer) getMetadata(node *blastraft.Node) (*blastraft.Node, error) {
-	meta, err := s.fsm.GetMetadata(node)
+func (s *RaftServer) getNode(node *blastraft.Node) (*blastraft.Node, error) {
+	meta, err := s.fsm.GetNode(node)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +215,7 @@ func (s *RaftServer) getMetadata(node *blastraft.Node) (*blastraft.Node, error) 
 	return meta, nil
 }
 
-func (s *RaftServer) setMetadata(node *blastraft.Node) error {
+func (s *RaftServer) setNode(node *blastraft.Node) error {
 	// Node -> Any
 	nodeAny := &any.Any{}
 	err := protobuf.UnmarshalAny(node, nodeAny)
@@ -224,7 +224,7 @@ func (s *RaftServer) setMetadata(node *blastraft.Node) error {
 	}
 
 	c := &management.ManagementCommand{
-		Type: management.ManagementCommand_SET_METADATA,
+		Type: management.ManagementCommand_SET_NODE,
 		Data: nodeAny,
 	}
 
@@ -242,7 +242,7 @@ func (s *RaftServer) setMetadata(node *blastraft.Node) error {
 	return nil
 }
 
-func (s *RaftServer) deleteMetadata(node *blastraft.Node) error {
+func (s *RaftServer) deleteNode(node *blastraft.Node) error {
 	// Node -> Any
 	nodeAny := &any.Any{}
 	err := protobuf.UnmarshalAny(node, nodeAny)
@@ -251,7 +251,7 @@ func (s *RaftServer) deleteMetadata(node *blastraft.Node) error {
 	}
 
 	c := &management.ManagementCommand{
-		Type: management.ManagementCommand_DELETE_METADATA,
+		Type: management.ManagementCommand_DELETE_NODE,
 		Data: nodeAny,
 	}
 
@@ -297,7 +297,7 @@ func (s *RaftServer) Join(node *blastraft.Node) error {
 			return err
 		}
 
-		leaderNode, err := s.getMetadata(&blastraft.Node{Id: string(leaderId)})
+		leaderNode, err := s.getNode(&blastraft.Node{Id: string(leaderId)})
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return nil
@@ -344,7 +344,7 @@ func (s *RaftServer) Join(node *blastraft.Node) error {
 	}
 
 	// set metadata
-	err = s.setMetadata(node)
+	err = s.setNode(node)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return nil
@@ -362,7 +362,7 @@ func (s *RaftServer) Leave(node *blastraft.Node) error {
 			return err
 		}
 
-		leaderNode, err := s.getMetadata(&blastraft.Node{Id: string(leaderId)})
+		leaderNode, err := s.getNode(&blastraft.Node{Id: string(leaderId)})
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return nil
@@ -409,7 +409,7 @@ func (s *RaftServer) Leave(node *blastraft.Node) error {
 	}
 
 	// delete metadata
-	err = s.deleteMetadata(node)
+	err = s.deleteNode(node)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return nil
@@ -439,7 +439,7 @@ func (s *RaftServer) GetNode() (*blastraft.Node, error) {
 			node.Id = string(server.ID)
 			node.Leader = server.Address == leaderAddr
 
-			nodeInfo, err := s.getMetadata(&blastraft.Node{Id: node.Id})
+			nodeInfo, err := s.getNode(&blastraft.Node{Id: node.Id})
 			if err != nil {
 				s.logger.Printf("[WARN] %v", err)
 				break
@@ -474,7 +474,7 @@ func (s *RaftServer) GetCluster() (*blastraft.Cluster, error) {
 		node.Id = string(server.ID)
 		node.Leader = server.Address == leaderAddr
 
-		nodeInfo, err := s.getMetadata(&blastraft.Node{Id: node.Id})
+		nodeInfo, err := s.getNode(&blastraft.Node{Id: node.Id})
 		if err != nil {
 			s.logger.Printf("[WARN] %v", err)
 			continue
@@ -537,7 +537,7 @@ func (s *RaftServer) Set(kvp *management.KeyValuePair) error {
 			return err
 		}
 
-		leaderNode, err := s.getMetadata(&blastraft.Node{Id: string(leaderId)})
+		leaderNode, err := s.getNode(&blastraft.Node{Id: string(leaderId)})
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return err
@@ -598,7 +598,7 @@ func (s *RaftServer) Delete(kvp *management.KeyValuePair) error {
 			return err
 		}
 
-		leaderNode, err := s.getMetadata(&blastraft.Node{Id: string(leaderId)})
+		leaderNode, err := s.getNode(&blastraft.Node{Id: string(leaderId)})
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return err

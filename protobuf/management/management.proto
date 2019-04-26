@@ -44,12 +44,11 @@ message KeyValuePair {
 message ManagementCommand {
     enum Type {
         UNKNOWN_COMMAND = 0;
-        SET_METADATA = 1;
-        DELETE_METADATA = 2;
+        SET_NODE = 1;
+        DELETE_NODE = 2;
         PUT_KEY_VALUE_PAIR = 3;
         DELETE_KEY_VALUE_PAIR = 4;
     }
     Type type = 1;
     google.protobuf.Any data = 2;
 }
-
