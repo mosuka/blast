@@ -215,17 +215,35 @@ func (s *GRPCService) Delete(stream index.Index_DeleteServer) error {
 	return stream.SendAndClose(result)
 }
 
-func (s *GRPCService) GetStats(ctx context.Context, req *empty.Empty) (*index.Stats, error) {
+func (s *GRPCService) GetIndexConfig(ctx context.Context, req *empty.Empty) (*index.IndexConfig, error) {
 	start := time.Now()
-	defer RecordMetrics(start, "stats")
+	defer RecordMetrics(start, "indexconfig")
 
-	resp := &index.Stats{}
+	resp := &index.IndexConfig{}
 
 	s.logger.Printf("[INFO] stats %v", req)
 
 	var err error
 
-	resp, err = s.raftServer.Stats()
+	resp, err = s.raftServer.IndexConfig()
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	return resp, nil
+}
+
+func (s *GRPCService) GetIndexStats(ctx context.Context, req *empty.Empty) (*index.IndexStats, error) {
+	start := time.Now()
+	defer RecordMetrics(start, "indexstats")
+
+	resp := &index.IndexStats{}
+
+	s.logger.Printf("[INFO] stats %v", req)
+
+	var err error
+
+	resp, err = s.raftServer.IndexStats()
 	if err != nil {
 		return resp, status.Error(codes.Internal, err.Error())
 	}

@@ -19,6 +19,7 @@ import (
 	"reflect"
 
 	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/mapping"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/mosuka/blast/protobuf/index"
 	"github.com/mosuka/blast/protobuf/management"
@@ -37,6 +38,7 @@ func init() {
 	registry.RegisterType("index.Document", reflect.TypeOf(index.Document{}))
 	registry.RegisterType("raft.Node", reflect.TypeOf(raft.Node{}))
 
+	registry.RegisterType("mapping.IndexMappingImpl", reflect.TypeOf(mapping.IndexMappingImpl{}))
 	registry.RegisterType("bleve.SearchRequest", reflect.TypeOf(bleve.SearchRequest{}))
 	registry.RegisterType("bleve.SearchResult", reflect.TypeOf(bleve.SearchResult{}))
 }

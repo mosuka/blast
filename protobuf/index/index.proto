@@ -34,7 +34,8 @@ service Index {
     rpc Delete (stream Document) returns (UpdateResult) {}
     rpc Search (SearchRequest) returns (SearchResponse) {}
 
-    rpc GetStats (google.protobuf.Empty) returns (Stats) {}
+    rpc GetIndexConfig (google.protobuf.Empty) returns (IndexConfig) {}
+    rpc GetIndexStats (google.protobuf.Empty) returns (IndexStats) {}
 }
 
 message Document {
@@ -46,7 +47,13 @@ message UpdateResult {
     int32 count = 1;
 }
 
-message Stats {
+message IndexConfig {
+    google.protobuf.Any index_mapping = 1;
+    string index_type = 2;
+    string index_storage_type = 3;
+}
+
+message IndexStats {
     google.protobuf.Any stats = 1;
 }
 

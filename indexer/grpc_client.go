@@ -229,8 +229,19 @@ func (c *GRPCClient) Delete(docs []*index.Document, opts ...grpc.CallOption) (*i
 	return rep, nil
 }
 
-func (c *GRPCClient) GetIndexStats(opts ...grpc.CallOption) (*index.Stats, error) {
-	stats, err := c.client.GetStats(c.ctx, &empty.Empty{}, opts...)
+func (c *GRPCClient) GetIndexConfig(opts ...grpc.CallOption) (*index.IndexConfig, error) {
+	conf, err := c.client.GetIndexConfig(c.ctx, &empty.Empty{}, opts...)
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+
+	return conf, nil
+}
+
+func (c *GRPCClient) GetIndexStats(opts ...grpc.CallOption) (*index.IndexStats, error) {
+	stats, err := c.client.GetIndexStats(c.ctx, &empty.Empty{}, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 

@@ -62,7 +62,7 @@ func main() {
 				},
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":5050",
+					Value: ":7070",
 					Usage: "gRPC Server listen address",
 				},
 				cli.StringFlag{
@@ -162,7 +162,7 @@ func main() {
 				},
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":5050",
+					Value: ":7070",
 					Usage: "gRPC address to connect to",
 				},
 			},
@@ -174,7 +174,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "peer-addr",
-					Value: ":5050",
+					Value: ":7070",
 					Usage: "Existing gRPC server listen address to join to the cluster",
 				},
 				cli.StringFlag{
@@ -191,7 +191,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":5050",
+					Value: ":7070",
 					Usage: "gRPC address to connect to",
 				},
 			},
@@ -203,7 +203,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":5050",
+					Value: ":7070",
 					Usage: "gRPC address to connect to",
 				},
 			},
@@ -215,7 +215,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":5050",
+					Value: ":7070",
 					Usage: "gRPC address to connect to",
 				},
 			},
@@ -227,7 +227,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":5050",
+					Value: ":7070",
 					Usage: "gRPC address to connect to",
 				},
 				cli.StringFlag{
@@ -244,7 +244,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":5050",
+					Value: ":7070",
 					Usage: "gRPC address to connect to",
 				},
 				cli.StringFlag{
@@ -262,7 +262,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":5050",
+					Value: ":7070",
 					Usage: "address to connect to",
 				},
 				cli.StringFlag{
@@ -280,7 +280,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":5050",
+					Value: ":7070",
 					Usage: "gRPC address to connect to",
 				},
 			},
@@ -288,12 +288,24 @@ func main() {
 			Action:    execSearch,
 		},
 		{
+			Name:  "indexconfig",
+			Usage: "Get a index config",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "grpc-addr",
+					Value: ":7070",
+					Usage: "address to connect to",
+				},
+			},
+			Action: execIndexConfig,
+		},
+		{
 			Name:  "stats",
 			Usage: "Get a index stats",
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":5050",
+					Value: ":7070",
 					Usage: "address to connect to",
 				},
 			},

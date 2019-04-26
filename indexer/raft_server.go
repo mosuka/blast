@@ -43,8 +43,8 @@ type RaftServer struct {
 	logger *log.Logger
 }
 
-func NewRaftServer(node *blastraft.Node, bootstrap bool, indexMapping *mapping.IndexMappingImpl, indexStorageType string, logger *log.Logger) (*RaftServer, error) {
-	fsm, err := NewRaftFSM(filepath.Join(node.Metadata.DataDir, "index"), indexMapping, indexStorageType, logger)
+func NewRaftServer(node *blastraft.Node, bootstrap bool, indexMapping *mapping.IndexMappingImpl, indexType string, indexStorageType string, logger *log.Logger) (*RaftServer, error) {
+	fsm, err := NewRaftFSM(filepath.Join(node.Metadata.DataDir, "index"), indexMapping, indexType, indexStorageType, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -639,7 +639,30 @@ func (s *RaftServer) Delete(docs []*index.Document) (*index.UpdateResult, error)
 	}, nil
 }
 
-func (s *RaftServer) Stats() (*index.Stats, error) {
+func (s *RaftServer) IndexConfig() (*index.IndexConfig, error) {
+	configMap, err := s.fsm.IndexConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	// IndexMappingImpl{} -> Any
+	indexMappingAny := &any.Any{}
+	err = protobuf.UnmarshalAny(configMap["index_mapping"].(*mapping.IndexMappingImpl), indexMappingAny)
+	//err = protobuf.UnmarshalAny(configMap["index_mapping"].(mapping.IndexMappingImpl), indexMappingAny)
+	if err != nil {
+		return nil, err
+	}
+
+	indexConfig := &index.IndexConfig{
+		IndexMapping:     indexMappingAny,
+		IndexType:        configMap["index_type"].(string),
+		IndexStorageType: configMap["index_storage_type"].(string),
+	}
+
+	return indexConfig, nil
+}
+
+func (s *RaftServer) IndexStats() (*index.IndexStats, error) {
 	statsMap, err := s.fsm.Stats()
 	if err != nil {
 		return nil, err
@@ -652,7 +675,7 @@ func (s *RaftServer) Stats() (*index.Stats, error) {
 		return nil, err
 	}
 
-	indexStats := &index.Stats{
+	indexStats := &index.IndexStats{
 		Stats: statsAny,
 	}
 

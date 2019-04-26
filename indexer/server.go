@@ -59,7 +59,7 @@ func NewServer(managerAddr string, clusterId string, node *raft.Node, peerAddr s
 	}
 
 	// create raft server
-	server.raftServer, err = NewRaftServer(server.node, server.bootstrap, indexMapping, indexStorageType, server.logger)
+	server.raftServer, err = NewRaftServer(server.node, server.bootstrap, indexMapping, indexType, indexStorageType, server.logger)
 	if err != nil {
 		return nil, err
 	}

@@ -35,19 +35,26 @@ type RaftFSM struct {
 
 	index *Index
 
+	indexMapping     *mapping.IndexMappingImpl
+	indexType        string
+	indexStorageType string
+
 	logger *log.Logger
 }
 
-func NewRaftFSM(path string, indexMapping *mapping.IndexMappingImpl, indexStorageType string, logger *log.Logger) (*RaftFSM, error) {
-	index, err := NewIndex(path, indexMapping, indexStorageType, logger)
+func NewRaftFSM(path string, indexMapping *mapping.IndexMappingImpl, indexType string, indexStorageType string, logger *log.Logger) (*RaftFSM, error) {
+	index, err := NewIndex(path, indexMapping, indexType, indexStorageType, logger)
 	if err != nil {
 		return nil, err
 	}
 
 	return &RaftFSM{
-		cluster: &blastraft.Cluster{Nodes: make([]*blastraft.Node, 0)},
-		index:   index,
-		logger:  logger,
+		cluster:          &blastraft.Cluster{Nodes: make([]*blastraft.Node, 0)},
+		index:            index,
+		indexMapping:     indexMapping,
+		indexType:        indexType,
+		indexStorageType: indexStorageType,
+		logger:           logger,
 	}, nil
 }
 
@@ -203,6 +210,15 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 	default:
 		return errors.New("command type not support")
 	}
+}
+
+func (f *RaftFSM) IndexConfig() (map[string]interface{}, error) {
+	return map[string]interface{}{
+		"index_mapping": f.indexMapping,
+		//"index_mapping":      *f.indexMapping,
+		"index_type":         f.indexType,
+		"index_storage_type": f.indexStorageType,
+	}, nil
 }
 
 func (f *RaftFSM) Stats() (map[string]interface{}, error) {
