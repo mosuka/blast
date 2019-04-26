@@ -147,7 +147,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "peer-addr",
-					Value: "",
+					Value: ":17070",
 					Usage: "Existing gRPC server listen address to join to the cluster",
 				},
 				cli.StringFlag{
@@ -164,7 +164,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "peer-addr",
-					Value: "",
+					Value: ":17070",
 				},
 				cli.StringFlag{
 					Name:  "node-id",
@@ -180,7 +180,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: "",
+					Value: ";17070",
 					Usage: "gRPC address to connect to",
 				},
 			},
@@ -192,7 +192,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: "",
+					Value: ":17070",
 					Usage: "gRPC address to connect to",
 				},
 			},
@@ -204,7 +204,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":15050",
+					Value: ":17070",
 					Usage: "address to connect to",
 				},
 			},
@@ -216,7 +216,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":15050",
+					Value: ":17070",
 					Usage: "gRPC address to connect to",
 				},
 				cli.StringFlag{
@@ -233,7 +233,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":15050",
+					Value: ":17070",
 					Usage: "gRPC address to connect to",
 				},
 				cli.StringFlag{
@@ -251,7 +251,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":15050",
+					Value: ":17070",
 					Usage: "gRPC address to connect to",
 				},
 				cli.StringFlag{
@@ -268,7 +268,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":15050",
+					Value: ":17070",
 					Usage: "gRPC address to connect to",
 				},
 				cli.StringFlag{
