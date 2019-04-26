@@ -36,13 +36,13 @@ func TypeByName(name string) reflect.Type {
 }
 
 func TypeNameByInstance(instance interface{}) string {
-	switch ins := instance.(type) {
+	switch instance.(type) {
+	case bool, string, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, uintptr, float32, float64, complex64, complex128:
+		return reflect.TypeOf(instance).Name()
 	case map[string]interface{}, []interface{}:
-		return reflect.TypeOf(ins).String()
-	case string, int, int8, int16, int32, int64, float32, float64:
-		return reflect.TypeOf(ins).Name()
+		return reflect.TypeOf(instance).String()
 	default:
-		return reflect.TypeOf(ins).Elem().String()
+		return reflect.TypeOf(instance).Elem().String()
 	}
 }
 
