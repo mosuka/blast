@@ -21,7 +21,6 @@ import (
 	"log"
 
 	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve/mapping"
 	"github.com/golang/protobuf/proto"
 	"github.com/hashicorp/raft"
 	blasterrors "github.com/mosuka/blast/errors"
@@ -35,26 +34,22 @@ type RaftFSM struct {
 
 	index *Index
 
-	indexMapping     *mapping.IndexMappingImpl
-	indexType        string
-	indexStorageType string
+	indexConfig map[string]interface{}
 
 	logger *log.Logger
 }
 
-func NewRaftFSM(path string, indexMapping *mapping.IndexMappingImpl, indexType string, indexStorageType string, logger *log.Logger) (*RaftFSM, error) {
-	index, err := NewIndex(path, indexMapping, indexType, indexStorageType, logger)
+func NewRaftFSM(path string, indexConfig map[string]interface{}, logger *log.Logger) (*RaftFSM, error) {
+	index, err := NewIndex(path, indexConfig, logger)
 	if err != nil {
 		return nil, err
 	}
 
 	return &RaftFSM{
-		cluster:          &blastraft.Cluster{Nodes: make([]*blastraft.Node, 0)},
-		index:            index,
-		indexMapping:     indexMapping,
-		indexType:        indexType,
-		indexStorageType: indexStorageType,
-		logger:           logger,
+		cluster:     &blastraft.Cluster{Nodes: make([]*blastraft.Node, 0)},
+		index:       index,
+		indexConfig: indexConfig,
+		logger:      logger,
 	}, nil
 }
 
@@ -213,21 +208,11 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 }
 
 func (f *RaftFSM) IndexConfig() (map[string]interface{}, error) {
-	return map[string]interface{}{
-		"index_mapping": f.indexMapping,
-		//"index_mapping":      *f.indexMapping,
-		"index_type":         f.indexType,
-		"index_storage_type": f.indexStorageType,
-	}, nil
+	return f.index.Config()
 }
 
-func (f *RaftFSM) Stats() (map[string]interface{}, error) {
-	stats, err := f.index.Stats()
-	if err != nil {
-		return nil, err
-	}
-
-	return stats, nil
+func (f *RaftFSM) IndexStats() (map[string]interface{}, error) {
+	return f.index.Stats()
 }
 
 func (f *RaftFSM) Snapshot() (raft.FSMSnapshot, error) {

@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve/mapping"
 	"github.com/golang/protobuf/ptypes/any"
 	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
@@ -31,21 +30,28 @@ import (
 type Index struct {
 	index bleve.Index
 
-	indexMapping     *mapping.IndexMappingImpl
-	indexType        string
-	indexStorageType string
+	indexConfig map[string]interface{}
 
 	logger *log.Logger
 }
 
-func NewIndex(dir string, indexMapping *mapping.IndexMappingImpl, indexType string, indexStorageType string, logger *log.Logger) (*Index, error) {
+func NewIndex(dir string, indexConfig map[string]interface{}, logger *log.Logger) (*Index, error) {
 	bleve.SetLog(logger)
 
 	var index bleve.Index
 	_, err := os.Stat(dir)
 	if os.IsNotExist(err) {
 		// create new index
-		index, err = bleve.NewUsing(dir, indexMapping, indexType, indexStorageType, nil)
+		indexMappingSrc, err := json.Marshal(indexConfig["index_mapping"])
+		if err != nil {
+			return nil, err
+		}
+		indexMapping := bleve.NewIndexMapping()
+		err = json.Unmarshal(indexMappingSrc, indexMapping)
+		if err != nil {
+			return nil, err
+		}
+		index, err = bleve.NewUsing(dir, indexMapping, indexConfig["index_type"].(string), indexConfig["index_storage_type"].(string), nil)
 		if err != nil {
 			return nil, err
 		}
@@ -61,11 +67,9 @@ func NewIndex(dir string, indexMapping *mapping.IndexMappingImpl, indexType stri
 	}
 
 	return &Index{
-		index:            index,
-		indexMapping:     indexMapping,
-		indexType:        indexType,
-		indexStorageType: indexStorageType,
-		logger:           logger,
+		index:       index,
+		indexConfig: indexConfig,
+		logger:      logger,
 	}, nil
 }
 
@@ -172,13 +176,7 @@ func (i *Index) Config() (map[string]interface{}, error) {
 		i.logger.Printf("[DEBUG] stats %f", float64(time.Since(start))/float64(time.Second))
 	}()
 
-	indexConfig := map[string]interface{}{
-		"index_mapping":      i.indexMapping,
-		"index_type":         i.indexType,
-		"index_storage_type": i.indexStorageType,
-	}
-
-	return indexConfig, nil
+	return i.indexConfig, nil
 }
 
 func (i *Index) Stats() (map[string]interface{}, error) {

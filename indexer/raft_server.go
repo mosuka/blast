@@ -40,11 +40,13 @@ type RaftServer struct {
 	raft *raft.Raft
 	fsm  *RaftFSM
 
+	indexConfig map[string]interface{}
+
 	logger *log.Logger
 }
 
-func NewRaftServer(node *blastraft.Node, bootstrap bool, indexMapping *mapping.IndexMappingImpl, indexType string, indexStorageType string, logger *log.Logger) (*RaftServer, error) {
-	fsm, err := NewRaftFSM(filepath.Join(node.Metadata.DataDir, "index"), indexMapping, indexType, indexStorageType, logger)
+func NewRaftServer(node *blastraft.Node, bootstrap bool, indexConfig map[string]interface{}, logger *log.Logger) (*RaftServer, error) {
+	fsm, err := NewRaftFSM(filepath.Join(node.Metadata.DataDir, "index"), indexConfig, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -663,7 +665,7 @@ func (s *RaftServer) IndexConfig() (*index.IndexConfig, error) {
 }
 
 func (s *RaftServer) IndexStats() (*index.IndexStats, error) {
-	statsMap, err := s.fsm.Stats()
+	statsMap, err := s.fsm.IndexStats()
 	if err != nil {
 		return nil, err
 	}

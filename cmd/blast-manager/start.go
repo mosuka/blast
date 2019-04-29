@@ -72,6 +72,18 @@ func execStart(c *cli.Context) error {
 		httpAccessLogCompress,
 	)
 
+	// node
+	node := &raft.Node{
+		Id: nodeId,
+		Metadata: &raft.Metadata{
+			BindAddr: bindAddr,
+			GrpcAddr: grpcAddr,
+			HttpAddr: httpAddr,
+			DataDir:  dataDir,
+		},
+		Leader: false,
+	}
+
 	// index mapping
 	indexMapping := mapping.NewIndexMapping()
 	if indexMappingFile != "" {
@@ -104,18 +116,6 @@ func execStart(c *cli.Context) error {
 		return err
 	}
 
-	// node
-	node := &raft.Node{
-		Id: nodeId,
-		Metadata: &raft.Metadata{
-			BindAddr: bindAddr,
-			GrpcAddr: grpcAddr,
-			HttpAddr: httpAddr,
-			DataDir:  dataDir,
-		},
-		Leader: false,
-	}
-
 	// IndexMappingImpl -> JSON
 	indexMappingJSON, err := json.Marshal(indexMapping)
 	if err != nil {
@@ -133,28 +133,6 @@ func execStart(c *cli.Context) error {
 		"index_type":         indexType,
 		"index_storage_type": indexStorageType,
 	}
-	//indexConfigJSON, err := json.Marshal(&mm)
-
-	// index config
-	//indexConfig := maputils.NewStructuredMap()
-	//err = indexConfig.LoadJSON(indexConfigJSON)
-	//err = indexConfig.LoadMap(map[string]interface{}{
-	//	"index_mapping":      indexMappingMap,
-	//	"index_type":         indexType,
-	//	"index_storage_type": indexStorageType,
-	//},
-	//)
-	//indexConfig := maputils.NewStructuredMap()
-	//err = indexConfig.Set("index_config",
-	//	map[string]interface{}{
-	//		"index_mapping":      indexMappingMap,
-	//		"index_type":         indexType,
-	//		"index_storage_type": indexStorageType,
-	//	},
-	//)
-	//if err != nil {
-	//	return err
-	//}
 
 	svr, err := manager.NewServer(node, peerAddr, indexConfig, logger, httpAccessLogger)
 	if err != nil {

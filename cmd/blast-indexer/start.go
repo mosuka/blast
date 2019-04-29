@@ -56,7 +56,7 @@ func execStart(c *cli.Context) error {
 	httpAccessLogMaxAge := c.Int("http-access-log-max-age")
 	httpAccessLogCompress := c.Bool("http-access-log-compress")
 
-	// Create logger
+	// create logger
 	logger := logutils.NewLogger(
 		logLevel,
 		logFilename,
@@ -66,7 +66,7 @@ func execStart(c *cli.Context) error {
 		logCompress,
 	)
 
-	// Create HTTP access logger
+	// create HTTP access logger
 	httpAccessLogger := logutils.NewApacheCombinedLogger(
 		httpAccessLogFilename,
 		httpAccessLogMaxSize,
@@ -75,10 +75,20 @@ func execStart(c *cli.Context) error {
 		httpAccessLogCompress,
 	)
 
-	// set default index mapping
-	indexMapping := mapping.NewIndexMapping()
+	// node
+	node := &raft.Node{
+		Id: nodeId,
+		Metadata: &raft.Metadata{
+			BindAddr: bindAddr,
+			GrpcAddr: grpcAddr,
+			HttpAddr: httpAddr,
+			DataDir:  dataDir,
+		},
+		Leader: false,
+	}
 
-	// check index mapping file
+	// index mapping
+	indexMapping := mapping.NewIndexMapping()
 	if indexMappingFile != "" {
 		_, err := os.Stat(indexMappingFile)
 		if err == nil {
@@ -104,19 +114,30 @@ func execStart(c *cli.Context) error {
 			return err
 		}
 	}
-
-	node := &raft.Node{
-		Id: nodeId,
-		Metadata: &raft.Metadata{
-			BindAddr: bindAddr,
-			GrpcAddr: grpcAddr,
-			HttpAddr: httpAddr,
-			DataDir:  dataDir,
-		},
-		Leader: false,
+	err := indexMapping.Validate()
+	if err != nil {
+		return err
 	}
 
-	svr, err := indexer.NewServer(managerAddr, clusterId, node, peerAddr, indexMapping, indexType, indexStorageType, logger, httpAccessLogger)
+	// IndexMappingImpl -> JSON
+	indexMappingJSON, err := json.Marshal(indexMapping)
+	if err != nil {
+		return err
+	}
+	// JSON -> map[string]interface{}
+	var indexMappingMap map[string]interface{}
+	err = json.Unmarshal(indexMappingJSON, &indexMappingMap)
+	if err != nil {
+		return err
+	}
+
+	indexConfig := map[string]interface{}{
+		"index_mapping":      indexMappingMap,
+		"index_type":         indexType,
+		"index_storage_type": indexStorageType,
+	}
+
+	svr, err := indexer.NewServer(managerAddr, clusterId, node, peerAddr, indexConfig, logger, httpAccessLogger)
 	if err != nil {
 		return err
 	}
