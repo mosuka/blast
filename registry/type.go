@@ -18,7 +18,46 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+
+	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/mapping"
+	"github.com/mosuka/blast/protobuf/index"
+	"github.com/mosuka/blast/protobuf/management"
+	"github.com/mosuka/blast/protobuf/raft"
 )
+
+func init() {
+	RegisterType("bool", reflect.TypeOf(false))
+	RegisterType("string", reflect.TypeOf(""))
+	RegisterType("int", reflect.TypeOf(int(0)))
+	RegisterType("int8", reflect.TypeOf(int8(0)))
+	RegisterType("int16", reflect.TypeOf(int16(0)))
+	RegisterType("int32", reflect.TypeOf(int32(0)))
+	RegisterType("int64", reflect.TypeOf(int64(0)))
+	RegisterType("uint", reflect.TypeOf(uint(0)))
+	RegisterType("uint8", reflect.TypeOf(uint8(0)))
+	RegisterType("uint16", reflect.TypeOf(uint16(0)))
+	RegisterType("uint32", reflect.TypeOf(uint32(0)))
+	RegisterType("uint64", reflect.TypeOf(uint64(0)))
+	RegisterType("uintptr", reflect.TypeOf(uintptr(0)))
+	RegisterType("byte", reflect.TypeOf(byte(0)))
+	RegisterType("rune", reflect.TypeOf(rune(0)))
+	RegisterType("float32", reflect.TypeOf(float32(0)))
+	RegisterType("float64", reflect.TypeOf(float64(0)))
+	RegisterType("complex64", reflect.TypeOf(complex64(0)))
+	RegisterType("complex128", reflect.TypeOf(complex128(0)))
+
+	RegisterType("map[string]interface {}", reflect.TypeOf((map[string]interface{})(nil)))
+	RegisterType("[]interface {}", reflect.TypeOf(([]interface{})(nil)))
+
+	RegisterType("index.Document", reflect.TypeOf(index.Document{}))
+	RegisterType("management.KeyValuePair", reflect.TypeOf(management.KeyValuePair{}))
+	RegisterType("raft.Node", reflect.TypeOf(raft.Node{}))
+
+	RegisterType("mapping.IndexMappingImpl", reflect.TypeOf(mapping.IndexMappingImpl{}))
+	RegisterType("bleve.SearchRequest", reflect.TypeOf(bleve.SearchRequest{}))
+	RegisterType("bleve.SearchResult", reflect.TypeOf(bleve.SearchResult{}))
+}
 
 type TypeRegistry map[string]reflect.Type
 
