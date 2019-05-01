@@ -17,7 +17,12 @@ package indexer
 import (
 	"log"
 
+	"github.com/mosuka/blast/protobuf"
+
+	"github.com/mosuka/blast/protobuf/management"
+
 	accesslog "github.com/mash/go-accesslog"
+	"github.com/mosuka/blast/manager"
 	"github.com/mosuka/blast/protobuf/raft"
 )
 
@@ -60,40 +65,39 @@ func NewServer(managerAddr string, clusterId string, node *raft.Node, peerAddr s
 		httpLogger:  httpLogger,
 	}
 
-	//// create raft server
-	//server.raftServer, err = NewRaftServer(server.node, server.bootstrap, server.indexConfig, server.logger)
-	//if err != nil {
-	//	return nil, err
-	//}
-
-	//// create gRPC service
-	//server.grpcService, err = NewGRPCService(server.raftServer, server.logger)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//// create gRPC server
-	//server.grpcServer, err = NewGRPCServer(node.Metadata.GrpcAddr, server.grpcService, server.logger)
-	//if err != nil {
-	//	return nil, err
-	//}
-
-	//// create gRPC client for HTTP server
-	//server.grpcClient, err = NewGRPCClient(node.Metadata.GrpcAddr)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//// create HTTP server
-	//server.httpServer, err = NewHTTPServer(node.Metadata.HttpAddr, server.grpcClient, server.logger, server.httpLogger)
-	//if err != nil {
-	//	return nil, err
-	//}
-
 	return server, nil
 }
 
 func (s *Server) Start() {
+	// get index config from leader node
+	if s.managerAddr != "" {
+		mc, err := manager.NewGRPCClient(s.managerAddr)
+		defer func() {
+			err = mc.Close()
+			if err != nil {
+				s.logger.Printf("[ERR] %v", err)
+				return
+			}
+		}()
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			return
+		}
+		kvp, err := mc.Get(&management.KeyValuePair{Key: "/index_config"})
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			return
+		}
+		ins, err := protobuf.MarshalAny(kvp.Value)
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			return
+		}
+		if ins != nil {
+			s.indexConfig = *ins.(*map[string]interface{})
+		}
+	}
+
 	var err error
 
 	// create raft server
