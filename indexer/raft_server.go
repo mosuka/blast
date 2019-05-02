@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve/mapping"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/hashicorp/raft"
@@ -52,10 +51,11 @@ func NewRaftServer(node *blastraft.Node, bootstrap bool, indexConfig map[string]
 	}
 
 	return &RaftServer{
-		node:      node,
-		bootstrap: bootstrap,
-		fsm:       fsm,
-		logger:    logger,
+		node:        node,
+		bootstrap:   bootstrap,
+		fsm:         fsm,
+		indexConfig: indexConfig,
+		logger:      logger,
 	}, nil
 }
 
@@ -112,16 +112,26 @@ func (s *RaftServer) Start() error {
 				s.logger.Printf("[WARN] %v", err)
 			} else {
 				s.logger.Printf("[ERR] %v", err)
-				return nil
+				return err
 			}
 		}
 
 		// set metadata
 		err = s.setMetadata(s.node)
 		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil
+			return err
 		}
+
+		// set index config
+		err = s.setIndexConfig(s.indexConfig)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = s.fsm.Start()
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -216,7 +226,7 @@ func (s *RaftServer) setMetadata(node *blastraft.Node) error {
 	}
 
 	c := &index.IndexCommand{
-		Type: index.IndexCommand_SET_METADATA,
+		Type: index.IndexCommand_SET_NODE,
 		Data: nodeAny,
 	}
 
@@ -247,7 +257,7 @@ func (s *RaftServer) deleteMetadata(nodeId string) error {
 	}
 
 	c := &index.IndexCommand{
-		Type: index.IndexCommand_DELETE_METADATA,
+		Type: index.IndexCommand_DELETE_NODE,
 		Data: nodeAny,
 	}
 
@@ -473,6 +483,33 @@ func (s *RaftServer) Snapshot() error {
 	return nil
 }
 
+func (s *RaftServer) setIndexConfig(indexConfig map[string]interface{}) error {
+	// map[string]interface{} -> Any
+	indexConfigAny := &any.Any{}
+	err := protobuf.UnmarshalAny(indexConfig, indexConfigAny)
+	if err != nil {
+		return err
+	}
+
+	c := &index.IndexCommand{
+		Type: index.IndexCommand_SET_INDEX_CONFIG,
+		Data: indexConfigAny,
+	}
+
+	msg, err := proto.Marshal(c)
+	if err != nil {
+		return err
+	}
+
+	f := s.raft.Apply(msg, 10*time.Second)
+	err = f.Error()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *RaftServer) Get(doc *index.Document) (*index.Document, error) {
 	fieldsMap, err := s.fsm.Get(doc.Id)
 	if err != nil {
@@ -649,8 +686,7 @@ func (s *RaftServer) IndexConfig() (*index.IndexConfig, error) {
 
 	// IndexMappingImpl{} -> Any
 	indexMappingAny := &any.Any{}
-	err = protobuf.UnmarshalAny(configMap["index_mapping"].(*mapping.IndexMappingImpl), indexMappingAny)
-	//err = protobuf.UnmarshalAny(configMap["index_mapping"].(mapping.IndexMappingImpl), indexMappingAny)
+	err = protobuf.UnmarshalAny(configMap["index_mapping"].(map[string]interface{}), indexMappingAny)
 	if err != nil {
 		return nil, err
 	}

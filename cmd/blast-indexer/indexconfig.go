@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/blevesearch/bleve/mapping"
-
 	"github.com/mosuka/blast/indexer"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/urfave/cli"
@@ -47,14 +45,14 @@ func execIndexConfig(c *cli.Context) error {
 	}
 
 	// Any -> IndexMappingImpl
-	configInstance, err := protobuf.MarshalAny(resp.IndexMapping)
+	indexMappingInstance, err := protobuf.MarshalAny(resp.IndexMapping)
 	if err != nil {
 		return err
 	}
-	if configInstance == nil {
+	if indexMappingInstance == nil {
 		return errors.New("nil")
 	}
-	indexMapping := configInstance.(*mapping.IndexMappingImpl)
+	indexMapping := *indexMappingInstance.(*map[string]interface{})
 
 	indexConfig := map[string]interface{}{
 		"index_mapping":      indexMapping,

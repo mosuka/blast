@@ -32,6 +32,8 @@ import (
 type RaftFSM struct {
 	cluster *blastraft.Cluster
 
+	path string
+
 	index *Index
 
 	indexConfig map[string]interface{}
@@ -40,17 +42,23 @@ type RaftFSM struct {
 }
 
 func NewRaftFSM(path string, indexConfig map[string]interface{}, logger *log.Logger) (*RaftFSM, error) {
-	index, err := NewIndex(path, indexConfig, logger)
-	if err != nil {
-		return nil, err
-	}
-
 	return &RaftFSM{
 		cluster:     &blastraft.Cluster{Nodes: make([]*blastraft.Node, 0)},
-		index:       index,
+		path:        path,
 		indexConfig: indexConfig,
 		logger:      logger,
 	}, nil
+}
+
+func (f *RaftFSM) Start() error {
+	var err error
+
+	f.index, err = NewIndex(f.path, f.indexConfig, f.logger)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (f *RaftFSM) Close() error {
@@ -92,6 +100,12 @@ func (f *RaftFSM) applyDeleteMetadata(node *blastraft.Node) interface{} {
 	}
 
 	return blasterrors.ErrNotFound
+}
+
+func (f *RaftFSM) applySetIndexConfig(indexConfig map[string]interface{}) interface{} {
+	f.indexConfig = indexConfig
+
+	return nil
 }
 
 func (f *RaftFSM) Get(id string) (map[string]interface{}, error) {
@@ -144,7 +158,7 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 	f.logger.Printf("[DEBUG] Apply %v", c)
 
 	switch c.Type {
-	case pbindex.IndexCommand_SET_METADATA:
+	case pbindex.IndexCommand_SET_NODE:
 		// Any -> Node
 		nodeInstance, err := protobuf.MarshalAny(c.Data)
 		if err != nil {
@@ -156,7 +170,7 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 		node := nodeInstance.(*blastraft.Node)
 
 		return f.applySetMetadata(node)
-	case pbindex.IndexCommand_DELETE_METADATA:
+	case pbindex.IndexCommand_DELETE_NODE:
 		// Any -> Node
 		nodeInstance, err := protobuf.MarshalAny(c.Data)
 		if err != nil {
@@ -168,6 +182,18 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 		node := nodeInstance.(*blastraft.Node)
 
 		return f.applyDeleteMetadata(node)
+	case pbindex.IndexCommand_SET_INDEX_CONFIG:
+		// Any -> map[string]interface{}
+		indexConfigInstance, err := protobuf.MarshalAny(c.Data)
+		if err != nil {
+			return err
+		}
+		if indexConfigInstance == nil {
+			return errors.New("nil")
+		}
+		indexConfig := *indexConfigInstance.(*map[string]interface{})
+
+		return f.applySetIndexConfig(indexConfig)
 	case pbindex.IndexCommand_INDEX_DOCUMENT:
 		// Any -> Document
 		docInstance, err := protobuf.MarshalAny(c.Data)

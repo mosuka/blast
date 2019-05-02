@@ -68,10 +68,11 @@ message SearchResponse {
 message IndexCommand {
     enum Type {
         UNKNOWN_COMMAND = 0;
-        SET_METADATA = 1;
-        DELETE_METADATA = 2;
-        INDEX_DOCUMENT = 3;
-        DELETE_DOCUMENT = 4;
+        SET_NODE = 1;
+        DELETE_NODE = 2;
+        SET_INDEX_CONFIG = 3;
+        INDEX_DOCUMENT = 4;
+        DELETE_DOCUMENT = 5;
     }
     Type type = 1;
     google.protobuf.Any data = 2;
