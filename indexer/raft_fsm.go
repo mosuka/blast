@@ -102,12 +102,6 @@ func (f *RaftFSM) applyDeleteMetadata(node *blastraft.Node) interface{} {
 	return blasterrors.ErrNotFound
 }
 
-func (f *RaftFSM) applySetIndexConfig(indexConfig map[string]interface{}) interface{} {
-	f.indexConfig = indexConfig
-
-	return nil
-}
-
 func (f *RaftFSM) Get(id string) (map[string]interface{}, error) {
 	fields, err := f.index.Get(id)
 	if err != nil {
@@ -182,18 +176,6 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 		node := nodeInstance.(*blastraft.Node)
 
 		return f.applyDeleteMetadata(node)
-	case pbindex.IndexCommand_SET_INDEX_CONFIG:
-		// Any -> map[string]interface{}
-		indexConfigInstance, err := protobuf.MarshalAny(c.Data)
-		if err != nil {
-			return err
-		}
-		if indexConfigInstance == nil {
-			return errors.New("nil")
-		}
-		indexConfig := *indexConfigInstance.(*map[string]interface{})
-
-		return f.applySetIndexConfig(indexConfig)
 	case pbindex.IndexCommand_INDEX_DOCUMENT:
 		// Any -> Document
 		docInstance, err := protobuf.MarshalAny(c.Data)

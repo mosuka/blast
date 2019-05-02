@@ -121,12 +121,6 @@ func (s *RaftServer) Start() error {
 		if err != nil {
 			return err
 		}
-
-		// set index config
-		err = s.setIndexConfig(s.indexConfig)
-		if err != nil {
-			return err
-		}
 	}
 
 	err = s.fsm.Start()
@@ -476,33 +470,6 @@ func (s *RaftServer) GetCluster() (*blastraft.Cluster, error) {
 func (s *RaftServer) Snapshot() error {
 	f := s.raft.Snapshot()
 	err := f.Error()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *RaftServer) setIndexConfig(indexConfig map[string]interface{}) error {
-	// map[string]interface{} -> Any
-	indexConfigAny := &any.Any{}
-	err := protobuf.UnmarshalAny(indexConfig, indexConfigAny)
-	if err != nil {
-		return err
-	}
-
-	c := &index.IndexCommand{
-		Type: index.IndexCommand_SET_INDEX_CONFIG,
-		Data: indexConfigAny,
-	}
-
-	msg, err := proto.Marshal(c)
-	if err != nil {
-		return err
-	}
-
-	f := s.raft.Apply(msg, 10*time.Second)
-	err = f.Error()
 	if err != nil {
 		return err
 	}
