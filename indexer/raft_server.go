@@ -33,6 +33,7 @@ import (
 )
 
 type RaftServer struct {
+	clusterId string
 	node      *blastraft.Node
 	bootstrap bool
 
@@ -44,13 +45,14 @@ type RaftServer struct {
 	logger *log.Logger
 }
 
-func NewRaftServer(node *blastraft.Node, bootstrap bool, indexConfig map[string]interface{}, logger *log.Logger) (*RaftServer, error) {
-	fsm, err := NewRaftFSM(filepath.Join(node.Metadata.DataDir, "index"), indexConfig, logger)
+func NewRaftServer(clusterId string, node *blastraft.Node, bootstrap bool, indexConfig map[string]interface{}, logger *log.Logger) (*RaftServer, error) {
+	fsm, err := NewRaftFSM(clusterId, filepath.Join(node.Metadata.DataDir, "index"), indexConfig, logger)
 	if err != nil {
 		return nil, err
 	}
 
 	return &RaftServer{
+		clusterId:   clusterId,
 		node:        node,
 		bootstrap:   bootstrap,
 		fsm:         fsm,
@@ -117,7 +119,7 @@ func (s *RaftServer) Start() error {
 		}
 
 		// set metadata
-		err = s.setMetadata(s.node)
+		err = s.setNode(s.node)
 		if err != nil {
 			return err
 		}
@@ -202,8 +204,8 @@ func (s *RaftServer) LeaderID(timeout time.Duration) (raft.ServerID, error) {
 	return "", errors.ErrNotFoundLeader
 }
 
-func (s *RaftServer) getMetadata(node *blastraft.Node) (*blastraft.Node, error) {
-	node, err := s.fsm.GetMetadata(node)
+func (s *RaftServer) getNode(node *blastraft.Node) (*blastraft.Node, error) {
+	node, err := s.fsm.GetNode(node)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +213,7 @@ func (s *RaftServer) getMetadata(node *blastraft.Node) (*blastraft.Node, error) 
 	return node, nil
 }
 
-func (s *RaftServer) setMetadata(node *blastraft.Node) error {
+func (s *RaftServer) setNode(node *blastraft.Node) error {
 	// Node -> Any
 	nodeAny := &any.Any{}
 	err := protobuf.UnmarshalAny(node, nodeAny)
@@ -238,7 +240,7 @@ func (s *RaftServer) setMetadata(node *blastraft.Node) error {
 	return nil
 }
 
-func (s *RaftServer) deleteMetadata(nodeId string) error {
+func (s *RaftServer) deleteNode(nodeId string) error {
 	node := &blastraft.Node{
 		Id: nodeId,
 	}
@@ -277,7 +279,7 @@ func (s *RaftServer) Join(node *blastraft.Node) error {
 			return err
 		}
 
-		leaderNode, err := s.getMetadata(&blastraft.Node{Id: string(leaderId)})
+		leaderNode, err := s.getNode(&blastraft.Node{Id: string(leaderId)})
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return nil
@@ -324,7 +326,7 @@ func (s *RaftServer) Join(node *blastraft.Node) error {
 	}
 
 	// set metadata
-	err = s.setMetadata(node)
+	err = s.setNode(node)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return nil
@@ -342,7 +344,7 @@ func (s *RaftServer) Leave(node *blastraft.Node) error {
 			return err
 		}
 
-		leaderNode, err := s.getMetadata(&blastraft.Node{Id: string(leaderId)})
+		leaderNode, err := s.getNode(&blastraft.Node{Id: string(leaderId)})
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return nil
@@ -389,7 +391,7 @@ func (s *RaftServer) Leave(node *blastraft.Node) error {
 	}
 
 	// delete metadata
-	err = s.deleteMetadata(node.Id)
+	err = s.deleteNode(node.Id)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return nil
@@ -419,7 +421,7 @@ func (s *RaftServer) GetNode() (*blastraft.Node, error) {
 			node.Id = string(server.ID)
 			node.Leader = server.Address == leaderAddr
 
-			nodeInfo, err := s.getMetadata(&blastraft.Node{Id: node.Id})
+			nodeInfo, err := s.getNode(&blastraft.Node{Id: node.Id})
 			if err != nil {
 				s.logger.Printf("[WARN] %v", err)
 				break
@@ -445,7 +447,7 @@ func (s *RaftServer) GetCluster() (*blastraft.Cluster, error) {
 	}
 
 	cluster := &blastraft.Cluster{
-		Id:    "default",
+		Id:    s.clusterId,
 		Nodes: make([]*blastraft.Node, 0),
 	}
 
@@ -454,7 +456,7 @@ func (s *RaftServer) GetCluster() (*blastraft.Cluster, error) {
 		node.Id = string(server.ID)
 		node.Leader = server.Address == leaderAddr
 
-		nodeInfo, err := s.getMetadata(&blastraft.Node{Id: node.Id})
+		nodeInfo, err := s.getNode(&blastraft.Node{Id: node.Id})
 		if err != nil {
 			s.logger.Printf("[WARN] %v", err)
 			continue
@@ -515,7 +517,7 @@ func (s *RaftServer) Index(docs []*index.Document) (*index.UpdateResult, error) 
 			return nil, err
 		}
 
-		leaderNode, err := s.getMetadata(&blastraft.Node{Id: string(leaderId)})
+		leaderNode, err := s.getNode(&blastraft.Node{Id: string(leaderId)})
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return nil, err
@@ -584,7 +586,7 @@ func (s *RaftServer) Delete(docs []*index.Document) (*index.UpdateResult, error)
 			return nil, err
 		}
 
-		leaderNode, err := s.getMetadata(&blastraft.Node{Id: string(leaderId)})
+		leaderNode, err := s.getNode(&blastraft.Node{Id: string(leaderId)})
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return nil, err

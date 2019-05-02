@@ -41,9 +41,9 @@ type RaftFSM struct {
 	logger *log.Logger
 }
 
-func NewRaftFSM(path string, indexConfig map[string]interface{}, logger *log.Logger) (*RaftFSM, error) {
+func NewRaftFSM(clusterId string, path string, indexConfig map[string]interface{}, logger *log.Logger) (*RaftFSM, error) {
 	return &RaftFSM{
-		cluster:     &blastraft.Cluster{Nodes: make([]*blastraft.Node, 0)},
+		cluster:     &blastraft.Cluster{Id: clusterId, Nodes: make([]*blastraft.Node, 0)},
 		path:        path,
 		indexConfig: indexConfig,
 		logger:      logger,
@@ -70,7 +70,7 @@ func (f *RaftFSM) Close() error {
 	return nil
 }
 
-func (f *RaftFSM) GetMetadata(node *blastraft.Node) (*blastraft.Node, error) {
+func (f *RaftFSM) GetNode(node *blastraft.Node) (*blastraft.Node, error) {
 	for _, n := range f.cluster.Nodes {
 		if n.Id == node.Id {
 			return n, nil
@@ -80,7 +80,7 @@ func (f *RaftFSM) GetMetadata(node *blastraft.Node) (*blastraft.Node, error) {
 	return nil, blasterrors.ErrNotFound
 }
 
-func (f *RaftFSM) applySetMetadata(node *blastraft.Node) interface{} {
+func (f *RaftFSM) applySetNode(node *blastraft.Node) interface{} {
 	for _, n := range f.cluster.Nodes {
 		if n.Id == node.Id {
 			return errors.New("already exists")
@@ -92,7 +92,7 @@ func (f *RaftFSM) applySetMetadata(node *blastraft.Node) interface{} {
 	return nil
 }
 
-func (f *RaftFSM) applyDeleteMetadata(node *blastraft.Node) interface{} {
+func (f *RaftFSM) applyDeleteNode(node *blastraft.Node) interface{} {
 	for i, n := range f.cluster.Nodes {
 		if n.Id == node.Id {
 			return append(f.cluster.Nodes[:i], f.cluster.Nodes[i+1:]...)
@@ -163,7 +163,7 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 		}
 		node := nodeInstance.(*blastraft.Node)
 
-		return f.applySetMetadata(node)
+		return f.applySetNode(node)
 	case pbindex.IndexCommand_DELETE_NODE:
 		// Any -> Node
 		nodeInstance, err := protobuf.MarshalAny(c.Data)
@@ -175,7 +175,7 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 		}
 		node := nodeInstance.(*blastraft.Node)
 
-		return f.applyDeleteMetadata(node)
+		return f.applyDeleteNode(node)
 	case pbindex.IndexCommand_INDEX_DOCUMENT:
 		// Any -> Document
 		docInstance, err := protobuf.MarshalAny(c.Data)

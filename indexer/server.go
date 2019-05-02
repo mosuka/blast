@@ -125,7 +125,7 @@ func (s *Server) Start() {
 	var err error
 
 	// create raft server
-	s.raftServer, err = NewRaftServer(s.node, s.bootstrap, s.indexConfig, s.logger)
+	s.raftServer, err = NewRaftServer(s.clusterId, s.node, s.bootstrap, s.indexConfig, s.logger)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return
