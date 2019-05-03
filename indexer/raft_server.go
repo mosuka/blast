@@ -15,10 +15,15 @@
 package indexer
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
 	"net"
 	"path/filepath"
 	"time"
+
+	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/protobuf/management"
 
 	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/proto"
@@ -33,9 +38,10 @@ import (
 )
 
 type RaftServer struct {
-	clusterId string
-	node      *blastraft.Node
-	bootstrap bool
+	managerAddr string
+	clusterId   string
+	node        *blastraft.Node
+	bootstrap   bool
 
 	raft *raft.Raft
 	fsm  *RaftFSM
@@ -45,13 +51,14 @@ type RaftServer struct {
 	logger *log.Logger
 }
 
-func NewRaftServer(clusterId string, node *blastraft.Node, bootstrap bool, indexConfig map[string]interface{}, logger *log.Logger) (*RaftServer, error) {
+func NewRaftServer(managerAddr string, clusterId string, node *blastraft.Node, bootstrap bool, indexConfig map[string]interface{}, logger *log.Logger) (*RaftServer, error) {
 	fsm, err := NewRaftFSM(clusterId, filepath.Join(node.Metadata.DataDir, "index"), indexConfig, logger)
 	if err != nil {
 		return nil, err
 	}
 
 	return &RaftServer{
+		managerAddr: managerAddr,
 		clusterId:   clusterId,
 		node:        node,
 		bootstrap:   bootstrap,
@@ -128,6 +135,48 @@ func (s *RaftServer) Start() error {
 	err = s.fsm.Start()
 	if err != nil {
 		return err
+	}
+
+	// register node to manager
+	if s.managerAddr != "" {
+		mc, err := manager.NewGRPCClient(s.managerAddr)
+		defer func() {
+			err = mc.Close()
+			if err != nil {
+				s.logger.Printf("[ERR] %v", err)
+				return
+			}
+		}()
+		if err != nil {
+			return err
+		}
+
+		nodeJSON, err := json.Marshal(s.node)
+		if err != nil {
+			return err
+		}
+
+		var nodeMap map[string]interface{}
+		err = json.Unmarshal(nodeJSON, &nodeMap)
+		if err != nil {
+			return err
+		}
+
+		nodeAny := &any.Any{}
+		err = protobuf.UnmarshalAny(nodeMap, nodeAny)
+		if err != nil {
+			return err
+		}
+
+		err = mc.Set(
+			&management.KeyValuePair{
+				Key:   fmt.Sprintf("/clusters/%s/nodes/%s", s.clusterId, s.node.Id),
+				Value: nodeAny,
+			},
+		)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

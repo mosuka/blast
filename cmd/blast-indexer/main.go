@@ -47,12 +47,12 @@ func main() {
 				},
 				cli.StringFlag{
 					Name:  "cluster-id",
-					Value: "",
+					Value: "default",
 					Usage: "Cluster ID",
 				},
 				cli.StringFlag{
 					Name:  "node-id",
-					Value: "",
+					Value: "indexer1",
 					Usage: "Node ID",
 				},
 				cli.StringFlag{
