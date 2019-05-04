@@ -41,7 +41,7 @@ type RaftFSM struct {
 
 func NewRaftFSM(path string, logger *log.Logger) (*RaftFSM, error) {
 	return &RaftFSM{
-		cluster: &blastraft.Cluster{Nodes: make([]*blastraft.Node, 0)},
+		cluster: &blastraft.Cluster{Nodes: make(map[string]*blastraft.Metadata, 0)},
 		data:    objx.New(map[string]interface{}{}),
 		logger:  logger,
 	}, nil
@@ -52,35 +52,32 @@ func (f *RaftFSM) Close() error {
 }
 
 func (f *RaftFSM) GetNode(node *blastraft.Node) (*blastraft.Node, error) {
-	for _, n := range f.cluster.Nodes {
-		if n.Id == node.Id {
-			return n, nil
-		}
+	if _, exist := f.cluster.Nodes[node.Id]; exist {
+		return &blastraft.Node{
+			Id:       node.Id,
+			Metadata: f.cluster.Nodes[node.Id],
+		}, nil
+	} else {
+		return nil, blasterrors.ErrNotFound
 	}
-
-	return nil, blasterrors.ErrNotFound
 }
 
 func (f *RaftFSM) applySetNode(node *blastraft.Node) interface{} {
-	for _, n := range f.cluster.Nodes {
-		if n.Id == node.Id {
-			return errors.New("already exists")
-		}
+	if _, exist := f.cluster.Nodes[node.Id]; !exist {
+		f.cluster.Nodes[node.Id] = node.Metadata
+		return nil
+	} else {
+		return errors.New("already exists")
 	}
-
-	f.cluster.Nodes = append(f.cluster.Nodes, node)
-
-	return nil
 }
 
 func (f *RaftFSM) applyDeleteNode(node *blastraft.Node) interface{} {
-	for i, n := range f.cluster.Nodes {
-		if n.Id == node.Id {
-			return append(f.cluster.Nodes[:i], f.cluster.Nodes[i+1:]...)
-		}
+	if _, exist := f.cluster.Nodes[node.Id]; exist {
+		delete(f.cluster.Nodes, node.Id)
+		return nil
+	} else {
+		return blasterrors.ErrNotFound
 	}
-
-	return blasterrors.ErrNotFound
 }
 
 func (f *RaftFSM) pathKeys(path string) []string {
@@ -98,7 +95,6 @@ func (f *RaftFSM) makeSafePath(path string) string {
 	keys := f.pathKeys(path)
 
 	safePath := strings.Join(keys, "/")
-	//safePath = strings.Join(strings.Split(safePath, "."), "_")
 	safePath = strings.Join(strings.Split(safePath, "/"), objx.PathSeparator)
 
 	return safePath

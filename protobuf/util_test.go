@@ -109,8 +109,8 @@ func TestMarshalAny_Node(t *testing.T) {
 			DataDir:  "/tmp/blast/index1",
 			BindAddr: ":6060",
 			HttpAddr: ":8080",
+			Leader:   true,
 		},
-		Leader: true,
 	}
 
 	dataAny := &any.Any{}
@@ -125,7 +125,7 @@ func TestMarshalAny_Node(t *testing.T) {
 		t.Errorf("expected content to see %s, saw %s", expectedType, actualType)
 	}
 
-	expectedValue := []byte(`{"id":"node1","metadata":{"bind_addr":":6060","grpc_addr":":5050","http_addr":":8080","data_dir":"/tmp/blast/index1"},"leader":true}`)
+	expectedValue := []byte(`{"id":"node1","metadata":{"bind_addr":":6060","grpc_addr":":5050","http_addr":":8080","data_dir":"/tmp/blast/index1","leader":true}}`)
 	actualValue := dataAny.Value
 	if !bytes.Equal(expectedValue, actualValue) {
 		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)

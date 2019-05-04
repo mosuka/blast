@@ -15,15 +15,11 @@
 package indexer
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net"
 	"path/filepath"
 	"time"
-
-	"github.com/mosuka/blast/manager"
-	"github.com/mosuka/blast/protobuf/management"
 
 	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/proto"
@@ -32,8 +28,10 @@ import (
 	raftboltdb "github.com/hashicorp/raft-boltdb"
 	_ "github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/errors"
+	"github.com/mosuka/blast/manager"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/index"
+	"github.com/mosuka/blast/protobuf/management"
 	blastraft "github.com/mosuka/blast/protobuf/raft"
 )
 
@@ -125,8 +123,14 @@ func (s *RaftServer) Start() error {
 			}
 		}
 
-		// set metadata
+		// set node
 		err = s.setNode(s.node)
+		if err != nil {
+			return err
+		}
+
+		// register node to manager
+		err = s.updateCluster()
 		if err != nil {
 			return err
 		}
@@ -135,48 +139,6 @@ func (s *RaftServer) Start() error {
 	err = s.fsm.Start()
 	if err != nil {
 		return err
-	}
-
-	// register node to manager
-	if s.managerAddr != "" {
-		mc, err := manager.NewGRPCClient(s.managerAddr)
-		defer func() {
-			err = mc.Close()
-			if err != nil {
-				s.logger.Printf("[ERR] %v", err)
-				return
-			}
-		}()
-		if err != nil {
-			return err
-		}
-
-		nodeJSON, err := json.Marshal(s.node)
-		if err != nil {
-			return err
-		}
-
-		var nodeMap map[string]interface{}
-		err = json.Unmarshal(nodeJSON, &nodeMap)
-		if err != nil {
-			return err
-		}
-
-		nodeAny := &any.Any{}
-		err = protobuf.UnmarshalAny(nodeMap, nodeAny)
-		if err != nil {
-			return err
-		}
-
-		err = mc.Set(
-			&management.KeyValuePair{
-				Key:   fmt.Sprintf("/clusters/%s/nodes/%s", s.clusterId, s.node.Id),
-				Value: nodeAny,
-			},
-		)
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -320,6 +282,45 @@ func (s *RaftServer) deleteNode(nodeId string) error {
 	return nil
 }
 
+func (s *RaftServer) updateCluster() error {
+	if s.managerAddr != "" {
+		mc, err := manager.NewGRPCClient(s.managerAddr)
+		defer func() {
+			err = mc.Close()
+			if err != nil {
+				s.logger.Printf("[ERR] %v", err)
+				return
+			}
+		}()
+		if err != nil {
+			return err
+		}
+
+		cluster, err := s.GetCluster()
+		if err != nil {
+			return err
+		}
+
+		clusterAny := &any.Any{}
+		err = protobuf.UnmarshalAny(cluster, clusterAny)
+		if err != nil {
+			return err
+		}
+
+		err = mc.Set(
+			&management.KeyValuePair{
+				Key:   fmt.Sprintf("/cluster_config/clusters/%s", cluster.Id),
+				Value: clusterAny,
+			},
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (s *RaftServer) Join(node *blastraft.Node) error {
 	if s.raft.State() != raft.Leader {
 		// forward to leader node
@@ -330,8 +331,7 @@ func (s *RaftServer) Join(node *blastraft.Node) error {
 
 		leaderNode, err := s.getNode(&blastraft.Node{Id: string(leaderId)})
 		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil
+			return err
 		}
 
 		client, err := NewGRPCClient(leaderNode.Metadata.GrpcAddr)
@@ -342,14 +342,12 @@ func (s *RaftServer) Join(node *blastraft.Node) error {
 			}
 		}()
 		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil
+			return err
 		}
 
 		err = client.Join(node)
 		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil
+			return err
 		}
 
 		return nil
@@ -374,11 +372,16 @@ func (s *RaftServer) Join(node *blastraft.Node) error {
 		return err
 	}
 
-	// set metadata
+	// set node
 	err = s.setNode(node)
 	if err != nil {
-		s.logger.Printf("[ERR] %v", err)
-		return nil
+		return err
+	}
+
+	// update cluster to manager
+	err = s.updateCluster()
+	if err != nil {
+		return err
 	}
 
 	s.logger.Printf("[INFO] node %v joined successfully", node)
@@ -446,6 +449,12 @@ func (s *RaftServer) Leave(node *blastraft.Node) error {
 		return nil
 	}
 
+	// unregister node from manager
+	err = s.updateCluster()
+	if err != nil {
+		return err
+	}
+
 	s.logger.Printf("[INFO] node %v does not exists in the cluster", node)
 	return nil
 }
@@ -468,7 +477,6 @@ func (s *RaftServer) GetNode() (*blastraft.Node, error) {
 	for _, server := range cf.Configuration().Servers {
 		if server.ID == raft.ServerID(s.node.Id) {
 			node.Id = string(server.ID)
-			node.Leader = server.Address == leaderAddr
 
 			nodeInfo, err := s.getNode(&blastraft.Node{Id: node.Id})
 			if err != nil {
@@ -476,6 +484,8 @@ func (s *RaftServer) GetNode() (*blastraft.Node, error) {
 				break
 			}
 			node.Metadata = nodeInfo.Metadata
+			node.Metadata.Leader = server.Address == leaderAddr
+
 			break
 		}
 	}
@@ -497,13 +507,12 @@ func (s *RaftServer) GetCluster() (*blastraft.Cluster, error) {
 
 	cluster := &blastraft.Cluster{
 		Id:    s.clusterId,
-		Nodes: make([]*blastraft.Node, 0),
+		Nodes: make(map[string]*blastraft.Metadata, 0),
 	}
 
 	for _, server := range cf.Configuration().Servers {
 		node := &blastraft.Node{}
 		node.Id = string(server.ID)
-		node.Leader = server.Address == leaderAddr
 
 		nodeInfo, err := s.getNode(&blastraft.Node{Id: node.Id})
 		if err != nil {
@@ -511,8 +520,9 @@ func (s *RaftServer) GetCluster() (*blastraft.Cluster, error) {
 			continue
 		}
 		node.Metadata = nodeInfo.Metadata
+		node.Metadata.Leader = server.Address == leaderAddr
 
-		cluster.Nodes = append(cluster.Nodes, node)
+		cluster.Nodes[node.Id] = node.Metadata
 	}
 
 	return cluster, nil

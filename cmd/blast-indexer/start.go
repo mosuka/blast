@@ -83,8 +83,8 @@ func execStart(c *cli.Context) error {
 			GrpcAddr: grpcAddr,
 			HttpAddr: httpAddr,
 			DataDir:  dataDir,
+			Leader:   false,
 		},
-		Leader: false,
 	}
 
 	// index mapping

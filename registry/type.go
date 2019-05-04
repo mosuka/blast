@@ -53,6 +53,7 @@ func init() {
 	RegisterType("index.Document", reflect.TypeOf(index.Document{}))
 	RegisterType("management.KeyValuePair", reflect.TypeOf(management.KeyValuePair{}))
 	RegisterType("raft.Node", reflect.TypeOf(raft.Node{}))
+	RegisterType("raft.Cluster", reflect.TypeOf(raft.Cluster{}))
 
 	RegisterType("mapping.IndexMappingImpl", reflect.TypeOf(mapping.IndexMappingImpl{}))
 	RegisterType("bleve.SearchRequest", reflect.TypeOf(bleve.SearchRequest{}))

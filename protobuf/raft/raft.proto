@@ -23,15 +23,15 @@ message Metadata {
     string grpc_addr = 2;
     string http_addr = 3;
     string data_dir = 4;
+    bool leader = 5;
 }
 
 message Node {
     string id = 1;
     Metadata metadata = 2;
-    bool leader = 3;
 }
 
 message Cluster {
     string id = 1;
-    repeated Node nodes = 2;
+    map<string, Metadata> nodes = 2;
 }

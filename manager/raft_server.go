@@ -437,7 +437,6 @@ func (s *RaftServer) GetNode() (*blastraft.Node, error) {
 	for _, server := range cf.Configuration().Servers {
 		if server.ID == raft.ServerID(s.node.Id) {
 			node.Id = string(server.ID)
-			node.Leader = server.Address == leaderAddr
 
 			nodeInfo, err := s.getNode(&blastraft.Node{Id: node.Id})
 			if err != nil {
@@ -445,6 +444,7 @@ func (s *RaftServer) GetNode() (*blastraft.Node, error) {
 				break
 			}
 			node.Metadata = nodeInfo.Metadata
+			node.Metadata.Leader = server.Address == leaderAddr
 			break
 		}
 	}
@@ -466,13 +466,12 @@ func (s *RaftServer) GetCluster() (*blastraft.Cluster, error) {
 
 	cluster := &blastraft.Cluster{
 		Id:    "default",
-		Nodes: make([]*blastraft.Node, 0),
+		Nodes: make(map[string]*blastraft.Metadata, 0),
 	}
 
 	for _, server := range cf.Configuration().Servers {
 		node := &blastraft.Node{}
 		node.Id = string(server.ID)
-		node.Leader = server.Address == leaderAddr
 
 		nodeInfo, err := s.getNode(&blastraft.Node{Id: node.Id})
 		if err != nil {
@@ -480,8 +479,9 @@ func (s *RaftServer) GetCluster() (*blastraft.Cluster, error) {
 			continue
 		}
 		node.Metadata = nodeInfo.Metadata
+		node.Metadata.Leader = server.Address == leaderAddr
 
-		cluster.Nodes = append(cluster.Nodes, node)
+		cluster.Nodes[node.Id] = node.Metadata
 	}
 
 	return cluster, nil
