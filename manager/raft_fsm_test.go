@@ -49,8 +49,8 @@ func TestRaftFSM_GetNode(t *testing.T) {
 			BindAddr: ":16060",
 			GrpcAddr: ":17070",
 			HttpAddr: ":18080",
+			Leader:   false,
 		},
-		Leader: false,
 	}
 	node2 := &raft.Node{
 		Id: "node2",
@@ -58,8 +58,8 @@ func TestRaftFSM_GetNode(t *testing.T) {
 			BindAddr: ":16061",
 			GrpcAddr: ":17071",
 			HttpAddr: ":18081",
+			Leader:   false,
 		},
-		Leader: false,
 	}
 	node3 := &raft.Node{
 		Id: "node3",
@@ -67,8 +67,8 @@ func TestRaftFSM_GetNode(t *testing.T) {
 			BindAddr: ":16062",
 			GrpcAddr: ":17072",
 			HttpAddr: ":18082",
+			Leader:   false,
 		},
-		Leader: false,
 	}
 
 	fsm.applySetNode(node1)
@@ -88,8 +88,8 @@ func TestRaftFSM_GetNode(t *testing.T) {
 			BindAddr: ":16061",
 			GrpcAddr: ":17071",
 			HttpAddr: ":18081",
+			Leader:   false,
 		},
-		Leader: false,
 	}
 	actualValue := node
 	if !reflect.DeepEqual(expectedValue, actualValue) {
@@ -123,8 +123,8 @@ func TestRaftFSM_SetNode(t *testing.T) {
 			BindAddr: ":16060",
 			GrpcAddr: ":17070",
 			HttpAddr: ":18080",
+			Leader:   false,
 		},
-		Leader: false,
 	}
 	node2 := &raft.Node{
 		Id: "node2",
@@ -132,8 +132,8 @@ func TestRaftFSM_SetNode(t *testing.T) {
 			BindAddr: ":16061",
 			GrpcAddr: ":17071",
 			HttpAddr: ":18081",
+			Leader:   false,
 		},
-		Leader: false,
 	}
 	node3 := &raft.Node{
 		Id: "node3",
@@ -141,8 +141,8 @@ func TestRaftFSM_SetNode(t *testing.T) {
 			BindAddr: ":16062",
 			GrpcAddr: ":17072",
 			HttpAddr: ":18082",
+			Leader:   false,
 		},
-		Leader: false,
 	}
 
 	fsm.applySetNode(node1)
@@ -162,15 +162,15 @@ func TestRaftFSM_SetNode(t *testing.T) {
 			BindAddr: ":16061",
 			GrpcAddr: ":17071",
 			HttpAddr: ":18081",
+			Leader:   false,
 		},
-		Leader: false,
 	}
 	actualValue := node
 	if !reflect.DeepEqual(expectedValue, actualValue) {
 		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
 	}
 
-	node2.Leader = true
+	node2.Metadata.Leader = true
 	fsm.applySetNode(node2)
 
 	node, err = fsm.GetNode(&raft.Node{
@@ -186,8 +186,8 @@ func TestRaftFSM_SetNode(t *testing.T) {
 			BindAddr: ":16061",
 			GrpcAddr: ":17071",
 			HttpAddr: ":18081",
+			Leader:   true,
 		},
-		Leader: true,
 	}
 	actualValue = node
 	if !reflect.DeepEqual(expectedValue, actualValue) {
@@ -220,8 +220,8 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 			BindAddr: ":16060",
 			GrpcAddr: ":17070",
 			HttpAddr: ":18080",
+			Leader:   false,
 		},
-		Leader: false,
 	}
 	node2 := &raft.Node{
 		Id: "node2",
@@ -229,8 +229,8 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 			BindAddr: ":16061",
 			GrpcAddr: ":17071",
 			HttpAddr: ":18081",
+			Leader:   false,
 		},
-		Leader: false,
 	}
 	node3 := &raft.Node{
 		Id: "node3",
@@ -238,8 +238,8 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 			BindAddr: ":16062",
 			GrpcAddr: ":17072",
 			HttpAddr: ":18082",
+			Leader:   false,
 		},
-		Leader: false,
 	}
 
 	fsm.applySetNode(node1)
@@ -259,15 +259,15 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 			BindAddr: ":16061",
 			GrpcAddr: ":17071",
 			HttpAddr: ":18081",
+			Leader:   false,
 		},
-		Leader: false,
 	}
 	actualValue := node
 	if !reflect.DeepEqual(expectedValue, actualValue) {
 		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
 	}
 
-	node2.Leader = true
+	node2.Metadata.Leader = true
 	fsm.applySetNode(node2)
 
 	node, err = fsm.GetNode(&raft.Node{
@@ -283,8 +283,8 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 			BindAddr: ":16061",
 			GrpcAddr: ":17071",
 			HttpAddr: ":18081",
+			Leader:   true,
 		},
-		Leader: true,
 	}
 	actualValue = node
 	if !reflect.DeepEqual(expectedValue, actualValue) {

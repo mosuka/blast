@@ -50,7 +50,7 @@ type RaftServer struct {
 }
 
 func NewRaftServer(managerAddr string, clusterId string, node *blastraft.Node, bootstrap bool, indexConfig map[string]interface{}, logger *log.Logger) (*RaftServer, error) {
-	fsm, err := NewRaftFSM(clusterId, filepath.Join(node.Metadata.DataDir, "index"), indexConfig, logger)
+	fsm, err := NewRaftFSM(filepath.Join(node.Metadata.DataDir, "index"), indexConfig, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +309,7 @@ func (s *RaftServer) updateCluster() error {
 
 		err = mc.Set(
 			&management.KeyValuePair{
-				Key:   fmt.Sprintf("/cluster_config/clusters/%s", cluster.Id),
+				Key:   fmt.Sprintf("/cluster_config/clusters/%s", s.clusterId),
 				Value: clusterAny,
 			},
 		)
@@ -506,7 +506,6 @@ func (s *RaftServer) GetCluster() (*blastraft.Cluster, error) {
 	}
 
 	cluster := &blastraft.Cluster{
-		Id:    s.clusterId,
 		Nodes: make(map[string]*blastraft.Metadata, 0),
 	}
 

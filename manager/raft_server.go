@@ -465,7 +465,6 @@ func (s *RaftServer) GetCluster() (*blastraft.Cluster, error) {
 	}
 
 	cluster := &blastraft.Cluster{
-		Id:    "default",
 		Nodes: make(map[string]*blastraft.Metadata, 0),
 	}
 

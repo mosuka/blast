@@ -15,9 +15,11 @@
 package indexer
 
 import (
+	"fmt"
 	"log"
 
 	accesslog "github.com/mash/go-accesslog"
+	"github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/manager"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/management"
@@ -49,7 +51,7 @@ type Server struct {
 func NewServer(managerAddr string, clusterId string, node *raft.Node, peerAddr string, indexConfig map[string]interface{}, logger *log.Logger, httpLogger accesslog.Logger) (*Server, error) {
 	server := &Server{
 		node:        node,
-		bootstrap:   peerAddr == "",
+		bootstrap:   true,
 		peerAddr:    peerAddr,
 		indexConfig: indexConfig,
 		managerAddr: managerAddr,
@@ -62,7 +64,7 @@ func NewServer(managerAddr string, clusterId string, node *raft.Node, peerAddr s
 }
 
 func (s *Server) Start() {
-	// get index config from manager node
+	// get peer from manager
 	if s.managerAddr != "" {
 		mc, err := manager.NewGRPCClient(s.managerAddr)
 		defer func() {
@@ -76,23 +78,74 @@ func (s *Server) Start() {
 			s.logger.Printf("[ERR] %v", err)
 			return
 		}
+
+		kvp, err := mc.Get(
+			&management.KeyValuePair{
+				Key: fmt.Sprintf("/cluster_config/clusters/%s/nodes", s.clusterId),
+			},
+		)
+		if err == errors.ErrNotFound {
+			// not found
+			s.logger.Printf("[WARN] %v", err)
+		} else if err != nil {
+			// error
+			s.logger.Printf("[ERR] %v", err)
+			return
+		} else {
+			ins, err := protobuf.MarshalAny(kvp.Value)
+			if err != nil {
+				s.logger.Printf("[ERR] %v", err)
+				return
+			}
+
+			if ins != nil {
+				m := *ins.(*map[string]interface{})
+				for k, v := range m {
+					// skip if it is own node id
+					if k == s.node.Id {
+						continue
+					}
+
+					// get the peer node address
+					metadata := v.(map[string]interface{})
+					s.peerAddr = metadata["grpc_addr"].(string)
+					break
+				}
+			}
+		}
+	}
+
+	// get index config from manager or peer
+	if s.managerAddr != "" {
+		mc, err := manager.NewGRPCClient(s.managerAddr)
+		defer func() {
+			err = mc.Close()
+			if err != nil {
+				s.logger.Printf("[ERR] %v", err)
+				return
+			}
+		}()
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			return
+		}
+
 		kvp, err := mc.Get(&management.KeyValuePair{Key: "/index_config"})
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return
 		}
+
 		ins, err := protobuf.MarshalAny(kvp.Value)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return
 		}
+
 		if ins != nil {
 			s.indexConfig = *ins.(*map[string]interface{})
 		}
-	}
-
-	// get index config from peer node
-	if s.peerAddr != "" {
+	} else if s.peerAddr != "" {
 		pc, err := NewGRPCClient(s.peerAddr)
 		defer func() {
 			err = pc.Close()
@@ -105,21 +158,31 @@ func (s *Server) Start() {
 			s.logger.Printf("[ERR] %v", err)
 			return
 		}
+
 		indexConfig, err := pc.GetIndexConfig()
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return
 		}
+
 		ins, err := protobuf.MarshalAny(indexConfig.IndexMapping)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return
 		}
+
 		s.indexConfig = map[string]interface{}{
 			"index_mapping":      *ins.(*map[string]interface{}),
 			"index_type":         indexConfig.IndexType,
 			"index_storage_type": indexConfig.IndexStorageType,
 		}
+	}
+
+	// check bootstrap
+	if s.peerAddr == "" {
+		s.bootstrap = true
+	} else {
+		s.bootstrap = false
 	}
 
 	var err error

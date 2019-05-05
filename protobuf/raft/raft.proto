@@ -32,6 +32,5 @@ message Node {
 }
 
 message Cluster {
-    string id = 1;
-    map<string, Metadata> nodes = 2;
+    map<string, Metadata> nodes = 1;
 }

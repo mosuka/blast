@@ -41,9 +41,9 @@ type RaftFSM struct {
 	logger *log.Logger
 }
 
-func NewRaftFSM(clusterId string, path string, indexConfig map[string]interface{}, logger *log.Logger) (*RaftFSM, error) {
+func NewRaftFSM(path string, indexConfig map[string]interface{}, logger *log.Logger) (*RaftFSM, error) {
 	return &RaftFSM{
-		cluster:     &blastraft.Cluster{Id: clusterId, Nodes: make(map[string]*blastraft.Metadata, 0)},
+		cluster:     &blastraft.Cluster{Nodes: make(map[string]*blastraft.Metadata, 0)},
 		path:        path,
 		indexConfig: indexConfig,
 		logger:      logger,
