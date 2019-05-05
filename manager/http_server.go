@@ -34,8 +34,13 @@ type HTTPServer struct {
 	httpLogger accesslog.Logger
 }
 
-func NewHTTPServer(httpAddr string, grpcClient *GRPCClient, logger *log.Logger, httpLogger accesslog.Logger) (*HTTPServer, error) {
+func NewHTTPServer(httpAddr string, grpcAddr string, logger *log.Logger, httpLogger accesslog.Logger) (*HTTPServer, error) {
 	listener, err := net.Listen("tcp", httpAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	grpcClient, err := NewGRPCClient(grpcAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -78,6 +83,11 @@ func (s *HTTPServer) Start() error {
 
 func (s *HTTPServer) Stop() error {
 	err := s.listener.Close()
+	if err != nil {
+		return err
+	}
+
+	err = s.grpcClient.Close()
 	if err != nil {
 		return err
 	}

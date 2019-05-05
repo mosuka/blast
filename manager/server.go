@@ -22,18 +22,13 @@ import (
 )
 
 type Server struct {
-	node      *raft.Node
-	bootstrap bool
-	peerAddr  string
+	node     *raft.Node
+	peerAddr string
 
 	indexConfig map[string]interface{}
 
 	raftServer *RaftServer
-
-	grpcService *GRPCService
-	grpcServer  *GRPCServer
-	grpcClient  *GRPCClient
-
+	grpcServer *GRPCServer
 	httpServer *HTTPServer
 
 	logger     *log.Logger
@@ -41,51 +36,42 @@ type Server struct {
 }
 
 func NewServer(node *raft.Node, peerAddr string, indexConfig map[string]interface{}, logger *log.Logger, httpLogger accesslog.Logger) (*Server, error) {
-	var err error
-
-	server := &Server{
+	return &Server{
 		node:        node,
-		bootstrap:   peerAddr == "",
 		peerAddr:    peerAddr,
 		indexConfig: indexConfig,
 		logger:      logger,
 		httpLogger:  httpLogger,
-	}
-
-	// create raft server
-	server.raftServer, err = NewRaftServer(server.node, server.bootstrap, server.indexConfig, server.logger)
-	if err != nil {
-		return nil, err
-	}
-
-	// create gRPC service
-	server.grpcService, err = NewGRPCService(server.raftServer, server.logger)
-	if err != nil {
-		return nil, err
-	}
-
-	// create gRPC server
-	server.grpcServer, err = NewGRPCServer(server.node.Metadata.GrpcAddr, server.grpcService, server.logger)
-	if err != nil {
-		return nil, err
-	}
-
-	// create gRPC client for HTTP server
-	server.grpcClient, err = NewGRPCClient(server.node.Metadata.GrpcAddr)
-	if err != nil {
-		return nil, err
-	}
-
-	// create HTTP server
-	server.httpServer, err = NewHTTPServer(server.node.Metadata.HttpAddr, server.grpcClient, server.logger, server.httpLogger)
-	if err != nil {
-		return nil, err
-	}
-
-	return server, nil
+	}, nil
 }
 
 func (s *Server) Start() {
+	var err error
+
+	// bootstrap node?
+	bootstrap := s.peerAddr == ""
+
+	// create raft server
+	s.raftServer, err = NewRaftServer(s.node, bootstrap, s.indexConfig, s.logger)
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return
+	}
+
+	// create gRPC server
+	s.grpcServer, err = NewGRPCServer(s.node.Metadata.GrpcAddr, s.raftServer, s.logger)
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return
+	}
+
+	// create HTTP server
+	s.httpServer, err = NewHTTPServer(s.node.Metadata.HttpAddr, s.node.Metadata.GrpcAddr, s.logger, s.httpLogger)
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return
+	}
+
 	// start Raft server
 	go func() {
 		err := s.raftServer.Start()
@@ -93,8 +79,8 @@ func (s *Server) Start() {
 			s.logger.Printf("[ERR] %v", err)
 			return
 		}
+		s.logger.Print("[INFO] Raft server started")
 	}()
-	s.logger.Print("[INFO] Raft server started")
 
 	// start gRPC server
 	go func() {
@@ -103,8 +89,8 @@ func (s *Server) Start() {
 			s.logger.Printf("[ERR] %v", err)
 			return
 		}
+		s.logger.Print("[INFO] gRPC server started")
 	}()
-	s.logger.Print("[INFO] gRPC server started")
 
 	// start HTTP server
 	go func() {
@@ -113,11 +99,11 @@ func (s *Server) Start() {
 			s.logger.Printf("[ERR] %v", err)
 			return
 		}
+		s.logger.Print("[INFO] HTTP server started")
 	}()
-	s.logger.Print("[INFO] HTTP server started")
 
-	if !s.bootstrap {
-		// create gRPC client
+	// join to the existing cluster
+	if !bootstrap {
 		client, err := NewGRPCClient(s.peerAddr)
 		defer func() {
 			err := client.Close()
@@ -130,7 +116,6 @@ func (s *Server) Start() {
 			return
 		}
 
-		// join to the existing cluster
 		err = client.Join(s.node)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
@@ -142,12 +127,6 @@ func (s *Server) Start() {
 func (s *Server) Stop() {
 	// stop HTTP server
 	err := s.httpServer.Stop()
-	if err != nil {
-		s.logger.Printf("[ERR] %v", err)
-	}
-
-	// close gRPC client
-	err = s.grpcClient.Close()
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 	}
