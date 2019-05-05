@@ -29,8 +29,13 @@ type GRPCServer struct {
 	logger *log.Logger
 }
 
-func NewGRPCServer(grpcAddr string, service *GRPCService, logger *log.Logger) (*GRPCServer, error) {
+func NewGRPCServer(grpcAddr string, raftServer *RaftServer, logger *log.Logger) (*GRPCServer, error) {
 	server := grpc.NewServer()
+
+	service, err := NewGRPCService(raftServer, logger)
+	if err != nil {
+		return nil, err
+	}
 
 	index.RegisterIndexServer(server, service)
 

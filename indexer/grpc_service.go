@@ -37,9 +37,9 @@ type GRPCService struct {
 	logger *log.Logger
 }
 
-func NewGRPCService(store *RaftServer, logger *log.Logger) (*GRPCService, error) {
+func NewGRPCService(raftServer *RaftServer, logger *log.Logger) (*GRPCService, error) {
 	return &GRPCService{
-		raftServer: store,
+		raftServer: raftServer,
 		logger:     logger,
 	}, nil
 }
