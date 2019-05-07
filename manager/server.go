@@ -50,6 +50,7 @@ func (s *Server) Start() {
 
 	// bootstrap node?
 	bootstrap := s.peerAddr == ""
+	s.logger.Printf("[INFO] bootstrap: %v", bootstrap)
 
 	// create raft server
 	s.raftServer, err = NewRaftServer(s.node, bootstrap, s.indexConfig, s.logger)
@@ -73,33 +74,29 @@ func (s *Server) Start() {
 	}
 
 	// start Raft server
+	s.logger.Print("[INFO] start Raft server")
 	go func() {
 		err := s.raftServer.Start()
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return
 		}
-		s.logger.Print("[INFO] Raft server started")
 	}()
 
 	// start gRPC server
+	s.logger.Print("[INFO] start gRPC server")
 	go func() {
 		err := s.grpcServer.Start()
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return
 		}
-		s.logger.Print("[INFO] gRPC server started")
 	}()
 
 	// start HTTP server
+	s.logger.Print("[INFO] start HTTP server")
 	go func() {
-		err := s.httpServer.Start()
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return
-		}
-		s.logger.Print("[INFO] HTTP server started")
+		s.httpServer.Start()
 	}()
 
 	// join to the existing cluster
@@ -126,18 +123,21 @@ func (s *Server) Start() {
 
 func (s *Server) Stop() {
 	// stop HTTP server
+	s.logger.Print("[INFO] stop HTTP server")
 	err := s.httpServer.Stop()
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 	}
 
 	// stop gRPC server
+	s.logger.Print("[INFO] stop gRPC server")
 	err = s.grpcServer.Stop()
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 	}
 
 	// stop Raft server
+	s.logger.Print("[INFO] stop Raft server")
 	err = s.raftServer.Stop()
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)

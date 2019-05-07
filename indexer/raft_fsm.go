@@ -61,7 +61,7 @@ func (f *RaftFSM) Start() error {
 	return nil
 }
 
-func (f *RaftFSM) Close() error {
+func (f *RaftFSM) Stop() error {
 	err := f.index.Close()
 	if err != nil {
 		return err

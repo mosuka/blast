@@ -34,6 +34,8 @@ import (
 type RaftFSM struct {
 	cluster *blastraft.Cluster
 
+	path string
+
 	data objx.Map
 
 	logger *log.Logger
@@ -42,12 +44,18 @@ type RaftFSM struct {
 func NewRaftFSM(path string, logger *log.Logger) (*RaftFSM, error) {
 	return &RaftFSM{
 		cluster: &blastraft.Cluster{Nodes: make(map[string]*blastraft.Metadata, 0)},
-		data:    objx.New(map[string]interface{}{}),
+		path:    path,
 		logger:  logger,
 	}, nil
 }
 
-func (f *RaftFSM) Close() error {
+func (f *RaftFSM) Start() error {
+	f.logger.Print("[INFO] initialize data")
+	f.data = objx.New(map[string]interface{}{})
+	return nil
+}
+
+func (f *RaftFSM) Stop() error {
 	return nil
 }
 
@@ -246,20 +254,17 @@ func (f *RaftFSM) delete(keys []string, data interface{}) (interface{}, error) {
 		switch data.(type) {
 		case map[string]interface{}:
 			if _, exist := data.(map[string]interface{})[key]; exist {
-				// key exists
 				if len(keys) > 1 {
 					data.(map[string]interface{})[key], err = f.delete(keys[1:], data.(map[string]interface{})[key])
 					if err != nil {
 						return nil, err
 					}
 				} else {
-					//
 					mm := data.(map[string]interface{})
 					delete(mm, key)
 					data = mm
 				}
 			} else {
-				// key does not exist
 				return nil, blasterrors.ErrNotFound
 			}
 		}
@@ -372,13 +377,15 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 }
 
 func (f *RaftFSM) Snapshot() (raft.FSMSnapshot, error) {
-	return &KVSFSMSnapshot{
+	return &RaftFSMSnapshot{
 		federation: f.data,
 		logger:     f.logger,
 	}, nil
 }
 
 func (f *RaftFSM) Restore(rc io.ReadCloser) error {
+	f.logger.Print("[INFO] restore data")
+
 	defer func() {
 		err := rc.Close()
 		if err != nil {
@@ -398,18 +405,16 @@ func (f *RaftFSM) Restore(rc io.ReadCloser) error {
 		return err
 	}
 
-	f.logger.Printf("[INFO] federation was restored: %v", f.data)
-
 	return nil
 }
 
-type KVSFSMSnapshot struct {
+type RaftFSMSnapshot struct {
 	federation objx.Map
 	logger     *log.Logger
 }
 
-func (f *KVSFSMSnapshot) Persist(sink raft.SnapshotSink) error {
-	f.logger.Printf("[INFO] start data persistence")
+func (f *RaftFSMSnapshot) Persist(sink raft.SnapshotSink) error {
+	f.logger.Printf("[INFO] persist data")
 
 	defer func() {
 		err := sink.Close()
@@ -428,11 +433,9 @@ func (f *KVSFSMSnapshot) Persist(sink raft.SnapshotSink) error {
 		return err
 	}
 
-	f.logger.Printf("[INFO] federation was persisted: %v", f.federation)
-
 	return nil
 }
 
-func (f *KVSFSMSnapshot) Release() {
+func (f *RaftFSMSnapshot) Release() {
 	f.logger.Printf("[INFO] release")
 }

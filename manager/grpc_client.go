@@ -17,7 +17,6 @@ package manager
 import (
 	"context"
 	"errors"
-	"log"
 	"math"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -34,8 +33,6 @@ type GRPCClient struct {
 	cancel context.CancelFunc
 	conn   *grpc.ClientConn
 	client management.ManagementClient
-
-	logger *log.Logger
 }
 
 func NewGRPCClient(address string) (*GRPCClient, error) {
@@ -52,7 +49,6 @@ func NewGRPCClient(address string) (*GRPCClient, error) {
 
 	conn, err := grpc.DialContext(ctx, address, dialOpts...)
 	if err != nil {
-		cancel()
 		return nil, err
 	}
 
@@ -64,8 +60,12 @@ func NewGRPCClient(address string) (*GRPCClient, error) {
 	}, nil
 }
 
-func (c *GRPCClient) Close() error {
+func (c *GRPCClient) Cancel() {
 	c.cancel()
+}
+
+func (c *GRPCClient) Close() error {
+	c.Cancel()
 	if c.conn != nil {
 		return c.conn.Close()
 	}

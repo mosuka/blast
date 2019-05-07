@@ -145,7 +145,7 @@ func (s *RaftServer) Start() error {
 }
 
 func (s *RaftServer) Stop() error {
-	err := s.fsm.Close()
+	err := s.fsm.Stop()
 	if err != nil {
 		return err
 	}

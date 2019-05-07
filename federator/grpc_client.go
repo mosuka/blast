@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package indexer
+package federator
 
 import (
 	"context"
@@ -21,11 +21,9 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/ptypes/any"
-	"github.com/golang/protobuf/ptypes/empty"
 	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
-	"github.com/mosuka/blast/protobuf/index"
-	"github.com/mosuka/blast/protobuf/raft"
+	"github.com/mosuka/blast/protobuf/federation"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -35,7 +33,7 @@ type GRPCClient struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 	conn   *grpc.ClientConn
-	client index.IndexClient
+	client federation.FederationClient
 }
 
 func NewGRPCClient(grpcAddr string) (*GRPCClient, error) {
@@ -59,7 +57,7 @@ func NewGRPCClient(grpcAddr string) (*GRPCClient, error) {
 		ctx:    ctx,
 		cancel: cancel,
 		conn:   conn,
-		client: index.NewIndexClient(conn),
+		client: federation.NewFederationClient(conn),
 	}, nil
 }
 
@@ -76,62 +74,7 @@ func (c *GRPCClient) Close() error {
 	return c.ctx.Err()
 }
 
-func (c *GRPCClient) Join(node *raft.Node, opts ...grpc.CallOption) error {
-	_, err := c.client.Join(c.ctx, node, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return errors.New(st.Message())
-	}
-
-	return nil
-}
-
-func (c *GRPCClient) Leave(node *raft.Node, opts ...grpc.CallOption) error {
-	_, err := c.client.Leave(c.ctx, node, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return errors.New(st.Message())
-	}
-
-	return nil
-}
-
-func (c *GRPCClient) GetNode(opts ...grpc.CallOption) (*raft.Node, error) {
-	node, err := c.client.GetNode(c.ctx, &empty.Empty{}, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return nil, errors.New(st.Message())
-	}
-
-	return node, nil
-}
-
-func (c *GRPCClient) GetCluster(opts ...grpc.CallOption) (*raft.Cluster, error) {
-	cluster, err := c.client.GetCluster(c.ctx, &empty.Empty{}, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return nil, errors.New(st.Message())
-	}
-
-	return cluster, nil
-}
-
-func (c *GRPCClient) Snapshot(opts ...grpc.CallOption) error {
-	_, err := c.client.Snapshot(c.ctx, &empty.Empty{})
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return errors.New(st.Message())
-	}
-
-	return nil
-}
-
-func (c *GRPCClient) Get(doc *index.Document, opts ...grpc.CallOption) (*index.Document, error) {
+func (c *GRPCClient) Get(doc *federation.Document, opts ...grpc.CallOption) (*federation.Document, error) {
 	retDoc, err := c.client.Get(c.ctx, doc, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
@@ -155,7 +98,7 @@ func (c *GRPCClient) Search(searchRequest *bleve.SearchRequest, opts ...grpc.Cal
 		return nil, err
 	}
 
-	req := &index.SearchRequest{
+	req := &federation.SearchRequest{
 		SearchRequest: searchRequestAny,
 	}
 
@@ -181,7 +124,7 @@ func (c *GRPCClient) Search(searchRequest *bleve.SearchRequest, opts ...grpc.Cal
 	return searchResult, nil
 }
 
-func (c *GRPCClient) Index(docs []*index.Document, opts ...grpc.CallOption) (*index.UpdateResult, error) {
+func (c *GRPCClient) Index(docs []*federation.Document, opts ...grpc.CallOption) (*federation.UpdateResult, error) {
 	stream, err := c.client.Index(c.ctx, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
@@ -204,7 +147,7 @@ func (c *GRPCClient) Index(docs []*index.Document, opts ...grpc.CallOption) (*in
 	return rep, nil
 }
 
-func (c *GRPCClient) Delete(docs []*index.Document, opts ...grpc.CallOption) (*index.UpdateResult, error) {
+func (c *GRPCClient) Delete(docs []*federation.Document, opts ...grpc.CallOption) (*federation.UpdateResult, error) {
 	stream, err := c.client.Delete(c.ctx, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
@@ -225,26 +168,4 @@ func (c *GRPCClient) Delete(docs []*index.Document, opts ...grpc.CallOption) (*i
 	}
 
 	return rep, nil
-}
-
-func (c *GRPCClient) GetIndexConfig(opts ...grpc.CallOption) (*index.IndexConfig, error) {
-	conf, err := c.client.GetIndexConfig(c.ctx, &empty.Empty{}, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return nil, errors.New(st.Message())
-	}
-
-	return conf, nil
-}
-
-func (c *GRPCClient) GetIndexStats(opts ...grpc.CallOption) (*index.IndexStats, error) {
-	stats, err := c.client.GetIndexStats(c.ctx, &empty.Empty{}, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return nil, errors.New(st.Message())
-	}
-
-	return stats, nil
 }

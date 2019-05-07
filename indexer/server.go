@@ -61,6 +61,8 @@ func NewServer(managerAddr string, clusterId string, node *raft.Node, peerAddr s
 func (s *Server) Start() {
 	// get peer from manager
 	if s.managerAddr != "" {
+		s.logger.Printf("[INFO] connect to master %s", s.managerAddr)
+
 		mc, err := manager.NewGRPCClient(s.managerAddr)
 		defer func() {
 			err = mc.Close()
@@ -74,16 +76,16 @@ func (s *Server) Start() {
 			return
 		}
 
+		s.logger.Printf("[INFO] get nodes in cluster: %s", s.clusterId)
 		kvp, err := mc.Get(
 			&management.KeyValuePair{
 				Key: fmt.Sprintf("/cluster_config/clusters/%s/nodes", s.clusterId),
 			},
 		)
 		if err == errors.ErrNotFound {
-			// not found
-			s.logger.Printf("[WARN] %v", err)
+			// cluster does not found
+			s.logger.Printf("[INFO] cluster does not found: %s", s.clusterId)
 		} else if err != nil {
-			// error
 			s.logger.Printf("[ERR] %v", err)
 			return
 		} else {
@@ -93,7 +95,9 @@ func (s *Server) Start() {
 				return
 			}
 
-			if ins != nil {
+			if ins == nil {
+				s.logger.Print("[INFO] value is nil")
+			} else {
 				m := *ins.(*map[string]interface{})
 				for k, v := range m {
 					// skip if it is own node id
@@ -104,6 +108,9 @@ func (s *Server) Start() {
 					// get the peer node address
 					metadata := v.(map[string]interface{})
 					s.peerAddr = metadata["grpc_addr"].(string)
+
+					s.logger.Printf("[INFO] peer node detected: %s", s.peerAddr)
+
 					break
 				}
 			}
@@ -112,6 +119,7 @@ func (s *Server) Start() {
 
 	// bootstrap node?
 	bootstrap := s.peerAddr == ""
+	s.logger.Printf("[INFO] bootstrap: %v", bootstrap)
 
 	// get index config from manager or peer
 	if s.managerAddr != "" {
@@ -200,6 +208,7 @@ func (s *Server) Start() {
 	}
 
 	// start Raft server
+	s.logger.Print("[INFO] start Raft server")
 	go func() {
 		// start raft server
 		err := s.raftServer.Start()
@@ -207,27 +216,26 @@ func (s *Server) Start() {
 			s.logger.Printf("[ERR] %v", err)
 			return
 		}
-		s.logger.Print("[INFO] Raft server started")
 	}()
 
 	// start gRPC server
+	s.logger.Print("[INFO] start gRPC server")
 	go func() {
 		err := s.grpcServer.Start()
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return
 		}
-		s.logger.Print("[INFO] gRPC server started")
 	}()
 
 	// start HTTP server
+	s.logger.Print("[INFO] start HTTP server")
 	go func() {
 		err := s.httpServer.Start()
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return
 		}
-		s.logger.Print("[INFO] HTTP server started")
 	}()
 
 	// join to the existing cluster
@@ -254,18 +262,21 @@ func (s *Server) Start() {
 
 func (s *Server) Stop() {
 	// stop HTTP server
+	s.logger.Printf("[INFO] stop HTTP server")
 	err := s.httpServer.Stop()
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 	}
 
 	// stop gRPC server
+	s.logger.Printf("[INFO] stop gRPC server")
 	err = s.grpcServer.Stop()
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 	}
 
 	// stop Raft server
+	s.logger.Printf("[INFO] stop Raft server")
 	err = s.raftServer.Stop()
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)

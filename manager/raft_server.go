@@ -36,6 +36,8 @@ type RaftServer struct {
 	node      *blastraft.Node
 	bootstrap bool
 
+	path string
+
 	raft *raft.Raft
 	fsm  *RaftFSM
 
@@ -46,21 +48,31 @@ type RaftServer struct {
 }
 
 func NewRaftServer(node *blastraft.Node, bootstrap bool, indexConfig map[string]interface{}, logger *log.Logger) (*RaftServer, error) {
-	fsm, err := NewRaftFSM(filepath.Join(node.Metadata.DataDir, "store"), logger)
-	if err != nil {
-		return nil, err
-	}
-
 	return &RaftServer{
 		node:        node,
 		bootstrap:   bootstrap,
-		fsm:         fsm,
+		path:        node.Metadata.DataDir,
 		indexConfig: indexConfig,
 		logger:      logger,
 	}, nil
 }
 
 func (s *RaftServer) Start() error {
+	var err error
+
+	s.logger.Print("[INFO] create finite state machine")
+	s.fsm, err = NewRaftFSM(filepath.Join(s.path, "store"), s.logger)
+	if err != nil {
+		return err
+	}
+
+	s.logger.Print("[INFO] start finite state machine")
+	err = s.fsm.Start()
+	if err != nil {
+		return err
+	}
+
+	s.logger.Print("[INFO] initialize Raft")
 	config := raft.DefaultConfig()
 	config.LocalID = raft.ServerID(s.node.Id)
 	config.SnapshotThreshold = 1024
@@ -90,12 +102,14 @@ func (s *RaftServer) Start() error {
 	}
 
 	// create raft
+	s.logger.Print("[INFO] start Raft")
 	s.raft, err = raft.NewRaft(config, s.fsm, raftLogStore, raftLogStore, snapshotStore, transport)
 	if err != nil {
 		return err
 	}
 
 	if s.bootstrap {
+		s.logger.Print("[INFO] configure Raft as bootstrap")
 		configuration := raft.Configuration{
 			Servers: []raft.Server{
 				{
@@ -106,7 +120,8 @@ func (s *RaftServer) Start() error {
 		}
 		s.raft.BootstrapCluster(configuration)
 
-		// wait for detect a leader
+		// wait for become a leader
+		s.logger.Print("[INFO] wait for become a leader")
 		err = s.WaitForDetectLeader(60 * time.Second)
 		if err != nil {
 			if err == errors.ErrTimeout {
@@ -118,6 +133,7 @@ func (s *RaftServer) Start() error {
 		}
 
 		// set metadata
+		s.logger.Print("[INFO] register itself in a cluster")
 		err = s.setNode(s.node)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
@@ -125,6 +141,7 @@ func (s *RaftServer) Start() error {
 		}
 
 		// set index config
+		s.logger.Print("[INFO] register index config")
 		err = s.setIndexConfig(s.indexConfig)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
@@ -136,34 +153,20 @@ func (s *RaftServer) Start() error {
 }
 
 func (s *RaftServer) Stop() error {
-	err := s.fsm.Close()
+	s.logger.Print("[INFO] shutdown Raft")
+	f := s.raft.Shutdown()
+	err := f.Error()
+	if err != nil {
+		return err
+	}
+
+	s.logger.Print("[INFO] stop finite state machine")
+	err = s.fsm.Stop()
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (s *RaftServer) WaitForDetectLeader(timeout time.Duration) error {
-	ticker := time.NewTicker(1000 * time.Millisecond)
-	defer ticker.Stop()
-	timer := time.NewTimer(timeout)
-	defer timer.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			leaderAddr := s.raft.Leader()
-			if leaderAddr != "" {
-				s.logger.Printf("[INFO] detected %v as a leader", leaderAddr)
-				return nil
-			} else {
-				s.logger.Printf("[WARN] %v", errors.ErrNotFoundLeader)
-			}
-		case <-timer.C:
-			return errors.ErrTimeout
-		}
-	}
 }
 
 func (s *RaftServer) LeaderAddress(timeout time.Duration) (raft.ServerAddress, error) {
@@ -177,6 +180,7 @@ func (s *RaftServer) LeaderAddress(timeout time.Duration) (raft.ServerAddress, e
 		case <-ticker.C:
 			leaderAddr := s.raft.Leader()
 			if leaderAddr != "" {
+				s.logger.Printf("[DEBUG] leader address detected: %v", leaderAddr)
 				return leaderAddr, nil
 			}
 		case <-timer.C:
@@ -186,13 +190,13 @@ func (s *RaftServer) LeaderAddress(timeout time.Duration) (raft.ServerAddress, e
 }
 
 func (s *RaftServer) LeaderID(timeout time.Duration) (raft.ServerID, error) {
-	cf := s.raft.GetConfiguration()
-	err := cf.Error()
+	leaderAddr, err := s.LeaderAddress(timeout)
 	if err != nil {
 		return "", err
 	}
 
-	leaderAddr, err := s.LeaderAddress(timeout)
+	cf := s.raft.GetConfiguration()
+	err = cf.Error()
 	if err != nil {
 		return "", err
 	}
@@ -204,6 +208,15 @@ func (s *RaftServer) LeaderID(timeout time.Duration) (raft.ServerID, error) {
 	}
 
 	return "", errors.ErrNotFoundLeader
+}
+
+func (s *RaftServer) WaitForDetectLeader(timeout time.Duration) error {
+	_, err := s.LeaderAddress(timeout)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *RaftServer) getNode(node *blastraft.Node) (*blastraft.Node, error) {
