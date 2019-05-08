@@ -22,6 +22,8 @@ import (
 	"log"
 	"strings"
 
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/hashicorp/raft"
 	blasterrors "github.com/mosuka/blast/errors"
@@ -192,17 +194,19 @@ func (f *RaftFSM) Get(key string) (interface{}, error) {
 	} else if value.IsUintptrSlice() {
 		retValue = value.UintptrSlice()
 	} else if value.IsMSI() || value.IsObjxMap() {
+		//retValue = value.MSI()
 		b, err := json.Marshal(value.MSI())
 		if err != nil {
 			return nil, err
 		}
 		var mm map[string]interface{}
-		err = json.Unmarshal(b, &mm)
+		err = yaml.Unmarshal(b, &mm)
 		if err != nil {
 			return nil, err
 		}
 		retValue = mm
 	} else if value.IsMSISlice() || value.IsObjxMapSlice() {
+		//retValue = value.MSISlice()
 		b, err := json.Marshal(value.MSISlice())
 		if err != nil {
 			return nil, err
@@ -224,22 +228,56 @@ func (f *RaftFSM) Get(key string) (interface{}, error) {
 	return retValue, nil
 }
 
-func (f *RaftFSM) applySet(key string, value interface{}) interface{} {
-	// convert to JSON string
-	valueJSON, err := json.Marshal(value)
-	if err != nil {
-		return err
+func (f *RaftFSM) makeMap(key string, value interface{}) map[string]interface{} {
+	keys := f.pathKeys(key)
+
+	if len(keys) > 1 {
+		value = f.makeMap(strings.Join(keys[1:], "/"), value)
 	}
 
-	valueMap, err := objx.FromJSON(string(valueJSON))
-	if err != nil {
-		return err
-	}
+	return map[string]interface{}{keys[0]: value}
+}
 
-	if key == "/" {
-		f.data = valueMap
+func (f *RaftFSM) applySet(key string, value interface{}, merge bool) interface{} {
+	var err error
+
+	if merge {
+		var valueJSON []byte
+		if key == "/" {
+			valueJSON, err = json.Marshal(value)
+			if err != nil {
+				return err
+			}
+		} else {
+			valueJSON, err = json.Marshal(f.makeMap(key, value))
+			if err != nil {
+				return err
+			}
+		}
+
+		valueMap, err := objx.FromJSON(string(valueJSON))
+		if err != nil {
+			return err
+		}
+
+		f.data = f.data.Merge(valueMap)
 	} else {
-		f.data.Set(f.makeSafePath(key), valueMap)
+		//valueJSON, err := json.Marshal(value)
+		//if err != nil {
+		//	return err
+		//}
+
+		//valueMap, err := objx.FromJSON(string(valueJSON))
+		//if err != nil {
+		//	return err
+		//}
+		valueMap := objx.New(value)
+
+		if key == "/" {
+			f.data = valueMap
+		} else {
+			f.data.Set(f.makeSafePath(key), valueMap)
+		}
 	}
 
 	return nil
@@ -358,7 +396,7 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 		// Any -> interface{}
 		value, err := protobuf.MarshalAny(kvp.Value)
 
-		return f.applySet(kvp.Key, value)
+		return f.applySet(kvp.Key, value, kvp.Merge)
 	case management.ManagementCommand_DELETE_KEY_VALUE_PAIR:
 		// Any -> KeyValuePair
 		kvpInstance, err := protobuf.MarshalAny(c.Data)

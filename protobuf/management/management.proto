@@ -60,6 +60,7 @@ message ReadinessStatus {
 message KeyValuePair {
     string key = 1;
     google.protobuf.Any value = 2;
+    bool merge = 3;
 }
 
 message ManagementCommand {

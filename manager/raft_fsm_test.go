@@ -384,7 +384,7 @@ func TestRaftFSM_Get(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	fsm.applySet("/", map[string]interface{}{"a": 1})
+	fsm.applySet("/", map[string]interface{}{"a": 1}, false)
 
 	value, err := fsm.Get("/a")
 	if err != nil {
@@ -396,6 +396,35 @@ func TestRaftFSM_Get(t *testing.T) {
 	if expectedValue != actualValue {
 		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
 	}
+}
+
+func TestRaftFSM_makeMap(t *testing.T) {
+	tmp, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	defer func() {
+		err := os.RemoveAll(tmp)
+		if err != nil {
+			t.Errorf("%v", err)
+		}
+	}()
+
+	logger := log.New(os.Stderr, "", 0)
+
+	fsm, err := NewRaftFSM(tmp, logger)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+
+	value := fsm.makeMap("/hoge/fuga", map[string]interface{}{"hoo": "var"})
+
+	expectedValue := map[string]interface{}{"hoge": map[string]interface{}{"fuga": map[string]interface{}{"hoo": "var"}}}
+	actualValue := value
+	if !reflect.DeepEqual(expectedValue, actualValue) {
+		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
+	}
+
 }
 
 func TestRaftFSM_Set(t *testing.T) {
@@ -417,17 +446,56 @@ func TestRaftFSM_Set(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	fsm.applySet("/", map[string]interface{}{"a": 1})
+	fsm.applySet("/", map[string]interface{}{"a": 1}, true)
 
-	value, err := fsm.Get("/a")
+	val1, err := fsm.Get("/a")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 
-	expectedValue := 1
-	actualValue := value
-	if expectedValue != actualValue {
-		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
+	exp1 := 1
+	act1 := val1
+	if exp1 != act1 {
+		t.Errorf("expected content to see %v, saw %v", exp1, act1)
+	}
+
+	fsm.applySet("/b/bb", map[string]interface{}{"b": 1}, false)
+
+	val2, err := fsm.Get("/b")
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+
+	exp2 := map[string]interface{}{"bb": map[string]interface{}{"b": 1}}
+	act2 := val2.(map[string]interface{})
+	if !reflect.DeepEqual(exp2, act2) {
+		t.Errorf("expected content to see %v, saw %v", exp2, act2)
+	}
+
+	fsm.applySet("/", map[string]interface{}{"a": 1}, false)
+
+	val3, err := fsm.Get("/")
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+
+	exp3 := map[string]interface{}{"a": float64(1)}
+	act3 := val3
+	if !reflect.DeepEqual(exp3, act3) {
+		t.Errorf("expected content to see %v, saw %v", exp3, act3)
+	}
+
+	fsm.applySet("/", map[string]interface{}{"b": 2}, true)
+
+	val4, err := fsm.Get("/")
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+
+	exp4 := map[string]interface{}{"a": float64(1), "b": float64(2)}
+	act4 := val4
+	if !reflect.DeepEqual(exp4, act4) {
+		t.Errorf("expected content to see %v, saw %v", exp4, act4)
 	}
 }
 
@@ -450,7 +518,7 @@ func TestRaftFSM_Delete(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	fsm.applySet("/", map[string]interface{}{"a": 1})
+	fsm.applySet("/", map[string]interface{}{"a": 1}, false)
 
 	value, err := fsm.Get("/a")
 	if err != nil {
