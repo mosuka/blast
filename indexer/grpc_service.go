@@ -113,6 +113,22 @@ func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Em
 	return resp, nil
 }
 
+func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*index.LivenessStatus, error) {
+	resp := &index.LivenessStatus{
+		State: index.LivenessStatus_ALIVE,
+	}
+
+	return resp, nil
+}
+
+func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*index.ReadinessStatus, error) {
+	resp := &index.ReadinessStatus{
+		State: index.ReadinessStatus_READY,
+	}
+
+	return resp, nil
+}
+
 func (s *GRPCService) Get(ctx context.Context, req *index.Document) (*index.Document, error) {
 	start := time.Now()
 	defer RecordMetrics(start, "get")

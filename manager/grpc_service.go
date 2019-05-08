@@ -118,6 +118,22 @@ func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Em
 	return resp, nil
 }
 
+func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*management.LivenessStatus, error) {
+	resp := &management.LivenessStatus{
+		State: management.LivenessStatus_ALIVE,
+	}
+
+	return resp, nil
+}
+
+func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*management.ReadinessStatus, error) {
+	resp := &management.ReadinessStatus{
+		State: management.ReadinessStatus_READY,
+	}
+
+	return resp, nil
+}
+
 func (s *GRPCService) Get(ctx context.Context, req *management.KeyValuePair) (*management.KeyValuePair, error) {
 	start := time.Now()
 	s.mu.RLock()

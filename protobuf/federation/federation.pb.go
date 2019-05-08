@@ -8,6 +8,7 @@ import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	any "github.com/golang/protobuf/ptypes/any"
+	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	math "math"
 )
@@ -23,6 +24,140 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
+type LivenessStatus_State int32
+
+const (
+	LivenessStatus_UNKNOWN LivenessStatus_State = 0
+	LivenessStatus_ALIVE   LivenessStatus_State = 1
+	LivenessStatus_DEAD    LivenessStatus_State = 2
+)
+
+var LivenessStatus_State_name = map[int32]string{
+	0: "UNKNOWN",
+	1: "ALIVE",
+	2: "DEAD",
+}
+
+var LivenessStatus_State_value = map[string]int32{
+	"UNKNOWN": 0,
+	"ALIVE":   1,
+	"DEAD":    2,
+}
+
+func (x LivenessStatus_State) String() string {
+	return proto.EnumName(LivenessStatus_State_name, int32(x))
+}
+
+func (LivenessStatus_State) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_07173ddef4f7d83d, []int{0, 0}
+}
+
+type ReadinessStatus_State int32
+
+const (
+	ReadinessStatus_UNKNOWN   ReadinessStatus_State = 0
+	ReadinessStatus_READY     ReadinessStatus_State = 1
+	ReadinessStatus_NOT_READY ReadinessStatus_State = 2
+)
+
+var ReadinessStatus_State_name = map[int32]string{
+	0: "UNKNOWN",
+	1: "READY",
+	2: "NOT_READY",
+}
+
+var ReadinessStatus_State_value = map[string]int32{
+	"UNKNOWN":   0,
+	"READY":     1,
+	"NOT_READY": 2,
+}
+
+func (x ReadinessStatus_State) String() string {
+	return proto.EnumName(ReadinessStatus_State_name, int32(x))
+}
+
+func (ReadinessStatus_State) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_07173ddef4f7d83d, []int{1, 0}
+}
+
+type LivenessStatus struct {
+	State                LivenessStatus_State `protobuf:"varint,1,opt,name=state,proto3,enum=federation.LivenessStatus_State" json:"state,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
+}
+
+func (m *LivenessStatus) Reset()         { *m = LivenessStatus{} }
+func (m *LivenessStatus) String() string { return proto.CompactTextString(m) }
+func (*LivenessStatus) ProtoMessage()    {}
+func (*LivenessStatus) Descriptor() ([]byte, []int) {
+	return fileDescriptor_07173ddef4f7d83d, []int{0}
+}
+
+func (m *LivenessStatus) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_LivenessStatus.Unmarshal(m, b)
+}
+func (m *LivenessStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_LivenessStatus.Marshal(b, m, deterministic)
+}
+func (m *LivenessStatus) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LivenessStatus.Merge(m, src)
+}
+func (m *LivenessStatus) XXX_Size() int {
+	return xxx_messageInfo_LivenessStatus.Size(m)
+}
+func (m *LivenessStatus) XXX_DiscardUnknown() {
+	xxx_messageInfo_LivenessStatus.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LivenessStatus proto.InternalMessageInfo
+
+func (m *LivenessStatus) GetState() LivenessStatus_State {
+	if m != nil {
+		return m.State
+	}
+	return LivenessStatus_UNKNOWN
+}
+
+type ReadinessStatus struct {
+	State                ReadinessStatus_State `protobuf:"varint,1,opt,name=state,proto3,enum=federation.ReadinessStatus_State" json:"state,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
+}
+
+func (m *ReadinessStatus) Reset()         { *m = ReadinessStatus{} }
+func (m *ReadinessStatus) String() string { return proto.CompactTextString(m) }
+func (*ReadinessStatus) ProtoMessage()    {}
+func (*ReadinessStatus) Descriptor() ([]byte, []int) {
+	return fileDescriptor_07173ddef4f7d83d, []int{1}
+}
+
+func (m *ReadinessStatus) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ReadinessStatus.Unmarshal(m, b)
+}
+func (m *ReadinessStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ReadinessStatus.Marshal(b, m, deterministic)
+}
+func (m *ReadinessStatus) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ReadinessStatus.Merge(m, src)
+}
+func (m *ReadinessStatus) XXX_Size() int {
+	return xxx_messageInfo_ReadinessStatus.Size(m)
+}
+func (m *ReadinessStatus) XXX_DiscardUnknown() {
+	xxx_messageInfo_ReadinessStatus.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ReadinessStatus proto.InternalMessageInfo
+
+func (m *ReadinessStatus) GetState() ReadinessStatus_State {
+	if m != nil {
+		return m.State
+	}
+	return ReadinessStatus_UNKNOWN
+}
+
 type Document struct {
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Fields               *any.Any `protobuf:"bytes,2,opt,name=fields,proto3" json:"fields,omitempty"`
@@ -35,7 +170,7 @@ func (m *Document) Reset()         { *m = Document{} }
 func (m *Document) String() string { return proto.CompactTextString(m) }
 func (*Document) ProtoMessage()    {}
 func (*Document) Descriptor() ([]byte, []int) {
-	return fileDescriptor_07173ddef4f7d83d, []int{0}
+	return fileDescriptor_07173ddef4f7d83d, []int{2}
 }
 
 func (m *Document) XXX_Unmarshal(b []byte) error {
@@ -81,7 +216,7 @@ func (m *UpdateResult) Reset()         { *m = UpdateResult{} }
 func (m *UpdateResult) String() string { return proto.CompactTextString(m) }
 func (*UpdateResult) ProtoMessage()    {}
 func (*UpdateResult) Descriptor() ([]byte, []int) {
-	return fileDescriptor_07173ddef4f7d83d, []int{1}
+	return fileDescriptor_07173ddef4f7d83d, []int{3}
 }
 
 func (m *UpdateResult) XXX_Unmarshal(b []byte) error {
@@ -120,7 +255,7 @@ func (m *SearchRequest) Reset()         { *m = SearchRequest{} }
 func (m *SearchRequest) String() string { return proto.CompactTextString(m) }
 func (*SearchRequest) ProtoMessage()    {}
 func (*SearchRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_07173ddef4f7d83d, []int{2}
+	return fileDescriptor_07173ddef4f7d83d, []int{4}
 }
 
 func (m *SearchRequest) XXX_Unmarshal(b []byte) error {
@@ -159,7 +294,7 @@ func (m *SearchResponse) Reset()         { *m = SearchResponse{} }
 func (m *SearchResponse) String() string { return proto.CompactTextString(m) }
 func (*SearchResponse) ProtoMessage()    {}
 func (*SearchResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_07173ddef4f7d83d, []int{3}
+	return fileDescriptor_07173ddef4f7d83d, []int{5}
 }
 
 func (m *SearchResponse) XXX_Unmarshal(b []byte) error {
@@ -188,6 +323,10 @@ func (m *SearchResponse) GetSearchResult() *any.Any {
 }
 
 func init() {
+	proto.RegisterEnum("federation.LivenessStatus_State", LivenessStatus_State_name, LivenessStatus_State_value)
+	proto.RegisterEnum("federation.ReadinessStatus_State", ReadinessStatus_State_name, ReadinessStatus_State_value)
+	proto.RegisterType((*LivenessStatus)(nil), "federation.LivenessStatus")
+	proto.RegisterType((*ReadinessStatus)(nil), "federation.ReadinessStatus")
 	proto.RegisterType((*Document)(nil), "federation.Document")
 	proto.RegisterType((*UpdateResult)(nil), "federation.UpdateResult")
 	proto.RegisterType((*SearchRequest)(nil), "federation.SearchRequest")
@@ -199,28 +338,38 @@ func init() {
 }
 
 var fileDescriptor_07173ddef4f7d83d = []byte{
-	// 324 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x92, 0xcf, 0x4f, 0xc2, 0x30,
-	0x18, 0x86, 0x19, 0x86, 0x45, 0x3f, 0x81, 0x43, 0xc3, 0x01, 0x76, 0x22, 0x0d, 0x07, 0x12, 0x75,
-	0x4b, 0xe0, 0x64, 0xf0, 0x82, 0x21, 0xfe, 0x88, 0x9e, 0x66, 0xbc, 0x78, 0x31, 0xdd, 0xfa, 0x01,
-	0x8b, 0xa3, 0xc5, 0xb5, 0x4d, 0xe4, 0xaf, 0xd7, 0xb0, 0x3a, 0xac, 0x09, 0x78, 0xf0, 0xb6, 0xbd,
-	0x7d, 0xdf, 0x67, 0xcb, 0x93, 0xc2, 0x60, 0x5d, 0x48, 0x2d, 0x13, 0x33, 0x8f, 0xe6, 0xc8, 0xb1,
-	0x60, 0x3a, 0x93, 0xc2, 0x79, 0x0c, 0xcb, 0x63, 0x02, 0x3f, 0x49, 0xd0, 0x5b, 0x48, 0xb9, 0xc8,
-	0x31, 0xda, 0x0d, 0x99, 0xd8, 0xd8, 0x1a, 0xbd, 0x83, 0xe3, 0x99, 0x4c, 0xcd, 0x0a, 0x85, 0x26,
-	0x6d, 0xa8, 0x67, 0xbc, 0xeb, 0xf5, 0xbd, 0xe1, 0x49, 0x5c, 0xcf, 0x38, 0x39, 0x07, 0x7f, 0x9e,
-	0x61, 0xce, 0x55, 0xb7, 0xde, 0xf7, 0x86, 0xa7, 0xa3, 0x4e, 0x68, 0x39, 0x61, 0xc5, 0x09, 0xa7,
-	0x62, 0x13, 0x7f, 0x77, 0xe8, 0x00, 0x9a, 0xcf, 0x6b, 0xce, 0x34, 0xc6, 0xa8, 0x4c, 0xae, 0x49,
-	0x07, 0x1a, 0xa9, 0x34, 0x42, 0x97, 0xc0, 0x46, 0x6c, 0x5f, 0xe8, 0x23, 0xb4, 0x9e, 0x90, 0x15,
-	0xe9, 0x32, 0xc6, 0x77, 0x83, 0x4a, 0x93, 0x09, 0xb4, 0x55, 0x19, 0xbc, 0x16, 0x36, 0x29, 0xfb,
-	0x87, 0x3e, 0xd6, 0x52, 0xee, 0x98, 0x3e, 0x40, 0xbb, 0xa2, 0xa9, 0xb5, 0x14, 0x0a, 0xc9, 0x25,
-	0xb4, 0x76, 0xb8, 0xed, 0x6f, 0xfc, 0x49, 0x6b, 0x56, 0xb4, 0x6d, 0x73, 0xf4, 0xe9, 0x01, 0xdc,
-	0xec, 0xa4, 0x91, 0x31, 0x1c, 0xdd, 0xa2, 0x26, 0x9d, 0xd0, 0x51, 0x5b, 0xa9, 0x0a, 0xf6, 0xa6,
-	0xb4, 0x46, 0x26, 0xd0, 0xb8, 0x17, 0x1c, 0x3f, 0x0e, 0xcc, 0xba, 0x6e, 0xea, 0xda, 0xa2, 0xb5,
-	0xa1, 0x47, 0xae, 0xc0, 0x9f, 0x61, 0x8e, 0x1a, 0xff, 0xb5, 0x9e, 0x82, 0x6f, 0x5d, 0x90, 0x9e,
-	0xdb, 0xfb, 0x65, 0x3b, 0x08, 0xf6, 0x1d, 0x59, 0x75, 0xb4, 0x76, 0x7d, 0xf1, 0x72, 0xb6, 0xc8,
-	0xf4, 0xd2, 0x24, 0x61, 0x2a, 0x57, 0xd1, 0x4a, 0x2a, 0xf3, 0xc6, 0xa2, 0x24, 0x67, 0x4a, 0x47,
-	0x7b, 0xee, 0x5c, 0xe2, 0x97, 0xe1, 0xf8, 0x2b, 0x00, 0x00, 0xff, 0xff, 0x04, 0xd1, 0x3e, 0x9a,
-	0x91, 0x02, 0x00, 0x00,
+	// 482 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x54, 0x51, 0x6f, 0x93, 0x50,
+	0x14, 0x86, 0x4e, 0xea, 0x76, 0xb6, 0x62, 0x73, 0xd2, 0x98, 0x8e, 0xbd, 0xd4, 0x9b, 0x3d, 0xd4,
+	0xa8, 0x90, 0x74, 0x89, 0xc6, 0xcc, 0x17, 0x0c, 0x38, 0x97, 0x35, 0x9d, 0x61, 0x4e, 0xa3, 0x2f,
+	0x0b, 0x94, 0xd3, 0x8e, 0x48, 0xb9, 0x95, 0x7b, 0x31, 0xce, 0x3f, 0xe1, 0x5f, 0x36, 0xc0, 0xa8,
+	0x30, 0xd7, 0x3e, 0xf8, 0x04, 0xe7, 0x3b, 0xdf, 0xf9, 0xbe, 0x9b, 0xf3, 0xdd, 0x5c, 0x38, 0x5c,
+	0xa6, 0x5c, 0xf2, 0x20, 0x9b, 0x59, 0x33, 0x0a, 0x29, 0xf5, 0x65, 0xc4, 0x93, 0xda, 0xaf, 0x59,
+	0xb4, 0x11, 0xfe, 0x22, 0xc6, 0xfe, 0x9c, 0xf3, 0x79, 0x4c, 0xd6, 0x6a, 0xd0, 0x4f, 0x6e, 0x4a,
+	0x9a, 0x71, 0x70, 0xb7, 0x45, 0x8b, 0xa5, 0xbc, 0x6d, 0x32, 0x01, 0xfa, 0x38, 0xfa, 0x41, 0x09,
+	0x09, 0x71, 0x21, 0x7d, 0x99, 0x09, 0x7c, 0x09, 0x9a, 0x90, 0xbe, 0xa4, 0xbe, 0x3a, 0x50, 0x87,
+	0xfa, 0x68, 0x60, 0xd6, 0x7c, 0x9b, 0x54, 0x33, 0xff, 0x90, 0x57, 0xd2, 0xd9, 0x53, 0xd0, 0x8a,
+	0x1a, 0x77, 0xe1, 0xe1, 0xe5, 0xe4, 0x6c, 0x72, 0xfe, 0x79, 0xd2, 0x55, 0x70, 0x07, 0x34, 0x7b,
+	0x7c, 0xfa, 0xc9, 0xed, 0xaa, 0xb8, 0x0d, 0x0f, 0x1c, 0xd7, 0x76, 0xba, 0x2d, 0xf6, 0x0b, 0x1e,
+	0x79, 0xe4, 0x87, 0x51, 0xcd, 0xf5, 0x55, 0xd3, 0xf5, 0x49, 0xdd, 0xf5, 0x0e, 0xb7, 0x69, 0x6b,
+	0xae, 0xb3, 0xf5, 0x5c, 0xdb, 0xf9, 0xd2, 0x55, 0xb1, 0x03, 0x3b, 0x93, 0xf3, 0x8f, 0x57, 0x65,
+	0xd9, 0x62, 0xef, 0x61, 0xdb, 0xe1, 0xd3, 0x6c, 0x41, 0x89, 0x44, 0x1d, 0x5a, 0x51, 0x58, 0x38,
+	0xee, 0x78, 0xad, 0x28, 0xc4, 0xe7, 0xd0, 0x9e, 0x45, 0x14, 0x87, 0xa2, 0xdf, 0x1a, 0xa8, 0xc3,
+	0xdd, 0x51, 0xcf, 0x2c, 0x57, 0x67, 0x56, 0xab, 0x33, 0xed, 0xe4, 0xc6, 0xbb, 0xe5, 0xb0, 0x43,
+	0xd8, 0xbb, 0x5c, 0x86, 0xf9, 0x51, 0x48, 0x64, 0xb1, 0xc4, 0x1e, 0x68, 0x53, 0x9e, 0x25, 0xb2,
+	0x10, 0xd4, 0xbc, 0xb2, 0x60, 0x63, 0xe8, 0x5c, 0x90, 0x9f, 0x4e, 0xaf, 0x3d, 0xfa, 0x9e, 0x91,
+	0x90, 0x78, 0x0c, 0xba, 0x28, 0x80, 0xab, 0xb4, 0x44, 0x0a, 0xfe, 0x3a, 0xb3, 0x8e, 0xa8, 0x0f,
+	0xb3, 0x33, 0xd0, 0x2b, 0x35, 0xb1, 0xe4, 0x89, 0x20, 0x7c, 0x0d, 0x9d, 0x95, 0x5c, 0x7e, 0x8c,
+	0x8d, 0x6a, 0x7b, 0x95, 0x5a, 0xce, 0x1c, 0xfd, 0xde, 0x02, 0x78, 0xb7, 0x5a, 0x33, 0xba, 0xd0,
+	0xa9, 0xf2, 0xfd, 0x90, 0xf2, 0x80, 0xf0, 0xf1, 0x3f, 0x1a, 0x6e, 0x7e, 0x73, 0x0c, 0x63, 0xfd,
+	0x95, 0x60, 0x0a, 0x9e, 0x80, 0xbe, 0x0a, 0x6c, 0xb3, 0xce, 0xc1, 0x86, 0x90, 0x99, 0x82, 0x47,
+	0xb0, 0x75, 0x42, 0x12, 0x7b, 0x75, 0x56, 0x15, 0x9d, 0x71, 0x2f, 0xca, 0x14, 0x3c, 0x06, 0xed,
+	0x34, 0x09, 0xe9, 0xe7, 0x9a, 0xb1, 0x7e, 0x1d, 0xad, 0xa7, 0xc7, 0x94, 0xa1, 0x8a, 0x6f, 0xa0,
+	0xed, 0x50, 0x4c, 0x92, 0xfe, 0x6b, 0xda, 0x86, 0x76, 0x99, 0x0d, 0xee, 0xd7, 0x79, 0x8d, 0xf4,
+	0x9b, 0xbb, 0x6b, 0x46, 0xc9, 0x94, 0xb7, 0x2f, 0xbe, 0x3e, 0x9b, 0x47, 0xf2, 0x3a, 0x0b, 0xcc,
+	0x29, 0x5f, 0x58, 0x0b, 0x2e, 0xb2, 0x6f, 0xbe, 0x15, 0xc4, 0xbe, 0x90, 0xd6, 0x3d, 0x2f, 0x42,
+	0xd0, 0x2e, 0xc0, 0xa3, 0x3f, 0x01, 0x00, 0x00, 0xff, 0xff, 0xb9, 0xb9, 0x80, 0x68, 0x2f, 0x04,
+	0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -235,6 +384,8 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type FederationClient interface {
+	LivenessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*LivenessStatus, error)
+	ReadinessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ReadinessStatus, error)
 	Get(ctx context.Context, in *Document, opts ...grpc.CallOption) (*Document, error)
 	Index(ctx context.Context, opts ...grpc.CallOption) (Federation_IndexClient, error)
 	Delete(ctx context.Context, opts ...grpc.CallOption) (Federation_DeleteClient, error)
@@ -247,6 +398,24 @@ type federationClient struct {
 
 func NewFederationClient(cc *grpc.ClientConn) FederationClient {
 	return &federationClient{cc}
+}
+
+func (c *federationClient) LivenessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*LivenessStatus, error) {
+	out := new(LivenessStatus)
+	err := c.cc.Invoke(ctx, "/federation.Federation/LivenessProbe", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *federationClient) ReadinessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ReadinessStatus, error) {
+	out := new(ReadinessStatus)
+	err := c.cc.Invoke(ctx, "/federation.Federation/ReadinessProbe", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *federationClient) Get(ctx context.Context, in *Document, opts ...grpc.CallOption) (*Document, error) {
@@ -337,6 +506,8 @@ func (c *federationClient) Search(ctx context.Context, in *SearchRequest, opts .
 
 // FederationServer is the server API for Federation service.
 type FederationServer interface {
+	LivenessProbe(context.Context, *empty.Empty) (*LivenessStatus, error)
+	ReadinessProbe(context.Context, *empty.Empty) (*ReadinessStatus, error)
 	Get(context.Context, *Document) (*Document, error)
 	Index(Federation_IndexServer) error
 	Delete(Federation_DeleteServer) error
@@ -345,6 +516,42 @@ type FederationServer interface {
 
 func RegisterFederationServer(s *grpc.Server, srv FederationServer) {
 	s.RegisterService(&_Federation_serviceDesc, srv)
+}
+
+func _Federation_LivenessProbe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(empty.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FederationServer).LivenessProbe(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/federation.Federation/LivenessProbe",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FederationServer).LivenessProbe(ctx, req.(*empty.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Federation_ReadinessProbe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(empty.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FederationServer).ReadinessProbe(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/federation.Federation/ReadinessProbe",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FederationServer).ReadinessProbe(ctx, req.(*empty.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Federation_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -439,6 +646,14 @@ var _Federation_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "federation.Federation",
 	HandlerType: (*FederationServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "LivenessProbe",
+			Handler:    _Federation_LivenessProbe_Handler,
+		},
+		{
+			MethodName: "ReadinessProbe",
+			Handler:    _Federation_ReadinessProbe_Handler,
+		},
 		{
 			MethodName: "Get",
 			Handler:    _Federation_Get_Handler,

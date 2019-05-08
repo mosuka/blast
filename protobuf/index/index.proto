@@ -29,6 +29,9 @@ service Index {
     rpc GetCluster (google.protobuf.Empty) returns (raft.Cluster) {}
     rpc Snapshot (google.protobuf.Empty) returns (google.protobuf.Empty) {}
 
+    rpc LivenessProbe (google.protobuf.Empty) returns (LivenessStatus) {}
+    rpc ReadinessProbe (google.protobuf.Empty) returns (ReadinessStatus) {}
+
     rpc Get (Document) returns (Document) {}
     rpc Index (stream Document) returns (UpdateResult) {}
     rpc Delete (stream Document) returns (UpdateResult) {}
@@ -36,6 +39,24 @@ service Index {
 
     rpc GetIndexConfig (google.protobuf.Empty) returns (IndexConfig) {}
     rpc GetIndexStats (google.protobuf.Empty) returns (IndexStats) {}
+}
+
+message LivenessStatus {
+    enum State {
+        UNKNOWN = 0;
+        ALIVE = 1;
+        DEAD = 2;
+    }
+    State state = 1;
+}
+
+message ReadinessStatus {
+    enum State {
+        UNKNOWN = 0;
+        READY = 1;
+        NOT_READY = 2;
+    }
+    State state = 1;
 }
 
 message Document {

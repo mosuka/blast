@@ -19,6 +19,8 @@ import (
 	"errors"
 	"math"
 
+	"github.com/golang/protobuf/ptypes/empty"
+
 	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/ptypes/any"
 	blasterrors "github.com/mosuka/blast/errors"
@@ -72,6 +74,28 @@ func (c *GRPCClient) Close() error {
 	}
 
 	return c.ctx.Err()
+}
+
+func (c *GRPCClient) LivenessProbe(opts ...grpc.CallOption) (*federation.LivenessStatus, error) {
+	livenessStatus, err := c.client.LivenessProbe(c.ctx, &empty.Empty{})
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+
+	return livenessStatus, nil
+}
+
+func (c *GRPCClient) ReadinessProbe(opts ...grpc.CallOption) (*federation.ReadinessStatus, error) {
+	readinessProbe, err := c.client.ReadinessProbe(c.ctx, &empty.Empty{})
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+
+	return readinessProbe, nil
 }
 
 func (c *GRPCClient) Get(doc *federation.Document, opts ...grpc.CallOption) (*federation.Document, error) {

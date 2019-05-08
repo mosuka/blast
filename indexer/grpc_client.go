@@ -131,6 +131,28 @@ func (c *GRPCClient) Snapshot(opts ...grpc.CallOption) error {
 	return nil
 }
 
+func (c *GRPCClient) LivenessProbe(opts ...grpc.CallOption) (*index.LivenessStatus, error) {
+	livenessStatus, err := c.client.LivenessProbe(c.ctx, &empty.Empty{})
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+
+	return livenessStatus, nil
+}
+
+func (c *GRPCClient) ReadinessProbe(opts ...grpc.CallOption) (*index.ReadinessStatus, error) {
+	readinessProbe, err := c.client.ReadinessProbe(c.ctx, &empty.Empty{})
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+
+	return readinessProbe, nil
+}
+
 func (c *GRPCClient) Get(doc *index.Document, opts ...grpc.CallOption) (*index.Document, error) {
 	retDoc, err := c.client.Get(c.ctx, doc, opts...)
 	if err != nil {

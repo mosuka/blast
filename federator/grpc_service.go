@@ -22,6 +22,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/mosuka/blast/manager"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/federation"
@@ -46,6 +47,22 @@ func NewGRPCService(managerAddr string, logger *log.Logger) (*GRPCService, error
 		watchDoneCh: make(chan struct{}),
 		logger:      logger,
 	}, nil
+}
+
+func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*federation.LivenessStatus, error) {
+	resp := &federation.LivenessStatus{
+		State: federation.LivenessStatus_ALIVE,
+	}
+
+	return resp, nil
+}
+
+func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*federation.ReadinessStatus, error) {
+	resp := &federation.ReadinessStatus{
+		State: federation.ReadinessStatus_READY,
+	}
+
+	return resp, nil
 }
 
 func (s *GRPCService) watch() {

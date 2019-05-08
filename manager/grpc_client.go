@@ -124,6 +124,28 @@ func (c *GRPCClient) Snapshot(opts ...grpc.CallOption) error {
 	return nil
 }
 
+func (c *GRPCClient) LivenessProbe(opts ...grpc.CallOption) (*management.LivenessStatus, error) {
+	livenessStatus, err := c.client.LivenessProbe(c.ctx, &empty.Empty{})
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+
+	return livenessStatus, nil
+}
+
+func (c *GRPCClient) ReadinessProbe(opts ...grpc.CallOption) (*management.ReadinessStatus, error) {
+	readinessProbe, err := c.client.ReadinessProbe(c.ctx, &empty.Empty{})
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+
+	return readinessProbe, nil
+}
+
 func (c *GRPCClient) Get(req *management.KeyValuePair, opts ...grpc.CallOption) (*management.KeyValuePair, error) {
 	resp, err := c.client.Get(c.ctx, req, opts...)
 	if err != nil {

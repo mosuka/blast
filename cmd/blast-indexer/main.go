@@ -222,6 +222,30 @@ func main() {
 			Action: execSnapshot,
 		},
 		{
+			Name:  "livenessprobe",
+			Usage: "Liveness probe",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "grpc-addr",
+					Value: ":7070",
+					Usage: "address to connect to",
+				},
+			},
+			Action: execLivenessProbe,
+		},
+		{
+			Name:  "readinessprobe",
+			Usage: "Readiness probe",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "grpc-addr",
+					Value: ":7070",
+					Usage: "address to connect to",
+				},
+			},
+			Action: execReadinessProbe,
+		},
+		{
 			Name:  "get",
 			Usage: "get document",
 			Flags: []cli.Flag{

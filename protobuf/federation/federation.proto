@@ -15,16 +15,38 @@
 syntax = "proto3";
 
 import "google/protobuf/any.proto";
+import "google/protobuf/empty.proto";
 
 package federation;
 
 option go_package = "github.com/mosuka/blast/protobuf/federation";
 
 service Federation {
+    rpc LivenessProbe (google.protobuf.Empty) returns (LivenessStatus) {}
+    rpc ReadinessProbe (google.protobuf.Empty) returns (ReadinessStatus) {}
+
     rpc Get (Document) returns (Document) {}
     rpc Index (stream Document) returns (UpdateResult) {}
     rpc Delete (stream Document) returns (UpdateResult) {}
     rpc Search (SearchRequest) returns (SearchResponse) {}
+}
+
+message LivenessStatus {
+    enum State {
+        UNKNOWN = 0;
+        ALIVE = 1;
+        DEAD = 2;
+    }
+    State state = 1;
+}
+
+message ReadinessStatus {
+    enum State {
+        UNKNOWN = 0;
+        READY = 1;
+        NOT_READY = 2;
+    }
+    State state = 1;
 }
 
 message Document {
