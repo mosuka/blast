@@ -21,6 +21,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/objx"
+
 	"github.com/mosuka/blast/protobuf/raft"
 )
 
@@ -365,6 +367,47 @@ func TestRaftFSM_makeSafePath(t *testing.T) {
 
 }
 
+func TestRaftFSM_walk(t *testing.T) {
+	tmp, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	defer func() {
+		err := os.RemoveAll(tmp)
+		if err != nil {
+			t.Errorf("%v", err)
+		}
+	}()
+
+	logger := log.New(os.Stderr, "", 0)
+
+	fsm, err := NewRaftFSM(tmp, logger)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+
+	data := map[string]interface{}{
+		"a": map[string]interface{}{
+			"b": map[string]interface{}{
+				"c": "abc",
+				"d": "abd",
+			},
+			"e": []interface{}{
+				"ae1",
+				"ae2",
+			},
+		},
+	}
+
+	val1 := fsm.normalize(objx.New(data))
+
+	exp1 := data
+	act1 := val1
+	if !reflect.DeepEqual(exp1, act1) {
+		t.Errorf("expected content to see %v, saw %v", exp1, act1)
+	}
+}
+
 func TestRaftFSM_Get(t *testing.T) {
 	tmp, err := ioutil.TempDir("", "")
 	if err != nil {
@@ -396,35 +439,6 @@ func TestRaftFSM_Get(t *testing.T) {
 	if expectedValue != actualValue {
 		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
 	}
-}
-
-func TestRaftFSM_makeMap(t *testing.T) {
-	tmp, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-	defer func() {
-		err := os.RemoveAll(tmp)
-		if err != nil {
-			t.Errorf("%v", err)
-		}
-	}()
-
-	logger := log.New(os.Stderr, "", 0)
-
-	fsm, err := NewRaftFSM(tmp, logger)
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-
-	value := fsm.makeMap("/hoge/fuga", map[string]interface{}{"hoo": "var"})
-
-	expectedValue := map[string]interface{}{"hoge": map[string]interface{}{"fuga": map[string]interface{}{"hoo": "var"}}}
-	actualValue := value
-	if !reflect.DeepEqual(expectedValue, actualValue) {
-		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
-	}
-
 }
 
 func TestRaftFSM_Set(t *testing.T) {
@@ -479,7 +493,7 @@ func TestRaftFSM_Set(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	exp3 := map[string]interface{}{"a": float64(1)}
+	exp3 := map[string]interface{}{"a": 1}
 	act3 := val3
 	if !reflect.DeepEqual(exp3, act3) {
 		t.Errorf("expected content to see %v, saw %v", exp3, act3)
@@ -492,7 +506,7 @@ func TestRaftFSM_Set(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	exp4 := map[string]interface{}{"a": float64(1), "b": float64(2)}
+	exp4 := map[string]interface{}{"a": 1, "b": 2}
 	act4 := val4
 	if !reflect.DeepEqual(exp4, act4) {
 		t.Errorf("expected content to see %v, saw %v", exp4, act4)

@@ -22,8 +22,6 @@ import (
 	"log"
 	"strings"
 
-	yaml "gopkg.in/yaml.v2"
-
 	"github.com/golang/protobuf/proto"
 	"github.com/hashicorp/raft"
 	blasterrors "github.com/mosuka/blast/errors"
@@ -110,9 +108,39 @@ func (f *RaftFSM) makeSafePath(path string) string {
 	return safePath
 }
 
+func (f *RaftFSM) normalize(value interface{}) interface{} {
+	var ret interface{}
+
+	switch value.(type) {
+	case objx.Map:
+		ret = map[string]interface{}{}
+		for k, v := range value.(objx.Map) {
+			ret.(map[string]interface{})[k] = f.normalize(v)
+		}
+	case map[string]interface{}:
+		ret = map[string]interface{}{}
+		for k, v := range value.(map[string]interface{}) {
+			ret.(map[string]interface{})[k] = f.normalize(v)
+		}
+	case *map[string]interface{}:
+		ret = map[string]interface{}{}
+		for k, v := range *value.(*map[string]interface{}) {
+			ret.(map[string]interface{})[k] = f.normalize(v)
+		}
+	case []interface{}:
+		ret = []interface{}{}
+		for _, v := range value.([]interface{}) {
+			ret = append(ret.([]interface{}), f.normalize(v))
+		}
+	case bool, string, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, uintptr, float32, float64, complex64, complex128:
+		ret = value
+	}
+
+	return ret
+}
+
 func (f *RaftFSM) Get(key string) (interface{}, error) {
 	var value *objx.Value
-
 	if key == "/" {
 		value = f.data.Value()
 	} else {
@@ -193,32 +221,16 @@ func (f *RaftFSM) Get(key string) (interface{}, error) {
 		retValue = value.Uintptr()
 	} else if value.IsUintptrSlice() {
 		retValue = value.UintptrSlice()
-	} else if value.IsMSI() || value.IsObjxMap() {
-		//retValue = value.MSI()
-		b, err := json.Marshal(value.MSI())
-		if err != nil {
-			return nil, err
-		}
-		var mm map[string]interface{}
-		err = yaml.Unmarshal(b, &mm)
-		if err != nil {
-			return nil, err
-		}
-		retValue = mm
-	} else if value.IsMSISlice() || value.IsObjxMapSlice() {
-		//retValue = value.MSISlice()
-		b, err := json.Marshal(value.MSISlice())
-		if err != nil {
-			return nil, err
-		}
-		var mm []map[string]interface{}
-		err = json.Unmarshal(b, &mm)
-		if err != nil {
-			return nil, err
-		}
-		retValue = mm
+	} else if value.IsMSI() {
+		retValue = f.normalize(value.MSI())
+	} else if value.IsObjxMap() {
+		retValue = f.normalize(value.ObjxMap())
+	} else if value.IsMSISlice() {
+		retValue = f.normalize(value.MSISlice())
+	} else if value.IsObjxMapSlice() {
+		retValue = f.normalize(value.ObjxMapSlice())
 	} else if value.IsInterSlice() {
-		retValue = value.InterSlice()
+		retValue = f.normalize(value.InterSlice())
 	} else if value.IsInter() {
 		retValue = value.Inter()
 	} else if value.IsNil() {
@@ -228,50 +240,11 @@ func (f *RaftFSM) Get(key string) (interface{}, error) {
 	return retValue, nil
 }
 
-func (f *RaftFSM) makeMap(key string, value interface{}) map[string]interface{} {
-	keys := f.pathKeys(key)
-
-	if len(keys) > 1 {
-		value = f.makeMap(strings.Join(keys[1:], "/"), value)
-	}
-
-	return map[string]interface{}{keys[0]: value}
-}
-
 func (f *RaftFSM) applySet(key string, value interface{}, merge bool) interface{} {
-	var err error
-
 	if merge {
-		var valueJSON []byte
-		if key == "/" {
-			valueJSON, err = json.Marshal(value)
-			if err != nil {
-				return err
-			}
-		} else {
-			valueJSON, err = json.Marshal(f.makeMap(key, value))
-			if err != nil {
-				return err
-			}
-		}
-
-		valueMap, err := objx.FromJSON(string(valueJSON))
-		if err != nil {
-			return err
-		}
-
-		f.data = f.data.Merge(valueMap)
+		f.data = f.data.Merge(objx.New(f.normalize(value)))
 	} else {
-		//valueJSON, err := json.Marshal(value)
-		//if err != nil {
-		//	return err
-		//}
-
-		//valueMap, err := objx.FromJSON(string(valueJSON))
-		//if err != nil {
-		//	return err
-		//}
-		valueMap := objx.New(value)
+		valueMap := objx.New(f.normalize(value))
 
 		if key == "/" {
 			f.data = valueMap
@@ -317,16 +290,7 @@ func (f *RaftFSM) applyDelete(key string) interface{} {
 		return nil
 	}
 
-	// get data as map[string]interface{}
-	dataJSON, err := json.Marshal(&f.data)
-	if err != nil {
-		return err
-	}
-	var dataMap map[string]interface{}
-	err = json.Unmarshal(dataJSON, &dataMap)
-	if err != nil {
-		return err
-	}
+	dataMap := f.normalize(f.data)
 
 	// delete by key
 	data, err := f.delete(f.pathKeys(key), dataMap)
@@ -334,16 +298,7 @@ func (f *RaftFSM) applyDelete(key string) interface{} {
 		return err
 	}
 
-	// interface{} -> JSON
-	dataJSON, err = json.Marshal(&data)
-	if err != nil {
-		return err
-	}
-
-	f.data, err = objx.FromJSON(string(dataJSON))
-	if err != nil {
-		return err
-	}
+	f.data = objx.New(data)
 
 	return nil
 }
@@ -416,8 +371,8 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 
 func (f *RaftFSM) Snapshot() (raft.FSMSnapshot, error) {
 	return &RaftFSMSnapshot{
-		federation: f.data,
-		logger:     f.logger,
+		data:   f.data,
+		logger: f.logger,
 	}, nil
 }
 
@@ -447,8 +402,8 @@ func (f *RaftFSM) Restore(rc io.ReadCloser) error {
 }
 
 type RaftFSMSnapshot struct {
-	federation objx.Map
-	logger     *log.Logger
+	data   objx.Map
+	logger *log.Logger
 }
 
 func (f *RaftFSMSnapshot) Persist(sink raft.SnapshotSink) error {
@@ -461,7 +416,7 @@ func (f *RaftFSMSnapshot) Persist(sink raft.SnapshotSink) error {
 		}
 	}()
 
-	buff, err := json.Marshal(f.federation)
+	buff, err := json.Marshal(f.data)
 	if err != nil {
 		return err
 	}
