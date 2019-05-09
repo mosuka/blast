@@ -25,19 +25,18 @@ require (
 	github.com/hashicorp/raft v1.0.0
 	github.com/hashicorp/raft-boltdb v0.0.0-20171010151810-6e5ba93211ea
 	github.com/ikawaha/kagome.ipadic v1.0.1 // indirect
-	github.com/imdario/mergo v0.3.7
 	github.com/jmhodges/levigo v1.0.0 // indirect
 	github.com/mash/go-accesslog v0.0.0-20180522074327-610c2be04217
 	github.com/mosuka/bbadger v0.0.0-20190319122948-67a91aedfe68
 	github.com/mosuka/logutils v0.1.2
-	github.com/mosuka/maputils v0.1.2
 	github.com/pascaldekloe/goe v0.1.0 // indirect
 	github.com/prometheus/client_golang v0.9.2
 	github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90 // indirect
 	github.com/prometheus/common v0.2.0 // indirect
 	github.com/prometheus/procfs v0.0.0-20190322151404-55ae3d9d5573 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20190321074620-2f0d2b0e0001 // indirect
-	github.com/syndtr/goleveldb v1.0.0
+	github.com/stretchr/objx v0.1.1
+	github.com/syndtr/goleveldb v1.0.0 // indirect
 	github.com/tebeka/snowball v0.0.0-20130405174319-16e884df4e19 // indirect
 	github.com/tecbot/gorocksdb v0.0.0-20181010114359-8752a9433481 // indirect
 	github.com/urfave/cli v1.20.0

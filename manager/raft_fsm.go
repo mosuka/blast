@@ -240,16 +240,33 @@ func (f *RaftFSM) Get(key string) (interface{}, error) {
 	return retValue, nil
 }
 
+func (f *RaftFSM) makeMap(path string, value interface{}) interface{} {
+	var ret interface{}
+
+	keys := f.pathKeys(path)
+
+	if len(keys) >= 1 {
+		ret = map[string]interface{}{keys[0]: f.makeMap(strings.Join(keys[1:], "/"), value)}
+	} else if len(keys) == 0 {
+		ret = value
+	}
+
+	return ret
+}
+
 func (f *RaftFSM) applySet(key string, value interface{}, merge bool) interface{} {
 	if merge {
-		f.data = f.data.Merge(objx.New(f.normalize(value)))
+		f.data = f.data.Merge(objx.New(f.makeMap(key, f.normalize(value))))
 	} else {
-		valueMap := objx.New(f.normalize(value))
-
 		if key == "/" {
-			f.data = valueMap
+			f.data = objx.New(f.normalize(value))
 		} else {
-			f.data.Set(f.makeSafePath(key), valueMap)
+			path := f.makeSafePath(key)
+			if f.data.Has(path) {
+				f.data.Set(path, objx.New(f.normalize(value)))
+			} else {
+				f.data = f.data.Merge(objx.New(f.makeMap(key, f.normalize(value))))
+			}
 		}
 	}
 

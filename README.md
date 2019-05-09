@@ -238,7 +238,7 @@ $ make \
 Running a Blast index node is easy. Start Blast data node like so:
 
 ```bash
-$ ./bin/blast-indexer start --node-id=indexer1 --data-dir=/tmp/blast/indexer1 --bind-addr=:6060 --grpc-addr=:5050 --http-addr=:8080 --index-mapping-file=./example/index_mapping.json
+$ ./bin/blast-indexer start --node-id=indexer1 --data-dir=/tmp/blast/indexer1 --bind-addr=:6060 --grpc-addr=:7070 --http-addr=:8080 --index-mapping-file=./example/index_mapping.json
 ```
 
 Please refer to following document for details of index mapping:
@@ -255,7 +255,7 @@ You can now put, get, search and delete the documents via CLI.
 For document indexing, execute the following command:
 
 ```bash
-$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast-indexer index --grpc-addr=:5050 --id=enwiki_1
+$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast-indexer index --grpc-addr=:7070 --id=enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -272,7 +272,7 @@ You can see the result in JSON format. The result of the above command is:
 Getting a document is as following:
 
 ```bash
-$ ./bin/blast-indexer get --grpc-addr=:5050 --id=enwiki_1
+$ ./bin/blast-indexer get --grpc-addr=:7070 --id=enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -293,7 +293,7 @@ You can see the result in JSON format. The result of the above command is:
 Searching documents is as like following:
 
 ```bash
-$ cat ./example/search_request.json | xargs -0 ./bin/blast-indexer search --grpc-addr=:5050
+$ cat ./example/search_request.json | xargs -0 ./bin/blast-indexer search --grpc-addr=:7070
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -465,7 +465,7 @@ Please refer to following document for details of search request and result:
 Deleting a document is as following:
 
 ```bash
-$ ./bin/blast-indexer delete --grpc-addr=:5050 --id=enwiki_1
+$ ./bin/blast-indexer delete --grpc-addr=:7070 --id=enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -482,7 +482,7 @@ You can see the result in JSON format. The result of the above command is:
 Indexing documents in bulk, run the following command:
 
 ```bash
-$ cat ./example/docs_wiki.json | xargs -0 ./bin/blast-indexer index --grpc-addr=:5050
+$ cat ./example/docs_wiki.json | xargs -0 ./bin/blast-indexer index --grpc-addr=:7070
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -499,7 +499,7 @@ You can see the result in JSON format. The result of the above command is:
 Deleting documents in bulk, run the following command:
 
 ```bash
-$ cat ./example/docs_wiki.json | xargs -0 ./bin/blast-indexer delete --grpc-addr=:5050
+$ cat ./example/docs_wiki.json | xargs -0 ./bin/blast-indexer delete --grpc-addr=:7070
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -572,48 +572,64 @@ $ curl -X DELETE 'http://127.0.0.1:8080/documents' -d @./example/docs_wiki.json
 
 ## Bringing up a cluster
 
-Blast is easy to bring up the cluster. Blast data node is already running, but that is not fault tolerant. If you need to increase the fault tolerance, bring up 2 more data nodes like so:
+Blast can easily bring up a cluster. Running indexer node in standalone is not fault tolerant. If you need to improve fault tolerance, start two more indexer nodes as follows:
+
+At first, start the indexer node in standalone.
 
 ```bash
-$ ./bin/blast-indexer start --node-id=indexer2 --data-dir=/tmp/blast/indexer2 --bind-addr=:6061 --grpc-addr=:5051 --http-addr=:8081 --index-mapping-file=./example/index_mapping.json --join-addr=:5050
-$ ./bin/blast-indexer start --node-id=indexer3 --data-dir=/tmp/blast/indexer3 --bind-addr=:6062 --grpc-addr=:5052 --http-addr=:8082 --index-mapping-file=./example/index_mapping.json --join-addr=:5050
+$ ./bin/blast-indexer start --node-id=indexer1 --data-dir=/tmp/blast/indexer1 --bind-addr=:6060 --grpc-addr=:7070 --http-addr=:8080 --index-mapping-file=./example/index_mapping.json --index-type=upside_down --index-storage-type=boltdb
+```
+
+Then, start two more indexer nodes.
+
+```bash
+$ ./bin/blast-indexer start --node-id=indexer2 --data-dir=/tmp/blast/indexer2 --bind-addr=:6061 --grpc-addr=:7071 --http-addr=:8081 --peer-addr=:7070
+$ ./bin/blast-indexer start --node-id=indexer3 --data-dir=/tmp/blast/indexer3 --bind-addr=:6062 --grpc-addr=:7072 --http-addr=:8082 --peer-addr=:7070
 ```
 
 _Above example shows each Blast node running on the same host, so each node must listen on different ports. This would not be necessary if each node ran on a different host._
 
-This instructs each new node to join an existing node, each node recognizes the joining clusters when started.
-So you have a 3-node cluster. That way you can tolerate the failure of 1 node. You can check the peers with the following command:
+This instructs each new node to join an existing node, specifying `--peer-addr=:7070`. Each node recognizes the joining clusters when started.
+So you have a 3-node cluster. That way you can tolerate the failure of 1 node. You can check the peers in the cluster with the following command:
+
 
 ```bash
-$ ./bin/blast-indexer cluster --grpc-addr=:5050
+$ ./bin/blast-indexer cluster --grpc-addr=:7070
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
 ```json
 {
+  "id": "default",
   "nodes": [
     {
-      "id": "index1",
-      "bind_addr": ":6060",
-      "grpc_addr": ":5050",
-      "http_addr": ":8080",
-      "leader": true,
-      "data_dir": "/tmp/blast/index1"
+      "id": "indexer1",
+      "metadata": {
+        "bind_addr": ":6060",
+        "grpc_addr": ":7070",
+        "http_addr": ":8080",
+        "data_dir": "/tmp/blast/indexer1"
+      },
+      "leader": true
     },
     {
-      "id": "index2",
-      "bind_addr": ":6061",
-      "grpc_addr": ":5051",
-      "http_addr": ":8081",
-      "data_dir": "/tmp/blast/index2"
+      "id": "indexer2",
+      "metadata": {
+        "bind_addr": ":6061",
+        "grpc_addr": ":7071",
+        "http_addr": ":8081",
+        "data_dir": "/tmp/blast/indexer2"
+      }
     },
     {
-      "id": "index3",
-      "bind_addr": ":6062",
-      "grpc_addr": ":5052",
-      "http_addr": ":8082",
-      "data_dir": "/tmp/blast/index3"
+      "id": "indexer3",
+      "metadata": {
+        "bind_addr": ":6062",
+        "grpc_addr": ":7072",
+        "http_addr": ":8082",
+        "data_dir": "/tmp/blast/indexer3"
+      }
     }
   ]
 }
@@ -624,13 +640,13 @@ Recommend 3 or more odd number of nodes in the cluster. In failure scenarios, da
 The following command indexes documents to any node in the cluster:
 
 ```bash
-$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast-indexer index --grpc-addr=:5050 enwiki_1
+$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast-indexer index --grpc-addr=:7070 --id=enwiki_1
 ```
 
 So, you can get the document from the node specified by the above command as follows:
 
 ```bash
-$ ./bin/blast-indexer get --grpc-addr=:5050 enwiki_1
+$ ./bin/blast-indexer get --grpc-addr=:7070 --id=enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -648,8 +664,8 @@ You can see the result in JSON format. The result of the above command is:
 You can also get the same document from other nodes in the cluster as follows:
 
 ```bash
-$ ./bin/blast-indexer get --grpc-addr=:5051 enwiki_1
-$ ./bin/blast-indexer get --grpc-addr=:5052 enwiki_1
+$ ./bin/blast-indexer get --grpc-addr=:7071 --id=enwiki_1
+$ ./bin/blast-indexer get --grpc-addr=:7072 --id=enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -662,6 +678,27 @@ You can see the result in JSON format. The result of the above command is:
   "timestamp": "2018-07-04T05:41:00Z",
   "title_en": "Search engine (computing)"
 }
+```
+
+
+## Cluster federation
+
+
+
+```bash
+$ ./bin/blast-manager start --node-id=manager1 --bind-addr=:16060 --grpc-addr=:17070 --http-addr=:18080 --data-dir=/tmp/blast/manager1 --index-mapping-file=./example/index_mapping.json --index-type=upside_down --index-storage-type=boltdb
+$ ./bin/blast-manager start --node-id=manager2 --bind-addr=:16061 --grpc-addr=:17071 --http-addr=:18081 --data-dir=/tmp/blast/manager2 --peer-addr=:17070
+$ ./bin/blast-manager start --node-id=manager3 --bind-addr=:16062 --grpc-addr=:17072 --http-addr=:18082 --data-dir=/tmp/blast/manager3 --peer-addr=:17070
+```
+
+```bash
+$ ./bin/blast-federator start --manager-addr=:17070 --grpc-addr=:27070 --http-addr=:28080
+```
+
+```bash
+$ ./bin/blast-indexer start --manager-addr=:17070 --cluster-id=cluster1 --node-id=indexer1 --bind-addr=:6060 --grpc-addr=:7070 --http-addr=:8080 --data-dir=/tmp/blast/indexer1
+$ ./bin/blast-indexer start --manager-addr=:17070 --cluster-id=cluster2 --node-id=indexer2 --bind-addr=:6061 --grpc-addr=:7071 --http-addr=:8081 --data-dir=/tmp/blast/indexer2
+$ ./bin/blast-indexer start --manager-addr=:17070 --cluster-id=cluster3 --node-id=indexer3 --bind-addr=:6062 --grpc-addr=:7072 --http-addr=:8082 --data-dir=/tmp/blast/indexer3
 ```
 
 
@@ -701,14 +738,14 @@ Running a Blast data node on Docker. Start Blast data node like so:
 
 ```bash
 $ docker run --rm --name blast-indexer1 \
-    -p 5050:5050 \
     -p 6060:6060 \
+    -p 7070:7070 \
     -p 8080:8080 \
     -v $(pwd)/example:/opt/blast/example \
     mosuka/blast:latest blast-indexer start \
       --node-id=blast-indexer1 \
       --bind-addr=:6060 \
-      --grpc-addr=:5050 \
+      --grpc-addr=:7070 \
       --http-addr=:8080 \
       --data-dir=/tmp/blast/indexer1 \
       --index-mapping-file=/opt/blast/example/index_mapping.json \
@@ -718,7 +755,7 @@ $ docker run --rm --name blast-indexer1 \
 You can execute the command in docker container as follows:
 
 ```bash
-$ docker exec -it blast-indexer1 blast-indexer node --grpc-addr=:5050
+$ docker exec -it blast-indexer1 blast-indexer node --grpc-addr=:7070
 ```
 
 
@@ -752,7 +789,7 @@ $ ./WikiExtractor.py -o ~/tmp/enwiki --json ~/tmp/enwiki-20190101-pages-articles
 
 ### Indexing wikipedia dump
 
-```bash
+```shell
 $ for FILE in $(find ~/tmp/enwiki -type f -name '*' | sort)
   do
     echo "Indexing ${FILE}"

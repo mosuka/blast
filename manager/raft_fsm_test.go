@@ -441,6 +441,34 @@ func TestRaftFSM_Get(t *testing.T) {
 	}
 }
 
+func TestRaftFSM_makeMap(t *testing.T) {
+	tmp, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	defer func() {
+		err := os.RemoveAll(tmp)
+		if err != nil {
+			t.Errorf("%v", err)
+		}
+	}()
+
+	logger := log.New(os.Stderr, "", 0)
+
+	fsm, err := NewRaftFSM(tmp, logger)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+
+	value := fsm.makeMap("/hoge/fuga", map[string]interface{}{"hoo": "var"})
+
+	expectedValue := map[string]interface{}{"hoge": map[string]interface{}{"fuga": map[string]interface{}{"hoo": "var"}}}
+	actualValue := value
+	if !reflect.DeepEqual(expectedValue, actualValue) {
+		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
+	}
+}
+
 func TestRaftFSM_Set(t *testing.T) {
 	tmp, err := ioutil.TempDir("", "")
 	if err != nil {
