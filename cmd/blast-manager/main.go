@@ -180,7 +180,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ";17070",
+					Value: ":17070",
 					Usage: "gRPC address to connect to",
 				},
 			},
