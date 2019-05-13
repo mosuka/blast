@@ -20,15 +20,14 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hashicorp/raft"
 	blasterrors "github.com/mosuka/blast/errors"
+	"github.com/mosuka/blast/maputils"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/management"
 	blastraft "github.com/mosuka/blast/protobuf/raft"
-	"github.com/stretchr/objx"
 )
 
 type RaftFSM struct {
@@ -36,7 +35,7 @@ type RaftFSM struct {
 
 	path string
 
-	data objx.Map
+	data maputils.Map
 
 	logger *log.Logger
 }
@@ -51,7 +50,7 @@ func NewRaftFSM(path string, logger *log.Logger) (*RaftFSM, error) {
 
 func (f *RaftFSM) Start() error {
 	f.logger.Print("[INFO] initialize data")
-	f.data = objx.New(map[string]interface{}{})
+	f.data = maputils.Map{}
 	return nil
 }
 
@@ -88,185 +87,33 @@ func (f *RaftFSM) applyDeleteNode(node *blastraft.Node) interface{} {
 	}
 }
 
-func (f *RaftFSM) pathKeys(path string) []string {
-	keys := make([]string, 0)
-	for _, k := range strings.Split(path, "/") {
-		if k != "" {
-			keys = append(keys, k)
-		}
-	}
-
-	return keys
-}
-
-func (f *RaftFSM) makeSafePath(path string) string {
-	keys := f.pathKeys(path)
-
-	safePath := strings.Join(keys, "/")
-	safePath = strings.Join(strings.Split(safePath, "/"), objx.PathSeparator)
-
-	return safePath
-}
-
-func (f *RaftFSM) normalize(value interface{}) interface{} {
-	var ret interface{}
-
-	switch value.(type) {
-	case objx.Map:
-		ret = map[string]interface{}{}
-		for k, v := range value.(objx.Map) {
-			ret.(map[string]interface{})[k] = f.normalize(v)
-		}
-	case map[string]interface{}:
-		ret = map[string]interface{}{}
-		for k, v := range value.(map[string]interface{}) {
-			ret.(map[string]interface{})[k] = f.normalize(v)
-		}
-	case *map[string]interface{}:
-		ret = map[string]interface{}{}
-		for k, v := range *value.(*map[string]interface{}) {
-			ret.(map[string]interface{})[k] = f.normalize(v)
-		}
-	case []interface{}:
-		ret = []interface{}{}
-		for _, v := range value.([]interface{}) {
-			ret = append(ret.([]interface{}), f.normalize(v))
-		}
-	case bool, string, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, uintptr, float32, float64, complex64, complex128:
-		ret = value
-	}
-
-	return ret
-}
-
 func (f *RaftFSM) Get(key string) (interface{}, error) {
-	var value *objx.Value
-	if key == "/" {
-		value = f.data.Value()
-	} else {
-		path := f.makeSafePath(key)
-		if f.data.Has(path) {
-			value = f.data.Get(path)
-		} else {
-			return nil, blasterrors.ErrNotFound
-		}
+	value, err := f.data.Get(key)
+	if err != nil {
+		return nil, err
 	}
 
-	var retValue interface{}
-	if value.IsBool() {
-		retValue = value.Bool()
-	} else if value.IsBoolSlice() {
-		retValue = value.BoolSlice()
-	} else if value.IsComplex64() {
-		retValue = value.Complex64()
-	} else if value.IsComplex64Slice() {
-		retValue = value.Complex64Slice()
-	} else if value.IsComplex128() {
-		retValue = value.Complex128()
-	} else if value.IsComplex128Slice() {
-		retValue = value.Complex128Slice()
-	} else if value.IsFloat32() {
-		retValue = value.Float32()
-	} else if value.IsFloat32Slice() {
-		retValue = value.Float32Slice()
-	} else if value.IsFloat64() {
-		retValue = value.Float64()
-	} else if value.IsFloat64Slice() {
-		retValue = value.Float64Slice()
-	} else if value.IsInt() {
-		retValue = value.Int()
-	} else if value.IsIntSlice() {
-		retValue = value.IntSlice()
-	} else if value.IsInt8() {
-		retValue = value.IsInt8()
-	} else if value.IsInt8Slice() {
-		retValue = value.Int8Slice()
-	} else if value.IsInt16() {
-		retValue = value.Int16()
-	} else if value.IsInt16Slice() {
-		retValue = value.Int16Slice()
-	} else if value.IsInt32() {
-		retValue = value.Int32()
-	} else if value.IsInt32Slice() {
-		retValue = value.Int32Slice()
-	} else if value.IsInt64() {
-		retValue = value.IsInt64()
-	} else if value.IsInt64Slice() {
-		retValue = value.Int64Slice()
-	} else if value.IsStr() {
-		retValue = value.Str()
-	} else if value.IsStrSlice() {
-		retValue = value.StrSlice()
-	} else if value.IsUint() {
-		retValue = value.Uint()
-	} else if value.IsUintSlice() {
-		retValue = value.UintSlice()
-	} else if value.IsUint8() {
-		retValue = value.Uint8()
-	} else if value.IsUint8Slice() {
-		retValue = value.Uint8Slice()
-	} else if value.IsUint16() {
-		retValue = value.Uint16()
-	} else if value.IsUint16Slice() {
-		retValue = value.Uint16Slice()
-	} else if value.IsUint32() {
-		retValue = value.Uint32()
-	} else if value.IsUint32Slice() {
-		retValue = value.Uint32Slice()
-	} else if value.IsUint64() {
-		retValue = value.Uint64()
-	} else if value.IsUint64Slice() {
-		retValue = value.Uint64Slice()
-	} else if value.IsUintptr() {
-		retValue = value.Uintptr()
-	} else if value.IsUintptrSlice() {
-		retValue = value.UintptrSlice()
-	} else if value.IsMSI() {
-		retValue = f.normalize(value.MSI())
-	} else if value.IsObjxMap() {
-		retValue = f.normalize(value.ObjxMap())
-	} else if value.IsMSISlice() {
-		retValue = f.normalize(value.MSISlice())
-	} else if value.IsObjxMapSlice() {
-		retValue = f.normalize(value.ObjxMapSlice())
-	} else if value.IsInterSlice() {
-		retValue = f.normalize(value.InterSlice())
-	} else if value.IsInter() {
-		retValue = value.Inter()
-	} else if value.IsNil() {
-		retValue = nil
-	}
-
-	return retValue, nil
-}
-
-func (f *RaftFSM) makeMap(path string, value interface{}) interface{} {
 	var ret interface{}
-
-	keys := f.pathKeys(path)
-
-	if len(keys) >= 1 {
-		ret = map[string]interface{}{keys[0]: f.makeMap(strings.Join(keys[1:], "/"), value)}
-	} else if len(keys) == 0 {
+	switch value.(type) {
+	case maputils.Map:
+		ret = value.(maputils.Map).ToMap()
+	default:
 		ret = value
 	}
 
-	return ret
+	return ret, nil
 }
 
 func (f *RaftFSM) applySet(key string, value interface{}, merge bool) interface{} {
 	if merge {
-		f.data = f.data.Merge(objx.New(f.makeMap(key, f.normalize(value))))
+		err := f.data.Merge(key, value)
+		if err != nil {
+			return err
+		}
 	} else {
-		if key == "/" {
-			f.data = objx.New(f.normalize(value))
-		} else {
-			path := f.makeSafePath(key)
-			if f.data.Has(path) {
-				f.data.Set(path, objx.New(f.normalize(value)))
-			} else {
-				f.data = f.data.Merge(objx.New(f.makeMap(key, f.normalize(value))))
-			}
+		err := f.data.Set(key, value)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -302,20 +149,10 @@ func (f *RaftFSM) delete(keys []string, data interface{}) (interface{}, error) {
 }
 
 func (f *RaftFSM) applyDelete(key string) interface{} {
-	if key == "/" {
-		f.data = objx.Map{}
-		return nil
-	}
-
-	dataMap := f.normalize(f.data)
-
-	// delete by key
-	data, err := f.delete(f.pathKeys(key), dataMap)
+	err := f.data.Delete(key)
 	if err != nil {
 		return err
 	}
-
-	f.data = objx.New(data)
 
 	return nil
 }
@@ -363,12 +200,14 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 		if kvpInstance == nil {
 			return errors.New("nil")
 		}
-		kvp := kvpInstance.(*management.KeyValuePair)
+		kvp := *kvpInstance.(*management.KeyValuePair)
 
 		// Any -> interface{}
 		value, err := protobuf.MarshalAny(kvp.Value)
 
-		return f.applySet(kvp.Key, value, kvp.Merge)
+		v := value.(*map[string]interface{})
+
+		return f.applySet(kvp.Key, *v, kvp.Merge)
 	case management.ManagementCommand_DELETE_KEY_VALUE_PAIR:
 		// Any -> KeyValuePair
 		kvpInstance, err := protobuf.MarshalAny(c.Data)
@@ -378,7 +217,7 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 		if kvpInstance == nil {
 			return errors.New("nil")
 		}
-		kvp := kvpInstance.(*management.KeyValuePair)
+		kvp := *kvpInstance.(*management.KeyValuePair)
 
 		return f.applyDelete(kvp.Key)
 	default:
@@ -419,7 +258,7 @@ func (f *RaftFSM) Restore(rc io.ReadCloser) error {
 }
 
 type RaftFSMSnapshot struct {
-	data   objx.Map
+	data   maputils.Map
 	logger *log.Logger
 }
 

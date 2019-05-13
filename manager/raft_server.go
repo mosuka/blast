@@ -520,17 +520,9 @@ func (s *RaftServer) Get(kvp *management.KeyValuePair) (*management.KeyValuePair
 	}
 
 	valueAny := &any.Any{}
-	switch value.(type) {
-	case []interface{}:
-		err = protobuf.UnmarshalAny(value.([]interface{}), valueAny)
-		if err != nil {
-			return nil, err
-		}
-	default:
-		err = protobuf.UnmarshalAny(value, valueAny)
-		if err != nil {
-			return nil, err
-		}
+	err = protobuf.UnmarshalAny(value, valueAny)
+	if err != nil {
+		return nil, err
 	}
 
 	retKVP := &management.KeyValuePair{
