@@ -91,7 +91,7 @@ func Test_normalize(t *testing.T) {
 }
 
 func Test_makeMap(t *testing.T) {
-	val1 := makeMap("/a/b/c", "C")
+	val1 := makeMap("/a/b/c", "C").(Map)
 	exp1 := Map{
 		"a": Map{
 			"b": Map{
@@ -104,7 +104,7 @@ func Test_makeMap(t *testing.T) {
 		t.Errorf("expected content to see %v, saw %v", exp1, act1)
 	}
 
-	val2 := makeMap("a/b", map[string]interface{}{"c": "C"})
+	val2 := makeMap("a/b", map[string]interface{}{"c": "C"}).(Map)
 	exp2 := Map{
 		"a": Map{
 			"b": Map{

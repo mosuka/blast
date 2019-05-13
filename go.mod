@@ -25,6 +25,7 @@ require (
 	github.com/hashicorp/raft v1.0.0
 	github.com/hashicorp/raft-boltdb v0.0.0-20171010151810-6e5ba93211ea
 	github.com/ikawaha/kagome.ipadic v1.0.1 // indirect
+	github.com/imdario/mergo v0.3.7
 	github.com/jmhodges/levigo v1.0.0 // indirect
 	github.com/mash/go-accesslog v0.0.0-20180522074327-610c2be04217
 	github.com/mosuka/bbadger v0.0.0-20190319122948-67a91aedfe68
@@ -43,4 +44,5 @@ require (
 	golang.org/x/net v0.0.0-20190327214358-63eda1eb0650 // indirect
 	google.golang.org/genproto v0.0.0-20190327125643-d831d65fe17d // indirect
 	google.golang.org/grpc v1.19.1
+	gopkg.in/yaml.v2 v2.2.2
 )

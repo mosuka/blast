@@ -78,28 +78,18 @@ func normalize(value interface{}) interface{} {
 	}
 }
 
-func _makeMap(path string, value interface{}) interface{} {
+func makeMap(path string, value interface{}) interface{} {
 	var ret interface{}
 
 	keys := splitKey(path)
 
 	if len(keys) >= 1 {
-		ret = Map{keys[0]: _makeMap(strings.Join(keys[1:], "/"), value)}
+		ret = Map{keys[0]: makeMap(strings.Join(keys[1:], "/"), value)}
 	} else if len(keys) == 0 {
 		ret = normalize(value)
 	}
 
 	return ret
-}
-
-func makeMap(path string, value interface{}) Map {
-	mm := _makeMap(path, value)
-
-	if _, ok := mm.(Map); !ok {
-		return nil
-	}
-
-	return mm.(Map)
 }
 
 func (m Map) Has(key string) (bool, error) {
@@ -126,7 +116,7 @@ func (m Map) Set(key string, value interface{}) error {
 		}
 	}
 
-	mm := makeMap(key, value)
+	mm := makeMap(key, value).(Map)
 
 	err = mergo.Merge(&m, mm, mergo.WithOverride)
 	if err != nil {
@@ -137,7 +127,7 @@ func (m Map) Set(key string, value interface{}) error {
 }
 
 func (m Map) Merge(key string, value interface{}) error {
-	mm := makeMap(key, value)
+	mm := makeMap(key, value).(Map)
 
 	err := mergo.Merge(&m, mm)
 	if err != nil {
