@@ -90,7 +90,12 @@ func (f *RaftFSM) applyDeleteNode(node *blastraft.Node) interface{} {
 func (f *RaftFSM) Get(key string) (interface{}, error) {
 	value, err := f.data.Get(key)
 	if err != nil {
-		return nil, err
+		switch err {
+		case maputils.ErrNotFound:
+			return nil, blasterrors.ErrNotFound
+		default:
+			return nil, err
+		}
 	}
 
 	var ret interface{}

@@ -93,19 +93,17 @@ func makeMap(path string, value interface{}) interface{} {
 }
 
 func (m Map) Has(key string) (bool, error) {
-	value, err := m.Get(key)
-	if err == ErrNotFound {
-		return false, nil
-	} else if err != nil {
+	_, err := m.Get(key)
+	if err != nil {
 		return false, err
 	}
 
-	return value != nil, nil
+	return true, nil
 }
 
 func (m Map) Set(key string, value interface{}) error {
 	exist, err := m.Has(key)
-	if err != ErrNotFound && err != nil {
+	if err != nil && err != ErrNotFound {
 		return err
 	}
 
