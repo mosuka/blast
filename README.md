@@ -601,37 +601,27 @@ You can see the result in JSON format. The result of the above command is:
 
 ```json
 {
-  "id": "default",
-  "nodes": [
-    {
-      "id": "indexer1",
-      "metadata": {
-        "bind_addr": ":6060",
-        "grpc_addr": ":7070",
-        "http_addr": ":8080",
-        "data_dir": "/tmp/blast/indexer1"
-      },
-      "leader": true
-    },
-    {
-      "id": "indexer2",
-      "metadata": {
-        "bind_addr": ":6061",
-        "grpc_addr": ":7071",
-        "http_addr": ":8081",
-        "data_dir": "/tmp/blast/indexer2"
-      }
-    },
-    {
-      "id": "indexer3",
-      "metadata": {
-        "bind_addr": ":6062",
-        "grpc_addr": ":7072",
-        "http_addr": ":8082",
-        "data_dir": "/tmp/blast/indexer3"
-      }
-    }
-  ]
+  "indexer1": {
+    "bind_addr": ":6060",
+    "data_dir": "/tmp/blast/indexer1",
+    "grpc_addr": ":7070",
+    "http_addr": ":8080",
+    "leader": true
+  },
+  "indexer2": {
+    "bind_addr": ":6061",
+    "data_dir": "/tmp/blast/indexer2",
+    "grpc_addr": ":7071",
+    "http_addr": ":8081",
+    "leader": false
+  },
+  "indexer3": {
+    "bind_addr": ":6062",
+    "data_dir": "/tmp/blast/indexer3",
+    "grpc_addr": ":7072",
+    "http_addr": ":8082",
+    "leader": false
+  }
 }
 ```
 
@@ -640,13 +630,13 @@ Recommend 3 or more odd number of nodes in the cluster. In failure scenarios, da
 The following command indexes documents to any node in the cluster:
 
 ```bash
-$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast-indexer index --grpc-addr=:7070 --id=enwiki_1
+$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast-indexer index --grpc-addr=:7070 enwiki_1
 ```
 
 So, you can get the document from the node specified by the above command as follows:
 
 ```bash
-$ ./bin/blast-indexer get --grpc-addr=:7070 --id=enwiki_1
+$ ./bin/blast-indexer get --grpc-addr=:7070 enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -664,8 +654,8 @@ You can see the result in JSON format. The result of the above command is:
 You can also get the same document from other nodes in the cluster as follows:
 
 ```bash
-$ ./bin/blast-indexer get --grpc-addr=:7071 --id=enwiki_1
-$ ./bin/blast-indexer get --grpc-addr=:7072 --id=enwiki_1
+$ ./bin/blast-indexer get --grpc-addr=:7071 enwiki_1
+$ ./bin/blast-indexer get --grpc-addr=:7072 enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
