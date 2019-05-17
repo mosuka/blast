@@ -12,34 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package indexer
 
-import (
-	"fmt"
-	"os"
+import "encoding/json"
 
-	"github.com/mosuka/blast/indexer"
-	"github.com/urfave/cli"
+type command int
+
+const (
+	unknown command = iota
+	setNode
+	deleteNode
+	indexDocument
+	deleteDocument
 )
 
-func execSnapshot(c *cli.Context) error {
-	grpcAddr := c.String("grpc-addr")
+type message struct {
+	Command command         `json:"command,omitempty"`
+	Data    json.RawMessage `json:"data,omitempty"`
+}
 
-	client, err := indexer.NewGRPCClient(grpcAddr)
+func newMessage(cmd command, data interface{}) (*message, error) {
+	b, err := json.Marshal(data)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			_, _ = fmt.Fprintln(os.Stderr, err)
-		}
-	}()
-
-	err = client.Snapshot()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return &message{
+		Command: cmd,
+		Data:    b,
+	}, nil
 }

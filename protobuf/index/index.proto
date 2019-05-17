@@ -16,32 +16,53 @@ syntax = "proto3";
 
 import "google/protobuf/any.proto";
 import "google/protobuf/empty.proto";
-import "protobuf/raft/raft.proto";
+//import "protobuf/raft/raft.proto";
 
 package index;
 
 option go_package = "github.com/mosuka/blast/protobuf/index";
 
 service Index {
-    rpc Join (raft.Node) returns (google.protobuf.Empty) {}
-    rpc Leave (raft.Node) returns (google.protobuf.Empty) {}
-    rpc GetNode (google.protobuf.Empty) returns (raft.Node) {}
-    rpc GetCluster (google.protobuf.Empty) returns (raft.Cluster) {}
+    rpc GetNode (GetNodeRequest) returns (GetNodeResponse) {}
+    rpc SetNode (SetNodeRequest) returns (google.protobuf.Empty) {}
+    rpc DeleteNode (DeleteNodeRequest) returns (google.protobuf.Empty) {}
+    rpc GetCluster (google.protobuf.Empty) returns (GetClusterResponse) {}
     rpc Snapshot (google.protobuf.Empty) returns (google.protobuf.Empty) {}
 
-    rpc LivenessProbe (google.protobuf.Empty) returns (LivenessStatus) {}
-    rpc ReadinessProbe (google.protobuf.Empty) returns (ReadinessStatus) {}
+    rpc LivenessProbe (google.protobuf.Empty) returns (LivenessProbeResponse) {}
+    rpc ReadinessProbe (google.protobuf.Empty) returns (ReadinessProbeResponse) {}
 
-    rpc Get (Document) returns (Document) {}
-    rpc Index (stream Document) returns (UpdateResult) {}
-    rpc Delete (stream Document) returns (UpdateResult) {}
+    rpc GetDocument (GetDocumentRequest) returns (GetDocumentResponse) {}
+    rpc IndexDocument (stream IndexDocumentRequest) returns (IndexDocumentResponse) {}
+    rpc DeleteDocument (stream DeleteDocumentRequest) returns (DeleteDocumentResponse) {}
     rpc Search (SearchRequest) returns (SearchResponse) {}
 
-    rpc GetIndexConfig (google.protobuf.Empty) returns (IndexConfig) {}
-    rpc GetIndexStats (google.protobuf.Empty) returns (IndexStats) {}
+    rpc GetIndexConfig (google.protobuf.Empty) returns (GetIndexConfigResponse) {}
+    rpc GetIndexStats (google.protobuf.Empty) returns (GetIndexStatsResponse) {}
 }
 
-message LivenessStatus {
+message GetNodeRequest {
+    string id = 1;
+}
+
+message GetNodeResponse {
+    google.protobuf.Any metadata = 1;
+}
+
+message SetNodeRequest {
+    string id = 1;
+    google.protobuf.Any metadata = 2;
+}
+
+message DeleteNodeRequest {
+    string id = 1;
+}
+
+message GetClusterResponse {
+    google.protobuf.Any cluster = 1;
+}
+
+message LivenessProbeResponse {
     enum State {
         UNKNOWN = 0;
         ALIVE = 1;
@@ -50,7 +71,7 @@ message LivenessStatus {
     State state = 1;
 }
 
-message ReadinessStatus {
+message ReadinessProbeResponse {
     enum State {
         UNKNOWN = 0;
         READY = 1;
@@ -59,23 +80,29 @@ message ReadinessStatus {
     State state = 1;
 }
 
-message Document {
+message GetDocumentRequest {
+    string id = 1;
+}
+
+message GetDocumentResponse {
+    google.protobuf.Any fields = 1;
+}
+
+message IndexDocumentRequest {
     string id = 1;
     google.protobuf.Any fields = 2;
 }
 
-message UpdateResult {
+message IndexDocumentResponse {
     int32 count = 1;
 }
 
-message IndexConfig {
-    google.protobuf.Any index_mapping = 1;
-    string index_type = 2;
-    string index_storage_type = 3;
+message DeleteDocumentRequest {
+    string id = 1;
 }
 
-message IndexStats {
-    google.protobuf.Any stats = 1;
+message DeleteDocumentResponse {
+    int32 count = 1;
 }
 
 message SearchRequest {
@@ -86,14 +113,16 @@ message SearchResponse {
     google.protobuf.Any search_result = 1;
 }
 
-message IndexCommand {
-    enum Type {
-        UNKNOWN_COMMAND = 0;
-        SET_NODE = 1;
-        DELETE_NODE = 2;
-        INDEX_DOCUMENT = 3;
-        DELETE_DOCUMENT = 4;
-    }
-    Type type = 1;
-    google.protobuf.Any data = 2;
+message GetIndexConfigResponse {
+    google.protobuf.Any index_config = 1;
+}
+
+message GetIndexStatsResponse {
+    google.protobuf.Any index_stats = 1;
+}
+
+// use for creating snapshot
+message Document {
+    string id = 1;
+    google.protobuf.Any fields = 2;
 }

@@ -23,7 +23,6 @@ import (
 
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/mosuka/blast/indexer"
-	"github.com/mosuka/blast/protobuf/raft"
 	"github.com/mosuka/logutils"
 	"github.com/urfave/cli"
 )
@@ -75,16 +74,13 @@ func execStart(c *cli.Context) error {
 		httpAccessLogCompress,
 	)
 
-	// node
-	node := &raft.Node{
-		Id: nodeId,
-		Metadata: &raft.Metadata{
-			BindAddr: bindAddr,
-			GrpcAddr: grpcAddr,
-			HttpAddr: httpAddr,
-			DataDir:  dataDir,
-			Leader:   false,
-		},
+	// metadata
+	metadata := map[string]interface{}{
+		"bind_addr": bindAddr,
+		"grpc_addr": grpcAddr,
+		"http_addr": httpAddr,
+		"data_dir":  dataDir,
+		"leader":    false,
 	}
 
 	// index mapping
@@ -137,7 +133,7 @@ func execStart(c *cli.Context) error {
 		"index_storage_type": indexStorageType,
 	}
 
-	svr, err := indexer.NewServer(managerAddr, clusterId, node, peerAddr, indexConfig, logger, httpAccessLogger)
+	svr, err := indexer.NewServer(managerAddr, clusterId, nodeId, metadata, peerAddr, indexConfig, logger, httpAccessLogger)
 	if err != nil {
 		return err
 	}

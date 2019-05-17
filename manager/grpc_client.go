@@ -19,10 +19,11 @@ import (
 	"errors"
 	"math"
 
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
 	blasterrors "github.com/mosuka/blast/errors"
+	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/management"
-	"github.com/mosuka/blast/protobuf/raft"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -73,8 +74,37 @@ func (c *GRPCClient) Close() error {
 	return c.ctx.Err()
 }
 
-func (c *GRPCClient) Join(req *raft.Node, opts ...grpc.CallOption) error {
-	_, err := c.client.Join(c.ctx, req, opts...)
+func (c *GRPCClient) GetNode(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
+	req := &management.GetNodeRequest{
+		Id: id,
+	}
+
+	resp, err := c.client.GetNode(c.ctx, req, opts...)
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+
+	ins, err := protobuf.MarshalAny(resp.Metadata)
+	metadata := *ins.(*map[string]interface{})
+
+	return metadata, nil
+}
+
+func (c *GRPCClient) SetNode(id string, metadata map[string]interface{}, opts ...grpc.CallOption) error {
+	metadataAny := &any.Any{}
+	err := protobuf.UnmarshalAny(metadata, metadataAny)
+	if err != nil {
+		return err
+	}
+
+	req := &management.SetNodeRequest{
+		Id:       id,
+		Metadata: metadataAny,
+	}
+
+	_, err = c.client.SetNode(c.ctx, req, opts...)
 	if err != nil {
 		return err
 	}
@@ -82,8 +112,12 @@ func (c *GRPCClient) Join(req *raft.Node, opts ...grpc.CallOption) error {
 	return nil
 }
 
-func (c *GRPCClient) Leave(req *raft.Node, opts ...grpc.CallOption) error {
-	_, err := c.client.Leave(c.ctx, req, opts...)
+func (c *GRPCClient) DeleteNode(id string, opts ...grpc.CallOption) error {
+	req := &management.DeleteNodeRequest{
+		Id: id,
+	}
+
+	_, err := c.client.DeleteNode(c.ctx, req, opts...)
 	if err != nil {
 		return err
 	}
@@ -91,24 +125,16 @@ func (c *GRPCClient) Leave(req *raft.Node, opts ...grpc.CallOption) error {
 	return nil
 }
 
-func (c *GRPCClient) GetNode(opts ...grpc.CallOption) (*raft.Node, error) {
-	node, err := c.client.GetNode(c.ctx, &empty.Empty{}, opts...)
+func (c *GRPCClient) GetCluster(opts ...grpc.CallOption) (map[string]interface{}, error) {
+	resp, err := c.client.GetCluster(c.ctx, &empty.Empty{}, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
 		return nil, errors.New(st.Message())
 	}
 
-	return node, nil
-}
-
-func (c *GRPCClient) GetCluster(opts ...grpc.CallOption) (*raft.Cluster, error) {
-	cluster, err := c.client.GetCluster(c.ctx, &empty.Empty{}, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return nil, errors.New(st.Message())
-	}
+	ins, err := protobuf.MarshalAny(resp.Cluster)
+	cluster := *ins.(*map[string]interface{})
 
 	return cluster, nil
 }
@@ -124,29 +150,33 @@ func (c *GRPCClient) Snapshot(opts ...grpc.CallOption) error {
 	return nil
 }
 
-func (c *GRPCClient) LivenessProbe(opts ...grpc.CallOption) (*management.LivenessStatus, error) {
-	livenessStatus, err := c.client.LivenessProbe(c.ctx, &empty.Empty{})
+func (c *GRPCClient) LivenessProbe(opts ...grpc.CallOption) (string, error) {
+	resp, err := c.client.LivenessProbe(c.ctx, &empty.Empty{})
 	if err != nil {
 		st, _ := status.FromError(err)
 
-		return nil, errors.New(st.Message())
+		return management.LivenessProbeResponse_UNKNOWN.String(), errors.New(st.Message())
 	}
 
-	return livenessStatus, nil
+	return resp.State.String(), nil
 }
 
-func (c *GRPCClient) ReadinessProbe(opts ...grpc.CallOption) (*management.ReadinessStatus, error) {
-	readinessProbe, err := c.client.ReadinessProbe(c.ctx, &empty.Empty{})
+func (c *GRPCClient) ReadinessProbe(opts ...grpc.CallOption) (string, error) {
+	resp, err := c.client.ReadinessProbe(c.ctx, &empty.Empty{})
 	if err != nil {
 		st, _ := status.FromError(err)
 
-		return nil, errors.New(st.Message())
+		return management.ReadinessProbeResponse_UNKNOWN.String(), errors.New(st.Message())
 	}
 
-	return readinessProbe, nil
+	return resp.State.String(), nil
 }
 
-func (c *GRPCClient) Get(req *management.KeyValuePair, opts ...grpc.CallOption) (*management.KeyValuePair, error) {
+func (c *GRPCClient) Get(key string, opts ...grpc.CallOption) (interface{}, error) {
+	req := &management.GetRequest{
+		Key: key,
+	}
+
 	resp, err := c.client.Get(c.ctx, req, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
@@ -159,11 +189,24 @@ func (c *GRPCClient) Get(req *management.KeyValuePair, opts ...grpc.CallOption) 
 		}
 	}
 
-	return resp, nil
+	value, err := protobuf.MarshalAny(resp.Value)
+
+	return value, nil
 }
 
-func (c *GRPCClient) Set(req *management.KeyValuePair, opts ...grpc.CallOption) error {
-	_, err := c.client.Set(c.ctx, req, opts...)
+func (c *GRPCClient) Set(key string, value interface{}, opts ...grpc.CallOption) error {
+	valueAny := &any.Any{}
+	err := protobuf.UnmarshalAny(value, valueAny)
+	if err != nil {
+		return err
+	}
+
+	req := &management.SetRequest{
+		Key:   key,
+		Value: valueAny,
+	}
+
+	_, err = c.client.Set(c.ctx, req, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
@@ -178,7 +221,11 @@ func (c *GRPCClient) Set(req *management.KeyValuePair, opts ...grpc.CallOption) 
 	return nil
 }
 
-func (c *GRPCClient) Delete(req *management.KeyValuePair, opts ...grpc.CallOption) error {
+func (c *GRPCClient) Delete(key string, opts ...grpc.CallOption) error {
+	req := &management.DeleteRequest{
+		Key: key,
+	}
+
 	_, err := c.client.Delete(c.ctx, req, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
@@ -194,7 +241,11 @@ func (c *GRPCClient) Delete(req *management.KeyValuePair, opts ...grpc.CallOptio
 	return nil
 }
 
-func (c *GRPCClient) Watch(req *management.KeyValuePair, opts ...grpc.CallOption) (management.Management_WatchClient, error) {
+func (c *GRPCClient) Watch(key string, opts ...grpc.CallOption) (management.Management_WatchClient, error) {
+	req := &management.WatchRequest{
+		Key: key,
+	}
+
 	watchClient, err := c.client.Watch(c.ctx, req, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)

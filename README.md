@@ -255,7 +255,7 @@ You can now put, get, search and delete the documents via CLI.
 For document indexing, execute the following command:
 
 ```bash
-$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast-indexer index --grpc-addr=:7070 --id=enwiki_1
+$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast-indexer index --grpc-addr=:7070 enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -272,7 +272,7 @@ You can see the result in JSON format. The result of the above command is:
 Getting a document is as following:
 
 ```bash
-$ ./bin/blast-indexer get --grpc-addr=:7070 --id=enwiki_1
+$ ./bin/blast-indexer get --grpc-addr=:7070 enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -465,7 +465,7 @@ Please refer to following document for details of search request and result:
 Deleting a document is as following:
 
 ```bash
-$ ./bin/blast-indexer delete --grpc-addr=:7070 --id=enwiki_1
+$ ./bin/blast-indexer delete --grpc-addr=:7070 enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -482,7 +482,7 @@ You can see the result in JSON format. The result of the above command is:
 Indexing documents in bulk, run the following command:
 
 ```bash
-$ cat ./example/docs_wiki.json | xargs -0 ./bin/blast-indexer index --grpc-addr=:7070
+$ cat ./example/bulk_index_wiki.json | xargs -0 ./bin/blast-indexer index --grpc-addr=:7070
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -499,7 +499,7 @@ You can see the result in JSON format. The result of the above command is:
 Deleting documents in bulk, run the following command:
 
 ```bash
-$ cat ./example/docs_wiki.json | xargs -0 ./bin/blast-indexer delete --grpc-addr=:7070
+$ cat ./example/bulk_delete_wiki.json | xargs -0 ./bin/blast-indexer delete --grpc-addr=:7070
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -557,7 +557,7 @@ $ curl -X DELETE 'http://127.0.0.1:8080/documents/enwiki_1'
 Indexing documents in bulk via HTTP is as following:
 
 ```bash
-$ curl -s -X PUT 'http://127.0.0.1:8080/documents' -d @./example/docs_wiki.json
+$ curl -s -X PUT 'http://127.0.0.1:8080/documents' -d @./example/bulk_index_wiki.json
 ```
 
 
@@ -566,7 +566,7 @@ $ curl -s -X PUT 'http://127.0.0.1:8080/documents' -d @./example/docs_wiki.json
 Deleting documents in bulk via HTTP is as following:
 
 ```bash
-$ curl -X DELETE 'http://127.0.0.1:8080/documents' -d @./example/docs_wiki.json
+$ curl -X DELETE 'http://127.0.0.1:8080/documents' -d @./example/bulk_delete_wiki.json
 ```
 
 

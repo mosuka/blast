@@ -122,9 +122,7 @@ func (s *GRPCService) StartWatchCluster() error {
 		return err
 	}
 
-	s.watchClient, err = s.managerClient.Watch(&management.KeyValuePair{
-		Key: "/cluster_config/clusters/",
-	})
+	s.watchClient, err = s.managerClient.Watch("/cluster_config/clusters/")
 	if err != nil {
 		return err
 	}

@@ -19,17 +19,12 @@ import (
 	"os"
 
 	"github.com/mosuka/blast/manager"
-	"github.com/mosuka/blast/protobuf/raft"
 	"github.com/urfave/cli"
 )
 
 func execLeave(c *cli.Context) error {
 	peerAddr := c.String("peer-addr")
-	nodeId := c.String("node-id")
-
-	node := &raft.Node{
-		Id: nodeId,
-	}
+	nodeId := c.Args().Get(0)
 
 	peerClient, err := manager.NewGRPCClient(peerAddr)
 	if err != nil {
@@ -38,11 +33,11 @@ func execLeave(c *cli.Context) error {
 	defer func() {
 		err := peerClient.Close()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			_, _ = fmt.Fprintln(os.Stderr, err)
 		}
 	}()
 
-	err = peerClient.Leave(node)
+	err = peerClient.DeleteNode(nodeId)
 	if err != nil {
 		return err
 	}

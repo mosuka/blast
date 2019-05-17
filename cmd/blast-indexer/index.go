@@ -20,76 +20,45 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/mosuka/blast/indexer"
-	"github.com/mosuka/blast/protobuf"
-	pbindex "github.com/mosuka/blast/protobuf/index"
 	"github.com/urfave/cli"
 )
 
 func execIndex(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
-	id := c.String("id")
-
-	if c.NArg() == 0 {
-		err := errors.New("arguments are not correct")
-		return err
-	}
 
 	// create documents
-	docs := make([]*pbindex.Document, 0)
+	docs := make([]map[string]interface{}, 0)
 
-	if id == "" {
+	if c.NArg() == 1 {
 		// documents
 		docsStr := c.Args().Get(0)
 
-		var docMaps []map[string]interface{}
-		err := json.Unmarshal([]byte(docsStr), &docMaps)
+		err := json.Unmarshal([]byte(docsStr), &docs)
 		if err != nil {
 			return err
 		}
-
-		for _, docMap := range docMaps {
-			// map[string]interface{} -> Any
-			fieldsAny := &any.Any{}
-			err = protobuf.UnmarshalAny(docMap["fields"], fieldsAny)
-			if err != nil {
-				return err
-			}
-
-			// create document
-			doc := &pbindex.Document{
-				Id:     docMap["id"].(string),
-				Fields: fieldsAny,
-			}
-
-			docs = append(docs, doc)
-		}
-	} else {
+	} else if c.NArg() == 2 {
 		// document
-		fields := c.Args().Get(0)
+		id := c.Args().Get(0)
+		fieldsSrc := c.Args().Get(1)
 
 		// string -> map[string]interface{}
-		var fieldsMap map[string]interface{}
-		err := json.Unmarshal([]byte(fields), &fieldsMap)
-		if err != nil {
-			return err
-		}
-
-		// map[string]interface{} -> Any
-		fieldsAny := &any.Any{}
-		err = protobuf.UnmarshalAny(fieldsMap, fieldsAny)
+		var fields map[string]interface{}
+		err := json.Unmarshal([]byte(fieldsSrc), &fields)
 		if err != nil {
 			return err
 		}
 
 		// create document
-		doc := &pbindex.Document{
-			Id:     id,
-			Fields: fieldsAny,
+		doc := map[string]interface{}{
+			"id":     id,
+			"fields": fields,
 		}
 
 		docs = append(docs, doc)
+	} else {
+		return errors.New("argument error")
 	}
 
 	// create gRPC client
@@ -100,22 +69,22 @@ func execIndex(c *cli.Context) error {
 	defer func() {
 		err := client.Close()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			_, _ = fmt.Fprintln(os.Stderr, err)
 		}
 	}()
 
 	// index documents in bulk
-	result, err := client.Index(docs)
+	count, err := client.IndexDocument(docs)
 	if err != nil {
 		return err
 	}
 
-	resultBytes, err := json.MarshalIndent(result, "", "  ")
+	resultBytes, err := json.MarshalIndent(count, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", string(resultBytes)))
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resultBytes)))
 
 	return nil
 }

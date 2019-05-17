@@ -24,7 +24,6 @@ import (
 
 	"github.com/mosuka/blast/manager"
 	"github.com/mosuka/blast/protobuf"
-	pbfederation "github.com/mosuka/blast/protobuf/management"
 	"github.com/urfave/cli"
 )
 
@@ -37,10 +36,6 @@ func execWatch(c *cli.Context) error {
 		return err
 	}
 
-	req := &pbfederation.KeyValuePair{
-		Key: key,
-	}
-
 	client, err := manager.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
@@ -48,11 +43,11 @@ func execWatch(c *cli.Context) error {
 	defer func() {
 		err := client.Close()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			_, _ = fmt.Fprintln(os.Stderr, err)
 		}
 	}()
 
-	watchClient, err := client.Watch(req)
+	watchClient, err := client.Watch(key)
 	if err != nil {
 		return err
 	}
@@ -83,12 +78,12 @@ func execWatch(c *cli.Context) error {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", string(valueBytes)))
+			_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%s %s %v", resp.Command.String(), resp.Key, string(valueBytes)))
 		case *string:
 			valueStr := *value.(*string)
-			fmt.Fprintln(os.Stdout, fmt.Sprintf("%s\n", valueStr))
+			_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%s %s %s", resp.Command.String(), resp.Key, valueStr))
 		default:
-			fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", &value))
+			_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%s %s %v", resp.Command.String(), resp.Key, &value))
 		}
 	}
 

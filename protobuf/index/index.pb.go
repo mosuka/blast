@@ -9,7 +9,6 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	any "github.com/golang/protobuf/ptypes/any"
 	empty "github.com/golang/protobuf/ptypes/empty"
-	raft "github.com/mosuka/blast/protobuf/raft"
 	grpc "google.golang.org/grpc"
 	math "math"
 )
@@ -25,175 +24,422 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
-type LivenessStatus_State int32
+type LivenessProbeResponse_State int32
 
 const (
-	LivenessStatus_UNKNOWN LivenessStatus_State = 0
-	LivenessStatus_ALIVE   LivenessStatus_State = 1
-	LivenessStatus_DEAD    LivenessStatus_State = 2
+	LivenessProbeResponse_UNKNOWN LivenessProbeResponse_State = 0
+	LivenessProbeResponse_ALIVE   LivenessProbeResponse_State = 1
+	LivenessProbeResponse_DEAD    LivenessProbeResponse_State = 2
 )
 
-var LivenessStatus_State_name = map[int32]string{
+var LivenessProbeResponse_State_name = map[int32]string{
 	0: "UNKNOWN",
 	1: "ALIVE",
 	2: "DEAD",
 }
 
-var LivenessStatus_State_value = map[string]int32{
+var LivenessProbeResponse_State_value = map[string]int32{
 	"UNKNOWN": 0,
 	"ALIVE":   1,
 	"DEAD":    2,
 }
 
-func (x LivenessStatus_State) String() string {
-	return proto.EnumName(LivenessStatus_State_name, int32(x))
+func (x LivenessProbeResponse_State) String() string {
+	return proto.EnumName(LivenessProbeResponse_State_name, int32(x))
 }
 
-func (LivenessStatus_State) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_7b2daf652facb3ae, []int{0, 0}
+func (LivenessProbeResponse_State) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_7b2daf652facb3ae, []int{5, 0}
 }
 
-type ReadinessStatus_State int32
+type ReadinessProbeResponse_State int32
 
 const (
-	ReadinessStatus_UNKNOWN   ReadinessStatus_State = 0
-	ReadinessStatus_READY     ReadinessStatus_State = 1
-	ReadinessStatus_NOT_READY ReadinessStatus_State = 2
+	ReadinessProbeResponse_UNKNOWN   ReadinessProbeResponse_State = 0
+	ReadinessProbeResponse_READY     ReadinessProbeResponse_State = 1
+	ReadinessProbeResponse_NOT_READY ReadinessProbeResponse_State = 2
 )
 
-var ReadinessStatus_State_name = map[int32]string{
+var ReadinessProbeResponse_State_name = map[int32]string{
 	0: "UNKNOWN",
 	1: "READY",
 	2: "NOT_READY",
 }
 
-var ReadinessStatus_State_value = map[string]int32{
+var ReadinessProbeResponse_State_value = map[string]int32{
 	"UNKNOWN":   0,
 	"READY":     1,
 	"NOT_READY": 2,
 }
 
-func (x ReadinessStatus_State) String() string {
-	return proto.EnumName(ReadinessStatus_State_name, int32(x))
+func (x ReadinessProbeResponse_State) String() string {
+	return proto.EnumName(ReadinessProbeResponse_State_name, int32(x))
 }
 
-func (ReadinessStatus_State) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_7b2daf652facb3ae, []int{1, 0}
+func (ReadinessProbeResponse_State) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_7b2daf652facb3ae, []int{6, 0}
 }
 
-type IndexCommand_Type int32
-
-const (
-	IndexCommand_UNKNOWN_COMMAND IndexCommand_Type = 0
-	IndexCommand_SET_NODE        IndexCommand_Type = 1
-	IndexCommand_DELETE_NODE     IndexCommand_Type = 2
-	IndexCommand_INDEX_DOCUMENT  IndexCommand_Type = 3
-	IndexCommand_DELETE_DOCUMENT IndexCommand_Type = 4
-)
-
-var IndexCommand_Type_name = map[int32]string{
-	0: "UNKNOWN_COMMAND",
-	1: "SET_NODE",
-	2: "DELETE_NODE",
-	3: "INDEX_DOCUMENT",
-	4: "DELETE_DOCUMENT",
+type GetNodeRequest struct {
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-var IndexCommand_Type_value = map[string]int32{
-	"UNKNOWN_COMMAND": 0,
-	"SET_NODE":        1,
-	"DELETE_NODE":     2,
-	"INDEX_DOCUMENT":  3,
-	"DELETE_DOCUMENT": 4,
-}
-
-func (x IndexCommand_Type) String() string {
-	return proto.EnumName(IndexCommand_Type_name, int32(x))
-}
-
-func (IndexCommand_Type) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_7b2daf652facb3ae, []int{8, 0}
-}
-
-type LivenessStatus struct {
-	State                LivenessStatus_State `protobuf:"varint,1,opt,name=state,proto3,enum=index.LivenessStatus_State" json:"state,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
-	XXX_unrecognized     []byte               `json:"-"`
-	XXX_sizecache        int32                `json:"-"`
-}
-
-func (m *LivenessStatus) Reset()         { *m = LivenessStatus{} }
-func (m *LivenessStatus) String() string { return proto.CompactTextString(m) }
-func (*LivenessStatus) ProtoMessage()    {}
-func (*LivenessStatus) Descriptor() ([]byte, []int) {
+func (m *GetNodeRequest) Reset()         { *m = GetNodeRequest{} }
+func (m *GetNodeRequest) String() string { return proto.CompactTextString(m) }
+func (*GetNodeRequest) ProtoMessage()    {}
+func (*GetNodeRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7b2daf652facb3ae, []int{0}
 }
 
-func (m *LivenessStatus) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_LivenessStatus.Unmarshal(m, b)
+func (m *GetNodeRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetNodeRequest.Unmarshal(m, b)
 }
-func (m *LivenessStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_LivenessStatus.Marshal(b, m, deterministic)
+func (m *GetNodeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetNodeRequest.Marshal(b, m, deterministic)
 }
-func (m *LivenessStatus) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LivenessStatus.Merge(m, src)
+func (m *GetNodeRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetNodeRequest.Merge(m, src)
 }
-func (m *LivenessStatus) XXX_Size() int {
-	return xxx_messageInfo_LivenessStatus.Size(m)
+func (m *GetNodeRequest) XXX_Size() int {
+	return xxx_messageInfo_GetNodeRequest.Size(m)
 }
-func (m *LivenessStatus) XXX_DiscardUnknown() {
-	xxx_messageInfo_LivenessStatus.DiscardUnknown(m)
+func (m *GetNodeRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetNodeRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_LivenessStatus proto.InternalMessageInfo
+var xxx_messageInfo_GetNodeRequest proto.InternalMessageInfo
 
-func (m *LivenessStatus) GetState() LivenessStatus_State {
+func (m *GetNodeRequest) GetId() string {
 	if m != nil {
-		return m.State
+		return m.Id
 	}
-	return LivenessStatus_UNKNOWN
+	return ""
 }
 
-type ReadinessStatus struct {
-	State                ReadinessStatus_State `protobuf:"varint,1,opt,name=state,proto3,enum=index.ReadinessStatus_State" json:"state,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
-	XXX_unrecognized     []byte                `json:"-"`
-	XXX_sizecache        int32                 `json:"-"`
+type GetNodeResponse struct {
+	Metadata             *any.Any `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ReadinessStatus) Reset()         { *m = ReadinessStatus{} }
-func (m *ReadinessStatus) String() string { return proto.CompactTextString(m) }
-func (*ReadinessStatus) ProtoMessage()    {}
-func (*ReadinessStatus) Descriptor() ([]byte, []int) {
+func (m *GetNodeResponse) Reset()         { *m = GetNodeResponse{} }
+func (m *GetNodeResponse) String() string { return proto.CompactTextString(m) }
+func (*GetNodeResponse) ProtoMessage()    {}
+func (*GetNodeResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7b2daf652facb3ae, []int{1}
 }
 
-func (m *ReadinessStatus) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ReadinessStatus.Unmarshal(m, b)
+func (m *GetNodeResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetNodeResponse.Unmarshal(m, b)
 }
-func (m *ReadinessStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ReadinessStatus.Marshal(b, m, deterministic)
+func (m *GetNodeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetNodeResponse.Marshal(b, m, deterministic)
 }
-func (m *ReadinessStatus) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ReadinessStatus.Merge(m, src)
+func (m *GetNodeResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetNodeResponse.Merge(m, src)
 }
-func (m *ReadinessStatus) XXX_Size() int {
-	return xxx_messageInfo_ReadinessStatus.Size(m)
+func (m *GetNodeResponse) XXX_Size() int {
+	return xxx_messageInfo_GetNodeResponse.Size(m)
 }
-func (m *ReadinessStatus) XXX_DiscardUnknown() {
-	xxx_messageInfo_ReadinessStatus.DiscardUnknown(m)
+func (m *GetNodeResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetNodeResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ReadinessStatus proto.InternalMessageInfo
+var xxx_messageInfo_GetNodeResponse proto.InternalMessageInfo
 
-func (m *ReadinessStatus) GetState() ReadinessStatus_State {
+func (m *GetNodeResponse) GetMetadata() *any.Any {
+	if m != nil {
+		return m.Metadata
+	}
+	return nil
+}
+
+type SetNodeRequest struct {
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Metadata             *any.Any `protobuf:"bytes,2,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SetNodeRequest) Reset()         { *m = SetNodeRequest{} }
+func (m *SetNodeRequest) String() string { return proto.CompactTextString(m) }
+func (*SetNodeRequest) ProtoMessage()    {}
+func (*SetNodeRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7b2daf652facb3ae, []int{2}
+}
+
+func (m *SetNodeRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SetNodeRequest.Unmarshal(m, b)
+}
+func (m *SetNodeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SetNodeRequest.Marshal(b, m, deterministic)
+}
+func (m *SetNodeRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SetNodeRequest.Merge(m, src)
+}
+func (m *SetNodeRequest) XXX_Size() int {
+	return xxx_messageInfo_SetNodeRequest.Size(m)
+}
+func (m *SetNodeRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SetNodeRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SetNodeRequest proto.InternalMessageInfo
+
+func (m *SetNodeRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *SetNodeRequest) GetMetadata() *any.Any {
+	if m != nil {
+		return m.Metadata
+	}
+	return nil
+}
+
+type DeleteNodeRequest struct {
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DeleteNodeRequest) Reset()         { *m = DeleteNodeRequest{} }
+func (m *DeleteNodeRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteNodeRequest) ProtoMessage()    {}
+func (*DeleteNodeRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7b2daf652facb3ae, []int{3}
+}
+
+func (m *DeleteNodeRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteNodeRequest.Unmarshal(m, b)
+}
+func (m *DeleteNodeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteNodeRequest.Marshal(b, m, deterministic)
+}
+func (m *DeleteNodeRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteNodeRequest.Merge(m, src)
+}
+func (m *DeleteNodeRequest) XXX_Size() int {
+	return xxx_messageInfo_DeleteNodeRequest.Size(m)
+}
+func (m *DeleteNodeRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteNodeRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteNodeRequest proto.InternalMessageInfo
+
+func (m *DeleteNodeRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+type GetClusterResponse struct {
+	Cluster              *any.Any `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetClusterResponse) Reset()         { *m = GetClusterResponse{} }
+func (m *GetClusterResponse) String() string { return proto.CompactTextString(m) }
+func (*GetClusterResponse) ProtoMessage()    {}
+func (*GetClusterResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7b2daf652facb3ae, []int{4}
+}
+
+func (m *GetClusterResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetClusterResponse.Unmarshal(m, b)
+}
+func (m *GetClusterResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetClusterResponse.Marshal(b, m, deterministic)
+}
+func (m *GetClusterResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetClusterResponse.Merge(m, src)
+}
+func (m *GetClusterResponse) XXX_Size() int {
+	return xxx_messageInfo_GetClusterResponse.Size(m)
+}
+func (m *GetClusterResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetClusterResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetClusterResponse proto.InternalMessageInfo
+
+func (m *GetClusterResponse) GetCluster() *any.Any {
+	if m != nil {
+		return m.Cluster
+	}
+	return nil
+}
+
+type LivenessProbeResponse struct {
+	State                LivenessProbeResponse_State `protobuf:"varint,1,opt,name=state,proto3,enum=index.LivenessProbeResponse_State" json:"state,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
+	XXX_unrecognized     []byte                      `json:"-"`
+	XXX_sizecache        int32                       `json:"-"`
+}
+
+func (m *LivenessProbeResponse) Reset()         { *m = LivenessProbeResponse{} }
+func (m *LivenessProbeResponse) String() string { return proto.CompactTextString(m) }
+func (*LivenessProbeResponse) ProtoMessage()    {}
+func (*LivenessProbeResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7b2daf652facb3ae, []int{5}
+}
+
+func (m *LivenessProbeResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_LivenessProbeResponse.Unmarshal(m, b)
+}
+func (m *LivenessProbeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_LivenessProbeResponse.Marshal(b, m, deterministic)
+}
+func (m *LivenessProbeResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LivenessProbeResponse.Merge(m, src)
+}
+func (m *LivenessProbeResponse) XXX_Size() int {
+	return xxx_messageInfo_LivenessProbeResponse.Size(m)
+}
+func (m *LivenessProbeResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_LivenessProbeResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LivenessProbeResponse proto.InternalMessageInfo
+
+func (m *LivenessProbeResponse) GetState() LivenessProbeResponse_State {
 	if m != nil {
 		return m.State
 	}
-	return ReadinessStatus_UNKNOWN
+	return LivenessProbeResponse_UNKNOWN
 }
 
-type Document struct {
+type ReadinessProbeResponse struct {
+	State                ReadinessProbeResponse_State `protobuf:"varint,1,opt,name=state,proto3,enum=index.ReadinessProbeResponse_State" json:"state,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
+	XXX_unrecognized     []byte                       `json:"-"`
+	XXX_sizecache        int32                        `json:"-"`
+}
+
+func (m *ReadinessProbeResponse) Reset()         { *m = ReadinessProbeResponse{} }
+func (m *ReadinessProbeResponse) String() string { return proto.CompactTextString(m) }
+func (*ReadinessProbeResponse) ProtoMessage()    {}
+func (*ReadinessProbeResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7b2daf652facb3ae, []int{6}
+}
+
+func (m *ReadinessProbeResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ReadinessProbeResponse.Unmarshal(m, b)
+}
+func (m *ReadinessProbeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ReadinessProbeResponse.Marshal(b, m, deterministic)
+}
+func (m *ReadinessProbeResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ReadinessProbeResponse.Merge(m, src)
+}
+func (m *ReadinessProbeResponse) XXX_Size() int {
+	return xxx_messageInfo_ReadinessProbeResponse.Size(m)
+}
+func (m *ReadinessProbeResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ReadinessProbeResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ReadinessProbeResponse proto.InternalMessageInfo
+
+func (m *ReadinessProbeResponse) GetState() ReadinessProbeResponse_State {
+	if m != nil {
+		return m.State
+	}
+	return ReadinessProbeResponse_UNKNOWN
+}
+
+type GetDocumentRequest struct {
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetDocumentRequest) Reset()         { *m = GetDocumentRequest{} }
+func (m *GetDocumentRequest) String() string { return proto.CompactTextString(m) }
+func (*GetDocumentRequest) ProtoMessage()    {}
+func (*GetDocumentRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7b2daf652facb3ae, []int{7}
+}
+
+func (m *GetDocumentRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetDocumentRequest.Unmarshal(m, b)
+}
+func (m *GetDocumentRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetDocumentRequest.Marshal(b, m, deterministic)
+}
+func (m *GetDocumentRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetDocumentRequest.Merge(m, src)
+}
+func (m *GetDocumentRequest) XXX_Size() int {
+	return xxx_messageInfo_GetDocumentRequest.Size(m)
+}
+func (m *GetDocumentRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetDocumentRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetDocumentRequest proto.InternalMessageInfo
+
+func (m *GetDocumentRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+type GetDocumentResponse struct {
+	Fields               *any.Any `protobuf:"bytes,1,opt,name=fields,proto3" json:"fields,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetDocumentResponse) Reset()         { *m = GetDocumentResponse{} }
+func (m *GetDocumentResponse) String() string { return proto.CompactTextString(m) }
+func (*GetDocumentResponse) ProtoMessage()    {}
+func (*GetDocumentResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7b2daf652facb3ae, []int{8}
+}
+
+func (m *GetDocumentResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetDocumentResponse.Unmarshal(m, b)
+}
+func (m *GetDocumentResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetDocumentResponse.Marshal(b, m, deterministic)
+}
+func (m *GetDocumentResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetDocumentResponse.Merge(m, src)
+}
+func (m *GetDocumentResponse) XXX_Size() int {
+	return xxx_messageInfo_GetDocumentResponse.Size(m)
+}
+func (m *GetDocumentResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetDocumentResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetDocumentResponse proto.InternalMessageInfo
+
+func (m *GetDocumentResponse) GetFields() *any.Any {
+	if m != nil {
+		return m.Fields
+	}
+	return nil
+}
+
+type IndexDocumentRequest struct {
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Fields               *any.Any `protobuf:"bytes,2,opt,name=fields,proto3" json:"fields,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -201,176 +447,160 @@ type Document struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Document) Reset()         { *m = Document{} }
-func (m *Document) String() string { return proto.CompactTextString(m) }
-func (*Document) ProtoMessage()    {}
-func (*Document) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7b2daf652facb3ae, []int{2}
+func (m *IndexDocumentRequest) Reset()         { *m = IndexDocumentRequest{} }
+func (m *IndexDocumentRequest) String() string { return proto.CompactTextString(m) }
+func (*IndexDocumentRequest) ProtoMessage()    {}
+func (*IndexDocumentRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7b2daf652facb3ae, []int{9}
 }
 
-func (m *Document) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Document.Unmarshal(m, b)
+func (m *IndexDocumentRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_IndexDocumentRequest.Unmarshal(m, b)
 }
-func (m *Document) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Document.Marshal(b, m, deterministic)
+func (m *IndexDocumentRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_IndexDocumentRequest.Marshal(b, m, deterministic)
 }
-func (m *Document) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Document.Merge(m, src)
+func (m *IndexDocumentRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_IndexDocumentRequest.Merge(m, src)
 }
-func (m *Document) XXX_Size() int {
-	return xxx_messageInfo_Document.Size(m)
+func (m *IndexDocumentRequest) XXX_Size() int {
+	return xxx_messageInfo_IndexDocumentRequest.Size(m)
 }
-func (m *Document) XXX_DiscardUnknown() {
-	xxx_messageInfo_Document.DiscardUnknown(m)
+func (m *IndexDocumentRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_IndexDocumentRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Document proto.InternalMessageInfo
+var xxx_messageInfo_IndexDocumentRequest proto.InternalMessageInfo
 
-func (m *Document) GetId() string {
+func (m *IndexDocumentRequest) GetId() string {
 	if m != nil {
 		return m.Id
 	}
 	return ""
 }
 
-func (m *Document) GetFields() *any.Any {
+func (m *IndexDocumentRequest) GetFields() *any.Any {
 	if m != nil {
 		return m.Fields
 	}
 	return nil
 }
 
-type UpdateResult struct {
+type IndexDocumentResponse struct {
 	Count                int32    `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *UpdateResult) Reset()         { *m = UpdateResult{} }
-func (m *UpdateResult) String() string { return proto.CompactTextString(m) }
-func (*UpdateResult) ProtoMessage()    {}
-func (*UpdateResult) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7b2daf652facb3ae, []int{3}
+func (m *IndexDocumentResponse) Reset()         { *m = IndexDocumentResponse{} }
+func (m *IndexDocumentResponse) String() string { return proto.CompactTextString(m) }
+func (*IndexDocumentResponse) ProtoMessage()    {}
+func (*IndexDocumentResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7b2daf652facb3ae, []int{10}
 }
 
-func (m *UpdateResult) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_UpdateResult.Unmarshal(m, b)
+func (m *IndexDocumentResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_IndexDocumentResponse.Unmarshal(m, b)
 }
-func (m *UpdateResult) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_UpdateResult.Marshal(b, m, deterministic)
+func (m *IndexDocumentResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_IndexDocumentResponse.Marshal(b, m, deterministic)
 }
-func (m *UpdateResult) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdateResult.Merge(m, src)
+func (m *IndexDocumentResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_IndexDocumentResponse.Merge(m, src)
 }
-func (m *UpdateResult) XXX_Size() int {
-	return xxx_messageInfo_UpdateResult.Size(m)
+func (m *IndexDocumentResponse) XXX_Size() int {
+	return xxx_messageInfo_IndexDocumentResponse.Size(m)
 }
-func (m *UpdateResult) XXX_DiscardUnknown() {
-	xxx_messageInfo_UpdateResult.DiscardUnknown(m)
+func (m *IndexDocumentResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_IndexDocumentResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_UpdateResult proto.InternalMessageInfo
+var xxx_messageInfo_IndexDocumentResponse proto.InternalMessageInfo
 
-func (m *UpdateResult) GetCount() int32 {
+func (m *IndexDocumentResponse) GetCount() int32 {
 	if m != nil {
 		return m.Count
 	}
 	return 0
 }
 
-type IndexConfig struct {
-	IndexMapping         *any.Any `protobuf:"bytes,1,opt,name=index_mapping,json=indexMapping,proto3" json:"index_mapping,omitempty"`
-	IndexType            string   `protobuf:"bytes,2,opt,name=index_type,json=indexType,proto3" json:"index_type,omitempty"`
-	IndexStorageType     string   `protobuf:"bytes,3,opt,name=index_storage_type,json=indexStorageType,proto3" json:"index_storage_type,omitempty"`
+type DeleteDocumentRequest struct {
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *IndexConfig) Reset()         { *m = IndexConfig{} }
-func (m *IndexConfig) String() string { return proto.CompactTextString(m) }
-func (*IndexConfig) ProtoMessage()    {}
-func (*IndexConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7b2daf652facb3ae, []int{4}
+func (m *DeleteDocumentRequest) Reset()         { *m = DeleteDocumentRequest{} }
+func (m *DeleteDocumentRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteDocumentRequest) ProtoMessage()    {}
+func (*DeleteDocumentRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7b2daf652facb3ae, []int{11}
 }
 
-func (m *IndexConfig) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_IndexConfig.Unmarshal(m, b)
+func (m *DeleteDocumentRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteDocumentRequest.Unmarshal(m, b)
 }
-func (m *IndexConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_IndexConfig.Marshal(b, m, deterministic)
+func (m *DeleteDocumentRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteDocumentRequest.Marshal(b, m, deterministic)
 }
-func (m *IndexConfig) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_IndexConfig.Merge(m, src)
+func (m *DeleteDocumentRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteDocumentRequest.Merge(m, src)
 }
-func (m *IndexConfig) XXX_Size() int {
-	return xxx_messageInfo_IndexConfig.Size(m)
+func (m *DeleteDocumentRequest) XXX_Size() int {
+	return xxx_messageInfo_DeleteDocumentRequest.Size(m)
 }
-func (m *IndexConfig) XXX_DiscardUnknown() {
-	xxx_messageInfo_IndexConfig.DiscardUnknown(m)
+func (m *DeleteDocumentRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteDocumentRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_IndexConfig proto.InternalMessageInfo
+var xxx_messageInfo_DeleteDocumentRequest proto.InternalMessageInfo
 
-func (m *IndexConfig) GetIndexMapping() *any.Any {
+func (m *DeleteDocumentRequest) GetId() string {
 	if m != nil {
-		return m.IndexMapping
-	}
-	return nil
-}
-
-func (m *IndexConfig) GetIndexType() string {
-	if m != nil {
-		return m.IndexType
+		return m.Id
 	}
 	return ""
 }
 
-func (m *IndexConfig) GetIndexStorageType() string {
-	if m != nil {
-		return m.IndexStorageType
-	}
-	return ""
-}
-
-type IndexStats struct {
-	Stats                *any.Any `protobuf:"bytes,1,opt,name=stats,proto3" json:"stats,omitempty"`
+type DeleteDocumentResponse struct {
+	Count                int32    `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *IndexStats) Reset()         { *m = IndexStats{} }
-func (m *IndexStats) String() string { return proto.CompactTextString(m) }
-func (*IndexStats) ProtoMessage()    {}
-func (*IndexStats) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7b2daf652facb3ae, []int{5}
+func (m *DeleteDocumentResponse) Reset()         { *m = DeleteDocumentResponse{} }
+func (m *DeleteDocumentResponse) String() string { return proto.CompactTextString(m) }
+func (*DeleteDocumentResponse) ProtoMessage()    {}
+func (*DeleteDocumentResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7b2daf652facb3ae, []int{12}
 }
 
-func (m *IndexStats) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_IndexStats.Unmarshal(m, b)
+func (m *DeleteDocumentResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteDocumentResponse.Unmarshal(m, b)
 }
-func (m *IndexStats) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_IndexStats.Marshal(b, m, deterministic)
+func (m *DeleteDocumentResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteDocumentResponse.Marshal(b, m, deterministic)
 }
-func (m *IndexStats) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_IndexStats.Merge(m, src)
+func (m *DeleteDocumentResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteDocumentResponse.Merge(m, src)
 }
-func (m *IndexStats) XXX_Size() int {
-	return xxx_messageInfo_IndexStats.Size(m)
+func (m *DeleteDocumentResponse) XXX_Size() int {
+	return xxx_messageInfo_DeleteDocumentResponse.Size(m)
 }
-func (m *IndexStats) XXX_DiscardUnknown() {
-	xxx_messageInfo_IndexStats.DiscardUnknown(m)
+func (m *DeleteDocumentResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteDocumentResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_IndexStats proto.InternalMessageInfo
+var xxx_messageInfo_DeleteDocumentResponse proto.InternalMessageInfo
 
-func (m *IndexStats) GetStats() *any.Any {
+func (m *DeleteDocumentResponse) GetCount() int32 {
 	if m != nil {
-		return m.Stats
+		return m.Count
 	}
-	return nil
+	return 0
 }
 
 type SearchRequest struct {
@@ -384,7 +614,7 @@ func (m *SearchRequest) Reset()         { *m = SearchRequest{} }
 func (m *SearchRequest) String() string { return proto.CompactTextString(m) }
 func (*SearchRequest) ProtoMessage()    {}
 func (*SearchRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7b2daf652facb3ae, []int{6}
+	return fileDescriptor_7b2daf652facb3ae, []int{13}
 }
 
 func (m *SearchRequest) XXX_Unmarshal(b []byte) error {
@@ -423,7 +653,7 @@ func (m *SearchResponse) Reset()         { *m = SearchResponse{} }
 func (m *SearchResponse) String() string { return proto.CompactTextString(m) }
 func (*SearchResponse) ProtoMessage()    {}
 func (*SearchResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7b2daf652facb3ae, []int{7}
+	return fileDescriptor_7b2daf652facb3ae, []int{14}
 }
 
 func (m *SearchResponse) XXX_Unmarshal(b []byte) error {
@@ -451,121 +681,205 @@ func (m *SearchResponse) GetSearchResult() *any.Any {
 	return nil
 }
 
-type IndexCommand struct {
-	Type                 IndexCommand_Type `protobuf:"varint,1,opt,name=type,proto3,enum=index.IndexCommand_Type" json:"type,omitempty"`
-	Data                 *any.Any          `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
-	XXX_unrecognized     []byte            `json:"-"`
-	XXX_sizecache        int32             `json:"-"`
+type GetIndexConfigResponse struct {
+	IndexConfig          *any.Any `protobuf:"bytes,1,opt,name=index_config,json=indexConfig,proto3" json:"index_config,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *IndexCommand) Reset()         { *m = IndexCommand{} }
-func (m *IndexCommand) String() string { return proto.CompactTextString(m) }
-func (*IndexCommand) ProtoMessage()    {}
-func (*IndexCommand) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7b2daf652facb3ae, []int{8}
+func (m *GetIndexConfigResponse) Reset()         { *m = GetIndexConfigResponse{} }
+func (m *GetIndexConfigResponse) String() string { return proto.CompactTextString(m) }
+func (*GetIndexConfigResponse) ProtoMessage()    {}
+func (*GetIndexConfigResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7b2daf652facb3ae, []int{15}
 }
 
-func (m *IndexCommand) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_IndexCommand.Unmarshal(m, b)
+func (m *GetIndexConfigResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetIndexConfigResponse.Unmarshal(m, b)
 }
-func (m *IndexCommand) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_IndexCommand.Marshal(b, m, deterministic)
+func (m *GetIndexConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetIndexConfigResponse.Marshal(b, m, deterministic)
 }
-func (m *IndexCommand) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_IndexCommand.Merge(m, src)
+func (m *GetIndexConfigResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetIndexConfigResponse.Merge(m, src)
 }
-func (m *IndexCommand) XXX_Size() int {
-	return xxx_messageInfo_IndexCommand.Size(m)
+func (m *GetIndexConfigResponse) XXX_Size() int {
+	return xxx_messageInfo_GetIndexConfigResponse.Size(m)
 }
-func (m *IndexCommand) XXX_DiscardUnknown() {
-	xxx_messageInfo_IndexCommand.DiscardUnknown(m)
+func (m *GetIndexConfigResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetIndexConfigResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_IndexCommand proto.InternalMessageInfo
+var xxx_messageInfo_GetIndexConfigResponse proto.InternalMessageInfo
 
-func (m *IndexCommand) GetType() IndexCommand_Type {
+func (m *GetIndexConfigResponse) GetIndexConfig() *any.Any {
 	if m != nil {
-		return m.Type
+		return m.IndexConfig
 	}
-	return IndexCommand_UNKNOWN_COMMAND
+	return nil
 }
 
-func (m *IndexCommand) GetData() *any.Any {
+type GetIndexStatsResponse struct {
+	IndexStats           *any.Any `protobuf:"bytes,1,opt,name=index_stats,json=indexStats,proto3" json:"index_stats,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetIndexStatsResponse) Reset()         { *m = GetIndexStatsResponse{} }
+func (m *GetIndexStatsResponse) String() string { return proto.CompactTextString(m) }
+func (*GetIndexStatsResponse) ProtoMessage()    {}
+func (*GetIndexStatsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7b2daf652facb3ae, []int{16}
+}
+
+func (m *GetIndexStatsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetIndexStatsResponse.Unmarshal(m, b)
+}
+func (m *GetIndexStatsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetIndexStatsResponse.Marshal(b, m, deterministic)
+}
+func (m *GetIndexStatsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetIndexStatsResponse.Merge(m, src)
+}
+func (m *GetIndexStatsResponse) XXX_Size() int {
+	return xxx_messageInfo_GetIndexStatsResponse.Size(m)
+}
+func (m *GetIndexStatsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetIndexStatsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetIndexStatsResponse proto.InternalMessageInfo
+
+func (m *GetIndexStatsResponse) GetIndexStats() *any.Any {
 	if m != nil {
-		return m.Data
+		return m.IndexStats
+	}
+	return nil
+}
+
+// use for creating snapshot
+type Document struct {
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Fields               *any.Any `protobuf:"bytes,2,opt,name=fields,proto3" json:"fields,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *Document) Reset()         { *m = Document{} }
+func (m *Document) String() string { return proto.CompactTextString(m) }
+func (*Document) ProtoMessage()    {}
+func (*Document) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7b2daf652facb3ae, []int{17}
+}
+
+func (m *Document) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Document.Unmarshal(m, b)
+}
+func (m *Document) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Document.Marshal(b, m, deterministic)
+}
+func (m *Document) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Document.Merge(m, src)
+}
+func (m *Document) XXX_Size() int {
+	return xxx_messageInfo_Document.Size(m)
+}
+func (m *Document) XXX_DiscardUnknown() {
+	xxx_messageInfo_Document.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Document proto.InternalMessageInfo
+
+func (m *Document) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *Document) GetFields() *any.Any {
+	if m != nil {
+		return m.Fields
 	}
 	return nil
 }
 
 func init() {
-	proto.RegisterEnum("index.LivenessStatus_State", LivenessStatus_State_name, LivenessStatus_State_value)
-	proto.RegisterEnum("index.ReadinessStatus_State", ReadinessStatus_State_name, ReadinessStatus_State_value)
-	proto.RegisterEnum("index.IndexCommand_Type", IndexCommand_Type_name, IndexCommand_Type_value)
-	proto.RegisterType((*LivenessStatus)(nil), "index.LivenessStatus")
-	proto.RegisterType((*ReadinessStatus)(nil), "index.ReadinessStatus")
-	proto.RegisterType((*Document)(nil), "index.Document")
-	proto.RegisterType((*UpdateResult)(nil), "index.UpdateResult")
-	proto.RegisterType((*IndexConfig)(nil), "index.IndexConfig")
-	proto.RegisterType((*IndexStats)(nil), "index.IndexStats")
+	proto.RegisterEnum("index.LivenessProbeResponse_State", LivenessProbeResponse_State_name, LivenessProbeResponse_State_value)
+	proto.RegisterEnum("index.ReadinessProbeResponse_State", ReadinessProbeResponse_State_name, ReadinessProbeResponse_State_value)
+	proto.RegisterType((*GetNodeRequest)(nil), "index.GetNodeRequest")
+	proto.RegisterType((*GetNodeResponse)(nil), "index.GetNodeResponse")
+	proto.RegisterType((*SetNodeRequest)(nil), "index.SetNodeRequest")
+	proto.RegisterType((*DeleteNodeRequest)(nil), "index.DeleteNodeRequest")
+	proto.RegisterType((*GetClusterResponse)(nil), "index.GetClusterResponse")
+	proto.RegisterType((*LivenessProbeResponse)(nil), "index.LivenessProbeResponse")
+	proto.RegisterType((*ReadinessProbeResponse)(nil), "index.ReadinessProbeResponse")
+	proto.RegisterType((*GetDocumentRequest)(nil), "index.GetDocumentRequest")
+	proto.RegisterType((*GetDocumentResponse)(nil), "index.GetDocumentResponse")
+	proto.RegisterType((*IndexDocumentRequest)(nil), "index.IndexDocumentRequest")
+	proto.RegisterType((*IndexDocumentResponse)(nil), "index.IndexDocumentResponse")
+	proto.RegisterType((*DeleteDocumentRequest)(nil), "index.DeleteDocumentRequest")
+	proto.RegisterType((*DeleteDocumentResponse)(nil), "index.DeleteDocumentResponse")
 	proto.RegisterType((*SearchRequest)(nil), "index.SearchRequest")
 	proto.RegisterType((*SearchResponse)(nil), "index.SearchResponse")
-	proto.RegisterType((*IndexCommand)(nil), "index.IndexCommand")
+	proto.RegisterType((*GetIndexConfigResponse)(nil), "index.GetIndexConfigResponse")
+	proto.RegisterType((*GetIndexStatsResponse)(nil), "index.GetIndexStatsResponse")
+	proto.RegisterType((*Document)(nil), "index.Document")
 }
 
 func init() { proto.RegisterFile("protobuf/index/index.proto", fileDescriptor_7b2daf652facb3ae) }
 
 var fileDescriptor_7b2daf652facb3ae = []byte{
-	// 770 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x95, 0xff, 0x8e, 0xea, 0x44,
-	0x14, 0xc7, 0x5b, 0x96, 0x72, 0xe1, 0x00, 0x05, 0xe7, 0xae, 0x37, 0xc8, 0xd5, 0x64, 0x33, 0x31,
-	0x86, 0x35, 0x6b, 0x89, 0x18, 0xa3, 0x46, 0x63, 0x64, 0x69, 0x83, 0xb8, 0x50, 0x4c, 0x61, 0xfd,
-	0xf5, 0x0f, 0x19, 0xe8, 0xc0, 0x36, 0x42, 0x5b, 0x99, 0xe9, 0x46, 0x1e, 0xc4, 0xa7, 0xf2, 0x09,
-	0x7c, 0x1b, 0x33, 0x33, 0x85, 0xc0, 0xee, 0x96, 0xe8, 0x3f, 0x25, 0x73, 0xe6, 0x73, 0x7e, 0xcc,
-	0x77, 0xe6, 0x1c, 0xa0, 0x19, 0x6f, 0x23, 0x1e, 0xcd, 0x93, 0x65, 0x3b, 0x08, 0x7d, 0xfa, 0xa7,
-	0xfa, 0x5a, 0xd2, 0x88, 0x0c, 0xb9, 0x68, 0xbe, 0xb7, 0x8a, 0xa2, 0xd5, 0x9a, 0xb6, 0x0f, 0x24,
-	0x09, 0x77, 0x8a, 0x68, 0xbe, 0x7d, 0xba, 0x45, 0x37, 0x31, 0xdf, 0x6f, 0x36, 0x0e, 0xd6, 0x2d,
-	0x59, 0x72, 0xf9, 0x51, 0x3b, 0x38, 0x04, 0x73, 0x18, 0x3c, 0xd2, 0x90, 0x32, 0x36, 0xe1, 0x84,
-	0x27, 0x0c, 0x7d, 0x0a, 0x06, 0xe3, 0x84, 0xd3, 0x86, 0x7e, 0xa5, 0xb7, 0xcc, 0xce, 0x5b, 0x4b,
-	0xd5, 0x71, 0x4a, 0x59, 0xe2, 0x87, 0x7a, 0x8a, 0xc4, 0xd7, 0x60, 0xc8, 0x35, 0x2a, 0xc3, 0xab,
-	0x7b, 0xf7, 0xce, 0x1d, 0xff, 0xec, 0xd6, 0x35, 0x54, 0x02, 0xa3, 0x3b, 0x1c, 0xfc, 0xe4, 0xd4,
-	0x75, 0x54, 0x84, 0xbc, 0xed, 0x74, 0xed, 0x7a, 0x0e, 0x27, 0x50, 0xf3, 0x28, 0xf1, 0x83, 0xa3,
-	0x84, 0x9d, 0xd3, 0x84, 0xef, 0xa7, 0x09, 0x9f, 0x60, 0xa7, 0x19, 0xad, 0xac, 0x8c, 0x9e, 0xd3,
-	0xb5, 0x7f, 0xad, 0xeb, 0xa8, 0x0a, 0x25, 0x77, 0x3c, 0x9d, 0xa9, 0x65, 0x0e, 0x7f, 0x0f, 0x45,
-	0x3b, 0x5a, 0x24, 0x1b, 0x1a, 0x72, 0x64, 0x42, 0x2e, 0xf0, 0x65, 0xb2, 0x92, 0x97, 0x0b, 0x7c,
-	0x74, 0x03, 0x85, 0x65, 0x40, 0xd7, 0x3e, 0x6b, 0xe4, 0xae, 0xf4, 0x56, 0xb9, 0x73, 0x69, 0x29,
-	0x29, 0xad, 0xbd, 0x68, 0x56, 0x37, 0xdc, 0x79, 0x29, 0x83, 0x3f, 0x84, 0xca, 0x7d, 0xec, 0x8b,
-	0x52, 0x28, 0x4b, 0xd6, 0x1c, 0x5d, 0x82, 0xb1, 0x88, 0x92, 0x90, 0xcb, 0x80, 0x86, 0xa7, 0x16,
-	0xf8, 0x2f, 0x1d, 0xca, 0x03, 0x71, 0x8c, 0x5e, 0x14, 0x2e, 0x83, 0x15, 0xfa, 0x0a, 0xaa, 0xf2,
-	0x54, 0xb3, 0x0d, 0x89, 0xe3, 0x20, 0x5c, 0x49, 0x3a, 0x2b, 0x55, 0x45, 0xa2, 0x23, 0x45, 0xa2,
-	0x0f, 0x00, 0x94, 0x2b, 0xdf, 0xc5, 0x54, 0x96, 0x58, 0xf2, 0x4a, 0xd2, 0x32, 0xdd, 0xc5, 0x14,
-	0xdd, 0x00, 0x52, 0xdb, 0x8c, 0x47, 0x5b, 0xb2, 0xa2, 0x0a, 0xbb, 0x90, 0x58, 0x5d, 0xee, 0x4c,
-	0xd4, 0x86, 0xa0, 0xf1, 0x97, 0x00, 0x03, 0x65, 0x23, 0x9c, 0xa1, 0x8f, 0x95, 0xf2, 0xec, 0x6c,
-	0x35, 0x0a, 0xc1, 0x43, 0xa8, 0x4e, 0x28, 0xd9, 0x2e, 0x1e, 0x3c, 0xfa, 0x47, 0x42, 0x19, 0x47,
-	0x5f, 0x83, 0xc9, 0xa4, 0x61, 0xb6, 0x55, 0x96, 0xb3, 0x51, 0xaa, 0xec, 0xd8, 0x19, 0xdf, 0x81,
-	0xb9, 0x8f, 0xc6, 0xe2, 0x28, 0x64, 0x54, 0x28, 0x74, 0x08, 0x27, 0x84, 0x3d, 0xaf, 0xd0, 0x3e,
-	0x9a, 0x20, 0xf1, 0xdf, 0x3a, 0x54, 0x52, 0xb1, 0x37, 0x1b, 0x12, 0x8a, 0x1b, 0xcd, 0x4b, 0x15,
-	0xd4, 0x83, 0x6a, 0xa4, 0x0f, 0xea, 0x18, 0xb1, 0x84, 0x1a, 0x9e, 0xa4, 0x50, 0x0b, 0xf2, 0x3e,
-	0xe1, 0xe4, 0xec, 0xed, 0x4b, 0x02, 0x2f, 0x20, 0x2f, 0x35, 0x7f, 0x0d, 0xb5, 0xf4, 0xd1, 0xcd,
-	0x7a, 0xe3, 0xd1, 0xa8, 0xeb, 0xda, 0x75, 0x0d, 0x55, 0xa0, 0x38, 0x71, 0xa6, 0x33, 0x77, 0x6c,
-	0x8b, 0x17, 0x5f, 0x83, 0xb2, 0xed, 0x0c, 0x9d, 0xa9, 0xa3, 0x0c, 0x39, 0x84, 0xc0, 0x1c, 0xb8,
-	0xb6, 0xf3, 0xcb, 0xcc, 0x1e, 0xf7, 0xee, 0x47, 0x8e, 0x3b, 0xad, 0x5f, 0x88, 0x38, 0x29, 0x74,
-	0x30, 0xe6, 0x3b, 0xff, 0x18, 0x60, 0xc8, 0x52, 0xc5, 0x31, 0x7e, 0x88, 0x82, 0x10, 0x81, 0x25,
-	0x1b, 0xd6, 0x8d, 0x7c, 0xda, 0x7c, 0xf3, 0xac, 0x3c, 0x47, 0xf4, 0x39, 0xd6, 0xd0, 0x27, 0x60,
-	0x0c, 0x29, 0x79, 0xa4, 0xff, 0x11, 0x6f, 0xc3, 0xab, 0x3e, 0xe5, 0x02, 0x42, 0x19, 0x50, 0xf3,
-	0x28, 0x10, 0xd6, 0xd0, 0xe7, 0x00, 0x7d, 0xca, 0x7b, 0xeb, 0x84, 0x71, 0xba, 0xcd, 0xf4, 0xa9,
-	0x2a, 0x9f, 0x14, 0xc3, 0x1a, 0xfa, 0x06, 0x8a, 0x93, 0x90, 0xc4, 0xec, 0x21, 0xe2, 0x99, 0x4e,
-	0xd9, 0x55, 0x7e, 0x07, 0xd5, 0xfd, 0xe0, 0xf9, 0x71, 0x1b, 0xcd, 0xb3, 0x6b, 0x7d, 0xf7, 0xc5,
-	0x31, 0x85, 0x35, 0x74, 0x0b, 0xe6, 0x61, 0x92, 0x9c, 0x0f, 0xf1, 0xe6, 0xe5, 0xc1, 0x83, 0x35,
-	0x74, 0x0d, 0x17, 0x7d, 0xca, 0x51, 0x2d, 0x05, 0xf6, 0x93, 0xa4, 0xf9, 0xd4, 0x80, 0x35, 0x31,
-	0x3d, 0xd5, 0xe5, 0x3d, 0x83, 0x5f, 0xa7, 0x86, 0xe3, 0xe9, 0x81, 0xb5, 0x96, 0x8e, 0x3a, 0x50,
-	0xb0, 0xe9, 0x9a, 0x72, 0xfa, 0x3f, 0x7c, 0xbe, 0x80, 0x82, 0xea, 0x1f, 0x74, 0x99, 0x22, 0x27,
-	0xcd, 0x79, 0x90, 0xe3, 0xb4, 0xc9, 0xb0, 0x86, 0xbe, 0x05, 0xb3, 0x4f, 0xf9, 0xf1, 0x68, 0xca,
-	0x92, 0x03, 0x9d, 0xb6, 0x8d, 0x60, 0xe5, 0x75, 0x56, 0xf7, 0xfe, 0x6a, 0x86, 0x64, 0xb9, 0xbf,
-	0x73, 0xec, 0x2e, 0x51, 0xac, 0xdd, 0xb6, 0x7e, 0xfb, 0x68, 0x15, 0xf0, 0x87, 0x64, 0x6e, 0x2d,
-	0xa2, 0x4d, 0x7b, 0x13, 0xb1, 0xe4, 0x77, 0xd2, 0x9e, 0xaf, 0x09, 0xe3, 0xed, 0xd3, 0x3f, 0xbf,
-	0x79, 0x41, 0xae, 0x3f, 0xfb, 0x37, 0x00, 0x00, 0xff, 0xff, 0x4a, 0xf9, 0xab, 0xc1, 0x15, 0x07,
-	0x00, 0x00,
+	// 736 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x96, 0xdf, 0x6f, 0xda, 0x3a,
+	0x14, 0xc7, 0x03, 0xba, 0x29, 0xf4, 0x50, 0x72, 0xb9, 0xbe, 0x80, 0xda, 0xb4, 0x95, 0x2a, 0xf7,
+	0xea, 0xae, 0x93, 0xb6, 0x30, 0x75, 0x9a, 0xba, 0x5f, 0x0f, 0x63, 0x85, 0xb1, 0xaa, 0x55, 0xba,
+	0x86, 0x6e, 0xd3, 0xf6, 0x82, 0x02, 0x71, 0x69, 0x34, 0x48, 0x18, 0x76, 0xa6, 0x55, 0xda, 0xdb,
+	0xde, 0xf7, 0x37, 0x4f, 0x89, 0x43, 0x88, 0xd3, 0x24, 0x54, 0xda, 0x0b, 0x92, 0x8f, 0xbf, 0xfe,
+	0x9c, 0xe3, 0x93, 0xe3, 0xaf, 0x00, 0x75, 0x36, 0x77, 0x99, 0x3b, 0xf4, 0xae, 0x5a, 0xb6, 0x63,
+	0x91, 0xef, 0xfc, 0x57, 0x0b, 0x82, 0x48, 0x0e, 0x16, 0xea, 0xd6, 0xd8, 0x75, 0xc7, 0x13, 0xd2,
+	0x8a, 0x94, 0xa6, 0x73, 0xc3, 0x15, 0xea, 0x76, 0x72, 0x8b, 0x4c, 0x67, 0x2c, 0xdc, 0xc4, 0x7b,
+	0xa0, 0xf4, 0x08, 0xd3, 0x5d, 0x8b, 0x18, 0xe4, 0xab, 0x47, 0x28, 0x43, 0x0a, 0x14, 0x6d, 0x6b,
+	0xb3, 0xb0, 0x57, 0x38, 0x58, 0x37, 0x8a, 0xb6, 0x85, 0x8f, 0xe1, 0xef, 0x48, 0x41, 0x67, 0xae,
+	0x43, 0x09, 0x7a, 0x04, 0xe5, 0x29, 0x61, 0xa6, 0x65, 0x32, 0x33, 0x10, 0x56, 0x0e, 0xeb, 0x1a,
+	0x4f, 0xa2, 0x2d, 0x92, 0x68, 0x6d, 0xe7, 0xc6, 0x88, 0x54, 0xd8, 0x00, 0xa5, 0x9f, 0x9b, 0x46,
+	0x60, 0x16, 0xef, 0xc4, 0xdc, 0x87, 0x7f, 0x3a, 0x64, 0x42, 0x18, 0xc9, 0xab, 0xbe, 0x03, 0xa8,
+	0x47, 0xd8, 0xf1, 0xc4, 0xa3, 0x8c, 0xcc, 0xa3, 0x0b, 0x68, 0x50, 0x1a, 0xf1, 0x50, 0x6e, 0xfd,
+	0x0b, 0x11, 0xfe, 0x01, 0x8d, 0x33, 0xfb, 0x1b, 0x71, 0x08, 0xa5, 0xef, 0xe6, 0xee, 0x70, 0xd9,
+	0x89, 0xa7, 0x20, 0x53, 0x66, 0x32, 0x12, 0x60, 0x94, 0x43, 0xac, 0xf1, 0x4f, 0x93, 0x2a, 0xd6,
+	0xfa, 0xbe, 0xd2, 0xe0, 0x07, 0xf0, 0x7d, 0x90, 0x83, 0x35, 0xaa, 0x40, 0xe9, 0xbd, 0x7e, 0xaa,
+	0x9f, 0x7f, 0xd4, 0x6b, 0x12, 0x5a, 0x07, 0xb9, 0x7d, 0x76, 0xf2, 0xa1, 0x5b, 0x2b, 0xa0, 0x32,
+	0xfc, 0xd5, 0xe9, 0xb6, 0x3b, 0xb5, 0x22, 0xfe, 0x59, 0x80, 0xa6, 0x41, 0x4c, 0xcb, 0xbe, 0x9d,
+	0xff, 0x99, 0x98, 0x7f, 0x3f, 0xcc, 0x9f, 0xae, 0x16, 0x0b, 0xd0, 0xb2, 0x0a, 0x30, 0xba, 0xed,
+	0xce, 0xa7, 0x5a, 0x01, 0x55, 0x61, 0x5d, 0x3f, 0xbf, 0x1c, 0xf0, 0x65, 0x11, 0xff, 0x17, 0x74,
+	0xb2, 0xe3, 0x8e, 0xbc, 0x29, 0x71, 0x58, 0xf6, 0xb4, 0xfc, 0x2b, 0xa8, 0xc2, 0x3a, 0x1f, 0xc0,
+	0xda, 0x95, 0x4d, 0x26, 0x16, 0xcd, 0xed, 0x77, 0xa8, 0xc1, 0x97, 0x50, 0x3f, 0xf1, 0xef, 0xb1,
+	0x22, 0x59, 0x8c, 0x5a, 0xbc, 0x03, 0xf5, 0x21, 0x34, 0x12, 0xd4, 0xb0, 0xb8, 0x3a, 0xc8, 0x23,
+	0xd7, 0x73, 0x58, 0x40, 0x96, 0x0d, 0xbe, 0xc0, 0xf7, 0xa0, 0xc1, 0xc7, 0x6b, 0xd5, 0x95, 0x35,
+	0x68, 0x26, 0x85, 0xb9, 0xe0, 0x33, 0xa8, 0xf6, 0x89, 0x39, 0x1f, 0x5d, 0x2f, 0x80, 0x2f, 0x40,
+	0xa1, 0x41, 0x60, 0x30, 0xe7, 0x91, 0xdc, 0x26, 0x55, 0x69, 0xfc, 0x30, 0x3e, 0xf5, 0x5f, 0x16,
+	0x0f, 0x44, 0x33, 0x51, 0x8d, 0x70, 0xd4, 0x9b, 0xe4, 0xd3, 0x36, 0x16, 0x34, 0x5f, 0x89, 0x2f,
+	0xa0, 0xd9, 0x23, 0x2c, 0xe8, 0xd2, 0xb1, 0xeb, 0x5c, 0xd9, 0xe3, 0x08, 0x7a, 0x04, 0x1b, 0xc1,
+	0x68, 0x0d, 0x46, 0x41, 0x3c, 0x97, 0x59, 0xb1, 0x97, 0x00, 0xac, 0x43, 0x63, 0x81, 0xf4, 0xc7,
+	0x8d, 0x46, 0xc4, 0x27, 0xc0, 0x75, 0x03, 0x7f, 0x1c, 0xf3, 0xe7, 0x02, 0xec, 0xe8, 0x38, 0x7e,
+	0x0b, 0xe5, 0x45, 0x9f, 0xff, 0x6c, 0x1e, 0x0e, 0x7f, 0x95, 0x40, 0x0e, 0xea, 0x42, 0xcf, 0xa1,
+	0x14, 0x5a, 0x1c, 0x6a, 0x84, 0x2f, 0x48, 0x34, 0x45, 0xb5, 0x99, 0x0c, 0xf3, 0x4b, 0x60, 0xc9,
+	0x3f, 0xdb, 0x4f, 0x9c, 0xed, 0x27, 0xcf, 0x26, 0xab, 0xe8, 0xfa, 0x06, 0x8c, 0x25, 0xf4, 0x0a,
+	0x60, 0xe9, 0x60, 0x68, 0x33, 0x3c, 0x7e, 0xcb, 0xd4, 0x72, 0x08, 0x6d, 0x80, 0xa5, 0xbd, 0xa1,
+	0x0c, 0x9d, 0xba, 0xb5, 0xac, 0x3e, 0xe1, 0x84, 0x58, 0x42, 0x2f, 0xa1, 0xdc, 0x77, 0xcc, 0x19,
+	0xbd, 0x76, 0x59, 0x26, 0x20, 0xbb, 0x80, 0x1e, 0x54, 0x05, 0xb3, 0xcb, 0x44, 0xec, 0xe4, 0x59,
+	0x23, 0x96, 0xd0, 0x09, 0x28, 0xa2, 0x6b, 0x65, 0x92, 0x76, 0x73, 0x4d, 0x0e, 0x4b, 0xe8, 0x0d,
+	0x54, 0x62, 0x1e, 0x84, 0x62, 0xb7, 0x4f, 0x3c, 0x65, 0x55, 0x4d, 0xdb, 0x8a, 0x38, 0x3a, 0x54,
+	0x05, 0xc3, 0x40, 0xdb, 0xa1, 0x3c, 0xcd, 0x9c, 0xa2, 0x0b, 0xa6, 0x7a, 0x0c, 0x96, 0x0e, 0x0a,
+	0xe8, 0x02, 0x14, 0xd1, 0x28, 0xd0, 0x8e, 0xf0, 0xc9, 0x93, 0xc4, 0xdd, 0x8c, 0xdd, 0x18, 0xf2,
+	0x08, 0xd6, 0xf8, 0xeb, 0x47, 0xf5, 0x68, 0xf8, 0x62, 0xee, 0xa0, 0x36, 0x12, 0xd1, 0x78, 0xbb,
+	0xc5, 0x97, 0xbe, 0xb2, 0xdd, 0xe9, 0xc6, 0xc0, 0x47, 0x40, 0x78, 0xe1, 0x2b, 0x47, 0x20, 0xd5,
+	0x0f, 0xb0, 0xf4, 0xfa, 0xe0, 0xf3, 0xff, 0x63, 0x9b, 0x5d, 0x7b, 0x43, 0x6d, 0xe4, 0x4e, 0x5b,
+	0x53, 0x97, 0x7a, 0x5f, 0xcc, 0xd6, 0x70, 0x62, 0x52, 0xd6, 0x12, 0xff, 0x00, 0x0d, 0xd7, 0x82,
+	0xf5, 0xe3, 0xdf, 0x01, 0x00, 0x00, 0xff, 0xff, 0xdc, 0x27, 0xef, 0x4e, 0x19, 0x09, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -580,19 +894,19 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type IndexClient interface {
-	Join(ctx context.Context, in *raft.Node, opts ...grpc.CallOption) (*empty.Empty, error)
-	Leave(ctx context.Context, in *raft.Node, opts ...grpc.CallOption) (*empty.Empty, error)
-	GetNode(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*raft.Node, error)
-	GetCluster(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*raft.Cluster, error)
+	GetNode(ctx context.Context, in *GetNodeRequest, opts ...grpc.CallOption) (*GetNodeResponse, error)
+	SetNode(ctx context.Context, in *SetNodeRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	DeleteNode(ctx context.Context, in *DeleteNodeRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	GetCluster(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetClusterResponse, error)
 	Snapshot(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error)
-	LivenessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*LivenessStatus, error)
-	ReadinessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ReadinessStatus, error)
-	Get(ctx context.Context, in *Document, opts ...grpc.CallOption) (*Document, error)
-	Index(ctx context.Context, opts ...grpc.CallOption) (Index_IndexClient, error)
-	Delete(ctx context.Context, opts ...grpc.CallOption) (Index_DeleteClient, error)
+	LivenessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*LivenessProbeResponse, error)
+	ReadinessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ReadinessProbeResponse, error)
+	GetDocument(ctx context.Context, in *GetDocumentRequest, opts ...grpc.CallOption) (*GetDocumentResponse, error)
+	IndexDocument(ctx context.Context, opts ...grpc.CallOption) (Index_IndexDocumentClient, error)
+	DeleteDocument(ctx context.Context, opts ...grpc.CallOption) (Index_DeleteDocumentClient, error)
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error)
-	GetIndexConfig(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*IndexConfig, error)
-	GetIndexStats(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*IndexStats, error)
+	GetIndexConfig(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetIndexConfigResponse, error)
+	GetIndexStats(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetIndexStatsResponse, error)
 }
 
 type indexClient struct {
@@ -603,26 +917,8 @@ func NewIndexClient(cc *grpc.ClientConn) IndexClient {
 	return &indexClient{cc}
 }
 
-func (c *indexClient) Join(ctx context.Context, in *raft.Node, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, "/index.Index/Join", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *indexClient) Leave(ctx context.Context, in *raft.Node, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, "/index.Index/Leave", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *indexClient) GetNode(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*raft.Node, error) {
-	out := new(raft.Node)
+func (c *indexClient) GetNode(ctx context.Context, in *GetNodeRequest, opts ...grpc.CallOption) (*GetNodeResponse, error) {
+	out := new(GetNodeResponse)
 	err := c.cc.Invoke(ctx, "/index.Index/GetNode", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -630,8 +926,26 @@ func (c *indexClient) GetNode(ctx context.Context, in *empty.Empty, opts ...grpc
 	return out, nil
 }
 
-func (c *indexClient) GetCluster(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*raft.Cluster, error) {
-	out := new(raft.Cluster)
+func (c *indexClient) SetNode(ctx context.Context, in *SetNodeRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/index.Index/SetNode", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *indexClient) DeleteNode(ctx context.Context, in *DeleteNodeRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/index.Index/DeleteNode", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *indexClient) GetCluster(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetClusterResponse, error) {
+	out := new(GetClusterResponse)
 	err := c.cc.Invoke(ctx, "/index.Index/GetCluster", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -648,8 +962,8 @@ func (c *indexClient) Snapshot(ctx context.Context, in *empty.Empty, opts ...grp
 	return out, nil
 }
 
-func (c *indexClient) LivenessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*LivenessStatus, error) {
-	out := new(LivenessStatus)
+func (c *indexClient) LivenessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*LivenessProbeResponse, error) {
+	out := new(LivenessProbeResponse)
 	err := c.cc.Invoke(ctx, "/index.Index/LivenessProbe", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -657,8 +971,8 @@ func (c *indexClient) LivenessProbe(ctx context.Context, in *empty.Empty, opts .
 	return out, nil
 }
 
-func (c *indexClient) ReadinessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ReadinessStatus, error) {
-	out := new(ReadinessStatus)
+func (c *indexClient) ReadinessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ReadinessProbeResponse, error) {
+	out := new(ReadinessProbeResponse)
 	err := c.cc.Invoke(ctx, "/index.Index/ReadinessProbe", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -666,77 +980,77 @@ func (c *indexClient) ReadinessProbe(ctx context.Context, in *empty.Empty, opts 
 	return out, nil
 }
 
-func (c *indexClient) Get(ctx context.Context, in *Document, opts ...grpc.CallOption) (*Document, error) {
-	out := new(Document)
-	err := c.cc.Invoke(ctx, "/index.Index/Get", in, out, opts...)
+func (c *indexClient) GetDocument(ctx context.Context, in *GetDocumentRequest, opts ...grpc.CallOption) (*GetDocumentResponse, error) {
+	out := new(GetDocumentResponse)
+	err := c.cc.Invoke(ctx, "/index.Index/GetDocument", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *indexClient) Index(ctx context.Context, opts ...grpc.CallOption) (Index_IndexClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Index_serviceDesc.Streams[0], "/index.Index/Index", opts...)
+func (c *indexClient) IndexDocument(ctx context.Context, opts ...grpc.CallOption) (Index_IndexDocumentClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_Index_serviceDesc.Streams[0], "/index.Index/IndexDocument", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &indexIndexClient{stream}
+	x := &indexIndexDocumentClient{stream}
 	return x, nil
 }
 
-type Index_IndexClient interface {
-	Send(*Document) error
-	CloseAndRecv() (*UpdateResult, error)
+type Index_IndexDocumentClient interface {
+	Send(*IndexDocumentRequest) error
+	CloseAndRecv() (*IndexDocumentResponse, error)
 	grpc.ClientStream
 }
 
-type indexIndexClient struct {
+type indexIndexDocumentClient struct {
 	grpc.ClientStream
 }
 
-func (x *indexIndexClient) Send(m *Document) error {
+func (x *indexIndexDocumentClient) Send(m *IndexDocumentRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *indexIndexClient) CloseAndRecv() (*UpdateResult, error) {
+func (x *indexIndexDocumentClient) CloseAndRecv() (*IndexDocumentResponse, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
-	m := new(UpdateResult)
+	m := new(IndexDocumentResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (c *indexClient) Delete(ctx context.Context, opts ...grpc.CallOption) (Index_DeleteClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Index_serviceDesc.Streams[1], "/index.Index/Delete", opts...)
+func (c *indexClient) DeleteDocument(ctx context.Context, opts ...grpc.CallOption) (Index_DeleteDocumentClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_Index_serviceDesc.Streams[1], "/index.Index/DeleteDocument", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &indexDeleteClient{stream}
+	x := &indexDeleteDocumentClient{stream}
 	return x, nil
 }
 
-type Index_DeleteClient interface {
-	Send(*Document) error
-	CloseAndRecv() (*UpdateResult, error)
+type Index_DeleteDocumentClient interface {
+	Send(*DeleteDocumentRequest) error
+	CloseAndRecv() (*DeleteDocumentResponse, error)
 	grpc.ClientStream
 }
 
-type indexDeleteClient struct {
+type indexDeleteDocumentClient struct {
 	grpc.ClientStream
 }
 
-func (x *indexDeleteClient) Send(m *Document) error {
+func (x *indexDeleteDocumentClient) Send(m *DeleteDocumentRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *indexDeleteClient) CloseAndRecv() (*UpdateResult, error) {
+func (x *indexDeleteDocumentClient) CloseAndRecv() (*DeleteDocumentResponse, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
-	m := new(UpdateResult)
+	m := new(DeleteDocumentResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -752,8 +1066,8 @@ func (c *indexClient) Search(ctx context.Context, in *SearchRequest, opts ...grp
 	return out, nil
 }
 
-func (c *indexClient) GetIndexConfig(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*IndexConfig, error) {
-	out := new(IndexConfig)
+func (c *indexClient) GetIndexConfig(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetIndexConfigResponse, error) {
+	out := new(GetIndexConfigResponse)
 	err := c.cc.Invoke(ctx, "/index.Index/GetIndexConfig", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -761,8 +1075,8 @@ func (c *indexClient) GetIndexConfig(ctx context.Context, in *empty.Empty, opts 
 	return out, nil
 }
 
-func (c *indexClient) GetIndexStats(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*IndexStats, error) {
-	out := new(IndexStats)
+func (c *indexClient) GetIndexStats(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetIndexStatsResponse, error) {
+	out := new(GetIndexStatsResponse)
 	err := c.cc.Invoke(ctx, "/index.Index/GetIndexStats", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -772,63 +1086,27 @@ func (c *indexClient) GetIndexStats(ctx context.Context, in *empty.Empty, opts .
 
 // IndexServer is the server API for Index service.
 type IndexServer interface {
-	Join(context.Context, *raft.Node) (*empty.Empty, error)
-	Leave(context.Context, *raft.Node) (*empty.Empty, error)
-	GetNode(context.Context, *empty.Empty) (*raft.Node, error)
-	GetCluster(context.Context, *empty.Empty) (*raft.Cluster, error)
+	GetNode(context.Context, *GetNodeRequest) (*GetNodeResponse, error)
+	SetNode(context.Context, *SetNodeRequest) (*empty.Empty, error)
+	DeleteNode(context.Context, *DeleteNodeRequest) (*empty.Empty, error)
+	GetCluster(context.Context, *empty.Empty) (*GetClusterResponse, error)
 	Snapshot(context.Context, *empty.Empty) (*empty.Empty, error)
-	LivenessProbe(context.Context, *empty.Empty) (*LivenessStatus, error)
-	ReadinessProbe(context.Context, *empty.Empty) (*ReadinessStatus, error)
-	Get(context.Context, *Document) (*Document, error)
-	Index(Index_IndexServer) error
-	Delete(Index_DeleteServer) error
+	LivenessProbe(context.Context, *empty.Empty) (*LivenessProbeResponse, error)
+	ReadinessProbe(context.Context, *empty.Empty) (*ReadinessProbeResponse, error)
+	GetDocument(context.Context, *GetDocumentRequest) (*GetDocumentResponse, error)
+	IndexDocument(Index_IndexDocumentServer) error
+	DeleteDocument(Index_DeleteDocumentServer) error
 	Search(context.Context, *SearchRequest) (*SearchResponse, error)
-	GetIndexConfig(context.Context, *empty.Empty) (*IndexConfig, error)
-	GetIndexStats(context.Context, *empty.Empty) (*IndexStats, error)
+	GetIndexConfig(context.Context, *empty.Empty) (*GetIndexConfigResponse, error)
+	GetIndexStats(context.Context, *empty.Empty) (*GetIndexStatsResponse, error)
 }
 
 func RegisterIndexServer(s *grpc.Server, srv IndexServer) {
 	s.RegisterService(&_Index_serviceDesc, srv)
 }
 
-func _Index_Join_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(raft.Node)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(IndexServer).Join(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/index.Index/Join",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(IndexServer).Join(ctx, req.(*raft.Node))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Index_Leave_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(raft.Node)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(IndexServer).Leave(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/index.Index/Leave",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(IndexServer).Leave(ctx, req.(*raft.Node))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Index_GetNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
+	in := new(GetNodeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -840,7 +1118,43 @@ func _Index_GetNode_Handler(srv interface{}, ctx context.Context, dec func(inter
 		FullMethod: "/index.Index/GetNode",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(IndexServer).GetNode(ctx, req.(*empty.Empty))
+		return srv.(IndexServer).GetNode(ctx, req.(*GetNodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Index_SetNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetNodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IndexServer).SetNode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/index.Index/SetNode",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IndexServer).SetNode(ctx, req.(*SetNodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Index_DeleteNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteNodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IndexServer).DeleteNode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/index.Index/DeleteNode",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IndexServer).DeleteNode(ctx, req.(*DeleteNodeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -917,70 +1231,70 @@ func _Index_ReadinessProbe_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Index_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Document)
+func _Index_GetDocument_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDocumentRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(IndexServer).Get(ctx, in)
+		return srv.(IndexServer).GetDocument(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/index.Index/Get",
+		FullMethod: "/index.Index/GetDocument",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(IndexServer).Get(ctx, req.(*Document))
+		return srv.(IndexServer).GetDocument(ctx, req.(*GetDocumentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Index_Index_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(IndexServer).Index(&indexIndexServer{stream})
+func _Index_IndexDocument_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(IndexServer).IndexDocument(&indexIndexDocumentServer{stream})
 }
 
-type Index_IndexServer interface {
-	SendAndClose(*UpdateResult) error
-	Recv() (*Document, error)
+type Index_IndexDocumentServer interface {
+	SendAndClose(*IndexDocumentResponse) error
+	Recv() (*IndexDocumentRequest, error)
 	grpc.ServerStream
 }
 
-type indexIndexServer struct {
+type indexIndexDocumentServer struct {
 	grpc.ServerStream
 }
 
-func (x *indexIndexServer) SendAndClose(m *UpdateResult) error {
+func (x *indexIndexDocumentServer) SendAndClose(m *IndexDocumentResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *indexIndexServer) Recv() (*Document, error) {
-	m := new(Document)
+func (x *indexIndexDocumentServer) Recv() (*IndexDocumentRequest, error) {
+	m := new(IndexDocumentRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func _Index_Delete_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(IndexServer).Delete(&indexDeleteServer{stream})
+func _Index_DeleteDocument_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(IndexServer).DeleteDocument(&indexDeleteDocumentServer{stream})
 }
 
-type Index_DeleteServer interface {
-	SendAndClose(*UpdateResult) error
-	Recv() (*Document, error)
+type Index_DeleteDocumentServer interface {
+	SendAndClose(*DeleteDocumentResponse) error
+	Recv() (*DeleteDocumentRequest, error)
 	grpc.ServerStream
 }
 
-type indexDeleteServer struct {
+type indexDeleteDocumentServer struct {
 	grpc.ServerStream
 }
 
-func (x *indexDeleteServer) SendAndClose(m *UpdateResult) error {
+func (x *indexDeleteDocumentServer) SendAndClose(m *DeleteDocumentResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *indexDeleteServer) Recv() (*Document, error) {
-	m := new(Document)
+func (x *indexDeleteDocumentServer) Recv() (*DeleteDocumentRequest, error) {
+	m := new(DeleteDocumentRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -1046,16 +1360,16 @@ var _Index_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*IndexServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Join",
-			Handler:    _Index_Join_Handler,
-		},
-		{
-			MethodName: "Leave",
-			Handler:    _Index_Leave_Handler,
-		},
-		{
 			MethodName: "GetNode",
 			Handler:    _Index_GetNode_Handler,
+		},
+		{
+			MethodName: "SetNode",
+			Handler:    _Index_SetNode_Handler,
+		},
+		{
+			MethodName: "DeleteNode",
+			Handler:    _Index_DeleteNode_Handler,
 		},
 		{
 			MethodName: "GetCluster",
@@ -1074,8 +1388,8 @@ var _Index_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Index_ReadinessProbe_Handler,
 		},
 		{
-			MethodName: "Get",
-			Handler:    _Index_Get_Handler,
+			MethodName: "GetDocument",
+			Handler:    _Index_GetDocument_Handler,
 		},
 		{
 			MethodName: "Search",
@@ -1092,13 +1406,13 @@ var _Index_serviceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "Index",
-			Handler:       _Index_Index_Handler,
+			StreamName:    "IndexDocument",
+			Handler:       _Index_IndexDocument_Handler,
 			ClientStreams: true,
 		},
 		{
-			StreamName:    "Delete",
-			Handler:       _Index_Delete_Handler,
+			StreamName:    "DeleteDocument",
+			Handler:       _Index_DeleteDocument_Handler,
 			ClientStreams: true,
 		},
 	},

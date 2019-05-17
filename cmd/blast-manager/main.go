@@ -156,7 +156,8 @@ func main() {
 					Usage: "gRPC address to connect to",
 				},
 			},
-			Action: execJoin,
+			ArgsUsage: "[id]",
+			Action:    execJoin,
 		},
 		{
 			Name:  "leave",
@@ -166,13 +167,9 @@ func main() {
 					Name:  "peer-addr",
 					Value: ":17070",
 				},
-				cli.StringFlag{
-					Name:  "node-id",
-					Value: "",
-					Usage: "Node ID",
-				},
 			},
-			Action: execLeave,
+			ArgsUsage: "[id]",
+			Action:    execLeave,
 		},
 		{
 			Name:  "node",
@@ -184,7 +181,8 @@ func main() {
 					Usage: "gRPC address to connect to",
 				},
 			},
-			Action: execNode,
+			ArgsUsage: "[id]",
+			Action:    execNode,
 		},
 		{
 			Name:  "cluster",
@@ -243,13 +241,9 @@ func main() {
 					Value: ":17070",
 					Usage: "gRPC address to connect to",
 				},
-				cli.StringFlag{
-					Name:  "key",
-					Value: "",
-					Usage: "Key",
-				},
 			},
-			Action: execGet,
+			ArgsUsage: "[key]",
+			Action:    execGet,
 		},
 		{
 			Name:  "set",
@@ -260,13 +254,8 @@ func main() {
 					Value: ":17070",
 					Usage: "gRPC address to connect to",
 				},
-				cli.StringFlag{
-					Name:  "key",
-					Value: "",
-					Usage: "key",
-				},
 			},
-			ArgsUsage: "[value]",
+			ArgsUsage: "[key] [value]",
 			Action:    execSet,
 		},
 		{
@@ -278,13 +267,9 @@ func main() {
 					Value: ":17070",
 					Usage: "gRPC address to connect to",
 				},
-				cli.StringFlag{
-					Name:  "key",
-					Value: "",
-					Usage: "Key",
-				},
 			},
-			Action: execDelete,
+			ArgsUsage: "[key]",
+			Action:    execDelete,
 		},
 		{
 			Name:  "watch",
@@ -316,6 +301,6 @@ func main() {
 
 	err := app.Run(os.Args)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		_, _ = fmt.Fprintln(os.Stderr, err)
 	}
 }

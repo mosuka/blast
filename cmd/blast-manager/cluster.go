@@ -33,7 +33,7 @@ func execCluster(c *cli.Context) error {
 	defer func() {
 		err := client.Close()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			_, _ = fmt.Fprintln(os.Stderr, err)
 		}
 	}()
 
@@ -47,7 +47,7 @@ func execCluster(c *cli.Context) error {
 		return err
 	}
 
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", string(clusterBytes)))
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(clusterBytes)))
 
 	return nil
 }

@@ -35,7 +35,7 @@ func execIndexConfig(c *cli.Context) error {
 	defer func() {
 		err := client.Close()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			_, _ = fmt.Fprintln(os.Stderr, err)
 		}
 	}()
 
@@ -45,28 +45,22 @@ func execIndexConfig(c *cli.Context) error {
 	}
 
 	// Any -> IndexMappingImpl
-	indexMappingInstance, err := protobuf.MarshalAny(resp.IndexMapping)
+	ins, err := protobuf.MarshalAny(resp.IndexConfig)
 	if err != nil {
 		return err
 	}
-	if indexMappingInstance == nil {
+	if ins == nil {
 		return errors.New("nil")
 	}
-	indexMapping := *indexMappingInstance.(*map[string]interface{})
-
-	indexConfig := map[string]interface{}{
-		"index_mapping":      indexMapping,
-		"index_type":         resp.IndexType,
-		"index_storage_type": resp.IndexStorageType,
-	}
+	indexConfig := *ins.(*map[string]interface{})
 
 	// map[string]interface -> []byte
-	fieldsBytes, err := json.MarshalIndent(indexConfig, "", "  ")
+	indexConfigBytes, err := json.MarshalIndent(indexConfig, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", string(fieldsBytes)))
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(indexConfigBytes)))
 
 	return nil
 }

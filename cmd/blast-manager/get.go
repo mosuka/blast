@@ -16,28 +16,17 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 
 	"github.com/mosuka/blast/manager"
-	"github.com/mosuka/blast/protobuf"
-	pbfederation "github.com/mosuka/blast/protobuf/management"
 	"github.com/urfave/cli"
 )
 
 func execGet(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 
-	key := c.String("key")
-	if key == "" {
-		err := errors.New("key argument must be set")
-		return err
-	}
-
-	req := &pbfederation.KeyValuePair{
-		Key: key,
-	}
+	key := c.Args().Get(0)
 
 	client, err := manager.NewGRPCClient(grpcAddr)
 	if err != nil {
@@ -46,28 +35,20 @@ func execGet(c *cli.Context) error {
 	defer func() {
 		err := client.Close()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			_, _ = fmt.Fprintln(os.Stderr, err)
 		}
 	}()
 
-	resp, err := client.Get(req)
+	value, err := client.Get(key)
 	if err != nil {
 		return err
-	}
-
-	value, err := protobuf.MarshalAny(resp.Value)
-	if err != nil {
-		return err
-	}
-	if value == nil {
-		return errors.New("nil")
 	}
 
 	valueBytes, err := json.MarshalIndent(value, "", "  ")
 	if err != nil {
 		return err
 	}
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", string(valueBytes)))
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(valueBytes)))
 
 	return nil
 }

@@ -26,7 +26,6 @@ import (
 	"github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/index"
-	"github.com/mosuka/blast/protobuf/raft"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -44,12 +43,42 @@ func NewGRPCService(raftServer *RaftServer, logger *log.Logger) (*GRPCService, e
 	}, nil
 }
 
-func (s *GRPCService) Join(ctx context.Context, req *raft.Node) (*empty.Empty, error) {
-	s.logger.Printf("[INFO] join %v", req)
+func (s *GRPCService) GetNode(ctx context.Context, req *index.GetNodeRequest) (*index.GetNodeResponse, error) {
+	s.logger.Printf("[INFO] get node %v", req)
+
+	resp := &index.GetNodeResponse{}
+
+	var err error
+
+	metadata, err := s.raftServer.GetNode(req.Id)
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	metadataAny := &any.Any{}
+	err = protobuf.UnmarshalAny(metadata, metadataAny)
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	resp.Metadata = metadataAny
+
+	return resp, nil
+}
+
+func (s *GRPCService) SetNode(ctx context.Context, req *index.SetNodeRequest) (*empty.Empty, error) {
+	s.logger.Printf("[INFO] %v", req)
 
 	resp := &empty.Empty{}
 
-	err := s.raftServer.Join(req)
+	ins, err := protobuf.MarshalAny(req.Metadata)
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	metadata := *ins.(*map[string]interface{})
+
+	err = s.raftServer.SetNode(req.Id, metadata)
 	if err != nil {
 		return resp, status.Error(codes.Internal, err.Error())
 	}
@@ -57,12 +86,12 @@ func (s *GRPCService) Join(ctx context.Context, req *raft.Node) (*empty.Empty, e
 	return resp, nil
 }
 
-func (s *GRPCService) Leave(ctx context.Context, req *raft.Node) (*empty.Empty, error) {
+func (s *GRPCService) DeleteNode(ctx context.Context, req *index.DeleteNodeRequest) (*empty.Empty, error) {
 	s.logger.Printf("[INFO] leave %v", req)
 
 	resp := &empty.Empty{}
 
-	err := s.raftServer.Leave(req)
+	err := s.raftServer.DeleteNode(req.Id)
 	if err != nil {
 		return resp, status.Error(codes.Internal, err.Error())
 	}
@@ -70,32 +99,23 @@ func (s *GRPCService) Leave(ctx context.Context, req *raft.Node) (*empty.Empty, 
 	return resp, nil
 }
 
-func (s *GRPCService) GetNode(ctx context.Context, req *empty.Empty) (*raft.Node, error) {
-	s.logger.Printf("[INFO] get node %v", req)
-
-	resp := &raft.Node{}
-
-	var err error
-
-	resp, err = s.raftServer.GetNode()
-	if err != nil {
-		return resp, status.Error(codes.Internal, err.Error())
-	}
-
-	return resp, nil
-}
-
-func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*raft.Cluster, error) {
+func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*index.GetClusterResponse, error) {
 	s.logger.Printf("[INFO] get cluster %v", req)
 
-	resp := &raft.Cluster{}
+	resp := &index.GetClusterResponse{}
 
-	var err error
-
-	resp, err = s.raftServer.GetCluster()
+	cluster, err := s.raftServer.GetCluster()
 	if err != nil {
 		return resp, status.Error(codes.Internal, err.Error())
 	}
+
+	clusterAny := &any.Any{}
+	err = protobuf.UnmarshalAny(cluster, clusterAny)
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	resp.Cluster = clusterAny
 
 	return resp, nil
 }
@@ -113,33 +133,31 @@ func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Em
 	return resp, nil
 }
 
-func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*index.LivenessStatus, error) {
-	resp := &index.LivenessStatus{
-		State: index.LivenessStatus_ALIVE,
+func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*index.LivenessProbeResponse, error) {
+	resp := &index.LivenessProbeResponse{
+		State: index.LivenessProbeResponse_ALIVE,
 	}
 
 	return resp, nil
 }
 
-func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*index.ReadinessStatus, error) {
-	resp := &index.ReadinessStatus{
-		State: index.ReadinessStatus_READY,
+func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*index.ReadinessProbeResponse, error) {
+	resp := &index.ReadinessProbeResponse{
+		State: index.ReadinessProbeResponse_READY,
 	}
 
 	return resp, nil
 }
 
-func (s *GRPCService) Get(ctx context.Context, req *index.Document) (*index.Document, error) {
+func (s *GRPCService) GetDocument(ctx context.Context, req *index.GetDocumentRequest) (*index.GetDocumentResponse, error) {
 	start := time.Now()
 	defer RecordMetrics(start, "get")
 
 	s.logger.Printf("[INFO] get %v", req)
 
-	resp := &index.Document{}
+	resp := &index.GetDocumentResponse{}
 
-	var err error
-
-	resp, err = s.raftServer.Get(req)
+	fields, err := s.raftServer.GetDocument(req.Id)
 	if err != nil {
 		switch err {
 		case errors.ErrNotFound:
@@ -148,6 +166,14 @@ func (s *GRPCService) Get(ctx context.Context, req *index.Document) (*index.Docu
 			return resp, status.Error(codes.Internal, err.Error())
 		}
 	}
+
+	fieldsAny := &any.Any{}
+	err = protobuf.UnmarshalAny(fields, fieldsAny)
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	resp.Fields = fieldsAny
 
 	return resp, nil
 }
@@ -183,35 +209,49 @@ func (s *GRPCService) Search(ctx context.Context, req *index.SearchRequest) (*in
 	return resp, nil
 }
 
-func (s *GRPCService) Index(stream index.Index_IndexServer) error {
-	docs := make([]*index.Document, 0)
+func (s *GRPCService) IndexDocument(stream index.Index_IndexDocumentServer) error {
+	docs := make([]map[string]interface{}, 0)
 
 	for {
-		doc, err := stream.Recv()
+		req, err := stream.Recv()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
 			return status.Error(codes.Internal, err.Error())
+		}
+
+		fields, err := protobuf.MarshalAny(req.Fields)
+		if err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+
+		doc := map[string]interface{}{
+			"id":     req.Id,
+			"fields": fields,
 		}
 
 		docs = append(docs, doc)
 	}
 
 	// index
-	result, err := s.raftServer.Index(docs)
+	count, err := s.raftServer.IndexDocument(docs)
 	if err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}
 
-	return stream.SendAndClose(result)
+	resp := &index.IndexDocumentResponse{
+		Count: int32(count),
+	}
+
+	return stream.SendAndClose(resp)
 }
 
-func (s *GRPCService) Delete(stream index.Index_DeleteServer) error {
-	docs := make([]*index.Document, 0)
+func (s *GRPCService) DeleteDocument(stream index.Index_DeleteDocumentServer) error {
+	ids := make([]string, 0)
 
 	for {
-		doc, err := stream.Recv()
+		req, err := stream.Recv()
 		if err == io.EOF {
 			break
 		}
@@ -219,50 +259,70 @@ func (s *GRPCService) Delete(stream index.Index_DeleteServer) error {
 			return status.Error(codes.Internal, err.Error())
 		}
 
-		docs = append(docs, doc)
+		ids = append(ids, req.Id)
 	}
 
 	// delete
-	result, err := s.raftServer.Delete(docs)
+	count, err := s.raftServer.DeleteDocument(ids)
 	if err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}
 
-	return stream.SendAndClose(result)
+	resp := &index.DeleteDocumentResponse{
+		Count: int32(count),
+	}
+
+	return stream.SendAndClose(resp)
 }
 
-func (s *GRPCService) GetIndexConfig(ctx context.Context, req *empty.Empty) (*index.IndexConfig, error) {
+func (s *GRPCService) GetIndexConfig(ctx context.Context, req *empty.Empty) (*index.GetIndexConfigResponse, error) {
 	start := time.Now()
 	defer RecordMetrics(start, "indexconfig")
 
-	resp := &index.IndexConfig{}
+	resp := &index.GetIndexConfigResponse{}
 
 	s.logger.Printf("[INFO] stats %v", req)
 
 	var err error
 
-	resp, err = s.raftServer.IndexConfig()
+	indexConfig, err := s.raftServer.GetIndexConfig()
 	if err != nil {
 		return resp, status.Error(codes.Internal, err.Error())
 	}
+
+	indexConfigAny := &any.Any{}
+	err = protobuf.UnmarshalAny(indexConfig, indexConfigAny)
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	resp.IndexConfig = indexConfigAny
 
 	return resp, nil
 }
 
-func (s *GRPCService) GetIndexStats(ctx context.Context, req *empty.Empty) (*index.IndexStats, error) {
+func (s *GRPCService) GetIndexStats(ctx context.Context, req *empty.Empty) (*index.GetIndexStatsResponse, error) {
 	start := time.Now()
 	defer RecordMetrics(start, "indexstats")
 
-	resp := &index.IndexStats{}
+	resp := &index.GetIndexStatsResponse{}
 
 	s.logger.Printf("[INFO] stats %v", req)
 
 	var err error
 
-	resp, err = s.raftServer.IndexStats()
+	indexStats, err := s.raftServer.GetIndexStats()
 	if err != nil {
 		return resp, status.Error(codes.Internal, err.Error())
 	}
+
+	indexStatsAny := &any.Any{}
+	err = protobuf.UnmarshalAny(indexStats, indexStatsAny)
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	resp.IndexStats = indexStatsAny
 
 	return resp, nil
 }

@@ -22,15 +22,15 @@ import (
 	"github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/manager"
 	"github.com/mosuka/blast/protobuf"
-	"github.com/mosuka/blast/protobuf/management"
-	"github.com/mosuka/blast/protobuf/raft"
 )
 
 type Server struct {
 	managerAddr string
 	clusterId   string
 
-	node     *raft.Node
+	nodeId   string
+	metadata map[string]interface{}
+
 	peerAddr string
 
 	indexConfig map[string]interface{}
@@ -43,12 +43,14 @@ type Server struct {
 	httpLogger accesslog.Logger
 }
 
-func NewServer(managerAddr string, clusterId string, node *raft.Node, peerAddr string, indexConfig map[string]interface{}, logger *log.Logger, httpLogger accesslog.Logger) (*Server, error) {
+func NewServer(managerAddr string, clusterId string, nodeId string, metadata map[string]interface{}, peerAddr string, indexConfig map[string]interface{}, logger *log.Logger, httpLogger accesslog.Logger) (*Server, error) {
 	return &Server{
 		managerAddr: managerAddr,
 		clusterId:   clusterId,
 
-		node:     node,
+		nodeId:   nodeId,
+		metadata: metadata,
+
 		peerAddr: peerAddr,
 
 		indexConfig: indexConfig,
@@ -77,11 +79,7 @@ func (s *Server) Start() {
 		}
 
 		s.logger.Printf("[INFO] get nodes in cluster: %s", s.clusterId)
-		kvp, err := mc.Get(
-			&management.KeyValuePair{
-				Key: fmt.Sprintf("/cluster_config/clusters/%s/nodes", s.clusterId),
-			},
-		)
+		value, err := mc.Get(fmt.Sprintf("cluster_config/clusters/%s/nodes", s.clusterId))
 		if err == errors.ErrNotFound {
 			// cluster does not found
 			s.logger.Printf("[INFO] cluster does not found: %s", s.clusterId)
@@ -89,19 +87,13 @@ func (s *Server) Start() {
 			s.logger.Printf("[ERR] %v", err)
 			return
 		} else {
-			ins, err := protobuf.MarshalAny(kvp.Value)
-			if err != nil {
-				s.logger.Printf("[ERR] %v", err)
-				return
-			}
-
-			if ins == nil {
+			if value == nil {
 				s.logger.Print("[INFO] value is nil")
 			} else {
-				m := *ins.(*map[string]interface{})
+				m := *value.(*map[string]interface{})
 				for k, v := range m {
 					// skip if it is own node id
-					if k == s.node.Id {
+					if k == s.nodeId {
 						continue
 					}
 
@@ -136,20 +128,14 @@ func (s *Server) Start() {
 			return
 		}
 
-		kvp, err := mc.Get(&management.KeyValuePair{Key: "/index_config"})
+		value, err := mc.Get("index_config")
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return
 		}
 
-		ins, err := protobuf.MarshalAny(kvp.Value)
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return
-		}
-
-		if ins != nil {
-			s.indexConfig = *ins.(*map[string]interface{})
+		if value != nil {
+			s.indexConfig = *value.(*map[string]interface{})
 		}
 	} else if s.peerAddr != "" {
 		pc, err := NewGRPCClient(s.peerAddr)
@@ -165,43 +151,39 @@ func (s *Server) Start() {
 			return
 		}
 
-		indexConfig, err := pc.GetIndexConfig()
+		resp, err := pc.GetIndexConfig()
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return
 		}
 
-		ins, err := protobuf.MarshalAny(indexConfig.IndexMapping)
+		ins, err := protobuf.MarshalAny(resp.IndexConfig)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return
 		}
 
-		s.indexConfig = map[string]interface{}{
-			"index_mapping":      *ins.(*map[string]interface{}),
-			"index_type":         indexConfig.IndexType,
-			"index_storage_type": indexConfig.IndexStorageType,
-		}
+		s.indexConfig = *ins.(*map[string]interface{})
 	}
 
 	var err error
 
 	// create raft server
-	s.raftServer, err = NewRaftServer(s.managerAddr, s.clusterId, s.node, bootstrap, s.indexConfig, s.logger)
+	s.raftServer, err = NewRaftServer(s.managerAddr, s.clusterId, s.nodeId, s.metadata, bootstrap, s.indexConfig, s.logger)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return
 	}
 
 	// create gRPC server
-	s.grpcServer, err = NewGRPCServer(s.node.Metadata.GrpcAddr, s.raftServer, s.logger)
+	s.grpcServer, err = NewGRPCServer(s.metadata["grpc_addr"].(string), s.raftServer, s.logger)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return
 	}
 
 	// create HTTP server
-	s.httpServer, err = NewHTTPServer(s.node.Metadata.HttpAddr, s.node.Metadata.GrpcAddr, s.logger, s.httpLogger)
+	s.httpServer, err = NewHTTPServer(s.metadata["http_addr"].(string), s.metadata["grpc_addr"].(string), s.logger, s.httpLogger)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return
@@ -252,7 +234,7 @@ func (s *Server) Start() {
 			return
 		}
 
-		err = client.Join(s.node)
+		err = client.SetNode(s.nodeId, s.metadata)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return

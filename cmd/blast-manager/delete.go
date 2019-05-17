@@ -20,21 +20,16 @@ import (
 	"os"
 
 	"github.com/mosuka/blast/manager"
-	pbfederation "github.com/mosuka/blast/protobuf/management"
 	"github.com/urfave/cli"
 )
 
 func execDelete(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 
-	key := c.String("key")
+	key := c.Args().Get(0)
 	if key == "" {
 		err := errors.New("key argument must be set")
 		return err
-	}
-
-	req := &pbfederation.KeyValuePair{
-		Key: key,
 	}
 
 	client, err := manager.NewGRPCClient(grpcAddr)
@@ -44,11 +39,11 @@ func execDelete(c *cli.Context) error {
 	defer func() {
 		err := client.Close()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			_, _ = fmt.Fprintln(os.Stderr, err)
 		}
 	}()
 
-	err = client.Delete(req)
+	err = client.Delete(key)
 	if err != nil {
 		return err
 	}

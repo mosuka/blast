@@ -155,24 +155,151 @@ func Test_Has(t *testing.T) {
 
 func Test_Set(t *testing.T) {
 	map1 := Map{}
-	err := map1.Set("a/b", Map{"c": "ABC"})
+
+	err := map1.Set("/", Map{"a": "A"})
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	exp1 := Map{"a": Map{"b": Map{"c": "ABC"}}}
+	exp1 := Map{
+		"a": "A",
+	}
 	act1 := map1
 	if !reflect.DeepEqual(exp1, act1) {
 		t.Errorf("expected content to see %v, saw %v", exp1, act1)
 	}
-	err = map1.Set("a/b", Map{"d": "ABD"})
+
+	err = map1.Set("/", Map{"A": "a"})
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	exp2 := Map{"a": Map{"b": Map{"d": "ABD"}}}
+	exp2 := Map{
+		"A": "a",
+	}
 	act2 := map1
 	if !reflect.DeepEqual(exp2, act2) {
 		t.Errorf("expected content to see %v, saw %v", exp2, act2)
 	}
+
+	err = map1.Set("/", Map{"A": 1})
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	exp3 := Map{
+		"A": 1,
+	}
+	act3 := map1
+	if !reflect.DeepEqual(exp3, act3) {
+		t.Errorf("expected content to see %v, saw %v", exp2, act2)
+	}
+
+	err = map1.Set("/A", "AAA")
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	exp4 := Map{
+		"A": "AAA",
+	}
+	act4 := map1
+	if !reflect.DeepEqual(exp4, act4) {
+		t.Errorf("expected content to see %v, saw %v", exp4, act4)
+	}
+
+	err = map1.Set("/B", "BBB")
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	exp5 := Map{
+		"A": "AAA",
+		"B": "BBB",
+	}
+	act5 := map1
+	if !reflect.DeepEqual(exp5, act5) {
+		t.Errorf("expected content to see %v, saw %v", exp5, act5)
+	}
+
+	err = map1.Set("/C", map[string]interface{}{"D": "CCC-DDD"})
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	exp6 := Map{
+		"A": "AAA",
+		"B": "BBB",
+		"C": Map{
+			"D": "CCC-DDD",
+		},
+	}
+	act6 := map1
+	if !reflect.DeepEqual(exp6, act6) {
+		t.Errorf("expected content to see %v, saw %v", exp6, act6)
+	}
+}
+
+func Test_Merge(t *testing.T) {
+	map1 := Map{}
+
+	err := map1.Merge("/", Map{"a": "A"})
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	exp1 := Map{
+		"a": "A",
+	}
+	act1 := map1
+	if !reflect.DeepEqual(exp1, act1) {
+		t.Errorf("expected content to see %v, saw %v", exp1, act1)
+	}
+
+	err = map1.Merge("/a", "a")
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	exp2 := Map{
+		"a": "a",
+	}
+	act2 := map1
+	if !reflect.DeepEqual(exp2, act2) {
+		t.Errorf("expected content to see %v, saw %v", exp2, act2)
+	}
+
+	err = map1.Merge("/", Map{"a": 1})
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	exp3 := Map{
+		"a": 1,
+	}
+	act3 := map1
+	if !reflect.DeepEqual(exp3, act3) {
+		t.Errorf("expected content to see %v, saw %v", exp3, act3)
+	}
+
+	err = map1.Merge("/", Map{"b": 2})
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	exp4 := Map{
+		"a": 1,
+		"b": 2,
+	}
+	act4 := map1
+	if !reflect.DeepEqual(exp4, act4) {
+		t.Errorf("expected content to see %v, saw %v", exp4, act4)
+	}
+
+	err = map1.Merge("/c", 3)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	exp5 := Map{
+		"a": 1,
+		"b": 2,
+		"c": 3,
+	}
+	act5 := map1
+	if !reflect.DeepEqual(exp5, act5) {
+		t.Errorf("expected content to see %v, saw %v", exp5, act5)
+	}
+
 }
 
 func Test_Get(t *testing.T) {

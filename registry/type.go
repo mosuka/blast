@@ -21,9 +21,6 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/mapping"
-	"github.com/mosuka/blast/protobuf/index"
-	"github.com/mosuka/blast/protobuf/management"
-	"github.com/mosuka/blast/protobuf/raft"
 )
 
 func init() {
@@ -49,11 +46,6 @@ func init() {
 
 	RegisterType("map[string]interface {}", reflect.TypeOf((map[string]interface{})(nil)))
 	RegisterType("[]interface {}", reflect.TypeOf(([]interface{})(nil)))
-
-	RegisterType("index.Document", reflect.TypeOf(index.Document{}))
-	RegisterType("management.KeyValuePair", reflect.TypeOf(management.KeyValuePair{}))
-	RegisterType("raft.Node", reflect.TypeOf(raft.Node{}))
-	RegisterType("raft.Cluster", reflect.TypeOf(raft.Cluster{}))
 
 	RegisterType("mapping.IndexMappingImpl", reflect.TypeOf(mapping.IndexMappingImpl{}))
 	RegisterType("bleve.SearchRequest", reflect.TypeOf(bleve.SearchRequest{}))

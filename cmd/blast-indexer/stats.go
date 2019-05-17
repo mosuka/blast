@@ -35,7 +35,7 @@ func execStats(c *cli.Context) error {
 	defer func() {
 		err := client.Close()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			_, _ = fmt.Fprintln(os.Stderr, err)
 		}
 	}()
 
@@ -45,23 +45,23 @@ func execStats(c *cli.Context) error {
 	}
 
 	// Any -> map[string]interface{}
-	var statsMap *map[string]interface{}
-	statsInstance, err := protobuf.MarshalAny(resp.Stats)
+	var indexStats *map[string]interface{}
+	statsInstance, err := protobuf.MarshalAny(resp.IndexStats)
 	if err != nil {
 		return err
 	}
 	if statsInstance == nil {
 		return errors.New("nil")
 	}
-	statsMap = statsInstance.(*map[string]interface{})
+	indexStats = statsInstance.(*map[string]interface{})
 
 	// map[string]interface -> []byte
-	fieldsBytes, err := json.MarshalIndent(statsMap, "", "  ")
+	indexStatsBytes, err := json.MarshalIndent(indexStats, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", string(fieldsBytes)))
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(indexStatsBytes)))
 
 	return nil
 }

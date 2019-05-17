@@ -26,6 +26,8 @@ func execJoin(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 	peerAddr := c.String("peer-addr")
 
+	// TODO: set target metadeta from CLI
+
 	targetClient, err := manager.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
@@ -33,11 +35,11 @@ func execJoin(c *cli.Context) error {
 	defer func() {
 		err := targetClient.Close()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			_, _ = fmt.Fprintln(os.Stderr, err)
 		}
 	}()
 
-	node, err := targetClient.GetNode()
+	metadata, err := targetClient.GetNode("")
 	if err != nil {
 		return err
 	}
@@ -49,11 +51,11 @@ func execJoin(c *cli.Context) error {
 	defer func() {
 		err := targetClient.Close()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			_, _ = fmt.Fprintln(os.Stderr, err)
 		}
 	}()
 
-	err = peerClient.Join(node)
+	err = peerClient.SetNode("", metadata)
 	if err != nil {
 		return err
 	}

@@ -12,6 +12,10 @@ import (
 
 type Map map[string]interface{}
 
+func New() Map {
+	return Map{}
+}
+
 func FromMap(src map[string]interface{}) Map {
 	return normalize(src).(Map)
 }
@@ -102,21 +106,9 @@ func (m Map) Has(key string) (bool, error) {
 }
 
 func (m Map) Set(key string, value interface{}) error {
-	exist, err := m.Has(key)
-	if err != nil && err != ErrNotFound {
-		return err
-	}
+	_ = m.Delete(key)
 
-	if exist {
-		err = m.Delete(key)
-		if err != nil {
-			return err
-		}
-	}
-
-	mm := makeMap(key, value).(Map)
-
-	err = mergo.Merge(&m, mm, mergo.WithOverride)
+	err := m.Merge(key, value)
 	if err != nil {
 		return err
 	}
@@ -127,7 +119,7 @@ func (m Map) Set(key string, value interface{}) error {
 func (m Map) Merge(key string, value interface{}) error {
 	mm := makeMap(key, value).(Map)
 
-	err := mergo.Merge(&m, mm)
+	err := mergo.Merge(&m, mm, mergo.WithOverride)
 	if err != nil {
 		return err
 	}
@@ -138,9 +130,16 @@ func (m Map) Merge(key string, value interface{}) error {
 func (m Map) Get(key string) (interface{}, error) {
 	var tmpMap interface{}
 
-	var value interface{}
 	tmpMap = m
+
+	keys := splitKey(key)
+
+	if len(keys) <= 0 {
+		return tmpMap.(Map).ToMap(), nil
+	}
+
 	iter := newIterator(splitKey(key))
+	var value interface{}
 	for {
 		k, err := iter.value()
 		if err != nil {
@@ -167,6 +166,18 @@ func (m Map) Delete(key string) error {
 	var tmpMap interface{}
 
 	tmpMap = m
+
+	keys := splitKey(key)
+
+	if len(keys) <= 0 {
+		// clear map
+		err := m.Clear()
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
 	iter := newIterator(splitKey(key))
 	for {
 		k, err := iter.value()
@@ -185,6 +196,14 @@ func (m Map) Delete(key string) error {
 			delete(tmpMap.(Map), k)
 			break
 		}
+	}
+
+	return nil
+}
+
+func (m Map) Clear() error {
+	for k := range m {
+		delete(m, k)
 	}
 
 	return nil

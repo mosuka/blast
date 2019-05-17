@@ -166,7 +166,8 @@ func main() {
 					Usage: "gRPC address to connect to",
 				},
 			},
-			Action: execJoin,
+			ArgsUsage: "[id]",
+			Action:    execJoin,
 		},
 		{
 			Name:  "leave",
@@ -177,13 +178,9 @@ func main() {
 					Value: ":7070",
 					Usage: "Existing gRPC server listen address to join to the cluster",
 				},
-				cli.StringFlag{
-					Name:  "node-id",
-					Value: "",
-					Usage: "Node ID",
-				},
 			},
-			Action: execLeave,
+			ArgsUsage: "[id]",
+			Action:    execLeave,
 		},
 		{
 			Name:  "node",
@@ -254,13 +251,9 @@ func main() {
 					Value: ":7070",
 					Usage: "gRPC address to connect to",
 				},
-				cli.StringFlag{
-					Name:  "id",
-					Value: "",
-					Usage: "document id",
-				},
 			},
-			Action: execGet,
+			ArgsUsage: "[id]",
+			Action:    execGet,
 		},
 		{
 			Name:  "index",
@@ -271,13 +264,8 @@ func main() {
 					Value: ":7070",
 					Usage: "gRPC address to connect to",
 				},
-				cli.StringFlag{
-					Name:  "id",
-					Value: "",
-					Usage: "document id",
-				},
 			},
-			ArgsUsage: "[documents | fields]",
+			ArgsUsage: "[documents | [id] [fields]]",
 			Action:    execIndex,
 		},
 		{
@@ -295,7 +283,7 @@ func main() {
 					Usage: "document id",
 				},
 			},
-			ArgsUsage: "[documents]",
+			ArgsUsage: "[id] ...",
 			Action:    execDelete,
 		},
 		{

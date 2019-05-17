@@ -25,7 +25,6 @@ import (
 	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/index"
-	"github.com/mosuka/blast/protobuf/raft"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -76,46 +75,67 @@ func (c *GRPCClient) Close() error {
 	return c.ctx.Err()
 }
 
-func (c *GRPCClient) Join(node *raft.Node, opts ...grpc.CallOption) error {
-	_, err := c.client.Join(c.ctx, node, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return errors.New(st.Message())
+func (c *GRPCClient) GetNode(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
+	req := &index.GetNodeRequest{
+		Id: id,
 	}
 
-	return nil
-}
-
-func (c *GRPCClient) Leave(node *raft.Node, opts ...grpc.CallOption) error {
-	_, err := c.client.Leave(c.ctx, node, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return errors.New(st.Message())
-	}
-
-	return nil
-}
-
-func (c *GRPCClient) GetNode(opts ...grpc.CallOption) (*raft.Node, error) {
-	node, err := c.client.GetNode(c.ctx, &empty.Empty{}, opts...)
+	resp, err := c.client.GetNode(c.ctx, req, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
 		return nil, errors.New(st.Message())
 	}
 
-	return node, nil
+	ins, err := protobuf.MarshalAny(resp.Metadata)
+	metadata := *ins.(*map[string]interface{})
+
+	return metadata, nil
 }
 
-func (c *GRPCClient) GetCluster(opts ...grpc.CallOption) (*raft.Cluster, error) {
-	cluster, err := c.client.GetCluster(c.ctx, &empty.Empty{}, opts...)
+func (c *GRPCClient) SetNode(id string, metadata map[string]interface{}, opts ...grpc.CallOption) error {
+	metadataAny := &any.Any{}
+	err := protobuf.UnmarshalAny(metadata, metadataAny)
+	if err != nil {
+		return err
+	}
+
+	req := &index.SetNodeRequest{
+		Id:       id,
+		Metadata: metadataAny,
+	}
+
+	_, err = c.client.SetNode(c.ctx, req, opts...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *GRPCClient) DeleteNode(id string, opts ...grpc.CallOption) error {
+	req := &index.DeleteNodeRequest{
+		Id: id,
+	}
+
+	_, err := c.client.DeleteNode(c.ctx, req, opts...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *GRPCClient) GetCluster(opts ...grpc.CallOption) (map[string]interface{}, error) {
+	resp, err := c.client.GetCluster(c.ctx, &empty.Empty{}, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
 		return nil, errors.New(st.Message())
 	}
+
+	ins, err := protobuf.MarshalAny(resp.Cluster)
+	cluster := *ins.(*map[string]interface{})
 
 	return cluster, nil
 }
@@ -131,30 +151,34 @@ func (c *GRPCClient) Snapshot(opts ...grpc.CallOption) error {
 	return nil
 }
 
-func (c *GRPCClient) LivenessProbe(opts ...grpc.CallOption) (*index.LivenessStatus, error) {
-	livenessStatus, err := c.client.LivenessProbe(c.ctx, &empty.Empty{})
+func (c *GRPCClient) LivenessProbe(opts ...grpc.CallOption) (string, error) {
+	resp, err := c.client.LivenessProbe(c.ctx, &empty.Empty{})
 	if err != nil {
 		st, _ := status.FromError(err)
 
-		return nil, errors.New(st.Message())
+		return index.LivenessProbeResponse_UNKNOWN.String(), errors.New(st.Message())
 	}
 
-	return livenessStatus, nil
+	return resp.State.String(), nil
 }
 
-func (c *GRPCClient) ReadinessProbe(opts ...grpc.CallOption) (*index.ReadinessStatus, error) {
-	readinessProbe, err := c.client.ReadinessProbe(c.ctx, &empty.Empty{})
+func (c *GRPCClient) ReadinessProbe(opts ...grpc.CallOption) (string, error) {
+	resp, err := c.client.ReadinessProbe(c.ctx, &empty.Empty{})
 	if err != nil {
 		st, _ := status.FromError(err)
 
-		return nil, errors.New(st.Message())
+		return index.ReadinessProbeResponse_UNKNOWN.String(), errors.New(st.Message())
 	}
 
-	return readinessProbe, nil
+	return resp.State.String(), nil
 }
 
-func (c *GRPCClient) Get(doc *index.Document, opts ...grpc.CallOption) (*index.Document, error) {
-	retDoc, err := c.client.Get(c.ctx, doc, opts...)
+func (c *GRPCClient) GetDocument(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
+	req := &index.GetDocumentRequest{
+		Id: id,
+	}
+
+	resp, err := c.client.GetDocument(c.ctx, req, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
@@ -166,7 +190,11 @@ func (c *GRPCClient) Get(doc *index.Document, opts ...grpc.CallOption) (*index.D
 		}
 	}
 
-	return retDoc, nil
+	ins, err := protobuf.MarshalAny(resp.Fields)
+	fields := *ins.(*map[string]interface{})
+
+	return fields, nil
+
 }
 
 func (c *GRPCClient) Search(searchRequest *bleve.SearchRequest, opts ...grpc.CallOption) (*bleve.SearchResult, error) {
@@ -203,53 +231,71 @@ func (c *GRPCClient) Search(searchRequest *bleve.SearchRequest, opts ...grpc.Cal
 	return searchResult, nil
 }
 
-func (c *GRPCClient) Index(docs []*index.Document, opts ...grpc.CallOption) (*index.UpdateResult, error) {
-	stream, err := c.client.Index(c.ctx, opts...)
+func (c *GRPCClient) IndexDocument(docs []map[string]interface{}, opts ...grpc.CallOption) (int, error) {
+	stream, err := c.client.IndexDocument(c.ctx, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
-		return nil, errors.New(st.Message())
+		return -1, errors.New(st.Message())
 	}
 
 	for _, doc := range docs {
-		err := stream.Send(doc)
+		id := doc["id"].(string)
+		fields := doc["fields"].(map[string]interface{})
+
+		fieldsAny := &any.Any{}
+		err := protobuf.UnmarshalAny(&fields, fieldsAny)
 		if err != nil {
-			return nil, err
+			return -1, err
+		}
+
+		req := &index.IndexDocumentRequest{
+			Id:     id,
+			Fields: fieldsAny,
+		}
+
+		err = stream.Send(req)
+		if err != nil {
+			return -1, err
 		}
 	}
 
-	rep, err := stream.CloseAndRecv()
+	resp, err := stream.CloseAndRecv()
 	if err != nil {
-		return nil, err
+		return -1, err
 	}
 
-	return rep, nil
+	return int(resp.Count), nil
 }
 
-func (c *GRPCClient) Delete(docs []*index.Document, opts ...grpc.CallOption) (*index.UpdateResult, error) {
-	stream, err := c.client.Delete(c.ctx, opts...)
+func (c *GRPCClient) DeleteDocument(ids []string, opts ...grpc.CallOption) (int, error) {
+	stream, err := c.client.DeleteDocument(c.ctx, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
-		return nil, errors.New(st.Message())
+		return -1, errors.New(st.Message())
 	}
 
-	for _, doc := range docs {
-		err := stream.Send(doc)
+	for _, id := range ids {
+		req := &index.DeleteDocumentRequest{
+			Id: id,
+		}
+
+		err := stream.Send(req)
 		if err != nil {
-			return nil, err
+			return -1, err
 		}
 	}
 
-	rep, err := stream.CloseAndRecv()
+	resp, err := stream.CloseAndRecv()
 	if err != nil {
-		return nil, err
+		return -1, err
 	}
 
-	return rep, nil
+	return int(resp.Count), nil
 }
 
-func (c *GRPCClient) GetIndexConfig(opts ...grpc.CallOption) (*index.IndexConfig, error) {
+func (c *GRPCClient) GetIndexConfig(opts ...grpc.CallOption) (*index.GetIndexConfigResponse, error) {
 	conf, err := c.client.GetIndexConfig(c.ctx, &empty.Empty{}, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
@@ -260,7 +306,7 @@ func (c *GRPCClient) GetIndexConfig(opts ...grpc.CallOption) (*index.IndexConfig
 	return conf, nil
 }
 
-func (c *GRPCClient) GetIndexStats(opts ...grpc.CallOption) (*index.IndexStats, error) {
+func (c *GRPCClient) GetIndexStats(opts ...grpc.CallOption) (*index.GetIndexStatsResponse, error) {
 	stats, err := c.client.GetIndexStats(c.ctx, &empty.Empty{}, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)

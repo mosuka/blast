@@ -20,10 +20,6 @@ import (
 	"os"
 	"reflect"
 	"testing"
-
-	"github.com/stretchr/objx"
-
-	"github.com/mosuka/blast/protobuf/raft"
 )
 
 func TestRaftFSM_GetNode(t *testing.T) {
@@ -44,58 +40,46 @@ func TestRaftFSM_GetNode(t *testing.T) {
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-
-	node1 := &raft.Node{
-		Id: "node1",
-		Metadata: &raft.Metadata{
-			BindAddr: ":16060",
-			GrpcAddr: ":17070",
-			HttpAddr: ":18080",
-			Leader:   false,
-		},
-	}
-	node2 := &raft.Node{
-		Id: "node2",
-		Metadata: &raft.Metadata{
-			BindAddr: ":16061",
-			GrpcAddr: ":17071",
-			HttpAddr: ":18081",
-			Leader:   false,
-		},
-	}
-	node3 := &raft.Node{
-		Id: "node3",
-		Metadata: &raft.Metadata{
-			BindAddr: ":16062",
-			GrpcAddr: ":17072",
-			HttpAddr: ":18082",
-			Leader:   false,
-		},
-	}
-
-	fsm.applySetNode(node1)
-	fsm.applySetNode(node2)
-	fsm.applySetNode(node3)
-
-	node, err := fsm.GetNode(&raft.Node{
-		Id: "node2",
-	})
+	err = fsm.Start()
+	defer func() {
+		err := fsm.Stop()
+		if err != nil {
+			t.Errorf("%v", err)
+		}
+	}()
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 
-	expectedValue := &raft.Node{
-		Id: "node2",
-		Metadata: &raft.Metadata{
-			BindAddr: ":16061",
-			GrpcAddr: ":17071",
-			HttpAddr: ":18081",
-			Leader:   false,
-		},
+	fsm.applySetNode("node1", map[string]interface{}{
+		"bind_addr": ":16060",
+		"grpc_addr": ":17070",
+		"http_addr": ":18080",
+	})
+	fsm.applySetNode("node2", map[string]interface{}{
+		"bind_addr": ":16061",
+		"grpc_addr": ":17071",
+		"http_addr": ":18081",
+	})
+	fsm.applySetNode("node3", map[string]interface{}{
+		"bind_addr": ":16062",
+		"grpc_addr": ":17072",
+		"http_addr": ":18082",
+	})
+
+	val1, err := fsm.GetNode("node2")
+	if err != nil {
+		t.Errorf("%v", err)
 	}
-	actualValue := node
-	if !reflect.DeepEqual(expectedValue, actualValue) {
-		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
+
+	exp1 := map[string]interface{}{
+		"bind_addr": ":16061",
+		"grpc_addr": ":17071",
+		"http_addr": ":18081",
+	}
+	act1 := val1
+	if !reflect.DeepEqual(exp1, act1) {
+		t.Errorf("expected content to see %v, saw %v", exp1, act1)
 	}
 
 }
@@ -118,82 +102,67 @@ func TestRaftFSM_SetNode(t *testing.T) {
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-
-	node1 := &raft.Node{
-		Id: "node1",
-		Metadata: &raft.Metadata{
-			BindAddr: ":16060",
-			GrpcAddr: ":17070",
-			HttpAddr: ":18080",
-			Leader:   false,
-		},
-	}
-	node2 := &raft.Node{
-		Id: "node2",
-		Metadata: &raft.Metadata{
-			BindAddr: ":16061",
-			GrpcAddr: ":17071",
-			HttpAddr: ":18081",
-			Leader:   false,
-		},
-	}
-	node3 := &raft.Node{
-		Id: "node3",
-		Metadata: &raft.Metadata{
-			BindAddr: ":16062",
-			GrpcAddr: ":17072",
-			HttpAddr: ":18082",
-			Leader:   false,
-		},
-	}
-
-	fsm.applySetNode(node1)
-	fsm.applySetNode(node2)
-	fsm.applySetNode(node3)
-
-	node, err := fsm.GetNode(&raft.Node{
-		Id: "node2",
-	})
+	err = fsm.Start()
+	defer func() {
+		err := fsm.Stop()
+		if err != nil {
+			t.Errorf("%v", err)
+		}
+	}()
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 
-	expectedValue := &raft.Node{
-		Id: "node2",
-		Metadata: &raft.Metadata{
-			BindAddr: ":16061",
-			GrpcAddr: ":17071",
-			HttpAddr: ":18081",
-			Leader:   false,
-		},
-	}
-	actualValue := node
-	if !reflect.DeepEqual(expectedValue, actualValue) {
-		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
-	}
-
-	node2.Metadata.Leader = true
-	fsm.applySetNode(node2)
-
-	node, err = fsm.GetNode(&raft.Node{
-		Id: "node2",
+	fsm.applySetNode("node1", map[string]interface{}{
+		"bind_addr": ":16060",
+		"grpc_addr": ":17070",
+		"http_addr": ":18080",
 	})
+	fsm.applySetNode("node2", map[string]interface{}{
+		"bind_addr": ":16061",
+		"grpc_addr": ":17071",
+		"http_addr": ":18081",
+	})
+	fsm.applySetNode("node3", map[string]interface{}{
+		"bind_addr": ":16062",
+		"grpc_addr": ":17072",
+		"http_addr": ":18082",
+	})
+
+	val1, err := fsm.GetNode("node2")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-
-	expectedValue = &raft.Node{
-		Id: "node2",
-		Metadata: &raft.Metadata{
-			BindAddr: ":16061",
-			GrpcAddr: ":17071",
-			HttpAddr: ":18081",
-			Leader:   true,
-		},
+	exp1 := map[string]interface{}{
+		"bind_addr": ":16061",
+		"grpc_addr": ":17071",
+		"http_addr": ":18081",
 	}
-	actualValue = node
-	if !reflect.DeepEqual(expectedValue, actualValue) {
-		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
+	act1 := val1
+	if !reflect.DeepEqual(exp1, act1) {
+		t.Errorf("expected content to see %v, saw %v", exp1, act1)
+	}
+
+	fsm.applySetNode("node2", map[string]interface{}{
+		"bind_addr": ":16061",
+		"grpc_addr": ":17071",
+		"http_addr": ":18081",
+		"leader":    true,
+	})
+
+	val2, err := fsm.GetNode("node2")
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	exp2 := map[string]interface{}{
+		"bind_addr": ":16061",
+		"grpc_addr": ":17071",
+		"http_addr": ":18081",
+		"leader":    true,
+	}
+	act2 := val2
+	if !reflect.DeepEqual(exp2, act2) {
+		t.Errorf("expected content to see %v, saw %v", exp2, act2)
 	}
 }
 
@@ -215,196 +184,57 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-
-	node1 := &raft.Node{
-		Id: "node1",
-		Metadata: &raft.Metadata{
-			BindAddr: ":16060",
-			GrpcAddr: ":17070",
-			HttpAddr: ":18080",
-			Leader:   false,
-		},
-	}
-	node2 := &raft.Node{
-		Id: "node2",
-		Metadata: &raft.Metadata{
-			BindAddr: ":16061",
-			GrpcAddr: ":17071",
-			HttpAddr: ":18081",
-			Leader:   false,
-		},
-	}
-	node3 := &raft.Node{
-		Id: "node3",
-		Metadata: &raft.Metadata{
-			BindAddr: ":16062",
-			GrpcAddr: ":17072",
-			HttpAddr: ":18082",
-			Leader:   false,
-		},
-	}
-
-	fsm.applySetNode(node1)
-	fsm.applySetNode(node2)
-	fsm.applySetNode(node3)
-
-	node, err := fsm.GetNode(&raft.Node{
-		Id: "node2",
-	})
+	err = fsm.Start()
+	defer func() {
+		err := fsm.Stop()
+		if err != nil {
+			t.Errorf("%v", err)
+		}
+	}()
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 
-	expectedValue := &raft.Node{
-		Id: "node2",
-		Metadata: &raft.Metadata{
-			BindAddr: ":16061",
-			GrpcAddr: ":17071",
-			HttpAddr: ":18081",
-			Leader:   false,
-		},
-	}
-	actualValue := node
-	if !reflect.DeepEqual(expectedValue, actualValue) {
-		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
-	}
-
-	node2.Metadata.Leader = true
-	fsm.applySetNode(node2)
-
-	node, err = fsm.GetNode(&raft.Node{
-		Id: "node2",
+	fsm.applySetNode("node1", map[string]interface{}{
+		"bind_addr": ":16060",
+		"grpc_addr": ":17070",
+		"http_addr": ":18080",
 	})
+	fsm.applySetNode("node2", map[string]interface{}{
+		"bind_addr": ":16061",
+		"grpc_addr": ":17071",
+		"http_addr": ":18081",
+	})
+	fsm.applySetNode("node3", map[string]interface{}{
+		"bind_addr": ":16062",
+		"grpc_addr": ":17072",
+		"http_addr": ":18082",
+	})
+
+	val1, err := fsm.GetNode("node2")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-
-	expectedValue = &raft.Node{
-		Id: "node2",
-		Metadata: &raft.Metadata{
-			BindAddr: ":16061",
-			GrpcAddr: ":17071",
-			HttpAddr: ":18081",
-			Leader:   true,
-		},
+	exp1 := map[string]interface{}{
+		"bind_addr": ":16061",
+		"grpc_addr": ":17071",
+		"http_addr": ":18081",
 	}
-	actualValue = node
-	if !reflect.DeepEqual(expectedValue, actualValue) {
-		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
+	act1 := val1
+	if !reflect.DeepEqual(exp1, act1) {
+		t.Errorf("expected content to see %v, saw %v", exp1, act1)
 	}
 
-	fsm.applyDeleteNode(&raft.Node{
-		Id: "node2",
-	})
+	fsm.applyDeleteNode("node2")
 
-	node, err = fsm.GetNode(&raft.Node{
-		Id: "node2",
-	})
+	val2, err := fsm.GetNode("node2")
 	if err == nil {
 		t.Errorf("expected error: %v", err)
 	}
 
-	actualValue = node
-	if reflect.DeepEqual(nil, actualValue) {
-		t.Errorf("expected content to see nil, saw %v", actualValue)
-	}
-}
-
-func TestRaftFSM_pathKeys(t *testing.T) {
-	tmp, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-	defer func() {
-		err := os.RemoveAll(tmp)
-		if err != nil {
-			t.Errorf("%v", err)
-		}
-	}()
-
-	logger := log.New(os.Stderr, "", 0)
-
-	fsm, err := NewRaftFSM(tmp, logger)
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-
-	keys := fsm.pathKeys("/a/b/c/d")
-
-	expectedValue := []string{"a", "b", "c", "d"}
-	actualValue := keys
-	if !reflect.DeepEqual(expectedValue, actualValue) {
-		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
-	}
-}
-
-func TestRaftFSM_makeSafePath(t *testing.T) {
-	tmp, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-	defer func() {
-		err := os.RemoveAll(tmp)
-		if err != nil {
-			t.Errorf("%v", err)
-		}
-	}()
-
-	logger := log.New(os.Stderr, "", 0)
-
-	fsm, err := NewRaftFSM(tmp, logger)
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-
-	safePath := fsm.makeSafePath("/a/b/c/d")
-
-	expectedValue := "a.b.c.d"
-	actualValue := safePath
-	if !reflect.DeepEqual(expectedValue, actualValue) {
-		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
-	}
-
-}
-
-func TestRaftFSM_walk(t *testing.T) {
-	tmp, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-	defer func() {
-		err := os.RemoveAll(tmp)
-		if err != nil {
-			t.Errorf("%v", err)
-		}
-	}()
-
-	logger := log.New(os.Stderr, "", 0)
-
-	fsm, err := NewRaftFSM(tmp, logger)
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-
-	data := map[string]interface{}{
-		"a": map[string]interface{}{
-			"b": map[string]interface{}{
-				"c": "abc",
-				"d": "abd",
-			},
-			"e": []interface{}{
-				"ae1",
-				"ae2",
-			},
-		},
-	}
-
-	val1 := fsm.normalize(objx.New(data))
-
-	exp1 := data
-	act1 := val1
-	if !reflect.DeepEqual(exp1, act1) {
-		t.Errorf("expected content to see %v, saw %v", exp1, act1)
+	act1 = val2
+	if reflect.DeepEqual(nil, act1) {
+		t.Errorf("expected content to see nil, saw %v", act1)
 	}
 }
 
@@ -426,6 +256,16 @@ func TestRaftFSM_Get(t *testing.T) {
 	if err != nil {
 		t.Errorf("%v", err)
 	}
+	err = fsm.Start()
+	defer func() {
+		err := fsm.Stop()
+		if err != nil {
+			t.Errorf("%v", err)
+		}
+	}()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
 
 	fsm.applySet("/", map[string]interface{}{"a": 1}, false)
 
@@ -437,34 +277,6 @@ func TestRaftFSM_Get(t *testing.T) {
 	expectedValue := 1
 	actualValue := value
 	if expectedValue != actualValue {
-		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
-	}
-}
-
-func TestRaftFSM_makeMap(t *testing.T) {
-	tmp, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-	defer func() {
-		err := os.RemoveAll(tmp)
-		if err != nil {
-			t.Errorf("%v", err)
-		}
-	}()
-
-	logger := log.New(os.Stderr, "", 0)
-
-	fsm, err := NewRaftFSM(tmp, logger)
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-
-	value := fsm.makeMap("/hoge/fuga", map[string]interface{}{"hoo": "var"})
-
-	expectedValue := map[string]interface{}{"hoge": map[string]interface{}{"fuga": map[string]interface{}{"hoo": "var"}}}
-	actualValue := value
-	if !reflect.DeepEqual(expectedValue, actualValue) {
 		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
 	}
 }
@@ -487,58 +299,125 @@ func TestRaftFSM_Set(t *testing.T) {
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-
-	fsm.applySet("/", map[string]interface{}{"a": 1}, true)
-
-	val1, err := fsm.Get("/a")
+	err = fsm.Start()
+	defer func() {
+		err := fsm.Stop()
+		if err != nil {
+			t.Errorf("%v", err)
+		}
+	}()
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 
-	exp1 := 1
+	// set {"a": 1}
+	fsm.applySet("/", map[string]interface{}{
+		"a": 1,
+	}, false)
+	val1, err := fsm.Get("/")
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	exp1 := map[string]interface{}{
+		"a": 1,
+	}
 	act1 := val1
-	if exp1 != act1 {
+	if !reflect.DeepEqual(exp1, act1) {
 		t.Errorf("expected content to see %v, saw %v", exp1, act1)
 	}
 
-	fsm.applySet("/b/bb", map[string]interface{}{"b": 1}, false)
-
-	val2, err := fsm.Get("/b")
+	// merge {"a": "A"}
+	fsm.applySet("/", map[string]interface{}{
+		"a": "A",
+	}, true)
+	val2, err := fsm.Get("/")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-
-	exp2 := map[string]interface{}{"bb": map[string]interface{}{"b": 1}}
-	act2 := val2.(map[string]interface{})
+	exp2 := map[string]interface{}{
+		"a": "A",
+	}
+	act2 := val2
 	if !reflect.DeepEqual(exp2, act2) {
 		t.Errorf("expected content to see %v, saw %v", exp2, act2)
 	}
 
-	fsm.applySet("/", map[string]interface{}{"a": 1}, false)
-
+	// set {"a": {"b": "AB"}}
+	fsm.applySet("/", map[string]interface{}{
+		"a": map[string]interface{}{
+			"b": "AB",
+		},
+	}, false)
 	val3, err := fsm.Get("/")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-
-	exp3 := map[string]interface{}{"a": 1}
+	exp3 := map[string]interface{}{
+		"a": map[string]interface{}{
+			"b": "AB",
+		},
+	}
 	act3 := val3
 	if !reflect.DeepEqual(exp3, act3) {
 		t.Errorf("expected content to see %v, saw %v", exp3, act3)
 	}
 
-	fsm.applySet("/", map[string]interface{}{"b": 2}, true)
-
+	// merge {"a": {"c": "AC"}}
+	fsm.applySet("/", map[string]interface{}{
+		"a": map[string]interface{}{
+			"c": "AC",
+		},
+	}, true)
 	val4, err := fsm.Get("/")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-
-	exp4 := map[string]interface{}{"a": 1, "b": 2}
+	exp4 := map[string]interface{}{
+		"a": map[string]interface{}{
+			"b": "AB",
+			"c": "AC",
+		},
+	}
 	act4 := val4
 	if !reflect.DeepEqual(exp4, act4) {
 		t.Errorf("expected content to see %v, saw %v", exp4, act4)
 	}
+
+	// set {"a": 1}
+	fsm.applySet("/", map[string]interface{}{
+		"a": 1,
+	}, false)
+	val5, err := fsm.Get("/")
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	exp5 := map[string]interface{}{
+		"a": 1,
+	}
+	act5 := val5
+	if !reflect.DeepEqual(exp5, act5) {
+		t.Errorf("expected content to see %v, saw %v", exp5, act5)
+	}
+
+	// TODO: merge {"a": {"c": "AC"}}
+	//fsm.applySet("/", map[string]interface{}{
+	//	"a": map[string]interface{}{
+	//		"c": "AC",
+	//	},
+	//}, true)
+	//val6, err := fsm.Get("/")
+	//if err != nil {
+	//	t.Errorf("%v", err)
+	//}
+	//exp6 := map[string]interface{}{
+	//	"a": map[string]interface{}{
+	//		"c": "AC",
+	//	},
+	//}
+	//act6 := val6
+	//if !reflect.DeepEqual(exp6, act6) {
+	//	t.Errorf("expected content to see %v, saw %v", exp6, act6)
+	//}
 }
 
 func TestRaftFSM_Delete(t *testing.T) {
@@ -556,6 +435,16 @@ func TestRaftFSM_Delete(t *testing.T) {
 	logger := log.New(os.Stderr, "", 0)
 
 	fsm, err := NewRaftFSM(tmp, logger)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	err = fsm.Start()
+	defer func() {
+		err := fsm.Stop()
+		if err != nil {
+			t.Errorf("%v", err)
+		}
+	}()
 	if err != nil {
 		t.Errorf("%v", err)
 	}

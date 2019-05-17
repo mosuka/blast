@@ -21,17 +21,18 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/mosuka/blast/errors"
+	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/management"
-	"github.com/mosuka/blast/protobuf/raft"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type GRPCService struct {
 	raftServer *RaftServer
-	chans      map[chan management.KeyValuePair]struct{}
+	chans      map[chan management.WatchResponse]struct{}
 	logger     *log.Logger
 	mu         sync.RWMutex
 }
@@ -39,17 +40,47 @@ type GRPCService struct {
 func NewGRPCService(raftServer *RaftServer, logger *log.Logger) (*GRPCService, error) {
 	return &GRPCService{
 		raftServer: raftServer,
-		chans:      make(map[chan management.KeyValuePair]struct{}),
+		chans:      make(map[chan management.WatchResponse]struct{}),
 		logger:     logger,
 	}, nil
 }
 
-func (s *GRPCService) Join(ctx context.Context, req *raft.Node) (*empty.Empty, error) {
+func (s *GRPCService) GetNode(ctx context.Context, req *management.GetNodeRequest) (*management.GetNodeResponse, error) {
+	s.logger.Printf("[INFO] get node %v", req)
+
+	resp := &management.GetNodeResponse{}
+
+	var err error
+
+	metadata, err := s.raftServer.GetNode(req.Id)
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	metadataAny := &any.Any{}
+	err = protobuf.UnmarshalAny(metadata, metadataAny)
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	resp.Metadata = metadataAny
+
+	return resp, nil
+}
+
+func (s *GRPCService) SetNode(ctx context.Context, req *management.SetNodeRequest) (*empty.Empty, error) {
 	s.logger.Printf("[INFO] %v", req)
 
 	resp := &empty.Empty{}
 
-	err := s.raftServer.Join(req)
+	ins, err := protobuf.MarshalAny(req.Metadata)
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	metadata := *ins.(*map[string]interface{})
+
+	err = s.raftServer.SetNode(req.Id, metadata)
 	if err != nil {
 		return resp, status.Error(codes.Internal, err.Error())
 	}
@@ -57,12 +88,12 @@ func (s *GRPCService) Join(ctx context.Context, req *raft.Node) (*empty.Empty, e
 	return resp, nil
 }
 
-func (s *GRPCService) Leave(ctx context.Context, req *raft.Node) (*empty.Empty, error) {
+func (s *GRPCService) DeleteNode(ctx context.Context, req *management.DeleteNodeRequest) (*empty.Empty, error) {
 	s.logger.Printf("[INFO] leave %v", req)
 
 	resp := &empty.Empty{}
 
-	err := s.raftServer.Leave(req)
+	err := s.raftServer.DeleteNode(req.Id)
 	if err != nil {
 		return resp, status.Error(codes.Internal, err.Error())
 	}
@@ -70,32 +101,23 @@ func (s *GRPCService) Leave(ctx context.Context, req *raft.Node) (*empty.Empty, 
 	return resp, nil
 }
 
-func (s *GRPCService) GetNode(ctx context.Context, req *empty.Empty) (*raft.Node, error) {
-	s.logger.Printf("[INFO] get node %v", req)
-
-	resp := &raft.Node{}
-
-	var err error
-
-	resp, err = s.raftServer.GetNode()
-	if err != nil {
-		return resp, status.Error(codes.Internal, err.Error())
-	}
-
-	return resp, nil
-}
-
-func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*raft.Cluster, error) {
+func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*management.GetClusterResponse, error) {
 	s.logger.Printf("[INFO] get cluster %v", req)
 
-	resp := &raft.Cluster{}
+	resp := &management.GetClusterResponse{}
 
-	var err error
-
-	resp, err = s.raftServer.GetCluster()
+	cluster, err := s.raftServer.GetCluster()
 	if err != nil {
 		return resp, status.Error(codes.Internal, err.Error())
 	}
+
+	clusterAny := &any.Any{}
+	err = protobuf.UnmarshalAny(cluster, clusterAny)
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	resp.Cluster = clusterAny
 
 	return resp, nil
 }
@@ -118,23 +140,23 @@ func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Em
 	return resp, nil
 }
 
-func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*management.LivenessStatus, error) {
-	resp := &management.LivenessStatus{
-		State: management.LivenessStatus_ALIVE,
+func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*management.LivenessProbeResponse, error) {
+	resp := &management.LivenessProbeResponse{
+		State: management.LivenessProbeResponse_ALIVE,
 	}
 
 	return resp, nil
 }
 
-func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*management.ReadinessStatus, error) {
-	resp := &management.ReadinessStatus{
-		State: management.ReadinessStatus_READY,
+func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*management.ReadinessProbeResponse, error) {
+	resp := &management.ReadinessProbeResponse{
+		State: management.ReadinessProbeResponse_READY,
 	}
 
 	return resp, nil
 }
 
-func (s *GRPCService) Get(ctx context.Context, req *management.KeyValuePair) (*management.KeyValuePair, error) {
+func (s *GRPCService) Get(ctx context.Context, req *management.GetRequest) (*management.GetResponse, error) {
 	start := time.Now()
 	s.mu.RLock()
 	defer func() {
@@ -142,11 +164,11 @@ func (s *GRPCService) Get(ctx context.Context, req *management.KeyValuePair) (*m
 		RecordMetrics(start, "get")
 	}()
 
-	resp := &management.KeyValuePair{}
+	resp := &management.GetResponse{}
 
 	var err error
 
-	resp, err = s.raftServer.Get(req)
+	value, err := s.raftServer.Get(req.Key)
 	if err != nil {
 		switch err {
 		case errors.ErrNotFound:
@@ -156,10 +178,18 @@ func (s *GRPCService) Get(ctx context.Context, req *management.KeyValuePair) (*m
 		}
 	}
 
+	valueAny := &any.Any{}
+	err = protobuf.UnmarshalAny(value, valueAny)
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	resp.Value = valueAny
+
 	return resp, nil
 }
 
-func (s *GRPCService) Set(ctx context.Context, req *management.KeyValuePair) (*empty.Empty, error) {
+func (s *GRPCService) Set(ctx context.Context, req *management.SetRequest) (*empty.Empty, error) {
 	start := time.Now()
 	s.mu.Lock()
 	defer func() {
@@ -169,7 +199,12 @@ func (s *GRPCService) Set(ctx context.Context, req *management.KeyValuePair) (*e
 
 	resp := &empty.Empty{}
 
-	err := s.raftServer.Set(req)
+	value, err := protobuf.MarshalAny(req.Value)
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	err = s.raftServer.Set(req.Key, value)
 	if err != nil {
 		switch err {
 		case errors.ErrNotFound:
@@ -181,13 +216,17 @@ func (s *GRPCService) Set(ctx context.Context, req *management.KeyValuePair) (*e
 
 	// notify
 	for c := range s.chans {
-		c <- *req
+		c <- management.WatchResponse{
+			Command: management.WatchResponse_SET,
+			Key:     req.Key,
+			Value:   req.Value,
+		}
 	}
 
 	return resp, nil
 }
 
-func (s *GRPCService) Delete(ctx context.Context, req *management.KeyValuePair) (*empty.Empty, error) {
+func (s *GRPCService) Delete(ctx context.Context, req *management.DeleteRequest) (*empty.Empty, error) {
 	start := time.Now()
 	s.mu.Lock()
 	defer func() {
@@ -199,7 +238,7 @@ func (s *GRPCService) Delete(ctx context.Context, req *management.KeyValuePair) 
 
 	resp := &empty.Empty{}
 
-	err := s.raftServer.Delete(req)
+	err := s.raftServer.Delete(req.Key)
 	if err != nil {
 		switch err {
 		case errors.ErrNotFound:
@@ -209,28 +248,36 @@ func (s *GRPCService) Delete(ctx context.Context, req *management.KeyValuePair) 
 		}
 	}
 
+	// notify
+	for c := range s.chans {
+		c <- management.WatchResponse{
+			Command: management.WatchResponse_DELETE,
+			Key:     req.Key,
+		}
+	}
+
 	return resp, nil
 }
 
-func (s *GRPCService) Watch(req *management.KeyValuePair, server management.Management_WatchServer) error {
-	kvpChan := make(chan management.KeyValuePair)
+func (s *GRPCService) Watch(req *management.WatchRequest, server management.Management_WatchServer) error {
+	chans := make(chan management.WatchResponse)
 
 	s.mu.Lock()
-	s.chans[kvpChan] = struct{}{}
+	s.chans[chans] = struct{}{}
 	s.mu.Unlock()
 
 	defer func() {
 		s.mu.Lock()
-		delete(s.chans, kvpChan)
+		delete(s.chans, chans)
 		s.mu.Unlock()
-		close(kvpChan)
+		close(chans)
 	}()
 
-	for kvp := range kvpChan {
-		if !strings.HasPrefix(kvp.Key, req.Key) {
+	for resp := range chans {
+		if !strings.HasPrefix(resp.Key, req.Key) {
 			continue
 		}
-		err := server.Send(&kvp)
+		err := server.Send(&resp)
 		if err != nil {
 			return status.Error(codes.Internal, err.Error())
 		}

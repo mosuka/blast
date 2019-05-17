@@ -20,47 +20,34 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/mosuka/blast/manager"
-	"github.com/mosuka/blast/protobuf"
-	pbfederation "github.com/mosuka/blast/protobuf/management"
 	"github.com/urfave/cli"
 )
 
 func execSet(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 
-	key := c.String("key")
+	key := c.Args().Get(0)
 	if key == "" {
 		err := errors.New("key argument must be set")
 		return err
 	}
 
-	value := c.Args().Get(0)
-	if value == "" {
+	valueStr := c.Args().Get(1)
+	if valueStr == "" {
 		err := errors.New("value argument must be set")
 		return err
 	}
 
-	// string -> map[string]interface{}
-	var valueMap map[string]interface{}
-	err := json.Unmarshal([]byte(value), &valueMap)
+	var value interface{}
+	err := json.Unmarshal([]byte(valueStr), &value)
 	if err != nil {
-		return err
-	}
-
-	// map[string]interface{} -> Any
-	valueAny := &any.Any{}
-	err = protobuf.UnmarshalAny(valueMap, valueAny)
-	if err != nil {
-		return err
-	}
-
-	// create PutRequest
-	req := &pbfederation.KeyValuePair{
-		Key: key,
-		//Value: []byte(value),
-		Value: valueAny,
+		switch err.(type) {
+		case *json.SyntaxError:
+			value = valueStr
+		default:
+			return err
+		}
 	}
 
 	client, err := manager.NewGRPCClient(grpcAddr)
@@ -70,11 +57,11 @@ func execSet(c *cli.Context) error {
 	defer func() {
 		err := client.Close()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			_, _ = fmt.Fprintln(os.Stderr, err)
 		}
 	}()
 
-	err = client.Set(req)
+	err = client.Set(key, value)
 	if err != nil {
 		return err
 	}

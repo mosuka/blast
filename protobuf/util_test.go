@@ -21,8 +21,6 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
 	"github.com/golang/protobuf/ptypes/any"
-	"github.com/mosuka/blast/protobuf/index"
-	"github.com/mosuka/blast/protobuf/raft"
 )
 
 func TestMarshalAny_Slice(t *testing.T) {
@@ -69,68 +67,68 @@ func TestMarshalAny_Map(t *testing.T) {
 	}
 }
 
-func TestMarshalAny_Document(t *testing.T) {
-	fieldsMap := map[string]interface{}{"f1": "aaa", "f2": 222, "f3": "ccc"}
-	fieldsAny := &any.Any{}
-	err := UnmarshalAny(fieldsMap, fieldsAny)
-	if err != nil {
-		t.Errorf("%v", err)
-	}
+//func TestMarshalAny_Document(t *testing.T) {
+//	fieldsMap := map[string]interface{}{"f1": "aaa", "f2": 222, "f3": "ccc"}
+//	fieldsAny := &any.Any{}
+//	err := UnmarshalAny(fieldsMap, fieldsAny)
+//	if err != nil {
+//		t.Errorf("%v", err)
+//	}
+//
+//	data := &index.Document{
+//		Id:     "1",
+//		Fields: fieldsAny,
+//	}
+//
+//	dataAny := &any.Any{}
+//	err = UnmarshalAny(data, dataAny)
+//	if err != nil {
+//		t.Errorf("%v", err)
+//	}
+//
+//	expectedType := "index.Document"
+//	actualType := dataAny.TypeUrl
+//	if expectedType != actualType {
+//		t.Errorf("expected content to see %s, saw %s", expectedType, actualType)
+//	}
+//
+//	expectedValue := []byte(`{"id":"1","fields":{"type_url":"map[string]interface {}","value":"eyJmMSI6ImFhYSIsImYyIjoyMjIsImYzIjoiY2NjIn0="}}`)
+//	actualValue := dataAny.Value
+//	if !bytes.Equal(expectedValue, actualValue) {
+//		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
+//	}
+//}
 
-	data := &index.Document{
-		Id:     "1",
-		Fields: fieldsAny,
-	}
-
-	dataAny := &any.Any{}
-	err = UnmarshalAny(data, dataAny)
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-
-	expectedType := "index.Document"
-	actualType := dataAny.TypeUrl
-	if expectedType != actualType {
-		t.Errorf("expected content to see %s, saw %s", expectedType, actualType)
-	}
-
-	expectedValue := []byte(`{"id":"1","fields":{"type_url":"map[string]interface {}","value":"eyJmMSI6ImFhYSIsImYyIjoyMjIsImYzIjoiY2NjIn0="}}`)
-	actualValue := dataAny.Value
-	if !bytes.Equal(expectedValue, actualValue) {
-		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
-	}
-}
-
-func TestMarshalAny_Node(t *testing.T) {
-	data := &raft.Node{
-		Id: "node1",
-		Metadata: &raft.Metadata{
-			GrpcAddr: ":5050",
-			DataDir:  "/tmp/blast/index1",
-			BindAddr: ":6060",
-			HttpAddr: ":8080",
-			Leader:   true,
-		},
-	}
-
-	dataAny := &any.Any{}
-	err := UnmarshalAny(data, dataAny)
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-
-	expectedType := "raft.Node"
-	actualType := dataAny.TypeUrl
-	if expectedType != actualType {
-		t.Errorf("expected content to see %s, saw %s", expectedType, actualType)
-	}
-
-	expectedValue := []byte(`{"id":"node1","metadata":{"bind_addr":":6060","grpc_addr":":5050","http_addr":":8080","data_dir":"/tmp/blast/index1","leader":true}}`)
-	actualValue := dataAny.Value
-	if !bytes.Equal(expectedValue, actualValue) {
-		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
-	}
-}
+//func TestMarshalAny_Node(t *testing.T) {
+//	data := &raft.Node{
+//		Id: "node1",
+//		Metadata: &raft.Metadata{
+//			GrpcAddr: ":5050",
+//			DataDir:  "/tmp/blast/index1",
+//			BindAddr: ":6060",
+//			HttpAddr: ":8080",
+//			Leader:   true,
+//		},
+//	}
+//
+//	dataAny := &any.Any{}
+//	err := UnmarshalAny(data, dataAny)
+//	if err != nil {
+//		t.Errorf("%v", err)
+//	}
+//
+//	expectedType := "raft.Node"
+//	actualType := dataAny.TypeUrl
+//	if expectedType != actualType {
+//		t.Errorf("expected content to see %s, saw %s", expectedType, actualType)
+//	}
+//
+//	expectedValue := []byte(`{"id":"node1","metadata":{"bind_addr":":6060","grpc_addr":":5050","http_addr":":8080","data_dir":"/tmp/blast/index1","leader":true}}`)
+//	actualValue := dataAny.Value
+//	if !bytes.Equal(expectedValue, actualValue) {
+//		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
+//	}
+//}
 
 func TestMarshalAny_SearchRequest(t *testing.T) {
 	data := bleve.NewSearchRequest(bleve.NewQueryStringQuery("blast"))
@@ -236,37 +234,37 @@ func TestUnmarshalAny_Map(t *testing.T) {
 	}
 }
 
-func TestUnmarshalAny_Document(t *testing.T) {
-	dataAny := &any.Any{
-		TypeUrl: "index.Document",
-		Value:   []byte(`{"id":"1","fields":{"type_url":"map[string]interface {}","value":"eyJmMSI6ImFhYSIsImYyIjoyMjIsImYzIjoiY2NjIn0="}}`),
-	}
-
-	ins, err := MarshalAny(dataAny)
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-
-	data := *ins.(*index.Document)
-
-	expected1 := "1"
-	actual1 := data.Id
-	if expected1 != actual1 {
-		t.Errorf("expected content to see %v, saw %v", expected1, actual1)
-	}
-
-	expected2 := "map[string]interface {}"
-	actual2 := data.Fields.TypeUrl
-	if expected2 != actual2 {
-		t.Errorf("expected content to see %v, saw %v", expected2, actual2)
-	}
-
-	expected3 := []byte(`{"f1":"aaa","f2":222,"f3":"ccc"}`)
-	actual3 := data.Fields.Value
-	if !bytes.Equal(expected3, actual3) {
-		t.Errorf("expected content to see %v, saw %v", expected3, actual3)
-	}
-}
+//func TestUnmarshalAny_Document(t *testing.T) {
+//	dataAny := &any.Any{
+//		TypeUrl: "index.Document",
+//		Value:   []byte(`{"id":"1","fields":{"type_url":"map[string]interface {}","value":"eyJmMSI6ImFhYSIsImYyIjoyMjIsImYzIjoiY2NjIn0="}}`),
+//	}
+//
+//	ins, err := MarshalAny(dataAny)
+//	if err != nil {
+//		t.Errorf("%v", err)
+//	}
+//
+//	data := *ins.(*index.Document)
+//
+//	expected1 := "1"
+//	actual1 := data.Id
+//	if expected1 != actual1 {
+//		t.Errorf("expected content to see %v, saw %v", expected1, actual1)
+//	}
+//
+//	expected2 := "map[string]interface {}"
+//	actual2 := data.Fields.TypeUrl
+//	if expected2 != actual2 {
+//		t.Errorf("expected content to see %v, saw %v", expected2, actual2)
+//	}
+//
+//	expected3 := []byte(`{"f1":"aaa","f2":222,"f3":"ccc"}`)
+//	actual3 := data.Fields.Value
+//	if !bytes.Equal(expected3, actual3) {
+//		t.Errorf("expected content to see %v, saw %v", expected3, actual3)
+//	}
+//}
 
 func TestUnmarshalAny_SearchRequest(t *testing.T) {
 	dataAny := &any.Any{

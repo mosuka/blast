@@ -17,12 +17,15 @@ package manager
 import (
 	"log"
 
+	"github.com/golang/protobuf/ptypes/any"
 	accesslog "github.com/mash/go-accesslog"
-	"github.com/mosuka/blast/protobuf/raft"
+	"github.com/mosuka/blast/protobuf"
 )
 
 type Server struct {
-	node     *raft.Node
+	id       string
+	metadata map[string]interface{}
+
 	peerAddr string
 
 	indexConfig map[string]interface{}
@@ -35,9 +38,10 @@ type Server struct {
 	httpLogger accesslog.Logger
 }
 
-func NewServer(node *raft.Node, peerAddr string, indexConfig map[string]interface{}, logger *log.Logger, httpLogger accesslog.Logger) (*Server, error) {
+func NewServer(id string, metadata map[string]interface{}, peerAddr string, indexConfig map[string]interface{}, logger *log.Logger, httpLogger accesslog.Logger) (*Server, error) {
 	return &Server{
-		node:        node,
+		id:          id,
+		metadata:    metadata,
 		peerAddr:    peerAddr,
 		indexConfig: indexConfig,
 		logger:      logger,
@@ -53,21 +57,21 @@ func (s *Server) Start() {
 	s.logger.Printf("[INFO] bootstrap: %v", bootstrap)
 
 	// create raft server
-	s.raftServer, err = NewRaftServer(s.node, bootstrap, s.indexConfig, s.logger)
+	s.raftServer, err = NewRaftServer(s.id, s.metadata, bootstrap, s.indexConfig, s.logger)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return
 	}
 
 	// create gRPC server
-	s.grpcServer, err = NewGRPCServer(s.node.Metadata.GrpcAddr, s.raftServer, s.logger)
+	s.grpcServer, err = NewGRPCServer(s.metadata["grpc_addr"].(string), s.raftServer, s.logger)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return
 	}
 
 	// create HTTP server
-	s.httpServer, err = NewHTTPServer(s.node.Metadata.HttpAddr, s.node.Metadata.GrpcAddr, s.logger, s.httpLogger)
+	s.httpServer, err = NewHTTPServer(s.metadata["http_addr"].(string), s.metadata["grpc_addr"].(string), s.logger, s.httpLogger)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return
@@ -113,7 +117,15 @@ func (s *Server) Start() {
 			return
 		}
 
-		err = client.Join(s.node)
+		// map[string]interface{} -> Any
+		metadataAny := &any.Any{}
+		err = protobuf.UnmarshalAny(s.metadata, metadataAny)
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			return
+		}
+
+		err = client.SetNode(s.id, s.metadata)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return

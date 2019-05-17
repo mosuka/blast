@@ -16,18 +16,14 @@ package manager
 
 import (
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/gorilla/mux"
 	blasterrors "github.com/mosuka/blast/errors"
 	blasthttp "github.com/mosuka/blast/http"
-	"github.com/mosuka/blast/protobuf"
-	"github.com/mosuka/blast/protobuf/management"
 	"github.com/mosuka/blast/version"
 )
 
@@ -84,13 +80,9 @@ func (h *GetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 
-	key := "/" + vars["path"]
+	key := vars["path"]
 
-	kvp := &management.KeyValuePair{
-		Key: key,
-	}
-
-	retKVP, err := h.client.Get(kvp)
+	value, err := h.client.Get(key)
 	if err != nil {
 		switch err {
 		case blasterrors.ErrNotFound:
@@ -112,41 +104,8 @@ func (h *GetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Any -> interface{}
-	valueInstance, err := protobuf.MarshalAny(retKVP.Value)
-	if err != nil {
-		httpStatus = http.StatusInternalServerError
-
-		msgMap := map[string]interface{}{
-			"message": err.Error(),
-			"status":  httpStatus,
-		}
-
-		content, err = blasthttp.NewJSONMessage(msgMap)
-		if err != nil {
-			h.logger.Printf("[ERR] %v", err)
-		}
-
-		return
-	}
-	if valueInstance == nil {
-		httpStatus = http.StatusInternalServerError
-
-		msgMap := map[string]interface{}{
-			"message": errors.New("nil"),
-			"status":  httpStatus,
-		}
-
-		content, err = blasthttp.NewJSONMessage(msgMap)
-		if err != nil {
-			h.logger.Printf("[ERR] %v", err)
-		}
-
-		return
-	}
-
 	// interface{} -> []byte
-	content, err = json.MarshalIndent(valueInstance, "", "  ")
+	content, err = json.MarshalIndent(value, "", "  ")
 	if err != nil {
 		httpStatus = http.StatusInternalServerError
 
@@ -187,7 +146,7 @@ func (h *PutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 
-	key := "/" + vars["path"]
+	key := vars["path"]
 
 	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -207,8 +166,8 @@ func (h *PutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// string -> map[string]interface{}
-	var valueMap map[string]interface{}
-	err = json.Unmarshal(bodyBytes, &valueMap)
+	var value interface{}
+	err = json.Unmarshal(bodyBytes, &value)
 	if err != nil {
 		httpStatus = http.StatusBadRequest
 
@@ -225,31 +184,7 @@ func (h *PutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// map[string]interface{} -> Any
-	valueAny := &any.Any{}
-	err = protobuf.UnmarshalAny(valueMap, valueAny)
-	if err != nil {
-		httpStatus = http.StatusInternalServerError
-
-		msgMap := map[string]interface{}{
-			"message": err.Error(),
-			"status":  httpStatus,
-		}
-
-		content, err = blasthttp.NewJSONMessage(msgMap)
-		if err != nil {
-			h.logger.Printf("[ERR] %v", err)
-		}
-
-		return
-	}
-
-	kvp := &management.KeyValuePair{
-		Key:   key,
-		Value: valueAny,
-	}
-
-	err = h.client.Set(kvp)
+	err = h.client.Set(key, value)
 	if err != nil {
 		httpStatus = http.StatusInternalServerError
 
@@ -290,13 +225,9 @@ func (h *DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 
-	key := "/" + vars["path"]
+	key := vars["path"]
 
-	kvp := &management.KeyValuePair{
-		Key: key,
-	}
-
-	err := h.client.Delete(kvp)
+	err := h.client.Delete(key)
 	if err != nil {
 		httpStatus = http.StatusInternalServerError
 

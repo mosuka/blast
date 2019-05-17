@@ -16,6 +16,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 
@@ -26,6 +27,11 @@ import (
 func execNode(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 
+	nodeId := c.Args().Get(0)
+	if nodeId == "" {
+		return errors.New("id is required")
+	}
+
 	client, err := manager.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
@@ -33,21 +39,21 @@ func execNode(c *cli.Context) error {
 	defer func() {
 		err := client.Close()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			_, _ = fmt.Fprintln(os.Stderr, err)
 		}
 	}()
 
-	node, err := client.GetNode()
+	metadata, err := client.GetNode(nodeId)
 	if err != nil {
 		return err
 	}
 
-	nodesBytes, err := json.MarshalIndent(node, "", "  ")
+	metadataBytes, err := json.MarshalIndent(metadata, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", string(nodesBytes)))
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(metadataBytes)))
 
 	return nil
 }
