@@ -18,7 +18,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/mosuka/blast/protobuf/index"
+	"github.com/mosuka/blast/protobuf"
 	"google.golang.org/grpc"
 )
 
@@ -37,7 +37,7 @@ func NewGRPCServer(grpcAddr string, raftServer *RaftServer, logger *log.Logger) 
 		return nil, err
 	}
 
-	index.RegisterIndexServer(server, service)
+	protobuf.RegisterBlastServer(server, service)
 
 	listener, err := net.Listen("tcp", grpcAddr)
 	if err != nil {

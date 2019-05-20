@@ -18,7 +18,8 @@ import (
 	"log"
 	"net"
 
-	"github.com/mosuka/blast/protobuf/federation"
+	"github.com/mosuka/blast/protobuf"
+
 	"google.golang.org/grpc"
 )
 
@@ -38,7 +39,7 @@ func NewGRPCServer(managerAddr string, grpcAddr string, logger *log.Logger) (*GR
 		return nil, err
 	}
 
-	federation.RegisterFederationServer(server, service)
+	protobuf.RegisterBlastServer(server, service)
 
 	listener, err := net.Listen("tcp", grpcAddr)
 	if err != nil {

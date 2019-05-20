@@ -277,11 +277,6 @@ func main() {
 					Value: ":7070",
 					Usage: "address to connect to",
 				},
-				cli.StringFlag{
-					Name:  "id",
-					Value: "",
-					Usage: "document id",
-				},
 			},
 			ArgsUsage: "[id] ...",
 			Action:    execDelete,
@@ -337,6 +332,6 @@ func main() {
 
 	err := app.Run(os.Args)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		_, _ = fmt.Fprintln(os.Stderr, err)
 	}
 }

@@ -32,16 +32,16 @@ func execLivenessProbe(c *cli.Context) error {
 	defer func() {
 		err := client.Close()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			_, _ = fmt.Fprintln(os.Stderr, err)
 		}
 	}()
 
-	resp, err := client.LivenessProbe()
+	state, err := client.LivenessProbe()
 	if err != nil {
 		return err
 	}
 
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", resp.State))
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", state))
 
 	return nil
 }

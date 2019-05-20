@@ -24,7 +24,6 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
-	"github.com/mosuka/blast/protobuf/index"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -34,7 +33,7 @@ type GRPCClient struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 	conn   *grpc.ClientConn
-	client index.IndexClient
+	client protobuf.BlastClient
 }
 
 func NewGRPCClient(grpcAddr string) (*GRPCClient, error) {
@@ -58,7 +57,7 @@ func NewGRPCClient(grpcAddr string) (*GRPCClient, error) {
 		ctx:    ctx,
 		cancel: cancel,
 		conn:   conn,
-		client: index.NewIndexClient(conn),
+		client: protobuf.NewBlastClient(conn),
 	}, nil
 }
 
@@ -76,7 +75,7 @@ func (c *GRPCClient) Close() error {
 }
 
 func (c *GRPCClient) GetNode(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
-	req := &index.GetNodeRequest{
+	req := &protobuf.GetNodeRequest{
 		Id: id,
 	}
 
@@ -100,7 +99,7 @@ func (c *GRPCClient) SetNode(id string, metadata map[string]interface{}, opts ..
 		return err
 	}
 
-	req := &index.SetNodeRequest{
+	req := &protobuf.SetNodeRequest{
 		Id:       id,
 		Metadata: metadataAny,
 	}
@@ -114,7 +113,7 @@ func (c *GRPCClient) SetNode(id string, metadata map[string]interface{}, opts ..
 }
 
 func (c *GRPCClient) DeleteNode(id string, opts ...grpc.CallOption) error {
-	req := &index.DeleteNodeRequest{
+	req := &protobuf.DeleteNodeRequest{
 		Id: id,
 	}
 
@@ -156,7 +155,7 @@ func (c *GRPCClient) LivenessProbe(opts ...grpc.CallOption) (string, error) {
 	if err != nil {
 		st, _ := status.FromError(err)
 
-		return index.LivenessProbeResponse_UNKNOWN.String(), errors.New(st.Message())
+		return protobuf.LivenessProbeResponse_UNKNOWN.String(), errors.New(st.Message())
 	}
 
 	return resp.State.String(), nil
@@ -167,14 +166,14 @@ func (c *GRPCClient) ReadinessProbe(opts ...grpc.CallOption) (string, error) {
 	if err != nil {
 		st, _ := status.FromError(err)
 
-		return index.ReadinessProbeResponse_UNKNOWN.String(), errors.New(st.Message())
+		return protobuf.ReadinessProbeResponse_UNKNOWN.String(), errors.New(st.Message())
 	}
 
 	return resp.State.String(), nil
 }
 
 func (c *GRPCClient) GetDocument(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
-	req := &index.GetDocumentRequest{
+	req := &protobuf.GetDocumentRequest{
 		Id: id,
 	}
 
@@ -205,7 +204,7 @@ func (c *GRPCClient) Search(searchRequest *bleve.SearchRequest, opts ...grpc.Cal
 		return nil, err
 	}
 
-	req := &index.SearchRequest{
+	req := &protobuf.SearchRequest{
 		SearchRequest: searchRequestAny,
 	}
 
@@ -249,7 +248,7 @@ func (c *GRPCClient) IndexDocument(docs []map[string]interface{}, opts ...grpc.C
 			return -1, err
 		}
 
-		req := &index.IndexDocumentRequest{
+		req := &protobuf.IndexDocumentRequest{
 			Id:     id,
 			Fields: fieldsAny,
 		}
@@ -277,7 +276,7 @@ func (c *GRPCClient) DeleteDocument(ids []string, opts ...grpc.CallOption) (int,
 	}
 
 	for _, id := range ids {
-		req := &index.DeleteDocumentRequest{
+		req := &protobuf.DeleteDocumentRequest{
 			Id: id,
 		}
 
@@ -295,7 +294,7 @@ func (c *GRPCClient) DeleteDocument(ids []string, opts ...grpc.CallOption) (int,
 	return int(resp.Count), nil
 }
 
-func (c *GRPCClient) GetIndexConfig(opts ...grpc.CallOption) (*index.GetIndexConfigResponse, error) {
+func (c *GRPCClient) GetIndexConfig(opts ...grpc.CallOption) (*protobuf.GetIndexConfigResponse, error) {
 	conf, err := c.client.GetIndexConfig(c.ctx, &empty.Empty{}, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
@@ -306,7 +305,7 @@ func (c *GRPCClient) GetIndexConfig(opts ...grpc.CallOption) (*index.GetIndexCon
 	return conf, nil
 }
 
-func (c *GRPCClient) GetIndexStats(opts ...grpc.CallOption) (*index.GetIndexStatsResponse, error) {
+func (c *GRPCClient) GetIndexStats(opts ...grpc.CallOption) (*protobuf.GetIndexStatsResponse, error) {
 	stats, err := c.client.GetIndexStats(c.ctx, &empty.Empty{}, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)

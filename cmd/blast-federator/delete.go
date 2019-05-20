@@ -21,16 +21,15 @@ import (
 	"os"
 
 	"github.com/mosuka/blast/federator"
-	"github.com/mosuka/blast/protobuf/federation"
 	"github.com/urfave/cli"
 )
 
 func execDelete(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
-	id := c.String("id")
+	id := c.Args().Get(0)
 
 	// create documents
-	docs := make([]*federation.Document, 0)
+	ids := make([]string, 0)
 
 	if id == "" {
 		if c.NArg() == 0 {
@@ -41,26 +40,12 @@ func execDelete(c *cli.Context) error {
 		// documents
 		docsStr := c.Args().Get(0)
 
-		var docMaps []map[string]interface{}
-		err := json.Unmarshal([]byte(docsStr), &docMaps)
+		err := json.Unmarshal([]byte(docsStr), &ids)
 		if err != nil {
 			return err
 		}
-
-		for _, docMap := range docMaps {
-			// create document
-			doc := &federation.Document{
-				Id: docMap["id"].(string),
-			}
-
-			docs = append(docs, doc)
-		}
 	} else {
-		doc := &federation.Document{
-			Id: id,
-		}
-
-		docs = append(docs, doc)
+		ids = append(ids, id)
 	}
 
 	// create client
@@ -71,11 +56,11 @@ func execDelete(c *cli.Context) error {
 	defer func() {
 		err := client.Close()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			_, _ = fmt.Fprintln(os.Stderr, err)
 		}
 	}()
 
-	result, err := client.Delete(docs)
+	result, err := client.DeleteDocument(ids)
 	if err != nil {
 		return err
 	}
@@ -85,7 +70,7 @@ func execDelete(c *cli.Context) error {
 		return err
 	}
 
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", string(resultBytes)))
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resultBytes)))
 
 	return nil
 }

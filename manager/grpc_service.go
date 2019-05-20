@@ -25,30 +25,30 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
-	"github.com/mosuka/blast/protobuf/management"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type GRPCService struct {
 	raftServer *RaftServer
-	chans      map[chan management.WatchResponse]struct{}
-	logger     *log.Logger
-	mu         sync.RWMutex
+	//chans      map[chan management.WatchResponse]struct{}
+	chans  map[chan protobuf.WatchStateResponse]struct{}
+	logger *log.Logger
+	mu     sync.RWMutex
 }
 
 func NewGRPCService(raftServer *RaftServer, logger *log.Logger) (*GRPCService, error) {
 	return &GRPCService{
 		raftServer: raftServer,
-		chans:      make(map[chan management.WatchResponse]struct{}),
+		chans:      make(map[chan protobuf.WatchStateResponse]struct{}),
 		logger:     logger,
 	}, nil
 }
 
-func (s *GRPCService) GetNode(ctx context.Context, req *management.GetNodeRequest) (*management.GetNodeResponse, error) {
+func (s *GRPCService) GetNode(ctx context.Context, req *protobuf.GetNodeRequest) (*protobuf.GetNodeResponse, error) {
 	s.logger.Printf("[INFO] get node %v", req)
 
-	resp := &management.GetNodeResponse{}
+	resp := &protobuf.GetNodeResponse{}
 
 	var err error
 
@@ -68,7 +68,7 @@ func (s *GRPCService) GetNode(ctx context.Context, req *management.GetNodeReques
 	return resp, nil
 }
 
-func (s *GRPCService) SetNode(ctx context.Context, req *management.SetNodeRequest) (*empty.Empty, error) {
+func (s *GRPCService) SetNode(ctx context.Context, req *protobuf.SetNodeRequest) (*empty.Empty, error) {
 	s.logger.Printf("[INFO] %v", req)
 
 	resp := &empty.Empty{}
@@ -88,7 +88,7 @@ func (s *GRPCService) SetNode(ctx context.Context, req *management.SetNodeReques
 	return resp, nil
 }
 
-func (s *GRPCService) DeleteNode(ctx context.Context, req *management.DeleteNodeRequest) (*empty.Empty, error) {
+func (s *GRPCService) DeleteNode(ctx context.Context, req *protobuf.DeleteNodeRequest) (*empty.Empty, error) {
 	s.logger.Printf("[INFO] leave %v", req)
 
 	resp := &empty.Empty{}
@@ -101,10 +101,10 @@ func (s *GRPCService) DeleteNode(ctx context.Context, req *management.DeleteNode
 	return resp, nil
 }
 
-func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*management.GetClusterResponse, error) {
+func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*protobuf.GetClusterResponse, error) {
 	s.logger.Printf("[INFO] get cluster %v", req)
 
-	resp := &management.GetClusterResponse{}
+	resp := &protobuf.GetClusterResponse{}
 
 	cluster, err := s.raftServer.GetCluster()
 	if err != nil {
@@ -140,23 +140,23 @@ func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Em
 	return resp, nil
 }
 
-func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*management.LivenessProbeResponse, error) {
-	resp := &management.LivenessProbeResponse{
-		State: management.LivenessProbeResponse_ALIVE,
+func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*protobuf.LivenessProbeResponse, error) {
+	resp := &protobuf.LivenessProbeResponse{
+		State: protobuf.LivenessProbeResponse_ALIVE,
 	}
 
 	return resp, nil
 }
 
-func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*management.ReadinessProbeResponse, error) {
-	resp := &management.ReadinessProbeResponse{
-		State: management.ReadinessProbeResponse_READY,
+func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*protobuf.ReadinessProbeResponse, error) {
+	resp := &protobuf.ReadinessProbeResponse{
+		State: protobuf.ReadinessProbeResponse_READY,
 	}
 
 	return resp, nil
 }
 
-func (s *GRPCService) Get(ctx context.Context, req *management.GetRequest) (*management.GetResponse, error) {
+func (s *GRPCService) GetState(ctx context.Context, req *protobuf.GetStateRequest) (*protobuf.GetStateResponse, error) {
 	start := time.Now()
 	s.mu.RLock()
 	defer func() {
@@ -164,7 +164,7 @@ func (s *GRPCService) Get(ctx context.Context, req *management.GetRequest) (*man
 		RecordMetrics(start, "get")
 	}()
 
-	resp := &management.GetResponse{}
+	resp := &protobuf.GetStateResponse{}
 
 	var err error
 
@@ -189,7 +189,7 @@ func (s *GRPCService) Get(ctx context.Context, req *management.GetRequest) (*man
 	return resp, nil
 }
 
-func (s *GRPCService) Set(ctx context.Context, req *management.SetRequest) (*empty.Empty, error) {
+func (s *GRPCService) SetState(ctx context.Context, req *protobuf.SetStateRequest) (*empty.Empty, error) {
 	start := time.Now()
 	s.mu.Lock()
 	defer func() {
@@ -216,8 +216,8 @@ func (s *GRPCService) Set(ctx context.Context, req *management.SetRequest) (*emp
 
 	// notify
 	for c := range s.chans {
-		c <- management.WatchResponse{
-			Command: management.WatchResponse_SET,
+		c <- protobuf.WatchStateResponse{
+			Command: protobuf.WatchStateResponse_SET,
 			Key:     req.Key,
 			Value:   req.Value,
 		}
@@ -226,7 +226,7 @@ func (s *GRPCService) Set(ctx context.Context, req *management.SetRequest) (*emp
 	return resp, nil
 }
 
-func (s *GRPCService) Delete(ctx context.Context, req *management.DeleteRequest) (*empty.Empty, error) {
+func (s *GRPCService) DeleteState(ctx context.Context, req *protobuf.DeleteStateRequest) (*empty.Empty, error) {
 	start := time.Now()
 	s.mu.Lock()
 	defer func() {
@@ -250,8 +250,8 @@ func (s *GRPCService) Delete(ctx context.Context, req *management.DeleteRequest)
 
 	// notify
 	for c := range s.chans {
-		c <- management.WatchResponse{
-			Command: management.WatchResponse_DELETE,
+		c <- protobuf.WatchStateResponse{
+			Command: protobuf.WatchStateResponse_DELETE,
 			Key:     req.Key,
 		}
 	}
@@ -259,8 +259,8 @@ func (s *GRPCService) Delete(ctx context.Context, req *management.DeleteRequest)
 	return resp, nil
 }
 
-func (s *GRPCService) Watch(req *management.WatchRequest, server management.Management_WatchServer) error {
-	chans := make(chan management.WatchResponse)
+func (s *GRPCService) WatchState(req *protobuf.WatchStateRequest, server protobuf.Blast_WatchStateServer) error {
+	chans := make(chan protobuf.WatchStateResponse)
 
 	s.mu.Lock()
 	s.chans[chans] = struct{}{}
@@ -284,4 +284,28 @@ func (s *GRPCService) Watch(req *management.WatchRequest, server management.Mana
 	}
 
 	return nil
+}
+
+func (s *GRPCService) GetDocument(ctx context.Context, req *protobuf.GetDocumentRequest) (*protobuf.GetDocumentResponse, error) {
+	return &protobuf.GetDocumentResponse{}, status.Error(codes.Unavailable, "not implement")
+}
+
+func (s *GRPCService) Search(ctx context.Context, req *protobuf.SearchRequest) (*protobuf.SearchResponse, error) {
+	return &protobuf.SearchResponse{}, status.Error(codes.Unavailable, "not implement")
+}
+
+func (s *GRPCService) IndexDocument(stream protobuf.Blast_IndexDocumentServer) error {
+	return status.Error(codes.Unavailable, "not implement")
+}
+
+func (s *GRPCService) DeleteDocument(stream protobuf.Blast_DeleteDocumentServer) error {
+	return status.Error(codes.Unavailable, "not implement")
+}
+
+func (s *GRPCService) GetIndexConfig(ctx context.Context, req *empty.Empty) (*protobuf.GetIndexConfigResponse, error) {
+	return &protobuf.GetIndexConfigResponse{}, status.Error(codes.Unavailable, "not implement")
+}
+
+func (s *GRPCService) GetIndexStats(ctx context.Context, req *empty.Empty) (*protobuf.GetIndexStatsResponse, error) {
+	return &protobuf.GetIndexStatsResponse{}, status.Error(codes.Unavailable, "not implement")
 }

@@ -26,7 +26,6 @@ import (
 	"github.com/hashicorp/raft"
 	"github.com/mosuka/blast/maputils"
 	"github.com/mosuka/blast/protobuf"
-	pbindex "github.com/mosuka/blast/protobuf/index"
 )
 
 type RaftFSM struct {
@@ -214,7 +213,7 @@ func (f *RaftFSM) Restore(rc io.ReadCloser) error {
 
 	buff := proto.NewBuffer(data)
 	for {
-		doc := &pbindex.Document{}
+		doc := &protobuf.Document{}
 		err = buff.DecodeMessage(doc)
 		if err == io.ErrUnexpectedEOF {
 			break

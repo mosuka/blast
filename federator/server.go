@@ -78,7 +78,7 @@ func (s *Server) Start() {
 	// start HTTP server
 	s.logger.Print("[INFO] start HTTP server")
 	go func() {
-		s.httpServer.Start()
+		_ = s.httpServer.Start()
 	}()
 }
 

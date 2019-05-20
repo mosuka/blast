@@ -143,13 +143,9 @@ func main() {
 					Value: ":27070",
 					Usage: "gRPC address to connect to",
 				},
-				cli.StringFlag{
-					Name:  "id",
-					Value: "",
-					Usage: "document id",
-				},
 			},
-			Action: execGet,
+			ArgsUsage: "[id]",
+			Action:    execGet,
 		},
 		{
 			Name:  "index",
@@ -160,13 +156,8 @@ func main() {
 					Value: ":27070",
 					Usage: "gRPC address to connect to",
 				},
-				cli.StringFlag{
-					Name:  "id",
-					Value: "",
-					Usage: "document id",
-				},
 			},
-			ArgsUsage: "[documents | fields]",
+			ArgsUsage: "[documents | [id] [fields]]",
 			Action:    execIndex,
 		},
 		{
@@ -178,13 +169,8 @@ func main() {
 					Value: ":27070",
 					Usage: "address to connect to",
 				},
-				cli.StringFlag{
-					Name:  "id",
-					Value: "",
-					Usage: "document id",
-				},
 			},
-			ArgsUsage: "[documents]",
+			ArgsUsage: "[id] ...",
 			Action:    execDelete,
 		},
 		{
@@ -214,6 +200,6 @@ func main() {
 
 	err := app.Run(os.Args)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		_, _ = fmt.Fprintln(os.Stderr, err)
 	}
 }

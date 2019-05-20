@@ -24,7 +24,6 @@ import (
 	"github.com/golang/protobuf/ptypes/any"
 	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
-	pbindex "github.com/mosuka/blast/protobuf/index"
 )
 
 type Index struct {
@@ -190,8 +189,8 @@ func (i *Index) Stats() (map[string]interface{}, error) {
 	return stats, nil
 }
 
-func (i *Index) SnapshotItems() <-chan *pbindex.Document {
-	ch := make(chan *pbindex.Document, 1024)
+func (i *Index) SnapshotItems() <-chan *protobuf.Document {
+	ch := make(chan *protobuf.Document, 1024)
 
 	go func() {
 		idx, _, err := i.index.Advanced()
@@ -239,7 +238,7 @@ func (i *Index) SnapshotItems() <-chan *pbindex.Document {
 				break
 			}
 
-			doc := &pbindex.Document{
+			doc := &protobuf.Document{
 				Id:     string(id),
 				Fields: fieldsAny,
 			}

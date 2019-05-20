@@ -50,7 +50,7 @@ func execSearch(c *cli.Context) error {
 	defer func() {
 		err := client.Close()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			_, _ = fmt.Fprintln(os.Stderr, err)
 		}
 	}()
 
@@ -64,7 +64,7 @@ func execSearch(c *cli.Context) error {
 		return err
 	}
 
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", string(jsonBytes)))
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", string(jsonBytes)))
 
 	return nil
 }

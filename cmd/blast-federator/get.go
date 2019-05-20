@@ -21,21 +21,15 @@ import (
 	"os"
 
 	"github.com/mosuka/blast/federator"
-	"github.com/mosuka/blast/protobuf"
-	"github.com/mosuka/blast/protobuf/federation"
 	"github.com/urfave/cli"
 )
 
 func execGet(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
-	id := c.String("id")
+	id := c.Args().Get(0)
 	if id == "" {
 		err := errors.New("arguments are not correct")
 		return err
-	}
-
-	doc := &federation.Document{
-		Id: id,
 	}
 
 	client, err := federator.NewGRPCClient(grpcAddr)
@@ -45,33 +39,22 @@ func execGet(c *cli.Context) error {
 	defer func() {
 		err := client.Close()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			_, _ = fmt.Fprintln(os.Stderr, err)
 		}
 	}()
 
-	resp, err := client.Get(doc)
+	fields, err := client.GetDocument(id)
 	if err != nil {
 		return err
 	}
-
-	// Any -> map[string]interface{}
-	var fieldsMap *map[string]interface{}
-	fieldsInstance, err := protobuf.MarshalAny(resp.Fields)
-	if err != nil {
-		return err
-	}
-	if fieldsInstance == nil {
-		return errors.New("nil")
-	}
-	fieldsMap = fieldsInstance.(*map[string]interface{})
 
 	// map[string]interface -> []byte
-	fieldsBytes, err := json.MarshalIndent(fieldsMap, "", "  ")
+	fieldsBytes, err := json.MarshalIndent(fields, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("%v\n", string(fieldsBytes)))
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(fieldsBytes)))
 
 	return nil
 }

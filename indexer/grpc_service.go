@@ -25,7 +25,6 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
-	"github.com/mosuka/blast/protobuf/index"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -43,10 +42,10 @@ func NewGRPCService(raftServer *RaftServer, logger *log.Logger) (*GRPCService, e
 	}, nil
 }
 
-func (s *GRPCService) GetNode(ctx context.Context, req *index.GetNodeRequest) (*index.GetNodeResponse, error) {
+func (s *GRPCService) GetNode(ctx context.Context, req *protobuf.GetNodeRequest) (*protobuf.GetNodeResponse, error) {
 	s.logger.Printf("[INFO] get node %v", req)
 
-	resp := &index.GetNodeResponse{}
+	resp := &protobuf.GetNodeResponse{}
 
 	var err error
 
@@ -66,7 +65,7 @@ func (s *GRPCService) GetNode(ctx context.Context, req *index.GetNodeRequest) (*
 	return resp, nil
 }
 
-func (s *GRPCService) SetNode(ctx context.Context, req *index.SetNodeRequest) (*empty.Empty, error) {
+func (s *GRPCService) SetNode(ctx context.Context, req *protobuf.SetNodeRequest) (*empty.Empty, error) {
 	s.logger.Printf("[INFO] %v", req)
 
 	resp := &empty.Empty{}
@@ -86,7 +85,7 @@ func (s *GRPCService) SetNode(ctx context.Context, req *index.SetNodeRequest) (*
 	return resp, nil
 }
 
-func (s *GRPCService) DeleteNode(ctx context.Context, req *index.DeleteNodeRequest) (*empty.Empty, error) {
+func (s *GRPCService) DeleteNode(ctx context.Context, req *protobuf.DeleteNodeRequest) (*empty.Empty, error) {
 	s.logger.Printf("[INFO] leave %v", req)
 
 	resp := &empty.Empty{}
@@ -99,10 +98,10 @@ func (s *GRPCService) DeleteNode(ctx context.Context, req *index.DeleteNodeReque
 	return resp, nil
 }
 
-func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*index.GetClusterResponse, error) {
+func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*protobuf.GetClusterResponse, error) {
 	s.logger.Printf("[INFO] get cluster %v", req)
 
-	resp := &index.GetClusterResponse{}
+	resp := &protobuf.GetClusterResponse{}
 
 	cluster, err := s.raftServer.GetCluster()
 	if err != nil {
@@ -133,29 +132,45 @@ func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Em
 	return resp, nil
 }
 
-func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*index.LivenessProbeResponse, error) {
-	resp := &index.LivenessProbeResponse{
-		State: index.LivenessProbeResponse_ALIVE,
+func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*protobuf.LivenessProbeResponse, error) {
+	resp := &protobuf.LivenessProbeResponse{
+		State: protobuf.LivenessProbeResponse_ALIVE,
 	}
 
 	return resp, nil
 }
 
-func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*index.ReadinessProbeResponse, error) {
-	resp := &index.ReadinessProbeResponse{
-		State: index.ReadinessProbeResponse_READY,
+func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*protobuf.ReadinessProbeResponse, error) {
+	resp := &protobuf.ReadinessProbeResponse{
+		State: protobuf.ReadinessProbeResponse_READY,
 	}
 
 	return resp, nil
 }
 
-func (s *GRPCService) GetDocument(ctx context.Context, req *index.GetDocumentRequest) (*index.GetDocumentResponse, error) {
+func (s *GRPCService) GetState(ctx context.Context, req *protobuf.GetStateRequest) (*protobuf.GetStateResponse, error) {
+	return &protobuf.GetStateResponse{}, status.Error(codes.Unavailable, "not implement")
+}
+
+func (s *GRPCService) SetState(ctx context.Context, req *protobuf.SetStateRequest) (*empty.Empty, error) {
+	return &empty.Empty{}, status.Error(codes.Unavailable, "not implement")
+}
+
+func (s *GRPCService) DeleteState(ctx context.Context, req *protobuf.DeleteStateRequest) (*empty.Empty, error) {
+	return &empty.Empty{}, status.Error(codes.Unavailable, "not implement")
+}
+
+func (s *GRPCService) WatchState(req *protobuf.WatchStateRequest, server protobuf.Blast_WatchStateServer) error {
+	return status.Error(codes.Unavailable, "not implement")
+}
+
+func (s *GRPCService) GetDocument(ctx context.Context, req *protobuf.GetDocumentRequest) (*protobuf.GetDocumentResponse, error) {
 	start := time.Now()
 	defer RecordMetrics(start, "get")
 
 	s.logger.Printf("[INFO] get %v", req)
 
-	resp := &index.GetDocumentResponse{}
+	resp := &protobuf.GetDocumentResponse{}
 
 	fields, err := s.raftServer.GetDocument(req.Id)
 	if err != nil {
@@ -178,13 +193,13 @@ func (s *GRPCService) GetDocument(ctx context.Context, req *index.GetDocumentReq
 	return resp, nil
 }
 
-func (s *GRPCService) Search(ctx context.Context, req *index.SearchRequest) (*index.SearchResponse, error) {
+func (s *GRPCService) Search(ctx context.Context, req *protobuf.SearchRequest) (*protobuf.SearchResponse, error) {
 	start := time.Now()
 	defer RecordMetrics(start, "search")
 
 	s.logger.Printf("[INFO] search %v", req)
 
-	resp := &index.SearchResponse{}
+	resp := &protobuf.SearchResponse{}
 
 	// Any -> bleve.SearchRequest
 	searchRequest, err := protobuf.MarshalAny(req.SearchRequest)
@@ -209,7 +224,7 @@ func (s *GRPCService) Search(ctx context.Context, req *index.SearchRequest) (*in
 	return resp, nil
 }
 
-func (s *GRPCService) IndexDocument(stream index.Index_IndexDocumentServer) error {
+func (s *GRPCService) IndexDocument(stream protobuf.Blast_IndexDocumentServer) error {
 	docs := make([]map[string]interface{}, 0)
 
 	for {
@@ -240,14 +255,14 @@ func (s *GRPCService) IndexDocument(stream index.Index_IndexDocumentServer) erro
 		return status.Error(codes.Internal, err.Error())
 	}
 
-	resp := &index.IndexDocumentResponse{
+	resp := &protobuf.IndexDocumentResponse{
 		Count: int32(count),
 	}
 
 	return stream.SendAndClose(resp)
 }
 
-func (s *GRPCService) DeleteDocument(stream index.Index_DeleteDocumentServer) error {
+func (s *GRPCService) DeleteDocument(stream protobuf.Blast_DeleteDocumentServer) error {
 	ids := make([]string, 0)
 
 	for {
@@ -268,18 +283,18 @@ func (s *GRPCService) DeleteDocument(stream index.Index_DeleteDocumentServer) er
 		return status.Error(codes.Internal, err.Error())
 	}
 
-	resp := &index.DeleteDocumentResponse{
+	resp := &protobuf.DeleteDocumentResponse{
 		Count: int32(count),
 	}
 
 	return stream.SendAndClose(resp)
 }
 
-func (s *GRPCService) GetIndexConfig(ctx context.Context, req *empty.Empty) (*index.GetIndexConfigResponse, error) {
+func (s *GRPCService) GetIndexConfig(ctx context.Context, req *empty.Empty) (*protobuf.GetIndexConfigResponse, error) {
 	start := time.Now()
 	defer RecordMetrics(start, "indexconfig")
 
-	resp := &index.GetIndexConfigResponse{}
+	resp := &protobuf.GetIndexConfigResponse{}
 
 	s.logger.Printf("[INFO] stats %v", req)
 
@@ -301,11 +316,11 @@ func (s *GRPCService) GetIndexConfig(ctx context.Context, req *empty.Empty) (*in
 	return resp, nil
 }
 
-func (s *GRPCService) GetIndexStats(ctx context.Context, req *empty.Empty) (*index.GetIndexStatsResponse, error) {
+func (s *GRPCService) GetIndexStats(ctx context.Context, req *empty.Empty) (*protobuf.GetIndexStatsResponse, error) {
 	start := time.Now()
 	defer RecordMetrics(start, "indexstats")
 
-	resp := &index.GetIndexStatsResponse{}
+	resp := &protobuf.GetIndexStatsResponse{}
 
 	s.logger.Printf("[INFO] stats %v", req)
 

@@ -22,12 +22,9 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/gorilla/mux"
 	"github.com/mosuka/blast/errors"
 	blasthttp "github.com/mosuka/blast/http"
-	"github.com/mosuka/blast/protobuf"
-	"github.com/mosuka/blast/protobuf/federation"
 	"github.com/mosuka/blast/version"
 )
 
@@ -84,11 +81,7 @@ func (h *GetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 
-	doc := &federation.Document{
-		Id: vars["id"],
-	}
-
-	doc, err := h.client.Get(doc)
+	fields, err := h.client.GetDocument(vars["id"])
 	if err != nil {
 		switch err {
 		case errors.ErrNotFound:
@@ -110,43 +103,8 @@ func (h *GetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Any -> map[string]interface{}
-	var fieldsMap *map[string]interface{}
-	fieldsInstance, err := protobuf.MarshalAny(doc.Fields)
-	if err != nil {
-		httpStatus = http.StatusInternalServerError
-
-		msgMap := map[string]interface{}{
-			"message": err.Error(),
-			"status":  httpStatus,
-		}
-
-		content, err = blasthttp.NewJSONMessage(msgMap)
-		if err != nil {
-			h.logger.Printf("[ERR] %v", err)
-		}
-
-		return
-	}
-	if fieldsInstance == nil {
-		httpStatus = http.StatusInternalServerError
-
-		msgMap := map[string]interface{}{
-			"message": err.Error(),
-			"status":  httpStatus,
-		}
-
-		content, err = blasthttp.NewJSONMessage(msgMap)
-		if err != nil {
-			h.logger.Printf("[ERR] %v", err)
-		}
-
-		return
-	}
-	fieldsMap = fieldsInstance.(*map[string]interface{})
-
 	// map[string]interface{} -> bytes
-	content, err = json.MarshalIndent(fieldsMap, "", "  ")
+	content, err = json.MarshalIndent(fields, "", "  ")
 	if err != nil {
 		httpStatus = http.StatusInternalServerError
 
@@ -186,7 +144,7 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	// create documents
-	docs := make([]*federation.Document, 0)
+	docs := make([]map[string]interface{}, 0)
 
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -210,8 +168,7 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if id == "" {
 		// Indexing documents in bulk
-		var docMaps []map[string]interface{}
-		err := json.Unmarshal(bodyBytes, &docMaps)
+		err := json.Unmarshal(bodyBytes, &docs)
 		if err != nil {
 			httpStatus = http.StatusBadRequest
 
@@ -226,38 +183,11 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 
 			return
-		}
-
-		for _, docMap := range docMaps {
-			fieldsAny := &any.Any{}
-			err = protobuf.UnmarshalAny(docMap["fields"], fieldsAny)
-			if err != nil {
-				httpStatus = http.StatusBadRequest
-
-				msgMap := map[string]interface{}{
-					"message": err.Error(),
-					"status":  httpStatus,
-				}
-
-				content, err = blasthttp.NewJSONMessage(msgMap)
-				if err != nil {
-					h.logger.Printf("[ERR] %v", err)
-				}
-
-				return
-			}
-
-			doc := &federation.Document{
-				Id:     docMap["id"].(string),
-				Fields: fieldsAny,
-			}
-
-			docs = append(docs, doc)
 		}
 	} else {
 		// Indexing a document
-		var fieldsMap map[string]interface{}
-		err := json.Unmarshal(bodyBytes, &fieldsMap)
+		var fields map[string]interface{}
+		err := json.Unmarshal(bodyBytes, &fields)
 		if err != nil {
 			httpStatus = http.StatusBadRequest
 
@@ -274,34 +204,16 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		fieldsAny := &any.Any{}
-		err = protobuf.UnmarshalAny(fieldsMap, fieldsAny)
-		if err != nil {
-			httpStatus = http.StatusBadRequest
-
-			msgMap := map[string]interface{}{
-				"message": err.Error(),
-				"status":  httpStatus,
-			}
-
-			content, err = blasthttp.NewJSONMessage(msgMap)
-			if err != nil {
-				h.logger.Printf("[ERR] %v", err)
-			}
-
-			return
-		}
-
-		doc := &federation.Document{
-			Id:     id,
-			Fields: fieldsAny,
+		doc := map[string]interface{}{
+			"id":     id,
+			"fields": fields,
 		}
 
 		docs = append(docs, doc)
 	}
 
 	// index documents in bulk
-	result, err := h.client.Index(docs)
+	result, err := h.client.IndexDocument(docs)
 	if err != nil {
 		httpStatus = http.StatusInternalServerError
 
@@ -358,7 +270,7 @@ func (h *DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	// create documents
-	docs := make([]*federation.Document, 0)
+	ids := make([]string, 0)
 
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -382,8 +294,7 @@ func (h *DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if id == "" {
 		// Deleting documents in bulk
-		var docMaps []map[string]interface{}
-		err := json.Unmarshal(bodyBytes, &docMaps)
+		err := json.Unmarshal(bodyBytes, &ids)
 		if err != nil {
 			httpStatus = http.StatusBadRequest
 
@@ -399,25 +310,13 @@ func (h *DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			return
 		}
-
-		for _, docMap := range docMaps {
-			doc := &federation.Document{
-				Id: docMap["id"].(string),
-			}
-
-			docs = append(docs, doc)
-		}
 	} else {
 		// Deleting a document
-		doc := &federation.Document{
-			Id: id,
-		}
-
-		docs = append(docs, doc)
+		ids = append(ids, id)
 	}
 
 	// delete documents in bulk
-	result, err := h.client.Delete(docs)
+	result, err := h.client.DeleteDocument(ids)
 	if err != nil {
 		httpStatus = http.StatusInternalServerError
 
@@ -544,5 +443,4 @@ func (h *SearchHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-
 }

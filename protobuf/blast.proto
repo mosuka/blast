@@ -16,13 +16,12 @@ syntax = "proto3";
 
 import "google/protobuf/any.proto";
 import "google/protobuf/empty.proto";
-//import "protobuf/raft/raft.proto";
 
-package management;
+package index;
 
-option go_package = "github.com/mosuka/blast/protobuf/management";
+option go_package = "github.com/mosuka/blast/protobuf";
 
-service Management {
+service Blast {
     rpc GetNode (GetNodeRequest) returns (GetNodeResponse) {}
     rpc SetNode (SetNodeRequest) returns (google.protobuf.Empty) {}
     rpc DeleteNode (DeleteNodeRequest) returns (google.protobuf.Empty) {}
@@ -32,34 +31,47 @@ service Management {
     rpc LivenessProbe (google.protobuf.Empty) returns (LivenessProbeResponse) {}
     rpc ReadinessProbe (google.protobuf.Empty) returns (ReadinessProbeResponse) {}
 
-    rpc Get (GetRequest) returns (GetResponse) {}
-    rpc Set (SetRequest) returns (google.protobuf.Empty) {}
-    rpc Delete (DeleteRequest) returns (google.protobuf.Empty) {}
+    rpc GetState (GetStateRequest) returns (GetStateResponse) {}
+    rpc SetState (SetStateRequest) returns (google.protobuf.Empty) {}
+    rpc DeleteState (DeleteStateRequest) returns (google.protobuf.Empty) {}
+    rpc WatchState (WatchStateRequest) returns (stream WatchStateResponse) {}
 
-    rpc Watch (WatchRequest) returns (stream WatchResponse) {}
+    rpc GetDocument (GetDocumentRequest) returns (GetDocumentResponse) {}
+    rpc IndexDocument (stream IndexDocumentRequest) returns (IndexDocumentResponse) {}
+    rpc DeleteDocument (stream DeleteDocumentRequest) returns (DeleteDocumentResponse) {}
+    rpc Search (SearchRequest) returns (SearchResponse) {}
+
+    rpc GetIndexConfig (google.protobuf.Empty) returns (GetIndexConfigResponse) {}
+    rpc GetIndexStats (google.protobuf.Empty) returns (GetIndexStatsResponse) {}
 }
 
+// use for raft cluster status
 message GetNodeRequest {
     string id = 1;
 }
 
+// use for raft cluster status
 message GetNodeResponse {
     google.protobuf.Any metadata = 1;
 }
 
+// use for raft cluster status
 message SetNodeRequest {
     string id = 1;
     google.protobuf.Any metadata = 2;
 }
 
+// use for raft cluster status
 message DeleteNodeRequest {
     string id = 1;
 }
 
+// use for raft cluster status
 message GetClusterResponse {
     google.protobuf.Any cluster = 1;
 }
 
+// use for health check
 message LivenessProbeResponse {
     enum State {
         UNKNOWN = 0;
@@ -69,6 +81,7 @@ message LivenessProbeResponse {
     State state = 1;
 }
 
+// use for health check
 message ReadinessProbeResponse {
     enum State {
         UNKNOWN = 0;
@@ -78,28 +91,28 @@ message ReadinessProbeResponse {
     State state = 1;
 }
 
-message GetRequest {
+message GetStateRequest {
     string key = 1;
 }
 
-message GetResponse {
+message GetStateResponse {
     google.protobuf.Any value = 1;
 }
 
-message SetRequest {
+message SetStateRequest {
     string key = 1;
     google.protobuf.Any value = 2;
 }
 
-message DeleteRequest {
+message DeleteStateRequest {
     string key = 1;
 }
 
-message WatchRequest {
+message WatchStateRequest {
     string key = 1;
 }
 
-message WatchResponse {
+message WatchStateResponse {
     enum Command {
         UNKNOWN = 0;
         SET = 1;
@@ -108,4 +121,51 @@ message WatchResponse {
     Command command = 1;
     string key = 2;
     google.protobuf.Any value = 3;
+}
+
+message GetDocumentRequest {
+    string id = 1;
+}
+
+message GetDocumentResponse {
+    google.protobuf.Any fields = 1;
+}
+
+message IndexDocumentRequest {
+    string id = 1;
+    google.protobuf.Any fields = 2;
+}
+
+message IndexDocumentResponse {
+    int32 count = 1;
+}
+
+message DeleteDocumentRequest {
+    string id = 1;
+}
+
+message DeleteDocumentResponse {
+    int32 count = 1;
+}
+
+message SearchRequest {
+    google.protobuf.Any search_request = 1;
+}
+
+message SearchResponse {
+    google.protobuf.Any search_result = 1;
+}
+
+message GetIndexConfigResponse {
+    google.protobuf.Any index_config = 1;
+}
+
+message GetIndexStatsResponse {
+    google.protobuf.Any index_stats = 1;
+}
+
+// use for creating snapshot
+message Document {
+    string id = 1;
+    google.protobuf.Any fields = 2;
 }
