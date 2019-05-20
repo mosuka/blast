@@ -18,6 +18,7 @@ import (
 	"context"
 	"io"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/blevesearch/bleve"
@@ -30,15 +31,17 @@ import (
 )
 
 type GRPCService struct {
-	raftServer *RaftServer
-
-	logger *log.Logger
+	raftServer   *RaftServer
+	clusterChans map[chan protobuf.GetClusterResponse]struct{}
+	clusterMutex sync.RWMutex
+	logger       *log.Logger
 }
 
 func NewGRPCService(raftServer *RaftServer, logger *log.Logger) (*GRPCService, error) {
 	return &GRPCService{
-		raftServer: raftServer,
-		logger:     logger,
+		raftServer:   raftServer,
+		clusterChans: make(map[chan protobuf.GetClusterResponse]struct{}),
+		logger:       logger,
 	}, nil
 }
 
@@ -82,6 +85,16 @@ func (s *GRPCService) SetNode(ctx context.Context, req *protobuf.SetNodeRequest)
 		return resp, status.Error(codes.Internal, err.Error())
 	}
 
+	getClusterResponse, err := s.GetCluster(ctx, &empty.Empty{})
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	// notify
+	for c := range s.clusterChans {
+		c <- *getClusterResponse
+	}
+
 	return resp, nil
 }
 
@@ -93,6 +106,16 @@ func (s *GRPCService) DeleteNode(ctx context.Context, req *protobuf.DeleteNodeRe
 	err := s.raftServer.DeleteNode(req.Id)
 	if err != nil {
 		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	getClusterResponse, err := s.GetCluster(ctx, &empty.Empty{})
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	// notify
+	for c := range s.clusterChans {
+		c <- *getClusterResponse
 	}
 
 	return resp, nil
@@ -117,6 +140,30 @@ func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*protob
 	resp.Cluster = clusterAny
 
 	return resp, nil
+}
+
+func (s *GRPCService) WatchCluster(req *empty.Empty, server protobuf.Blast_WatchClusterServer) error {
+	chans := make(chan protobuf.GetClusterResponse)
+
+	s.clusterMutex.Lock()
+	s.clusterChans[chans] = struct{}{}
+	s.clusterMutex.Unlock()
+
+	defer func() {
+		s.clusterMutex.Lock()
+		delete(s.clusterChans, chans)
+		s.clusterMutex.Unlock()
+		close(chans)
+	}()
+
+	for resp := range chans {
+		err := server.Send(&resp)
+		if err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+	}
+
+	return nil
 }
 
 func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {

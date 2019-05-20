@@ -30,18 +30,20 @@ import (
 )
 
 type GRPCService struct {
-	raftServer *RaftServer
-	//chans      map[chan management.WatchResponse]struct{}
-	chans  map[chan protobuf.WatchStateResponse]struct{}
-	logger *log.Logger
-	mu     sync.RWMutex
+	raftServer   *RaftServer
+	clusterChans map[chan protobuf.GetClusterResponse]struct{}
+	clusterMutex sync.RWMutex
+	stateChans   map[chan protobuf.WatchStateResponse]struct{}
+	stateMutex   sync.RWMutex
+	logger       *log.Logger
 }
 
 func NewGRPCService(raftServer *RaftServer, logger *log.Logger) (*GRPCService, error) {
 	return &GRPCService{
-		raftServer: raftServer,
-		chans:      make(map[chan protobuf.WatchStateResponse]struct{}),
-		logger:     logger,
+		raftServer:   raftServer,
+		clusterChans: make(map[chan protobuf.GetClusterResponse]struct{}),
+		stateChans:   make(map[chan protobuf.WatchStateResponse]struct{}),
+		logger:       logger,
 	}, nil
 }
 
@@ -85,6 +87,16 @@ func (s *GRPCService) SetNode(ctx context.Context, req *protobuf.SetNodeRequest)
 		return resp, status.Error(codes.Internal, err.Error())
 	}
 
+	getClusterResponse, err := s.GetCluster(ctx, &empty.Empty{})
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	// notify
+	for c := range s.clusterChans {
+		c <- *getClusterResponse
+	}
+
 	return resp, nil
 }
 
@@ -96,6 +108,16 @@ func (s *GRPCService) DeleteNode(ctx context.Context, req *protobuf.DeleteNodeRe
 	err := s.raftServer.DeleteNode(req.Id)
 	if err != nil {
 		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	getClusterResponse, err := s.GetCluster(ctx, &empty.Empty{})
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	// notify
+	for c := range s.clusterChans {
+		c <- *getClusterResponse
 	}
 
 	return resp, nil
@@ -122,11 +144,35 @@ func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*protob
 	return resp, nil
 }
 
+func (s *GRPCService) WatchCluster(req *empty.Empty, server protobuf.Blast_WatchClusterServer) error {
+	chans := make(chan protobuf.GetClusterResponse)
+
+	s.clusterMutex.Lock()
+	s.clusterChans[chans] = struct{}{}
+	s.clusterMutex.Unlock()
+
+	defer func() {
+		s.clusterMutex.Lock()
+		delete(s.clusterChans, chans)
+		s.clusterMutex.Unlock()
+		close(chans)
+	}()
+
+	for resp := range chans {
+		err := server.Send(&resp)
+		if err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+	}
+
+	return nil
+}
+
 func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
 	start := time.Now()
-	s.mu.Lock()
+	s.stateMutex.Lock()
 	defer func() {
-		s.mu.Unlock()
+		s.stateMutex.Unlock()
 		RecordMetrics(start, "snapshot")
 	}()
 
@@ -158,9 +204,9 @@ func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*pr
 
 func (s *GRPCService) GetState(ctx context.Context, req *protobuf.GetStateRequest) (*protobuf.GetStateResponse, error) {
 	start := time.Now()
-	s.mu.RLock()
+	s.stateMutex.RLock()
 	defer func() {
-		s.mu.RUnlock()
+		s.stateMutex.RUnlock()
 		RecordMetrics(start, "get")
 	}()
 
@@ -191,9 +237,9 @@ func (s *GRPCService) GetState(ctx context.Context, req *protobuf.GetStateReques
 
 func (s *GRPCService) SetState(ctx context.Context, req *protobuf.SetStateRequest) (*empty.Empty, error) {
 	start := time.Now()
-	s.mu.Lock()
+	s.stateMutex.Lock()
 	defer func() {
-		s.mu.Unlock()
+		s.stateMutex.Unlock()
 		RecordMetrics(start, "set")
 	}()
 
@@ -215,7 +261,7 @@ func (s *GRPCService) SetState(ctx context.Context, req *protobuf.SetStateReques
 	}
 
 	// notify
-	for c := range s.chans {
+	for c := range s.stateChans {
 		c <- protobuf.WatchStateResponse{
 			Command: protobuf.WatchStateResponse_SET,
 			Key:     req.Key,
@@ -228,9 +274,9 @@ func (s *GRPCService) SetState(ctx context.Context, req *protobuf.SetStateReques
 
 func (s *GRPCService) DeleteState(ctx context.Context, req *protobuf.DeleteStateRequest) (*empty.Empty, error) {
 	start := time.Now()
-	s.mu.Lock()
+	s.stateMutex.Lock()
 	defer func() {
-		s.mu.Unlock()
+		s.stateMutex.Unlock()
 		RecordMetrics(start, "delete")
 	}()
 
@@ -249,7 +295,7 @@ func (s *GRPCService) DeleteState(ctx context.Context, req *protobuf.DeleteState
 	}
 
 	// notify
-	for c := range s.chans {
+	for c := range s.stateChans {
 		c <- protobuf.WatchStateResponse{
 			Command: protobuf.WatchStateResponse_DELETE,
 			Key:     req.Key,
@@ -262,14 +308,14 @@ func (s *GRPCService) DeleteState(ctx context.Context, req *protobuf.DeleteState
 func (s *GRPCService) WatchState(req *protobuf.WatchStateRequest, server protobuf.Blast_WatchStateServer) error {
 	chans := make(chan protobuf.WatchStateResponse)
 
-	s.mu.Lock()
-	s.chans[chans] = struct{}{}
-	s.mu.Unlock()
+	s.stateMutex.Lock()
+	s.stateChans[chans] = struct{}{}
+	s.stateMutex.Unlock()
 
 	defer func() {
-		s.mu.Lock()
-		delete(s.chans, chans)
-		s.mu.Unlock()
+		s.stateMutex.Lock()
+		delete(s.stateChans, chans)
+		s.stateMutex.Unlock()
 		close(chans)
 	}()
 

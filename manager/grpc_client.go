@@ -138,6 +138,16 @@ func (c *GRPCClient) GetCluster(opts ...grpc.CallOption) (map[string]interface{}
 	return cluster, nil
 }
 
+func (c *GRPCClient) WatchCluster(opts ...grpc.CallOption) (protobuf.Blast_WatchClusterClient, error) {
+	watchClusterClient, err := c.client.WatchCluster(c.ctx, &empty.Empty{}, opts...)
+	if err != nil {
+		st, _ := status.FromError(err)
+		return nil, errors.New(st.Message())
+	}
+
+	return watchClusterClient, nil
+}
+
 func (c *GRPCClient) Snapshot(opts ...grpc.CallOption) error {
 	_, err := c.client.Snapshot(c.ctx, &empty.Empty{})
 	if err != nil {
