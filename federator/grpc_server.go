@@ -19,7 +19,6 @@ import (
 	"net"
 
 	"github.com/mosuka/blast/protobuf"
-
 	"google.golang.org/grpc"
 )
 
@@ -69,12 +68,12 @@ func (s *GRPCServer) Start() error {
 }
 
 func (s *GRPCServer) Stop() error {
+	s.server.GracefulStop()
+
 	err := s.service.StopWatchCluster()
 	if err != nil {
 		return err
 	}
-
-	s.server.GracefulStop()
 
 	return nil
 }

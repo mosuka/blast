@@ -155,28 +155,6 @@ func (s *RaftServer) Stop() error {
 	return nil
 }
 
-func (s *RaftServer) WaitForDetectLeader(timeout time.Duration) error {
-	ticker := time.NewTicker(1000 * time.Millisecond)
-	defer ticker.Stop()
-	timer := time.NewTimer(timeout)
-	defer timer.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			leaderAddr := s.raft.Leader()
-			if leaderAddr != "" {
-				s.logger.Printf("[INFO] detected %v as a leader", leaderAddr)
-				return nil
-			} else {
-				s.logger.Printf("[WARN] %v", errors.ErrNotFoundLeader)
-			}
-		case <-timer.C:
-			return errors.ErrTimeout
-		}
-	}
-}
-
 func (s *RaftServer) LeaderAddress(timeout time.Duration) (raft.ServerAddress, error) {
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
@@ -215,6 +193,15 @@ func (s *RaftServer) LeaderID(timeout time.Duration) (raft.ServerID, error) {
 	}
 
 	return "", errors.ErrNotFoundLeader
+}
+
+func (s *RaftServer) WaitForDetectLeader(timeout time.Duration) error {
+	_, err := s.LeaderAddress(timeout)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *RaftServer) getNode(id string) (map[string]interface{}, error) {

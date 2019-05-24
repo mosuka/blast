@@ -23,6 +23,7 @@ import (
 )
 
 type GRPCServer struct {
+	service  *GRPCService
 	server   *grpc.Server
 	listener net.Listener
 
@@ -45,6 +46,7 @@ func NewGRPCServer(grpcAddr string, raftServer *RaftServer, logger *log.Logger) 
 	}
 
 	return &GRPCServer{
+		service:  service,
 		server:   server,
 		listener: listener,
 		logger:   logger,
@@ -52,7 +54,12 @@ func NewGRPCServer(grpcAddr string, raftServer *RaftServer, logger *log.Logger) 
 }
 
 func (s *GRPCServer) Start() error {
-	err := s.server.Serve(s.listener)
+	err := s.service.Start()
+	if err != nil {
+		return err
+	}
+
+	err = s.server.Serve(s.listener)
 	if err != nil {
 		return err
 	}
@@ -62,6 +69,11 @@ func (s *GRPCServer) Start() error {
 
 func (s *GRPCServer) Stop() error {
 	s.server.GracefulStop()
+
+	err := s.service.Stop()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

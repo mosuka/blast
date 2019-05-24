@@ -17,6 +17,7 @@ package manager
 import (
 	"context"
 	"log"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -30,21 +31,106 @@ import (
 )
 
 type GRPCService struct {
-	raftServer   *RaftServer
+	raftServer *RaftServer
+	logger     *log.Logger
+
 	clusterChans map[chan protobuf.GetClusterResponse]struct{}
 	clusterMutex sync.RWMutex
 	stateChans   map[chan protobuf.WatchStateResponse]struct{}
 	stateMutex   sync.RWMutex
-	logger       *log.Logger
+
+	watchClusterStopCh chan struct{}
+	watchClusterDoneCh chan struct{}
 }
 
 func NewGRPCService(raftServer *RaftServer, logger *log.Logger) (*GRPCService, error) {
 	return &GRPCService{
-		raftServer:   raftServer,
+		raftServer: raftServer,
+		logger:     logger,
+
 		clusterChans: make(map[chan protobuf.GetClusterResponse]struct{}),
 		stateChans:   make(map[chan protobuf.WatchStateResponse]struct{}),
-		logger:       logger,
+
+		watchClusterStopCh: make(chan struct{}),
+		watchClusterDoneCh: make(chan struct{}),
 	}, nil
+}
+
+func (s *GRPCService) Start() error {
+	// start watching a cluster
+	s.logger.Printf("[INFO] start watching a cluster")
+	go s.watchCluster(1000 * time.Millisecond)
+
+	return nil
+}
+
+func (s *GRPCService) Stop() error {
+	s.logger.Printf("[INFO] stop watching a cluster")
+	close(s.watchClusterStopCh)
+	s.logger.Printf("[INFO] wait for stop watching a cluster has done")
+	<-s.watchClusterDoneCh
+	s.logger.Printf("[INFO] cluster watching has been stopped")
+
+	return nil
+}
+
+func (s *GRPCService) watchCluster(checkInterval time.Duration) {
+	defer func() {
+		close(s.watchClusterDoneCh)
+	}()
+
+	ticker := time.NewTicker(checkInterval)
+	defer ticker.Stop()
+
+	savedCluster := map[string]interface{}{}
+
+	for {
+		select {
+		case <-s.watchClusterStopCh:
+			s.logger.Printf("[DEBUG] receive request that stop watching a cluster")
+			//cancel()
+			return
+		case <-ticker.C:
+			// only the leader node watches own cluster
+			if s.raftServer.IsLeader() {
+				// get the cluster
+				cluster, err := s.raftServer.GetCluster() // TODO: if there is a problem, return an error and do not wait for the timeout
+				if err != nil {
+					s.logger.Printf("[ERR] %v", err)
+					return
+				}
+
+				// TODO: update cluster health
+
+				// notify when there is a change in the cluster
+				if !reflect.DeepEqual(savedCluster, cluster) {
+					s.logger.Printf("[INFO] cluster has chaged")
+					s.logger.Printf("[DEBUG] %v", cluster)
+
+					// save latest cluster
+					savedCluster = cluster
+
+					// create cluster response
+					clusterAny := &any.Any{}
+					err = protobuf.UnmarshalAny(cluster, clusterAny)
+					if err != nil {
+						s.logger.Printf("[ERR] %v", err)
+						continue
+					}
+					getClusterResponse := &protobuf.GetClusterResponse{Cluster: clusterAny}
+
+					// notify cluster changes
+					for c := range s.clusterChans {
+						c <- *getClusterResponse
+					}
+				}
+			} else {
+				s.logger.Printf("[INFO] not a leader")
+			}
+		default:
+			// avoid being blocked
+		}
+	}
 }
 
 func (s *GRPCService) GetNode(ctx context.Context, req *protobuf.GetNodeRequest) (*protobuf.GetNodeResponse, error) {

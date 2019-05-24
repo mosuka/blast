@@ -18,6 +18,7 @@ import (
 	"context"
 	"io"
 	"log"
+	"reflect"
 	"sync"
 	"time"
 
@@ -31,18 +32,97 @@ import (
 )
 
 type GRPCService struct {
-	raftServer   *RaftServer
+	grpcAddr   string
+	raftServer *RaftServer
+	logger     *log.Logger
+
 	clusterChans map[chan protobuf.GetClusterResponse]struct{}
 	clusterMutex sync.RWMutex
-	logger       *log.Logger
+
+	watchClusterStopCh chan struct{}
+	watchClusterDoneCh chan struct{}
 }
 
 func NewGRPCService(raftServer *RaftServer, logger *log.Logger) (*GRPCService, error) {
 	return &GRPCService{
-		raftServer:   raftServer,
+		raftServer: raftServer,
+		logger:     logger,
+
 		clusterChans: make(map[chan protobuf.GetClusterResponse]struct{}),
-		logger:       logger,
+
+		watchClusterStopCh: make(chan struct{}),
+		watchClusterDoneCh: make(chan struct{}),
 	}, nil
+}
+
+func (s *GRPCService) Start() error {
+	// start watching a cluster
+	s.logger.Printf("[INFO] start watching a cluster")
+	go s.watchCluster(100*time.Millisecond, 5*time.Second)
+
+	return nil
+}
+
+func (s *GRPCService) Stop() error {
+	// stop watching a cluster
+	s.logger.Printf("[INFO] stop watching a cluster")
+	close(s.watchClusterStopCh)
+
+	// wait for stop watching a cluster has done
+	<-s.watchClusterDoneCh
+	s.logger.Printf("[INFO] cluster watching has been stopped")
+
+	return nil
+}
+
+func (s *GRPCService) watchCluster(checkInterval time.Duration, timeout time.Duration) {
+	// wait for detect a leader
+	err := s.raftServer.WaitForDetectLeader(60 * time.Second)
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return
+	}
+
+	defer func() { close(s.watchClusterDoneCh) }()
+
+	ticker := time.NewTicker(checkInterval)
+	defer ticker.Stop()
+
+	savedCluster := map[string]interface{}{}
+
+	for {
+		select {
+		case <-s.watchClusterStopCh:
+			s.logger.Printf("[DEBUG] receive request that stop watching a cluster")
+			return
+		case <-ticker.C:
+			cluster, err := s.raftServer.GetCluster()
+			if err != nil {
+				s.logger.Printf("[WARN] %v", err)
+				continue
+			}
+
+			if !reflect.DeepEqual(savedCluster, cluster) {
+				savedCluster = cluster
+
+				s.logger.Printf("[DEBUG] cluster has chaged")
+				clusterAny := &any.Any{}
+				err = protobuf.UnmarshalAny(cluster, clusterAny)
+				if err != nil {
+					s.logger.Printf("[ERR] %v", err)
+					return
+				}
+
+				getClusterResponse := &protobuf.GetClusterResponse{Cluster: clusterAny}
+
+				// notify
+				for c := range s.clusterChans {
+					c <- *getClusterResponse
+				}
+			}
+			continue
+		}
+	}
 }
 
 func (s *GRPCService) GetNode(ctx context.Context, req *protobuf.GetNodeRequest) (*protobuf.GetNodeResponse, error) {

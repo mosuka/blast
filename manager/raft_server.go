@@ -178,7 +178,6 @@ func (s *RaftServer) LeaderAddress(timeout time.Duration) (raft.ServerAddress, e
 		case <-ticker.C:
 			leaderAddr := s.raft.Leader()
 			if leaderAddr != "" {
-				s.logger.Printf("[DEBUG] leader address detected: %v", leaderAddr)
 				return leaderAddr, nil
 			}
 		case <-timer.C:
@@ -206,6 +205,14 @@ func (s *RaftServer) LeaderID(timeout time.Duration) (raft.ServerID, error) {
 	}
 
 	return "", errors.ErrNotFoundLeader
+}
+
+func (s *RaftServer) State() string {
+	return s.raft.State().String()
+}
+
+func (s *RaftServer) IsLeader() bool {
+	return s.raft.State() == raft.Leader
 }
 
 func (s *RaftServer) WaitForDetectLeader(timeout time.Duration) error {
@@ -314,7 +321,7 @@ func (s *RaftServer) GetNode(id string) (map[string]interface{}, error) {
 }
 
 func (s *RaftServer) SetNode(id string, metadata map[string]interface{}) error {
-	if s.raft.State() != raft.Leader {
+	if !s.IsLeader() {
 		//// forward to leader node
 		//leaderId, err := s.LeaderID(60 * time.Second)
 		//if err != nil {
@@ -381,7 +388,7 @@ func (s *RaftServer) SetNode(id string, metadata map[string]interface{}) error {
 }
 
 func (s *RaftServer) DeleteNode(id string) error {
-	if s.raft.State() != raft.Leader {
+	if !s.IsLeader() {
 		//// forward to leader node
 		//leaderId, err := s.LeaderID(60 * time.Second)
 		//if err != nil {
@@ -454,19 +461,13 @@ func (s *RaftServer) GetCluster() (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	leaderAddr, err := s.LeaderAddress(60 * time.Second)
-	if err != nil {
-		return nil, err
-	}
-
 	cluster := map[string]interface{}{}
 	for _, server := range cf.Configuration().Servers {
-		metadata, err := s.getNode(string(server.ID))
+		metadata, err := s.GetNode(string(server.ID))
 		if err != nil {
 			s.logger.Printf("[WARN] %v", err)
 			continue
 		}
-		metadata["leader"] = server.Address == leaderAddr
 
 		cluster[string(server.ID)] = metadata
 	}
@@ -494,7 +495,7 @@ func (s *RaftServer) Get(key string) (interface{}, error) {
 }
 
 func (s *RaftServer) Set(key string, value interface{}) error {
-	if s.raft.State() != raft.Leader {
+	if !s.IsLeader() {
 		//// forward to leader node
 		//leaderId, err := s.LeaderID(60 * time.Second)
 		//if err != nil {
@@ -556,7 +557,7 @@ func (s *RaftServer) Set(key string, value interface{}) error {
 }
 
 func (s *RaftServer) Delete(key string) error {
-	if s.raft.State() != raft.Leader {
+	if !s.IsLeader() {
 		//// forward to leader node
 		//leaderId, err := s.LeaderID(60 * time.Second)
 		//if err != nil {
