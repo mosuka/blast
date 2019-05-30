@@ -238,7 +238,7 @@ $ make \
 Running a Blast index node is easy. Start Blast data node like so:
 
 ```bash
-$ ./bin/blast-indexer start --node-id=indexer1 --data-dir=/tmp/blast/indexer1 --bind-addr=:6060 --grpc-addr=:7070 --http-addr=:8080 --index-mapping-file=./example/index_mapping.json
+$ ./bin/blast-indexer start --node-id=indexer1 --bind-addr=:6060 --grpc-addr=:7070 --http-addr=:8080 --data-dir=/tmp/blast/indexer1 --index-mapping-file=./example/index_mapping.json --index-type=upside_down --index-storage-type=boltdb
 ```
 
 Please refer to following document for details of index mapping:
@@ -261,9 +261,7 @@ $ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast-indexer index --grpc-ad
 You can see the result in JSON format. The result of the above command is:
 
 ```bash
-{
-  "count": 1
-}
+1
 ```
 
 
@@ -280,7 +278,6 @@ You can see the result in JSON format. The result of the above command is:
 ```json
 {
   "_type": "enwiki",
-  "contributor": "unknown",
   "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
   "timestamp": "2018-07-04T05:41:00Z",
   "title_en": "Search engine (computing)"
@@ -351,9 +348,9 @@ You can see the result in JSON format. The result of the above command is:
   },
   "hits": [
     {
-      "index": "/tmp/blast/index1/index",
+      "index": "/tmp/blast/indexer1/index",
       "id": "enwiki_1",
-      "score": 0.09634961191421738,
+      "score": 0.09703538256409851,
       "locations": {
         "text_en": {
           "search": [
@@ -411,7 +408,6 @@ You can see the result in JSON format. The result of the above command is:
       ],
       "fields": {
         "_type": "enwiki",
-        "contributor": "unknown",
         "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
         "timestamp": "2018-07-04T05:41:00Z",
         "title_en": "Search engine (computing)"
@@ -419,20 +415,14 @@ You can see the result in JSON format. The result of the above command is:
     }
   ],
   "total_hits": 1,
-  "max_score": 0.09634961191421738,
-  "took": 362726,
+  "max_score": 0.09703538256409851,
+  "took": 201951,
   "facets": {
     "Contributor count": {
       "field": "contributor",
-      "total": 1,
-      "missing": 0,
-      "other": 0,
-      "terms": [
-        {
-          "term": "unknown",
-          "count": 1
-        }
-      ]
+      "total": 0,
+      "missing": 1,
+      "other": 0
     },
     "Timestamp range": {
       "field": "timestamp",
