@@ -17,9 +17,7 @@ package manager
 import (
 	"log"
 
-	"github.com/golang/protobuf/ptypes/any"
 	accesslog "github.com/mash/go-accesslog"
-	"github.com/mosuka/blast/protobuf"
 )
 
 type Server struct {
@@ -79,13 +77,11 @@ func (s *Server) Start() {
 
 	// start Raft server
 	s.logger.Print("[INFO] start Raft server")
-	go func() {
-		err := s.raftServer.Start()
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return
-		}
-	}()
+	err = s.raftServer.Start()
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return
+	}
 
 	// start gRPC server
 	s.logger.Print("[INFO] start gRPC server")
@@ -100,7 +96,7 @@ func (s *Server) Start() {
 	// start HTTP server
 	s.logger.Print("[INFO] start HTTP server")
 	go func() {
-		s.httpServer.Start()
+		_ = s.httpServer.Start()
 	}()
 
 	// join to the existing cluster
@@ -112,14 +108,6 @@ func (s *Server) Start() {
 				s.logger.Printf("[ERR] %v", err)
 			}
 		}()
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return
-		}
-
-		// map[string]interface{} -> Any
-		metadataAny := &any.Any{}
-		err = protobuf.UnmarshalAny(s.metadata, metadataAny)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return

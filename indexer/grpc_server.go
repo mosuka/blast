@@ -30,10 +30,10 @@ type GRPCServer struct {
 	logger *log.Logger
 }
 
-func NewGRPCServer(grpcAddr string, raftServer *RaftServer, logger *log.Logger) (*GRPCServer, error) {
+func NewGRPCServer(managerAddr string, clusterId string, grpcAddr string, raftServer *RaftServer, logger *log.Logger) (*GRPCServer, error) {
 	server := grpc.NewServer()
 
-	service, err := NewGRPCService(raftServer, logger)
+	service, err := NewGRPCService(managerAddr, clusterId, raftServer, logger)
 	if err != nil {
 		return nil, err
 	}

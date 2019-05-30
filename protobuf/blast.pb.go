@@ -49,7 +49,7 @@ func (x WatchClusterResponse_Command) String() string {
 }
 
 func (WatchClusterResponse_Command) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{5, 0}
+	return fileDescriptor_406ca165ef12c7d5, []int{9, 0}
 }
 
 type LivenessProbeResponse_State int32
@@ -77,7 +77,7 @@ func (x LivenessProbeResponse_State) String() string {
 }
 
 func (LivenessProbeResponse_State) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{6, 0}
+	return fileDescriptor_406ca165ef12c7d5, []int{10, 0}
 }
 
 type ReadinessProbeResponse_State int32
@@ -105,7 +105,7 @@ func (x ReadinessProbeResponse_State) String() string {
 }
 
 func (ReadinessProbeResponse_State) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{7, 0}
+	return fileDescriptor_406ca165ef12c7d5, []int{11, 0}
 }
 
 type WatchStateResponse_Command int32
@@ -133,7 +133,163 @@ func (x WatchStateResponse_Command) String() string {
 }
 
 func (WatchStateResponse_Command) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{13, 0}
+	return fileDescriptor_406ca165ef12c7d5, []int{17, 0}
+}
+
+type GetMetadataRequest struct {
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetMetadataRequest) Reset()         { *m = GetMetadataRequest{} }
+func (m *GetMetadataRequest) String() string { return proto.CompactTextString(m) }
+func (*GetMetadataRequest) ProtoMessage()    {}
+func (*GetMetadataRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_406ca165ef12c7d5, []int{0}
+}
+
+func (m *GetMetadataRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetMetadataRequest.Unmarshal(m, b)
+}
+func (m *GetMetadataRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetMetadataRequest.Marshal(b, m, deterministic)
+}
+func (m *GetMetadataRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetMetadataRequest.Merge(m, src)
+}
+func (m *GetMetadataRequest) XXX_Size() int {
+	return xxx_messageInfo_GetMetadataRequest.Size(m)
+}
+func (m *GetMetadataRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetMetadataRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetMetadataRequest proto.InternalMessageInfo
+
+func (m *GetMetadataRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+type GetMetadataResponse struct {
+	Metadata             *any.Any `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetMetadataResponse) Reset()         { *m = GetMetadataResponse{} }
+func (m *GetMetadataResponse) String() string { return proto.CompactTextString(m) }
+func (*GetMetadataResponse) ProtoMessage()    {}
+func (*GetMetadataResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_406ca165ef12c7d5, []int{1}
+}
+
+func (m *GetMetadataResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetMetadataResponse.Unmarshal(m, b)
+}
+func (m *GetMetadataResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetMetadataResponse.Marshal(b, m, deterministic)
+}
+func (m *GetMetadataResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetMetadataResponse.Merge(m, src)
+}
+func (m *GetMetadataResponse) XXX_Size() int {
+	return xxx_messageInfo_GetMetadataResponse.Size(m)
+}
+func (m *GetMetadataResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetMetadataResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetMetadataResponse proto.InternalMessageInfo
+
+func (m *GetMetadataResponse) GetMetadata() *any.Any {
+	if m != nil {
+		return m.Metadata
+	}
+	return nil
+}
+
+type GetNodeStateRequest struct {
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetNodeStateRequest) Reset()         { *m = GetNodeStateRequest{} }
+func (m *GetNodeStateRequest) String() string { return proto.CompactTextString(m) }
+func (*GetNodeStateRequest) ProtoMessage()    {}
+func (*GetNodeStateRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_406ca165ef12c7d5, []int{2}
+}
+
+func (m *GetNodeStateRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetNodeStateRequest.Unmarshal(m, b)
+}
+func (m *GetNodeStateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetNodeStateRequest.Marshal(b, m, deterministic)
+}
+func (m *GetNodeStateRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetNodeStateRequest.Merge(m, src)
+}
+func (m *GetNodeStateRequest) XXX_Size() int {
+	return xxx_messageInfo_GetNodeStateRequest.Size(m)
+}
+func (m *GetNodeStateRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetNodeStateRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetNodeStateRequest proto.InternalMessageInfo
+
+func (m *GetNodeStateRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+type GetNodeStateResponse struct {
+	State                string   `protobuf:"bytes,1,opt,name=state,proto3" json:"state,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetNodeStateResponse) Reset()         { *m = GetNodeStateResponse{} }
+func (m *GetNodeStateResponse) String() string { return proto.CompactTextString(m) }
+func (*GetNodeStateResponse) ProtoMessage()    {}
+func (*GetNodeStateResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_406ca165ef12c7d5, []int{3}
+}
+
+func (m *GetNodeStateResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetNodeStateResponse.Unmarshal(m, b)
+}
+func (m *GetNodeStateResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetNodeStateResponse.Marshal(b, m, deterministic)
+}
+func (m *GetNodeStateResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetNodeStateResponse.Merge(m, src)
+}
+func (m *GetNodeStateResponse) XXX_Size() int {
+	return xxx_messageInfo_GetNodeStateResponse.Size(m)
+}
+func (m *GetNodeStateResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetNodeStateResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetNodeStateResponse proto.InternalMessageInfo
+
+func (m *GetNodeStateResponse) GetState() string {
+	if m != nil {
+		return m.State
+	}
+	return ""
 }
 
 // use for raft cluster status
@@ -148,7 +304,7 @@ func (m *GetNodeRequest) Reset()         { *m = GetNodeRequest{} }
 func (m *GetNodeRequest) String() string { return proto.CompactTextString(m) }
 func (*GetNodeRequest) ProtoMessage()    {}
 func (*GetNodeRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{0}
+	return fileDescriptor_406ca165ef12c7d5, []int{4}
 }
 
 func (m *GetNodeRequest) XXX_Unmarshal(b []byte) error {
@@ -179,6 +335,7 @@ func (m *GetNodeRequest) GetId() string {
 // use for raft cluster status
 type GetNodeResponse struct {
 	Metadata             *any.Any `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	State                string   `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -188,7 +345,7 @@ func (m *GetNodeResponse) Reset()         { *m = GetNodeResponse{} }
 func (m *GetNodeResponse) String() string { return proto.CompactTextString(m) }
 func (*GetNodeResponse) ProtoMessage()    {}
 func (*GetNodeResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{1}
+	return fileDescriptor_406ca165ef12c7d5, []int{5}
 }
 
 func (m *GetNodeResponse) XXX_Unmarshal(b []byte) error {
@@ -216,6 +373,13 @@ func (m *GetNodeResponse) GetMetadata() *any.Any {
 	return nil
 }
 
+func (m *GetNodeResponse) GetState() string {
+	if m != nil {
+		return m.State
+	}
+	return ""
+}
+
 // use for raft cluster status
 type SetNodeRequest struct {
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -229,7 +393,7 @@ func (m *SetNodeRequest) Reset()         { *m = SetNodeRequest{} }
 func (m *SetNodeRequest) String() string { return proto.CompactTextString(m) }
 func (*SetNodeRequest) ProtoMessage()    {}
 func (*SetNodeRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{2}
+	return fileDescriptor_406ca165ef12c7d5, []int{6}
 }
 
 func (m *SetNodeRequest) XXX_Unmarshal(b []byte) error {
@@ -276,7 +440,7 @@ func (m *DeleteNodeRequest) Reset()         { *m = DeleteNodeRequest{} }
 func (m *DeleteNodeRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteNodeRequest) ProtoMessage()    {}
 func (*DeleteNodeRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{3}
+	return fileDescriptor_406ca165ef12c7d5, []int{7}
 }
 
 func (m *DeleteNodeRequest) XXX_Unmarshal(b []byte) error {
@@ -316,7 +480,7 @@ func (m *GetClusterResponse) Reset()         { *m = GetClusterResponse{} }
 func (m *GetClusterResponse) String() string { return proto.CompactTextString(m) }
 func (*GetClusterResponse) ProtoMessage()    {}
 func (*GetClusterResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{4}
+	return fileDescriptor_406ca165ef12c7d5, []int{8}
 }
 
 func (m *GetClusterResponse) XXX_Unmarshal(b []byte) error {
@@ -357,7 +521,7 @@ func (m *WatchClusterResponse) Reset()         { *m = WatchClusterResponse{} }
 func (m *WatchClusterResponse) String() string { return proto.CompactTextString(m) }
 func (*WatchClusterResponse) ProtoMessage()    {}
 func (*WatchClusterResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{5}
+	return fileDescriptor_406ca165ef12c7d5, []int{9}
 }
 
 func (m *WatchClusterResponse) XXX_Unmarshal(b []byte) error {
@@ -411,7 +575,7 @@ func (m *LivenessProbeResponse) Reset()         { *m = LivenessProbeResponse{} }
 func (m *LivenessProbeResponse) String() string { return proto.CompactTextString(m) }
 func (*LivenessProbeResponse) ProtoMessage()    {}
 func (*LivenessProbeResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{6}
+	return fileDescriptor_406ca165ef12c7d5, []int{10}
 }
 
 func (m *LivenessProbeResponse) XXX_Unmarshal(b []byte) error {
@@ -451,7 +615,7 @@ func (m *ReadinessProbeResponse) Reset()         { *m = ReadinessProbeResponse{}
 func (m *ReadinessProbeResponse) String() string { return proto.CompactTextString(m) }
 func (*ReadinessProbeResponse) ProtoMessage()    {}
 func (*ReadinessProbeResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{7}
+	return fileDescriptor_406ca165ef12c7d5, []int{11}
 }
 
 func (m *ReadinessProbeResponse) XXX_Unmarshal(b []byte) error {
@@ -490,7 +654,7 @@ func (m *GetStateRequest) Reset()         { *m = GetStateRequest{} }
 func (m *GetStateRequest) String() string { return proto.CompactTextString(m) }
 func (*GetStateRequest) ProtoMessage()    {}
 func (*GetStateRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{8}
+	return fileDescriptor_406ca165ef12c7d5, []int{12}
 }
 
 func (m *GetStateRequest) XXX_Unmarshal(b []byte) error {
@@ -529,7 +693,7 @@ func (m *GetStateResponse) Reset()         { *m = GetStateResponse{} }
 func (m *GetStateResponse) String() string { return proto.CompactTextString(m) }
 func (*GetStateResponse) ProtoMessage()    {}
 func (*GetStateResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{9}
+	return fileDescriptor_406ca165ef12c7d5, []int{13}
 }
 
 func (m *GetStateResponse) XXX_Unmarshal(b []byte) error {
@@ -569,7 +733,7 @@ func (m *SetStateRequest) Reset()         { *m = SetStateRequest{} }
 func (m *SetStateRequest) String() string { return proto.CompactTextString(m) }
 func (*SetStateRequest) ProtoMessage()    {}
 func (*SetStateRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{10}
+	return fileDescriptor_406ca165ef12c7d5, []int{14}
 }
 
 func (m *SetStateRequest) XXX_Unmarshal(b []byte) error {
@@ -615,7 +779,7 @@ func (m *DeleteStateRequest) Reset()         { *m = DeleteStateRequest{} }
 func (m *DeleteStateRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteStateRequest) ProtoMessage()    {}
 func (*DeleteStateRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{11}
+	return fileDescriptor_406ca165ef12c7d5, []int{15}
 }
 
 func (m *DeleteStateRequest) XXX_Unmarshal(b []byte) error {
@@ -654,7 +818,7 @@ func (m *WatchStateRequest) Reset()         { *m = WatchStateRequest{} }
 func (m *WatchStateRequest) String() string { return proto.CompactTextString(m) }
 func (*WatchStateRequest) ProtoMessage()    {}
 func (*WatchStateRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{12}
+	return fileDescriptor_406ca165ef12c7d5, []int{16}
 }
 
 func (m *WatchStateRequest) XXX_Unmarshal(b []byte) error {
@@ -695,7 +859,7 @@ func (m *WatchStateResponse) Reset()         { *m = WatchStateResponse{} }
 func (m *WatchStateResponse) String() string { return proto.CompactTextString(m) }
 func (*WatchStateResponse) ProtoMessage()    {}
 func (*WatchStateResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{13}
+	return fileDescriptor_406ca165ef12c7d5, []int{17}
 }
 
 func (m *WatchStateResponse) XXX_Unmarshal(b []byte) error {
@@ -748,7 +912,7 @@ func (m *GetDocumentRequest) Reset()         { *m = GetDocumentRequest{} }
 func (m *GetDocumentRequest) String() string { return proto.CompactTextString(m) }
 func (*GetDocumentRequest) ProtoMessage()    {}
 func (*GetDocumentRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{14}
+	return fileDescriptor_406ca165ef12c7d5, []int{18}
 }
 
 func (m *GetDocumentRequest) XXX_Unmarshal(b []byte) error {
@@ -787,7 +951,7 @@ func (m *GetDocumentResponse) Reset()         { *m = GetDocumentResponse{} }
 func (m *GetDocumentResponse) String() string { return proto.CompactTextString(m) }
 func (*GetDocumentResponse) ProtoMessage()    {}
 func (*GetDocumentResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{15}
+	return fileDescriptor_406ca165ef12c7d5, []int{19}
 }
 
 func (m *GetDocumentResponse) XXX_Unmarshal(b []byte) error {
@@ -827,7 +991,7 @@ func (m *IndexDocumentRequest) Reset()         { *m = IndexDocumentRequest{} }
 func (m *IndexDocumentRequest) String() string { return proto.CompactTextString(m) }
 func (*IndexDocumentRequest) ProtoMessage()    {}
 func (*IndexDocumentRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{16}
+	return fileDescriptor_406ca165ef12c7d5, []int{20}
 }
 
 func (m *IndexDocumentRequest) XXX_Unmarshal(b []byte) error {
@@ -873,7 +1037,7 @@ func (m *IndexDocumentResponse) Reset()         { *m = IndexDocumentResponse{} }
 func (m *IndexDocumentResponse) String() string { return proto.CompactTextString(m) }
 func (*IndexDocumentResponse) ProtoMessage()    {}
 func (*IndexDocumentResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{17}
+	return fileDescriptor_406ca165ef12c7d5, []int{21}
 }
 
 func (m *IndexDocumentResponse) XXX_Unmarshal(b []byte) error {
@@ -912,7 +1076,7 @@ func (m *DeleteDocumentRequest) Reset()         { *m = DeleteDocumentRequest{} }
 func (m *DeleteDocumentRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteDocumentRequest) ProtoMessage()    {}
 func (*DeleteDocumentRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{18}
+	return fileDescriptor_406ca165ef12c7d5, []int{22}
 }
 
 func (m *DeleteDocumentRequest) XXX_Unmarshal(b []byte) error {
@@ -951,7 +1115,7 @@ func (m *DeleteDocumentResponse) Reset()         { *m = DeleteDocumentResponse{}
 func (m *DeleteDocumentResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteDocumentResponse) ProtoMessage()    {}
 func (*DeleteDocumentResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{19}
+	return fileDescriptor_406ca165ef12c7d5, []int{23}
 }
 
 func (m *DeleteDocumentResponse) XXX_Unmarshal(b []byte) error {
@@ -990,7 +1154,7 @@ func (m *SearchRequest) Reset()         { *m = SearchRequest{} }
 func (m *SearchRequest) String() string { return proto.CompactTextString(m) }
 func (*SearchRequest) ProtoMessage()    {}
 func (*SearchRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{20}
+	return fileDescriptor_406ca165ef12c7d5, []int{24}
 }
 
 func (m *SearchRequest) XXX_Unmarshal(b []byte) error {
@@ -1029,7 +1193,7 @@ func (m *SearchResponse) Reset()         { *m = SearchResponse{} }
 func (m *SearchResponse) String() string { return proto.CompactTextString(m) }
 func (*SearchResponse) ProtoMessage()    {}
 func (*SearchResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{21}
+	return fileDescriptor_406ca165ef12c7d5, []int{25}
 }
 
 func (m *SearchResponse) XXX_Unmarshal(b []byte) error {
@@ -1068,7 +1232,7 @@ func (m *GetIndexConfigResponse) Reset()         { *m = GetIndexConfigResponse{}
 func (m *GetIndexConfigResponse) String() string { return proto.CompactTextString(m) }
 func (*GetIndexConfigResponse) ProtoMessage()    {}
 func (*GetIndexConfigResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{22}
+	return fileDescriptor_406ca165ef12c7d5, []int{26}
 }
 
 func (m *GetIndexConfigResponse) XXX_Unmarshal(b []byte) error {
@@ -1107,7 +1271,7 @@ func (m *GetIndexStatsResponse) Reset()         { *m = GetIndexStatsResponse{} }
 func (m *GetIndexStatsResponse) String() string { return proto.CompactTextString(m) }
 func (*GetIndexStatsResponse) ProtoMessage()    {}
 func (*GetIndexStatsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{23}
+	return fileDescriptor_406ca165ef12c7d5, []int{27}
 }
 
 func (m *GetIndexStatsResponse) XXX_Unmarshal(b []byte) error {
@@ -1148,7 +1312,7 @@ func (m *Document) Reset()         { *m = Document{} }
 func (m *Document) String() string { return proto.CompactTextString(m) }
 func (*Document) ProtoMessage()    {}
 func (*Document) Descriptor() ([]byte, []int) {
-	return fileDescriptor_406ca165ef12c7d5, []int{24}
+	return fileDescriptor_406ca165ef12c7d5, []int{28}
 }
 
 func (m *Document) XXX_Unmarshal(b []byte) error {
@@ -1188,6 +1352,10 @@ func init() {
 	proto.RegisterEnum("index.LivenessProbeResponse_State", LivenessProbeResponse_State_name, LivenessProbeResponse_State_value)
 	proto.RegisterEnum("index.ReadinessProbeResponse_State", ReadinessProbeResponse_State_name, ReadinessProbeResponse_State_value)
 	proto.RegisterEnum("index.WatchStateResponse_Command", WatchStateResponse_Command_name, WatchStateResponse_Command_value)
+	proto.RegisterType((*GetMetadataRequest)(nil), "index.GetMetadataRequest")
+	proto.RegisterType((*GetMetadataResponse)(nil), "index.GetMetadataResponse")
+	proto.RegisterType((*GetNodeStateRequest)(nil), "index.GetNodeStateRequest")
+	proto.RegisterType((*GetNodeStateResponse)(nil), "index.GetNodeStateResponse")
 	proto.RegisterType((*GetNodeRequest)(nil), "index.GetNodeRequest")
 	proto.RegisterType((*GetNodeResponse)(nil), "index.GetNodeResponse")
 	proto.RegisterType((*SetNodeRequest)(nil), "index.SetNodeRequest")
@@ -1218,67 +1386,71 @@ func init() {
 func init() { proto.RegisterFile("protobuf/blast.proto", fileDescriptor_406ca165ef12c7d5) }
 
 var fileDescriptor_406ca165ef12c7d5 = []byte{
-	// 956 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x57, 0x5b, 0x73, 0xdb, 0x44,
-	0x14, 0xb6, 0x14, 0x14, 0x3b, 0xc7, 0xb1, 0xab, 0x2e, 0x76, 0x68, 0xd4, 0x76, 0x26, 0x6c, 0xb8,
-	0x94, 0x9b, 0xd2, 0x09, 0xc3, 0x14, 0x28, 0x65, 0x70, 0x62, 0x11, 0x32, 0xcd, 0x38, 0x54, 0x0a,
-	0x74, 0xe0, 0x25, 0x23, 0xcb, 0x9b, 0x44, 0x53, 0x5b, 0x0a, 0xd6, 0xaa, 0x43, 0x66, 0x78, 0xe3,
-	0x6f, 0xf1, 0xc8, 0xdf, 0xe0, 0xbf, 0x30, 0xd2, 0xae, 0x56, 0x17, 0xeb, 0x12, 0xe8, 0x9b, 0xb5,
-	0xfa, 0xce, 0x77, 0x6e, 0xdf, 0x9e, 0x63, 0xc1, 0xe0, 0x7a, 0xe9, 0x53, 0x7f, 0x1a, 0x5e, 0xec,
-	0x4d, 0xe7, 0x76, 0x40, 0xf5, 0xf8, 0x11, 0x29, 0xae, 0x37, 0x23, 0xbf, 0x6b, 0xdb, 0x97, 0xbe,
-	0x7f, 0x39, 0x27, 0x7b, 0x02, 0x63, 0x7b, 0x37, 0x0c, 0xa1, 0xdd, 0x2f, 0xbe, 0x22, 0x8b, 0x6b,
-	0xca, 0x5f, 0xe2, 0x1d, 0xe8, 0x1f, 0x11, 0x3a, 0xf1, 0x67, 0xc4, 0x24, 0xbf, 0x85, 0x24, 0xa0,
-	0xa8, 0x0f, 0xb2, 0x3b, 0xbb, 0x27, 0xed, 0x48, 0x8f, 0x36, 0x4c, 0xd9, 0x9d, 0xe1, 0x43, 0xb8,
-	0x23, 0x10, 0xc1, 0xb5, 0xef, 0x05, 0x04, 0x3d, 0x86, 0xce, 0x82, 0x50, 0x7b, 0x66, 0x53, 0x3b,
-	0x06, 0x76, 0xf7, 0x07, 0x3a, 0x73, 0xa2, 0x27, 0x4e, 0xf4, 0x91, 0x77, 0x63, 0x0a, 0x14, 0x36,
-	0xa1, 0x6f, 0xd5, 0xba, 0xc9, 0x71, 0xca, 0xb7, 0xe2, 0xdc, 0x85, 0xbb, 0x63, 0x32, 0x27, 0x94,
-	0xd4, 0x45, 0x3f, 0x06, 0x74, 0x44, 0xe8, 0xe1, 0x3c, 0x0c, 0x28, 0x59, 0x8a, 0x04, 0x74, 0x68,
-	0x3b, 0xec, 0xa8, 0x36, 0xfe, 0x04, 0x84, 0xff, 0x96, 0x60, 0xf0, 0xd2, 0xa6, 0xce, 0x55, 0x91,
-	0xe8, 0x19, 0xb4, 0x1d, 0x7f, 0xb1, 0xb0, 0x3d, 0xe6, 0xb3, 0xbf, 0xbf, 0xab, 0xc7, 0xfd, 0xd0,
-	0xcb, 0xd0, 0xfa, 0x21, 0x83, 0x9a, 0x89, 0x0d, 0x8f, 0x56, 0x2e, 0x2d, 0xc2, 0xda, 0xad, 0x8a,
-	0xf0, 0x09, 0xb4, 0x39, 0x2b, 0xea, 0x42, 0xfb, 0xa7, 0xc9, 0xf3, 0xc9, 0xe9, 0xcb, 0x89, 0xda,
-	0x42, 0x6d, 0x58, 0xb3, 0x8c, 0x33, 0x55, 0x42, 0x00, 0xeb, 0x63, 0xe3, 0xc4, 0x38, 0x33, 0x54,
-	0x19, 0xff, 0x01, 0xc3, 0x13, 0xf7, 0x35, 0xf1, 0x48, 0x10, 0xfc, 0xb8, 0xf4, 0xa7, 0x69, 0x43,
-	0xbf, 0x04, 0x25, 0xa0, 0x36, 0x25, 0x3c, 0x09, 0xcc, 0x93, 0x28, 0x05, 0xeb, 0x56, 0x84, 0x34,
-	0x99, 0x01, 0xfe, 0x08, 0x94, 0xf8, 0x39, 0xef, 0x7d, 0x03, 0x94, 0xd1, 0xc9, 0xf1, 0xcf, 0x86,
-	0x2a, 0xa1, 0x0e, 0xbc, 0x35, 0x36, 0x46, 0x63, 0x55, 0xc6, 0x7f, 0x4a, 0xb0, 0x65, 0x12, 0x7b,
-	0xe6, 0xae, 0xfa, 0xff, 0x2a, 0xef, 0x3f, 0x29, 0x62, 0x39, 0x3a, 0x1f, 0x80, 0x5e, 0x15, 0x80,
-	0x69, 0x8c, 0xc6, 0xbf, 0xa8, 0x12, 0xea, 0xc1, 0xc6, 0xe4, 0xf4, 0xec, 0x9c, 0x3d, 0xca, 0x78,
-	0x37, 0x96, 0x33, 0xa3, 0xe0, 0x9a, 0x51, 0x61, 0xed, 0x15, 0xb9, 0xe1, 0xa2, 0x89, 0x7e, 0xe2,
-	0x6f, 0x41, 0x4d, 0x41, 0x3c, 0xc6, 0x8f, 0x41, 0x79, 0x6d, 0xcf, 0x43, 0x52, 0xab, 0x18, 0x06,
-	0xc1, 0xa7, 0x70, 0xc7, 0x6a, 0x72, 0x92, 0x12, 0xca, 0xcd, 0x84, 0x1f, 0x00, 0x62, 0x5a, 0x6f,
-	0x08, 0xfc, 0x7d, 0xb8, 0x1b, 0x2b, 0xaf, 0x01, 0xf6, 0x97, 0x04, 0x28, 0x8b, 0xe3, 0x29, 0x3e,
-	0x2d, 0xaa, 0xf9, 0xdd, 0xac, 0x9a, 0x73, 0xd8, 0x55, 0x2d, 0x73, 0x2f, 0x72, 0x49, 0x82, 0x6b,
-	0xcd, 0x09, 0xfe, 0x27, 0x1d, 0xbf, 0x17, 0x5f, 0xea, 0xb1, 0xef, 0x84, 0x0b, 0xe2, 0xd1, 0xea,
-	0xc1, 0xf5, 0x76, 0x0e, 0xc5, 0x93, 0xfc, 0x14, 0xd6, 0x2f, 0x5c, 0x32, 0x9f, 0x05, 0xb5, 0x8d,
-	0xe4, 0x18, 0x7c, 0x06, 0x83, 0xe3, 0xa8, 0x04, 0x0d, 0xce, 0x32, 0xac, 0xf2, 0x2d, 0x58, 0x3f,
-	0x83, 0x61, 0x81, 0x95, 0x07, 0x37, 0x00, 0xc5, 0xf1, 0x43, 0x8f, 0xc6, 0xcc, 0x8a, 0xc9, 0x1e,
-	0xf0, 0x87, 0x30, 0x64, 0xdd, 0x6f, 0x4a, 0x59, 0x87, 0xad, 0x22, 0xb0, 0x96, 0xf8, 0x04, 0x7a,
-	0x16, 0xb1, 0x97, 0xce, 0x55, 0x42, 0xf8, 0x14, 0xfa, 0x41, 0x7c, 0x70, 0xbe, 0x64, 0x27, 0xb5,
-	0x45, 0xea, 0x05, 0x59, 0x63, 0xfc, 0x3c, 0x1a, 0xf2, 0xec, 0x40, 0xdc, 0xeb, 0x9e, 0xa0, 0x0b,
-	0xc2, 0x79, 0x3d, 0xdb, 0x66, 0xc2, 0x16, 0x21, 0xf1, 0x0b, 0xd8, 0x3a, 0x22, 0x34, 0xae, 0xd2,
-	0xa1, 0xef, 0x5d, 0xb8, 0x97, 0x82, 0xf4, 0x09, 0x6c, 0xc6, 0xaa, 0x3c, 0x77, 0xe2, 0xf3, 0x5a,
-	0xce, 0xae, 0x9b, 0x12, 0xe0, 0x09, 0x0c, 0x13, 0xca, 0x48, 0xcb, 0x81, 0x60, 0xfc, 0x02, 0x18,
-	0xee, 0x3c, 0x1a, 0x29, 0xf5, 0xba, 0x00, 0x57, 0x98, 0xe3, 0x1f, 0xa0, 0x93, 0xd4, 0xf9, 0xcd,
-	0xf4, 0xb0, 0xff, 0xcf, 0x06, 0x28, 0x07, 0xd1, 0x52, 0x47, 0x5f, 0x43, 0x9b, 0x6f, 0x5b, 0x34,
-	0xe4, 0x97, 0x2f, 0xbf, 0x9f, 0xb5, 0xad, 0xe2, 0x31, 0x4b, 0x02, 0xb7, 0x22, 0x5b, 0xab, 0x60,
-	0x6b, 0x15, 0x6d, 0x8b, 0x51, 0x18, 0xd1, 0x7f, 0x01, 0xdc, 0x42, 0xdf, 0x01, 0xa4, 0xcb, 0x14,
-	0xdd, 0xe3, 0xe6, 0x2b, 0xfb, 0xb5, 0x86, 0x61, 0x04, 0x90, 0x6e, 0x5a, 0x54, 0x81, 0xd3, 0xb6,
-	0xd3, 0xe8, 0x0b, 0xdb, 0x11, 0xb7, 0x90, 0x01, 0x9b, 0xd9, 0xbd, 0xf9, 0xbf, 0x48, 0x1e, 0x4b,
-	0xe8, 0x1b, 0xe8, 0x58, 0x9e, 0x7d, 0x1d, 0x5c, 0xf9, 0xb4, 0x92, 0xa2, 0x3a, 0x8f, 0x23, 0xe8,
-	0xe5, 0xf6, 0x5e, 0x25, 0xc5, 0x83, 0xba, 0x2d, 0x89, 0x5b, 0xe8, 0x18, 0xfa, 0xf9, 0x05, 0x56,
-	0xc9, 0xf4, 0xb0, 0x76, 0xdf, 0xe1, 0x16, 0x7a, 0x06, 0x9d, 0x64, 0x1f, 0xa1, 0x4c, 0xff, 0xb3,
-	0x53, 0x5e, 0x7b, 0x67, 0xe5, 0x5c, 0x98, 0x47, 0x05, 0x29, 0x9a, 0x17, 0xf6, 0x53, 0x4d, 0x41,
-	0x0e, 0xa0, 0x9b, 0xd9, 0x3d, 0x68, 0x3b, 0xa7, 0x8d, 0x5b, 0x72, 0x18, 0x00, 0xe9, 0x0e, 0x11,
-	0xf2, 0x5a, 0x59, 0x55, 0xa2, 0xb3, 0xab, 0x0b, 0x27, 0xee, 0xec, 0xf7, 0xd0, 0xcd, 0x8c, 0x74,
-	0x94, 0xd1, 0x41, 0x61, 0x32, 0x6a, 0x5a, 0xd9, 0x2b, 0x51, 0x90, 0x09, 0xf4, 0x72, 0xf3, 0x17,
-	0xdd, 0xe7, 0xf0, 0xb2, 0x59, 0x2f, 0x1a, 0x5d, 0x3a, 0xb2, 0x71, 0xeb, 0x91, 0x84, 0x5e, 0x40,
-	0x3f, 0x3f, 0x77, 0xd1, 0x83, 0x5c, 0x95, 0x8a, 0x8c, 0x0f, 0x2b, 0xde, 0x66, 0x28, 0x9f, 0xc0,
-	0x3a, 0x1b, 0xa6, 0x68, 0x20, 0x3a, 0x96, 0x19, 0xb6, 0xda, 0xb0, 0x70, 0x9a, 0x95, 0x5d, 0x7e,
-	0x70, 0x36, 0xca, 0xae, 0x7c, 0xce, 0xb2, 0xab, 0x90, 0x1b, 0x98, 0x8d, 0x57, 0xa1, 0x74, 0xbc,
-	0xe2, 0xd6, 0x01, 0xfe, 0x75, 0xe7, 0xd2, 0xa5, 0x57, 0xe1, 0x54, 0x77, 0xfc, 0xc5, 0xde, 0xc2,
-	0x0f, 0xc2, 0x57, 0x36, 0xfb, 0x8a, 0x11, 0x5f, 0x25, 0xd3, 0xf5, 0xf8, 0xd7, 0xe7, 0xff, 0x06,
-	0x00, 0x00, 0xff, 0xff, 0xb1, 0x37, 0x04, 0xfe, 0xe7, 0x0c, 0x00, 0x00,
+	// 1012 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x57, 0xdd, 0x72, 0xdb, 0x44,
+	0x14, 0xb6, 0x14, 0x1c, 0x3b, 0xc7, 0xb1, 0xeb, 0x2e, 0xb6, 0x69, 0xdd, 0x76, 0x26, 0x6c, 0x28,
+	0x14, 0x28, 0x4a, 0x27, 0x0c, 0x53, 0xa0, 0x94, 0xc1, 0x89, 0x45, 0xc8, 0x34, 0x38, 0xd4, 0x0e,
+	0x74, 0xca, 0x4d, 0x46, 0xb6, 0x37, 0x89, 0xa6, 0xb6, 0x14, 0xac, 0x55, 0x86, 0xcc, 0x70, 0xc7,
+	0xd3, 0xf0, 0x0e, 0x5c, 0xf2, 0x60, 0x8c, 0xb4, 0xab, 0xd5, 0xae, 0x7e, 0x03, 0xbd, 0xb3, 0xce,
+	0x7e, 0xfb, 0x9d, 0x9f, 0x3d, 0x7f, 0x86, 0xce, 0xe5, 0xca, 0xa5, 0xee, 0xd4, 0x3f, 0xdb, 0x99,
+	0x2e, 0x2c, 0x8f, 0x1a, 0xe1, 0x27, 0xaa, 0xda, 0xce, 0x9c, 0xfc, 0xde, 0xbf, 0x7b, 0xee, 0xba,
+	0xe7, 0x0b, 0xb2, 0x23, 0x30, 0x96, 0x73, 0xcd, 0x10, 0xfd, 0x7b, 0xc9, 0x23, 0xb2, 0xbc, 0xa4,
+	0xfc, 0x10, 0x7f, 0x00, 0xe8, 0x80, 0xd0, 0x1f, 0x09, 0xb5, 0xe6, 0x16, 0xb5, 0xc6, 0xe4, 0x37,
+	0x9f, 0x78, 0x14, 0xb5, 0x40, 0xb7, 0xe7, 0x77, 0xb4, 0x2d, 0xed, 0xd1, 0xc6, 0x58, 0xb7, 0xe7,
+	0xf8, 0x00, 0xde, 0x55, 0x50, 0xde, 0xa5, 0xeb, 0x78, 0x04, 0x3d, 0x81, 0xfa, 0x92, 0xcb, 0x42,
+	0x70, 0x63, 0xb7, 0x63, 0x30, 0x65, 0x46, 0xa4, 0xcc, 0x18, 0x38, 0xd7, 0x63, 0x81, 0xc2, 0x0f,
+	0x43, 0xa2, 0x91, 0x3b, 0x27, 0x13, 0x6a, 0x51, 0x92, 0xa7, 0xef, 0x31, 0x74, 0x54, 0x18, 0x57,
+	0xd8, 0x81, 0xaa, 0x17, 0x08, 0x38, 0x94, 0x7d, 0xe0, 0x2d, 0x68, 0x71, 0x74, 0x1e, 0xdf, 0x6b,
+	0xb8, 0x25, 0x10, 0xff, 0xd7, 0xf6, 0x58, 0xb9, 0x2e, 0x2b, 0x1f, 0x43, 0x6b, 0x52, 0xa8, 0x5c,
+	0xd1, 0xa4, 0xdf, 0x28, 0x4a, 0xdb, 0x70, 0x7b, 0x48, 0x16, 0x84, 0x92, 0x22, 0x9f, 0x86, 0xe1,
+	0xcb, 0xed, 0x2f, 0x7c, 0x8f, 0x92, 0x95, 0x70, 0xcb, 0x80, 0xda, 0x8c, 0x89, 0x0a, 0xbd, 0x8a,
+	0x40, 0xf8, 0x1f, 0x0d, 0x3a, 0xaf, 0x2c, 0x3a, 0xbb, 0x48, 0x12, 0x3d, 0x87, 0xda, 0xcc, 0x5d,
+	0x2e, 0x2d, 0x87, 0xe9, 0x6c, 0xed, 0x6e, 0x1b, 0x61, 0xa6, 0x19, 0x59, 0x68, 0x63, 0x9f, 0x41,
+	0xc7, 0xd1, 0x1d, 0x6e, 0xad, 0x9e, 0x19, 0x84, 0xb5, 0x1b, 0x05, 0xe1, 0x53, 0xa8, 0x71, 0x56,
+	0xd4, 0x80, 0xda, 0xcf, 0xa3, 0x17, 0xa3, 0xe3, 0x57, 0xa3, 0x76, 0x05, 0xd5, 0x60, 0x6d, 0x62,
+	0x9e, 0xb4, 0x35, 0x04, 0xb0, 0x3e, 0x34, 0x8f, 0xcc, 0x13, 0xb3, 0xad, 0xe3, 0x3f, 0xa0, 0x7b,
+	0x64, 0x5f, 0x11, 0x87, 0x78, 0xde, 0x4f, 0x2b, 0x77, 0x1a, 0x3f, 0xf3, 0x97, 0x72, 0xc6, 0xb4,
+	0x76, 0x31, 0x77, 0x22, 0x13, 0x6c, 0xb0, 0x64, 0xe3, 0x0f, 0xfb, 0x31, 0x54, 0xc3, 0x6f, 0x55,
+	0xfb, 0x06, 0x54, 0x07, 0x47, 0x87, 0xbf, 0x98, 0x6d, 0x0d, 0xd5, 0xe1, 0x9d, 0xa1, 0x39, 0x18,
+	0xb6, 0x75, 0xfc, 0xa7, 0x06, 0xbd, 0x31, 0xb1, 0xe6, 0x76, 0x5a, 0xff, 0x57, 0xaa, 0xfe, 0x28,
+	0x88, 0xd9, 0x68, 0xd5, 0x00, 0x23, 0xcf, 0x80, 0xb1, 0x39, 0x18, 0xbe, 0x6e, 0x6b, 0xa8, 0x09,
+	0x1b, 0xa3, 0xe3, 0x93, 0x53, 0xf6, 0xa9, 0xe3, 0xed, 0x30, 0xc9, 0x95, 0xba, 0x6a, 0xc3, 0xda,
+	0x1b, 0x72, 0xcd, 0x93, 0x26, 0xf8, 0x89, 0xbf, 0x85, 0x76, 0x0c, 0xe2, 0x36, 0x7e, 0x02, 0xd5,
+	0x2b, 0x6b, 0xe1, 0x93, 0xc2, 0x8c, 0x61, 0x10, 0x7c, 0x0c, 0xb7, 0x26, 0x65, 0x4a, 0x62, 0x42,
+	0xbd, 0x9c, 0xf0, 0x43, 0x40, 0x2c, 0xd7, 0x4b, 0x0c, 0x7f, 0x08, 0xb7, 0xc3, 0xcc, 0x2b, 0x81,
+	0xfd, 0xad, 0x01, 0x92, 0x71, 0xdc, 0xc5, 0x67, 0xc9, 0x6c, 0x7e, 0x5f, 0xce, 0x66, 0x05, 0x9b,
+	0xce, 0x65, 0xae, 0x45, 0xcf, 0x70, 0x70, 0xad, 0xdc, 0xc1, 0xff, 0x94, 0xc7, 0xac, 0x1d, 0x0f,
+	0xdd, 0x99, 0xbf, 0x24, 0x0e, 0xcd, 0x2b, 0xfd, 0xfd, 0xb0, 0x8b, 0xc6, 0x28, 0xee, 0xe4, 0x63,
+	0x58, 0x3f, 0xb3, 0xc9, 0x62, 0xee, 0x15, 0x3e, 0x24, 0xc7, 0xe0, 0x13, 0xe8, 0x1c, 0x06, 0x21,
+	0x28, 0x51, 0x26, 0xb1, 0xea, 0x37, 0x60, 0xfd, 0x0c, 0xba, 0x09, 0xd6, 0xb8, 0x75, 0xcf, 0x5c,
+	0xdf, 0xa1, 0x21, 0x73, 0x75, 0xcc, 0x3e, 0xf0, 0x47, 0xd0, 0x65, 0xaf, 0x5f, 0xe6, 0xb2, 0x01,
+	0xbd, 0x24, 0xb0, 0x90, 0xf8, 0x08, 0x9a, 0x13, 0x62, 0xad, 0x66, 0x17, 0x11, 0xe1, 0x33, 0x68,
+	0x79, 0xa1, 0xe0, 0x74, 0xc5, 0x24, 0x85, 0x41, 0x6a, 0x7a, 0xf2, 0x65, 0xfc, 0x22, 0x68, 0xf2,
+	0x4c, 0x20, 0xea, 0xba, 0x29, 0xe8, 0x3c, 0x7f, 0x51, 0xcc, 0xb6, 0x19, 0xb1, 0x05, 0x48, 0xfc,
+	0x12, 0x7a, 0x07, 0x84, 0x86, 0x51, 0xda, 0x77, 0x9d, 0x33, 0xfb, 0x5c, 0x90, 0x3e, 0x85, 0xcd,
+	0x30, 0x2b, 0x4f, 0x67, 0xa1, 0xbc, 0x90, 0xb3, 0x61, 0xc7, 0x04, 0x78, 0x04, 0xdd, 0x88, 0x32,
+	0xc8, 0x65, 0x4f, 0x30, 0x7e, 0x01, 0x0c, 0x77, 0x1a, 0xb4, 0x94, 0xe2, 0xbc, 0x00, 0x5b, 0x5c,
+	0xc7, 0x3f, 0x40, 0x3d, 0x8a, 0xf3, 0xdb, 0xe5, 0xc3, 0xee, 0x5f, 0x00, 0xd5, 0xbd, 0x60, 0x5d,
+	0x41, 0xdf, 0x43, 0x43, 0xda, 0x21, 0xd0, 0x5d, 0x5e, 0x80, 0xe9, 0xed, 0xa3, 0xdf, 0xcf, 0x3a,
+	0x62, 0x0e, 0xe1, 0x0a, 0x3a, 0x84, 0x4d, 0x79, 0x37, 0x40, 0x12, 0x3a, 0xb9, 0x57, 0xf4, 0xef,
+	0x65, 0x9e, 0x09, 0xaa, 0x03, 0x68, 0x2a, 0x83, 0x00, 0xf5, 0x52, 0xbe, 0x98, 0xc1, 0xae, 0xd4,
+	0xbf, 0x5f, 0x34, 0x36, 0x42, 0x9b, 0x5a, 0x6a, 0x47, 0xcf, 0x65, 0x7a, 0x50, 0x38, 0x00, 0x70,
+	0x05, 0x7d, 0x0d, 0x35, 0x6e, 0x2d, 0xea, 0xaa, 0xd6, 0x47, 0x4e, 0xf5, 0x92, 0x62, 0xf9, 0xee,
+	0x24, 0x71, 0x77, 0x92, 0xbc, 0x9b, 0x69, 0x16, 0xae, 0xa0, 0xef, 0x00, 0xe2, 0x9d, 0x03, 0xdd,
+	0xe1, 0xd7, 0x53, 0x6b, 0x48, 0x01, 0xc3, 0x00, 0x20, 0x5e, 0x48, 0x72, 0x03, 0x20, 0xbd, 0x7b,
+	0x62, 0x89, 0xc0, 0x15, 0xf4, 0x0d, 0xd4, 0x27, 0x8e, 0x75, 0xe9, 0x5d, 0xb8, 0x34, 0x97, 0x20,
+	0xdf, 0x80, 0xe7, 0x50, 0x8f, 0x66, 0x1b, 0x92, 0x82, 0xa4, 0x64, 0xc4, 0x7b, 0x29, 0xb9, 0xa2,
+	0x3c, 0x79, 0x3d, 0x31, 0xeb, 0x0a, 0x94, 0xef, 0x41, 0x43, 0x9a, 0x63, 0x22, 0xbd, 0xd3, 0xb3,
+	0xad, 0x80, 0xc3, 0x04, 0x88, 0xe7, 0x91, 0x78, 0x83, 0xd4, 0xd8, 0x13, 0x31, 0x4c, 0x0f, 0x2f,
+	0x5c, 0x79, 0xa2, 0xf1, 0x4a, 0x13, 0x05, 0x2c, 0x45, 0x3c, 0xd1, 0x65, 0xe5, 0x4a, 0x4b, 0xf6,
+	0x55, 0x5c, 0x41, 0x23, 0x68, 0x2a, 0xbd, 0x1c, 0x45, 0xe5, 0x94, 0x35, 0x37, 0x44, 0x8d, 0x64,
+	0xb6, 0x7f, 0x5c, 0x79, 0xa4, 0xa1, 0x97, 0xd0, 0x52, 0x7b, 0x38, 0xba, 0xaf, 0x44, 0x29, 0xc9,
+	0xf8, 0x20, 0xe7, 0x54, 0xa2, 0x7c, 0x0a, 0xeb, 0xac, 0x31, 0xa3, 0x8e, 0x78, 0x31, 0xa9, 0x71,
+	0xf7, 0xbb, 0x09, 0xa9, 0x5c, 0xb1, 0x6a, 0x13, 0x2e, 0xad, 0xd8, 0xec, 0x9e, 0xcd, 0xba, 0x88,
+	0xd2, 0x7c, 0x4b, 0xbb, 0x48, 0x66, 0xab, 0xc6, 0x95, 0x3d, 0xfc, 0xeb, 0xd6, 0xb9, 0x4d, 0x2f,
+	0xfc, 0xa9, 0x31, 0x73, 0x97, 0x3b, 0x4b, 0xd7, 0xf3, 0xdf, 0x58, 0xec, 0xbf, 0x9e, 0xf8, 0xef,
+	0x36, 0x5d, 0x0f, 0x7f, 0x7d, 0xfe, 0x6f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x45, 0x2d, 0xa5, 0x98,
+	0x0d, 0x0e, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1293,14 +1465,15 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type BlastClient interface {
+	GetMetadata(ctx context.Context, in *GetMetadataRequest, opts ...grpc.CallOption) (*GetMetadataResponse, error)
+	GetNodeState(ctx context.Context, in *GetNodeStateRequest, opts ...grpc.CallOption) (*GetNodeStateResponse, error)
+	LivenessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*LivenessProbeResponse, error)
+	ReadinessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ReadinessProbeResponse, error)
 	GetNode(ctx context.Context, in *GetNodeRequest, opts ...grpc.CallOption) (*GetNodeResponse, error)
 	SetNode(ctx context.Context, in *SetNodeRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	DeleteNode(ctx context.Context, in *DeleteNodeRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	GetCluster(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetClusterResponse, error)
-	WatchCluster(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (Blast_WatchClusterClient, error)
 	Snapshot(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error)
-	LivenessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*LivenessProbeResponse, error)
-	ReadinessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ReadinessProbeResponse, error)
 	GetState(ctx context.Context, in *GetStateRequest, opts ...grpc.CallOption) (*GetStateResponse, error)
 	SetState(ctx context.Context, in *SetStateRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	DeleteState(ctx context.Context, in *DeleteStateRequest, opts ...grpc.CallOption) (*empty.Empty, error)
@@ -1319,6 +1492,42 @@ type blastClient struct {
 
 func NewBlastClient(cc *grpc.ClientConn) BlastClient {
 	return &blastClient{cc}
+}
+
+func (c *blastClient) GetMetadata(ctx context.Context, in *GetMetadataRequest, opts ...grpc.CallOption) (*GetMetadataResponse, error) {
+	out := new(GetMetadataResponse)
+	err := c.cc.Invoke(ctx, "/index.Blast/GetMetadata", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *blastClient) GetNodeState(ctx context.Context, in *GetNodeStateRequest, opts ...grpc.CallOption) (*GetNodeStateResponse, error) {
+	out := new(GetNodeStateResponse)
+	err := c.cc.Invoke(ctx, "/index.Blast/GetNodeState", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *blastClient) LivenessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*LivenessProbeResponse, error) {
+	out := new(LivenessProbeResponse)
+	err := c.cc.Invoke(ctx, "/index.Blast/LivenessProbe", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *blastClient) ReadinessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ReadinessProbeResponse, error) {
+	out := new(ReadinessProbeResponse)
+	err := c.cc.Invoke(ctx, "/index.Blast/ReadinessProbe", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *blastClient) GetNode(ctx context.Context, in *GetNodeRequest, opts ...grpc.CallOption) (*GetNodeResponse, error) {
@@ -1357,59 +1566,9 @@ func (c *blastClient) GetCluster(ctx context.Context, in *empty.Empty, opts ...g
 	return out, nil
 }
 
-func (c *blastClient) WatchCluster(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (Blast_WatchClusterClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Blast_serviceDesc.Streams[0], "/index.Blast/WatchCluster", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &blastWatchClusterClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type Blast_WatchClusterClient interface {
-	Recv() (*GetClusterResponse, error)
-	grpc.ClientStream
-}
-
-type blastWatchClusterClient struct {
-	grpc.ClientStream
-}
-
-func (x *blastWatchClusterClient) Recv() (*GetClusterResponse, error) {
-	m := new(GetClusterResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 func (c *blastClient) Snapshot(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, "/index.Blast/Snapshot", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *blastClient) LivenessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*LivenessProbeResponse, error) {
-	out := new(LivenessProbeResponse)
-	err := c.cc.Invoke(ctx, "/index.Blast/LivenessProbe", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *blastClient) ReadinessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ReadinessProbeResponse, error) {
-	out := new(ReadinessProbeResponse)
-	err := c.cc.Invoke(ctx, "/index.Blast/ReadinessProbe", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1444,7 +1603,7 @@ func (c *blastClient) DeleteState(ctx context.Context, in *DeleteStateRequest, o
 }
 
 func (c *blastClient) WatchState(ctx context.Context, in *WatchStateRequest, opts ...grpc.CallOption) (Blast_WatchStateClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Blast_serviceDesc.Streams[1], "/index.Blast/WatchState", opts...)
+	stream, err := c.cc.NewStream(ctx, &_Blast_serviceDesc.Streams[0], "/index.Blast/WatchState", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1485,7 +1644,7 @@ func (c *blastClient) GetDocument(ctx context.Context, in *GetDocumentRequest, o
 }
 
 func (c *blastClient) IndexDocument(ctx context.Context, opts ...grpc.CallOption) (Blast_IndexDocumentClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Blast_serviceDesc.Streams[2], "/index.Blast/IndexDocument", opts...)
+	stream, err := c.cc.NewStream(ctx, &_Blast_serviceDesc.Streams[1], "/index.Blast/IndexDocument", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1519,7 +1678,7 @@ func (x *blastIndexDocumentClient) CloseAndRecv() (*IndexDocumentResponse, error
 }
 
 func (c *blastClient) DeleteDocument(ctx context.Context, opts ...grpc.CallOption) (Blast_DeleteDocumentClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Blast_serviceDesc.Streams[3], "/index.Blast/DeleteDocument", opts...)
+	stream, err := c.cc.NewStream(ctx, &_Blast_serviceDesc.Streams[2], "/index.Blast/DeleteDocument", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1581,14 +1740,15 @@ func (c *blastClient) GetIndexStats(ctx context.Context, in *empty.Empty, opts .
 
 // BlastServer is the server API for Blast service.
 type BlastServer interface {
+	GetMetadata(context.Context, *GetMetadataRequest) (*GetMetadataResponse, error)
+	GetNodeState(context.Context, *GetNodeStateRequest) (*GetNodeStateResponse, error)
+	LivenessProbe(context.Context, *empty.Empty) (*LivenessProbeResponse, error)
+	ReadinessProbe(context.Context, *empty.Empty) (*ReadinessProbeResponse, error)
 	GetNode(context.Context, *GetNodeRequest) (*GetNodeResponse, error)
 	SetNode(context.Context, *SetNodeRequest) (*empty.Empty, error)
 	DeleteNode(context.Context, *DeleteNodeRequest) (*empty.Empty, error)
 	GetCluster(context.Context, *empty.Empty) (*GetClusterResponse, error)
-	WatchCluster(*empty.Empty, Blast_WatchClusterServer) error
 	Snapshot(context.Context, *empty.Empty) (*empty.Empty, error)
-	LivenessProbe(context.Context, *empty.Empty) (*LivenessProbeResponse, error)
-	ReadinessProbe(context.Context, *empty.Empty) (*ReadinessProbeResponse, error)
 	GetState(context.Context, *GetStateRequest) (*GetStateResponse, error)
 	SetState(context.Context, *SetStateRequest) (*empty.Empty, error)
 	DeleteState(context.Context, *DeleteStateRequest) (*empty.Empty, error)
@@ -1603,6 +1763,78 @@ type BlastServer interface {
 
 func RegisterBlastServer(s *grpc.Server, srv BlastServer) {
 	s.RegisterService(&_Blast_serviceDesc, srv)
+}
+
+func _Blast_GetMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMetadataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BlastServer).GetMetadata(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/index.Blast/GetMetadata",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BlastServer).GetMetadata(ctx, req.(*GetMetadataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Blast_GetNodeState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetNodeStateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BlastServer).GetNodeState(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/index.Blast/GetNodeState",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BlastServer).GetNodeState(ctx, req.(*GetNodeStateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Blast_LivenessProbe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(empty.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BlastServer).LivenessProbe(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/index.Blast/LivenessProbe",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BlastServer).LivenessProbe(ctx, req.(*empty.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Blast_ReadinessProbe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(empty.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BlastServer).ReadinessProbe(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/index.Blast/ReadinessProbe",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BlastServer).ReadinessProbe(ctx, req.(*empty.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Blast_GetNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -1677,27 +1909,6 @@ func _Blast_GetCluster_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Blast_WatchCluster_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(empty.Empty)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(BlastServer).WatchCluster(m, &blastWatchClusterServer{stream})
-}
-
-type Blast_WatchClusterServer interface {
-	Send(*GetClusterResponse) error
-	grpc.ServerStream
-}
-
-type blastWatchClusterServer struct {
-	grpc.ServerStream
-}
-
-func (x *blastWatchClusterServer) Send(m *GetClusterResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
 func _Blast_Snapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(empty.Empty)
 	if err := dec(in); err != nil {
@@ -1712,42 +1923,6 @@ func _Blast_Snapshot_Handler(srv interface{}, ctx context.Context, dec func(inte
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(BlastServer).Snapshot(ctx, req.(*empty.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Blast_LivenessProbe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(BlastServer).LivenessProbe(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/index.Blast/LivenessProbe",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BlastServer).LivenessProbe(ctx, req.(*empty.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Blast_ReadinessProbe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(BlastServer).ReadinessProbe(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/index.Blast/ReadinessProbe",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BlastServer).ReadinessProbe(ctx, req.(*empty.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1956,6 +2131,22 @@ var _Blast_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*BlastServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "GetMetadata",
+			Handler:    _Blast_GetMetadata_Handler,
+		},
+		{
+			MethodName: "GetNodeState",
+			Handler:    _Blast_GetNodeState_Handler,
+		},
+		{
+			MethodName: "LivenessProbe",
+			Handler:    _Blast_LivenessProbe_Handler,
+		},
+		{
+			MethodName: "ReadinessProbe",
+			Handler:    _Blast_ReadinessProbe_Handler,
+		},
+		{
 			MethodName: "GetNode",
 			Handler:    _Blast_GetNode_Handler,
 		},
@@ -1974,14 +2165,6 @@ var _Blast_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Snapshot",
 			Handler:    _Blast_Snapshot_Handler,
-		},
-		{
-			MethodName: "LivenessProbe",
-			Handler:    _Blast_LivenessProbe_Handler,
-		},
-		{
-			MethodName: "ReadinessProbe",
-			Handler:    _Blast_ReadinessProbe_Handler,
 		},
 		{
 			MethodName: "GetState",
@@ -2013,11 +2196,6 @@ var _Blast_serviceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams: []grpc.StreamDesc{
-		{
-			StreamName:    "WatchCluster",
-			Handler:       _Blast_WatchCluster_Handler,
-			ServerStreams: true,
-		},
 		{
 			StreamName:    "WatchState",
 			Handler:       _Blast_WatchState_Handler,

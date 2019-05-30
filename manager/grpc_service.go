@@ -24,7 +24,8 @@ import (
 
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/mosuka/blast/errors"
+	"github.com/hashicorp/raft"
+	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -34,13 +35,14 @@ type GRPCService struct {
 	raftServer *RaftServer
 	logger     *log.Logger
 
-	clusterChans map[chan protobuf.GetClusterResponse]struct{}
-	clusterMutex sync.RWMutex
-	stateChans   map[chan protobuf.WatchStateResponse]struct{}
-	stateMutex   sync.RWMutex
+	watchPeersStopCh chan struct{}
+	watchPeersDoneCh chan struct{}
 
-	watchClusterStopCh chan struct{}
-	watchClusterDoneCh chan struct{}
+	peers       map[string]interface{}
+	peerClients map[string]*GRPCClient
+
+	stateChans map[chan protobuf.WatchStateResponse]struct{}
+	stateMutex sync.RWMutex
 }
 
 func NewGRPCService(raftServer *RaftServer, logger *log.Logger) (*GRPCService, error) {
@@ -48,101 +50,167 @@ func NewGRPCService(raftServer *RaftServer, logger *log.Logger) (*GRPCService, e
 		raftServer: raftServer,
 		logger:     logger,
 
-		clusterChans: make(map[chan protobuf.GetClusterResponse]struct{}),
-		stateChans:   make(map[chan protobuf.WatchStateResponse]struct{}),
+		peers:       make(map[string]interface{}, 0),
+		peerClients: make(map[string]*GRPCClient, 0),
 
-		watchClusterStopCh: make(chan struct{}),
-		watchClusterDoneCh: make(chan struct{}),
+		stateChans: make(map[chan protobuf.WatchStateResponse]struct{}),
 	}, nil
 }
 
 func (s *GRPCService) Start() error {
-	// start watching a cluster
-	s.logger.Printf("[INFO] start watching a cluster")
-	go s.watchCluster(1000 * time.Millisecond)
+	go s.startWatchPeers(500 * time.Millisecond)
 
 	return nil
 }
 
 func (s *GRPCService) Stop() error {
-	s.logger.Printf("[INFO] stop watching a cluster")
-	close(s.watchClusterStopCh)
-	s.logger.Printf("[INFO] wait for stop watching a cluster has done")
-	<-s.watchClusterDoneCh
-	s.logger.Printf("[INFO] cluster watching has been stopped")
+	s.stopWatchPeers()
 
 	return nil
 }
 
-func (s *GRPCService) watchCluster(checkInterval time.Duration) {
+func (s *GRPCService) startWatchPeers(checkInterval time.Duration) {
+	s.watchPeersStopCh = make(chan struct{})
+	s.watchPeersDoneCh = make(chan struct{})
+
+	s.logger.Printf("[INFO] start watching a cluster")
+
 	defer func() {
-		close(s.watchClusterDoneCh)
+		close(s.watchPeersDoneCh)
 	}()
 
 	ticker := time.NewTicker(checkInterval)
 	defer ticker.Stop()
 
-	savedCluster := map[string]interface{}{}
-
 	for {
 		select {
-		case <-s.watchClusterStopCh:
-			s.logger.Printf("[DEBUG] receive request that stop watching a cluster")
-			//cancel()
+		case <-s.watchPeersStopCh:
+			s.logger.Print("[DEBUG] receive request that stop watching a cluster")
 			return
 		case <-ticker.C:
-			// only the leader node watches own cluster
-			if s.raftServer.IsLeader() {
-				// get the cluster
-				cluster, err := s.raftServer.GetCluster() // TODO: if there is a problem, return an error and do not wait for the timeout
-				if err != nil {
-					s.logger.Printf("[ERR] %v", err)
-					return
+			// get the cluster
+			servers, err := s.raftServer.GetServers()
+			if err != nil {
+				s.logger.Printf("[ERR] %v", err)
+				return
+			}
+
+			// create peer node list with out self node
+			peers := make(map[string]interface{}, 0)
+			for id, metadata := range servers {
+				if id != s.raftServer.id {
+					peers[id] = metadata
 				}
+			}
 
-				// TODO: update cluster health
+			if reflect.DeepEqual(s.peers, peers) {
+				// there is no change in the cluster
+				continue
+			}
 
-				// notify when there is a change in the cluster
-				if !reflect.DeepEqual(savedCluster, cluster) {
-					s.logger.Printf("[INFO] cluster has chaged")
-					s.logger.Printf("[DEBUG] %v", cluster)
+			// open clients
+			for id, metadata := range peers {
+				grpcAddr := metadata.(map[string]interface{})["grpc_addr"].(string)
 
-					// save latest cluster
-					savedCluster = cluster
+				if _, clientExists := s.peerClients[id]; clientExists {
+					client := s.peerClients[id]
+					if client.GetAddress() != grpcAddr {
+						s.logger.Printf("[DEBUG] close client for %s", client.GetAddress())
+						err = client.Close()
+						if err != nil {
+							s.logger.Printf("[ERR] %v", err)
+						}
 
-					// create cluster response
-					clusterAny := &any.Any{}
-					err = protobuf.UnmarshalAny(cluster, clusterAny)
+						s.logger.Printf("[DEBUG] create client for %s", grpcAddr)
+						newClient, err := NewGRPCClient(grpcAddr)
+						if err != nil {
+							s.logger.Printf("[ERR] %v", err)
+						}
+
+						if client != nil {
+							s.logger.Printf("[DEBUG] create client for %s", newClient.GetAddress())
+							s.peerClients[id] = newClient
+						}
+					}
+				} else {
+					s.logger.Printf("[DEBUG] create client for %s", grpcAddr)
+					newClient, err := NewGRPCClient(grpcAddr)
 					if err != nil {
 						s.logger.Printf("[ERR] %v", err)
-						continue
 					}
-					getClusterResponse := &protobuf.GetClusterResponse{Cluster: clusterAny}
 
-					// notify cluster changes
-					for c := range s.clusterChans {
-						c <- *getClusterResponse
+					s.peerClients[id] = newClient
+				}
+			}
+
+			// close nonexistent clients
+			for id := range s.peers {
+				if _, peerExists := peers[id]; !peerExists {
+					if _, clientExists := s.peerClients[id]; clientExists {
+						client := s.peerClients[id]
+
+						s.logger.Printf("[DEBUG] close client for %s", client.GetAddress())
+						err = client.Close()
+						if err != nil {
+							s.logger.Printf("[ERR] %v", err)
+						}
+
+						delete(s.peerClients, id)
 					}
 				}
-			} else {
-				s.logger.Printf("[INFO] not a leader")
 			}
+
+			// keep current peer nodes
+			s.peers = peers
 		default:
-			// avoid being blocked
+			time.Sleep(100 * time.Millisecond)
 		}
 	}
 }
 
-func (s *GRPCService) GetNode(ctx context.Context, req *protobuf.GetNodeRequest) (*protobuf.GetNodeResponse, error) {
-	s.logger.Printf("[INFO] get node %v", req)
+func (s *GRPCService) stopWatchPeers() {
+	s.logger.Printf("[INFO] stop watching a cluster")
+	close(s.watchPeersStopCh)
+	s.logger.Printf("[INFO] wait for stop watching a cluster has done")
+	<-s.watchPeersDoneCh
+	s.logger.Printf("[INFO] cluster watching has been stopped")
 
-	resp := &protobuf.GetNodeResponse{}
+	// close clients
+	s.logger.Printf("[INFO] close clients")
+	for _, client := range s.peerClients {
+		s.logger.Printf("[DEBUG] close client for %s", client.GetAddress())
+		err := client.Close()
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+		}
+	}
+}
 
+func (s *GRPCService) getMetadata(id string) (map[string]interface{}, error) {
+	metadata, err := s.raftServer.GetMetadata(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return metadata, nil
+}
+
+func (s *GRPCService) GetMetadata(ctx context.Context, req *protobuf.GetMetadataRequest) (*protobuf.GetMetadataResponse, error) {
+	resp := &protobuf.GetMetadataResponse{}
+
+	var metadata map[string]interface{}
 	var err error
 
-	metadata, err := s.raftServer.GetNode(req.Id)
-	if err != nil {
-		return resp, status.Error(codes.Internal, err.Error())
+	if req.Id == s.raftServer.id {
+		metadata, err = s.getMetadata(req.Id)
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+		}
+	} else {
+		metadata, err = s.peerClients[req.Id].GetMetadata(req.Id)
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+		}
 	}
 
 	metadataAny := &any.Any{}
@@ -152,6 +220,69 @@ func (s *GRPCService) GetNode(ctx context.Context, req *protobuf.GetNodeRequest)
 	}
 
 	resp.Metadata = metadataAny
+
+	return resp, nil
+}
+
+func (s *GRPCService) getNodeState() string {
+	return s.raftServer.State()
+}
+
+func (s *GRPCService) GetNodeState(ctx context.Context, req *protobuf.GetNodeStateRequest) (*protobuf.GetNodeStateResponse, error) {
+	resp := &protobuf.GetNodeStateResponse{}
+
+	state := ""
+	var err error
+
+	if req.Id == s.raftServer.id {
+		state = s.getNodeState()
+	} else {
+		state, err = s.peerClients[req.Id].GetNodeState(req.Id)
+		if err != nil {
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+	}
+
+	resp.State = state
+
+	return resp, nil
+}
+
+func (s *GRPCService) GetNode(ctx context.Context, req *protobuf.GetNodeRequest) (*protobuf.GetNodeResponse, error) {
+	resp := &protobuf.GetNodeResponse{}
+
+	var metadata map[string]interface{}
+	var state string
+	var err error
+
+	if req.Id == s.raftServer.id {
+		metadata, err = s.getMetadata(req.Id)
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+		}
+
+		state = s.getNodeState()
+	} else {
+		metadata, err = s.peerClients[req.Id].GetMetadata(req.Id)
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+		}
+
+		state, err = s.peerClients[req.Id].GetNodeState(req.Id)
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			state = raft.Shutdown.String()
+		}
+	}
+
+	metadataAny := &any.Any{}
+	err = protobuf.UnmarshalAny(metadata, metadataAny)
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	resp.Metadata = metadataAny
+	resp.State = state
 
 	return resp, nil
 }
@@ -168,19 +299,9 @@ func (s *GRPCService) SetNode(ctx context.Context, req *protobuf.SetNodeRequest)
 
 	metadata := *ins.(*map[string]interface{})
 
-	err = s.raftServer.SetNode(req.Id, metadata)
+	err = s.raftServer.SetMetadata(req.Id, metadata)
 	if err != nil {
 		return resp, status.Error(codes.Internal, err.Error())
-	}
-
-	getClusterResponse, err := s.GetCluster(ctx, &empty.Empty{})
-	if err != nil {
-		return resp, status.Error(codes.Internal, err.Error())
-	}
-
-	// notify
-	for c := range s.clusterChans {
-		c <- *getClusterResponse
 	}
 
 	return resp, nil
@@ -191,32 +312,39 @@ func (s *GRPCService) DeleteNode(ctx context.Context, req *protobuf.DeleteNodeRe
 
 	resp := &empty.Empty{}
 
-	err := s.raftServer.DeleteNode(req.Id)
+	err := s.raftServer.DeleteMetadata(req.Id)
 	if err != nil {
 		return resp, status.Error(codes.Internal, err.Error())
-	}
-
-	getClusterResponse, err := s.GetCluster(ctx, &empty.Empty{})
-	if err != nil {
-		return resp, status.Error(codes.Internal, err.Error())
-	}
-
-	// notify
-	for c := range s.clusterChans {
-		c <- *getClusterResponse
 	}
 
 	return resp, nil
 }
 
 func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*protobuf.GetClusterResponse, error) {
-	s.logger.Printf("[INFO] get cluster %v", req)
-
 	resp := &protobuf.GetClusterResponse{}
 
-	cluster, err := s.raftServer.GetCluster()
+	servers, err := s.raftServer.GetServers()
 	if err != nil {
 		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	cluster := map[string]interface{}{}
+
+	for id := range servers {
+		r, err := s.GetNode(ctx, &protobuf.GetNodeRequest{Id: id})
+		if err != nil {
+			return resp, err
+		}
+
+		ins, err := protobuf.MarshalAny(r.Metadata)
+		metadata := *ins.(*map[string]interface{})
+
+		node := map[string]interface{}{
+			"metadata": metadata,
+			"state":    r.State,
+		}
+
+		cluster[id] = node
 	}
 
 	clusterAny := &any.Any{}
@@ -228,30 +356,6 @@ func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*protob
 	resp.Cluster = clusterAny
 
 	return resp, nil
-}
-
-func (s *GRPCService) WatchCluster(req *empty.Empty, server protobuf.Blast_WatchClusterServer) error {
-	chans := make(chan protobuf.GetClusterResponse)
-
-	s.clusterMutex.Lock()
-	s.clusterChans[chans] = struct{}{}
-	s.clusterMutex.Unlock()
-
-	defer func() {
-		s.clusterMutex.Lock()
-		delete(s.clusterChans, chans)
-		s.clusterMutex.Unlock()
-		close(chans)
-	}()
-
-	for resp := range chans {
-		err := server.Send(&resp)
-		if err != nil {
-			return status.Error(codes.Internal, err.Error())
-		}
-	}
-
-	return nil
 }
 
 func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
@@ -298,12 +402,10 @@ func (s *GRPCService) GetState(ctx context.Context, req *protobuf.GetStateReques
 
 	resp := &protobuf.GetStateResponse{}
 
-	var err error
-
 	value, err := s.raftServer.Get(req.Key)
 	if err != nil {
 		switch err {
-		case errors.ErrNotFound:
+		case blasterrors.ErrNotFound:
 			return resp, status.Error(codes.NotFound, err.Error())
 		default:
 			return resp, status.Error(codes.Internal, err.Error())
@@ -339,7 +441,7 @@ func (s *GRPCService) SetState(ctx context.Context, req *protobuf.SetStateReques
 	err = s.raftServer.Set(req.Key, value)
 	if err != nil {
 		switch err {
-		case errors.ErrNotFound:
+		case blasterrors.ErrNotFound:
 			return resp, status.Error(codes.NotFound, err.Error())
 		default:
 			return resp, status.Error(codes.Internal, err.Error())
@@ -373,7 +475,7 @@ func (s *GRPCService) DeleteState(ctx context.Context, req *protobuf.DeleteState
 	err := s.raftServer.Delete(req.Key)
 	if err != nil {
 		switch err {
-		case errors.ErrNotFound:
+		case blasterrors.ErrNotFound:
 			return resp, status.Error(codes.NotFound, err.Error())
 		default:
 			return resp, status.Error(codes.Internal, err.Error())

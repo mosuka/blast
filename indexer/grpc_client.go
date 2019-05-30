@@ -74,6 +74,48 @@ func (c *GRPCClient) Close() error {
 	return c.ctx.Err()
 }
 
+func (c *GRPCClient) GetAddress() string {
+	return c.conn.Target()
+}
+
+func (c *GRPCClient) GetMetadata(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
+	req := &protobuf.GetMetadataRequest{
+		Id: id,
+	}
+
+	resp, err := c.client.GetMetadata(c.ctx, req, opts...)
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+
+	ins, err := protobuf.MarshalAny(resp.Metadata)
+
+	var metadata map[string]interface{}
+	if ins == nil {
+		return nil, errors.New("nil")
+	}
+	metadata = *ins.(*map[string]interface{})
+
+	return metadata, nil
+}
+
+func (c *GRPCClient) GetNodeState(id string, opts ...grpc.CallOption) (string, error) {
+	req := &protobuf.GetNodeStateRequest{
+		Id: id,
+	}
+
+	resp, err := c.client.GetNodeState(c.ctx, req, opts...)
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return "", errors.New(st.Message())
+	}
+
+	return resp.State, nil
+}
+
 func (c *GRPCClient) GetNode(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
 	req := &protobuf.GetNodeRequest{
 		Id: id,
@@ -89,7 +131,12 @@ func (c *GRPCClient) GetNode(id string, opts ...grpc.CallOption) (map[string]int
 	ins, err := protobuf.MarshalAny(resp.Metadata)
 	metadata := *ins.(*map[string]interface{})
 
-	return metadata, nil
+	node := map[string]interface{}{
+		"metadata": metadata,
+		"state":    resp.State,
+	}
+
+	return node, nil
 }
 
 func (c *GRPCClient) SetNode(id string, metadata map[string]interface{}, opts ...grpc.CallOption) error {
@@ -137,16 +184,6 @@ func (c *GRPCClient) GetCluster(opts ...grpc.CallOption) (map[string]interface{}
 	cluster := *ins.(*map[string]interface{})
 
 	return cluster, nil
-}
-
-func (c *GRPCClient) WatchCluster(opts ...grpc.CallOption) (protobuf.Blast_WatchClusterClient, error) {
-	watchClusterClient, err := c.client.WatchCluster(c.ctx, &empty.Empty{}, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-		return nil, errors.New(st.Message())
-	}
-
-	return watchClusterClient, nil
 }
 
 func (c *GRPCClient) Snapshot(opts ...grpc.CallOption) error {

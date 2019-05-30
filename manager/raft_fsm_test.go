@@ -51,23 +51,23 @@ func TestRaftFSM_GetNode(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	fsm.applySetNode("node1", map[string]interface{}{
+	fsm.applySetMetadata("node1", map[string]interface{}{
 		"bind_addr": ":16060",
 		"grpc_addr": ":17070",
 		"http_addr": ":18080",
 	})
-	fsm.applySetNode("node2", map[string]interface{}{
+	fsm.applySetMetadata("node2", map[string]interface{}{
 		"bind_addr": ":16061",
 		"grpc_addr": ":17071",
 		"http_addr": ":18081",
 	})
-	fsm.applySetNode("node3", map[string]interface{}{
+	fsm.applySetMetadata("node3", map[string]interface{}{
 		"bind_addr": ":16062",
 		"grpc_addr": ":17072",
 		"http_addr": ":18082",
 	})
 
-	val1, err := fsm.GetNode("node2")
+	val1, err := fsm.GetMetadata("node2")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -113,23 +113,23 @@ func TestRaftFSM_SetNode(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	fsm.applySetNode("node1", map[string]interface{}{
+	fsm.applySetMetadata("node1", map[string]interface{}{
 		"bind_addr": ":16060",
 		"grpc_addr": ":17070",
 		"http_addr": ":18080",
 	})
-	fsm.applySetNode("node2", map[string]interface{}{
+	fsm.applySetMetadata("node2", map[string]interface{}{
 		"bind_addr": ":16061",
 		"grpc_addr": ":17071",
 		"http_addr": ":18081",
 	})
-	fsm.applySetNode("node3", map[string]interface{}{
+	fsm.applySetMetadata("node3", map[string]interface{}{
 		"bind_addr": ":16062",
 		"grpc_addr": ":17072",
 		"http_addr": ":18082",
 	})
 
-	val1, err := fsm.GetNode("node2")
+	val1, err := fsm.GetMetadata("node2")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -143,14 +143,14 @@ func TestRaftFSM_SetNode(t *testing.T) {
 		t.Errorf("expected content to see %v, saw %v", exp1, act1)
 	}
 
-	fsm.applySetNode("node2", map[string]interface{}{
+	fsm.applySetMetadata("node2", map[string]interface{}{
 		"bind_addr": ":16061",
 		"grpc_addr": ":17071",
 		"http_addr": ":18081",
 		"leader":    true,
 	})
 
-	val2, err := fsm.GetNode("node2")
+	val2, err := fsm.GetMetadata("node2")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -195,23 +195,23 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	fsm.applySetNode("node1", map[string]interface{}{
+	fsm.applySetMetadata("node1", map[string]interface{}{
 		"bind_addr": ":16060",
 		"grpc_addr": ":17070",
 		"http_addr": ":18080",
 	})
-	fsm.applySetNode("node2", map[string]interface{}{
+	fsm.applySetMetadata("node2", map[string]interface{}{
 		"bind_addr": ":16061",
 		"grpc_addr": ":17071",
 		"http_addr": ":18081",
 	})
-	fsm.applySetNode("node3", map[string]interface{}{
+	fsm.applySetMetadata("node3", map[string]interface{}{
 		"bind_addr": ":16062",
 		"grpc_addr": ":17072",
 		"http_addr": ":18082",
 	})
 
-	val1, err := fsm.GetNode("node2")
+	val1, err := fsm.GetMetadata("node2")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -225,9 +225,9 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 		t.Errorf("expected content to see %v, saw %v", exp1, act1)
 	}
 
-	fsm.applyDeleteNode("node2")
+	fsm.applyDeleteMetadata("node2")
 
-	val2, err := fsm.GetNode("node2")
+	val2, err := fsm.GetMetadata("node2")
 	if err == nil {
 		t.Errorf("expected error: %v", err)
 	}

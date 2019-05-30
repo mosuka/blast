@@ -140,6 +140,14 @@ func (s *GRPCService) StopWatchCluster() error {
 	return nil
 }
 
+func (s *GRPCService) GetMetadata(ctx context.Context, req *protobuf.GetMetadataRequest) (*protobuf.GetMetadataResponse, error) {
+	return &protobuf.GetMetadataResponse{}, status.Error(codes.Unavailable, "not implement")
+}
+
+func (s *GRPCService) GetNodeState(ctx context.Context, req *protobuf.GetNodeStateRequest) (*protobuf.GetNodeStateResponse, error) {
+	return &protobuf.GetNodeStateResponse{}, status.Error(codes.Unavailable, "not implement")
+}
+
 func (s *GRPCService) GetNode(ctx context.Context, req *protobuf.GetNodeRequest) (*protobuf.GetNodeResponse, error) {
 	return &protobuf.GetNodeResponse{}, status.Error(codes.Unavailable, "not implement")
 }
@@ -154,10 +162,6 @@ func (s *GRPCService) DeleteNode(ctx context.Context, req *protobuf.DeleteNodeRe
 
 func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*protobuf.GetClusterResponse, error) {
 	return &protobuf.GetClusterResponse{}, status.Error(codes.Unavailable, "not implement")
-}
-
-func (s *GRPCService) WatchCluster(req *empty.Empty, server protobuf.Blast_WatchClusterServer) error {
-	return status.Error(codes.Unavailable, "not implement")
 }
 
 func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {

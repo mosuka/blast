@@ -22,16 +22,20 @@ package index;
 option go_package = "github.com/mosuka/blast/protobuf";
 
 service Blast {
+    rpc GetMetadata (GetMetadataRequest) returns (GetMetadataResponse) {}
+    rpc GetNodeState (GetNodeStateRequest) returns (GetNodeStateResponse) {}
+
+    rpc LivenessProbe (google.protobuf.Empty) returns (LivenessProbeResponse) {}
+    rpc ReadinessProbe (google.protobuf.Empty) returns (ReadinessProbeResponse) {}
+
     rpc GetNode (GetNodeRequest) returns (GetNodeResponse) {}
     rpc SetNode (SetNodeRequest) returns (google.protobuf.Empty) {}
     rpc DeleteNode (DeleteNodeRequest) returns (google.protobuf.Empty) {}
     rpc GetCluster (google.protobuf.Empty) returns (GetClusterResponse) {}
-    rpc WatchCluster (google.protobuf.Empty) returns (stream GetClusterResponse) {}
+//    rpc WatchCluster (google.protobuf.Empty) returns (stream GetClusterResponse) {}
 
     rpc Snapshot (google.protobuf.Empty) returns (google.protobuf.Empty) {}
 
-    rpc LivenessProbe (google.protobuf.Empty) returns (LivenessProbeResponse) {}
-    rpc ReadinessProbe (google.protobuf.Empty) returns (ReadinessProbeResponse) {}
 
     rpc GetState (GetStateRequest) returns (GetStateResponse) {}
     rpc SetState (SetStateRequest) returns (google.protobuf.Empty) {}
@@ -47,6 +51,22 @@ service Blast {
     rpc GetIndexStats (google.protobuf.Empty) returns (GetIndexStatsResponse) {}
 }
 
+message GetMetadataRequest {
+    string id = 1;
+}
+
+message GetMetadataResponse {
+    google.protobuf.Any metadata = 1;
+}
+
+message GetNodeStateRequest {
+    string id = 1;
+}
+
+message GetNodeStateResponse {
+    string state = 1;
+}
+
 // use for raft cluster status
 message GetNodeRequest {
     string id = 1;
@@ -55,6 +75,7 @@ message GetNodeRequest {
 // use for raft cluster status
 message GetNodeResponse {
     google.protobuf.Any metadata = 1;
+    string state = 2;
 }
 
 // use for raft cluster status

@@ -77,7 +77,6 @@ func execStart(c *cli.Context) error {
 		"grpc_addr": grpcAddr,
 		"http_addr": httpAddr,
 		"data_dir":  dataDir,
-		"leader":    false,
 	}
 
 	// index mapping

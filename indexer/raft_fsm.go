@@ -20,6 +20,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"sync"
 
 	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/proto"
@@ -29,7 +30,8 @@ import (
 )
 
 type RaftFSM struct {
-	cluster maputils.Map
+	metadata      maputils.Map
+	metadataMutex sync.RWMutex
 
 	path string
 
@@ -51,7 +53,7 @@ func NewRaftFSM(path string, indexConfig map[string]interface{}, logger *log.Log
 func (f *RaftFSM) Start() error {
 	var err error
 
-	f.cluster = maputils.Map{}
+	f.metadata = maputils.Map{}
 
 	f.index, err = NewIndex(f.path, f.indexConfig, f.logger)
 	if err != nil {
@@ -70,8 +72,11 @@ func (f *RaftFSM) Stop() error {
 	return nil
 }
 
-func (f *RaftFSM) GetNode(id string) (map[string]interface{}, error) {
-	value, err := f.cluster.Get(id)
+func (f *RaftFSM) GetMetadata(id string) (map[string]interface{}, error) {
+	f.metadataMutex.RLock()
+	defer f.metadataMutex.RUnlock()
+
+	value, err := f.metadata.Get(id)
 	if err != nil {
 		return nil, err
 	}
@@ -79,8 +84,11 @@ func (f *RaftFSM) GetNode(id string) (map[string]interface{}, error) {
 	return value.(maputils.Map).ToMap(), nil
 }
 
-func (f *RaftFSM) applySetNode(id string, value map[string]interface{}) interface{} {
-	err := f.cluster.Merge(id, value)
+func (f *RaftFSM) applySetMetadata(id string, value map[string]interface{}) interface{} {
+	f.metadataMutex.RLock()
+	defer f.metadataMutex.RUnlock()
+
+	err := f.metadata.Merge(id, value)
 	if err != nil {
 		return err
 	}
@@ -88,8 +96,11 @@ func (f *RaftFSM) applySetNode(id string, value map[string]interface{}) interfac
 	return nil
 }
 
-func (f *RaftFSM) applyDeleteNode(id string) interface{} {
-	err := f.cluster.Delete(id)
+func (f *RaftFSM) applyDeleteMetadata(id string) interface{} {
+	f.metadataMutex.RLock()
+	defer f.metadataMutex.RUnlock()
+
+	err := f.metadata.Delete(id)
 	if err != nil {
 		return err
 	}
@@ -153,14 +164,14 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 		if err != nil {
 			return err
 		}
-		return f.applySetNode(data["id"].(string), data["metadata"].(map[string]interface{}))
+		return f.applySetMetadata(data["id"].(string), data["metadata"].(map[string]interface{}))
 	case deleteNode:
 		var data map[string]interface{}
 		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
 			return err
 		}
-		return f.applyDeleteNode(data["id"].(string))
+		return f.applyDeleteMetadata(data["id"].(string))
 	case indexDocument:
 		var data map[string]interface{}
 		err := json.Unmarshal(msg.Data, &data)
