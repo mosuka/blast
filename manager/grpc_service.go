@@ -35,13 +35,12 @@ type GRPCService struct {
 	raftServer *RaftServer
 	logger     *log.Logger
 
+	peers            map[string]interface{}
+	peerClients      map[string]*GRPCClient
 	watchPeersStopCh chan struct{}
 	watchPeersDoneCh chan struct{}
 
 	cluster map[string]interface{}
-
-	peers       map[string]interface{}
-	peerClients map[string]*GRPCClient
 
 	clusterChans map[chan protobuf.GetClusterResponse]struct{}
 	clusterMutex sync.RWMutex
@@ -67,12 +66,14 @@ func NewGRPCService(raftServer *RaftServer, logger *log.Logger) (*GRPCService, e
 }
 
 func (s *GRPCService) Start() error {
+	s.logger.Print("[INFO] start watching cluster")
 	go s.startWatchPeers(500 * time.Millisecond)
 
 	return nil
 }
 
 func (s *GRPCService) Stop() error {
+	s.logger.Print("[INFO] stop watching cluster")
 	s.stopWatchPeers()
 
 	return nil
@@ -227,14 +228,16 @@ func (s *GRPCService) GetMetadata(ctx context.Context, req *protobuf.GetMetadata
 	var err error
 
 	if req.Id == s.raftServer.id {
-		metadata, err = s.getMetadata(req.Id)
+		metadata, err = s.getMetadata(s.raftServer.id)
 		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
+			s.logger.Printf("[ERR] %v: %v", err, s.raftServer.id)
 		}
 	} else {
-		metadata, err = s.peerClients[req.Id].GetMetadata(req.Id)
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
+		if client, exist := s.peerClients[req.Id]; exist {
+			metadata, err = client.GetMetadata(req.Id)
+			if err != nil {
+				s.logger.Printf("[ERR] %v: %v", err, req.Id)
+			}
 		}
 	}
 
@@ -262,9 +265,11 @@ func (s *GRPCService) GetNodeState(ctx context.Context, req *protobuf.GetNodeSta
 	if req.Id == s.raftServer.id {
 		state = s.getNodeState()
 	} else {
-		state, err = s.peerClients[req.Id].GetNodeState(req.Id)
-		if err != nil {
-			return resp, status.Error(codes.Internal, err.Error())
+		if client, exist := s.peerClients[req.Id]; exist {
+			state, err = client.GetNodeState(req.Id)
+			if err != nil {
+				return resp, status.Error(codes.Internal, err.Error())
+			}
 		}
 	}
 
@@ -306,15 +311,17 @@ func (s *GRPCService) GetNode(ctx context.Context, req *protobuf.GetNodeRequest)
 
 		state = node["state"].(string)
 	} else {
-		metadata, err = s.peerClients[req.Id].GetMetadata(req.Id)
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-		}
+		if client, exist := s.peerClients[req.Id]; exist {
+			metadata, err = client.GetMetadata(req.Id)
+			if err != nil {
+				s.logger.Printf("[ERR] %v", err)
+			}
 
-		state, err = s.peerClients[req.Id].GetNodeState(req.Id)
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			state = raft.Shutdown.String()
+			state, err = client.GetNodeState(req.Id)
+			if err != nil {
+				s.logger.Printf("[ERR] %v", err)
+				state = raft.Shutdown.String()
+			}
 		}
 	}
 

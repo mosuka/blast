@@ -36,7 +36,6 @@ service Blast {
 
     rpc Snapshot (google.protobuf.Empty) returns (google.protobuf.Empty) {}
 
-
     rpc GetState (GetStateRequest) returns (GetStateResponse) {}
     rpc SetState (SetStateRequest) returns (google.protobuf.Empty) {}
     rpc DeleteState (DeleteStateRequest) returns (google.protobuf.Empty) {}
@@ -93,18 +92,6 @@ message DeleteNodeRequest {
 message GetClusterResponse {
     google.protobuf.Any cluster = 1;
 }
-
-// ?????
-//message WatchClusterResponse {
-//    enum Command {
-//        UNKNOWN = 0;
-//        SET = 1;
-//        DELETE = 2;
-//    }
-//    Command command = 1;
-//    string id = 2;
-//    google.protobuf.Any metadata = 3;
-//}
 
 // use for health check
 message LivenessProbeResponse {

@@ -320,39 +320,37 @@ func (s *RaftServer) GetMetadata(id string) (map[string]interface{}, error) {
 
 func (s *RaftServer) SetMetadata(id string, metadata map[string]interface{}) error {
 	if !s.IsLeader() {
-		//// forward to leader node
-		//leaderId, err := s.LeaderID(60 * time.Second)
-		//if err != nil {
-		//	return err
-		//}
-		//
-		//leaderNode, err := s.getNode(&blastraft.Node{Id: string(leaderId)})
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return nil
-		//}
-		//
-		//client, err := NewGRPCClient(leaderNode.Metadata.GrpcAddr)
-		//defer func() {
-		//	err := client.Close()
-		//	if err != nil {
-		//		s.logger.Printf("[ERR] %v", err)
-		//	}
-		//}()
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return nil
-		//}
-		//
-		//err = client.Join(node)
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return nil
-		//}
-		//
-		//return nil
+		// forward to leader node
+		leaderId, err := s.LeaderID(60 * time.Second)
+		if err != nil {
+			return err
+		}
 
-		return raft.ErrNotLeader
+		leaderMetadata, err := s.getMetadata(string(leaderId))
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			return nil
+		}
+
+		client, err := NewGRPCClient(leaderMetadata["grpc_addr"].(string))
+		defer func() {
+			err := client.Close()
+			if err != nil {
+				s.logger.Printf("[ERR] %v", err)
+			}
+		}()
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			return nil
+		}
+
+		err = client.SetNode(id, metadata)
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			return nil
+		}
+
+		return nil
 	}
 
 	cf := s.raft.GetConfiguration()
@@ -387,39 +385,37 @@ func (s *RaftServer) SetMetadata(id string, metadata map[string]interface{}) err
 
 func (s *RaftServer) DeleteMetadata(id string) error {
 	if !s.IsLeader() {
-		//// forward to leader node
-		//leaderId, err := s.LeaderID(60 * time.Second)
-		//if err != nil {
-		//	return err
-		//}
-		//
-		//leaderNode, err := s.getNode(&blastraft.Node{Id: string(leaderId)})
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return nil
-		//}
-		//
-		//client, err := NewGRPCClient(leaderNode.Metadata.GrpcAddr)
-		//defer func() {
-		//	err := client.Close()
-		//	if err != nil {
-		//		s.logger.Printf("[ERR] %v", err)
-		//	}
-		//}()
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return nil
-		//}
-		//
-		//err = client.Leave(node)
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return nil
-		//}
-		//
-		//return nil
+		// forward to leader node
+		leaderId, err := s.LeaderID(60 * time.Second)
+		if err != nil {
+			return err
+		}
 
-		return raft.ErrNotLeader
+		leaderMetadata, err := s.getMetadata(string(leaderId))
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			return nil
+		}
+
+		client, err := NewGRPCClient(leaderMetadata["grpc_addr"].(string))
+		defer func() {
+			err := client.Close()
+			if err != nil {
+				s.logger.Printf("[ERR] %v", err)
+			}
+		}()
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			return nil
+		}
+
+		err = client.DeleteNode(id)
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			return nil
+		}
+
+		return nil
 	}
 
 	cf := s.raft.GetConfiguration()
@@ -463,7 +459,7 @@ func (s *RaftServer) GetServers() (map[string]interface{}, error) {
 	for _, server := range cf.Configuration().Servers {
 		metadata, err := s.GetMetadata(string(server.ID))
 		if err != nil {
-			s.logger.Printf("[DEBUG] %v", err)
+			// could not get metadata
 			continue
 		}
 

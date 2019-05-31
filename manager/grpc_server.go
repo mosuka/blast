@@ -68,12 +68,15 @@ func (s *GRPCServer) Start() error {
 }
 
 func (s *GRPCServer) Stop() error {
-	s.server.GracefulStop()
-
+	s.logger.Print("[INFO] stop service")
 	err := s.service.Stop()
 	if err != nil {
 		return err
 	}
+
+	s.logger.Print("[INFO] stop server")
+	//s.server.GracefulStop() // TODO: graceful stop
+	s.server.Stop()
 
 	return nil
 }

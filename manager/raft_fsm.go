@@ -167,8 +167,6 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 		return err
 	}
 
-	f.logger.Printf("[DEBUG] Apply %v", msg)
-
 	switch msg.Command {
 	case setNode:
 		var data map[string]interface{}
