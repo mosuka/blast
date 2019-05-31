@@ -164,6 +164,10 @@ func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*protob
 	return &protobuf.GetClusterResponse{}, status.Error(codes.Unavailable, "not implement")
 }
 
+func (s *GRPCService) WatchCluster(req *empty.Empty, server protobuf.Blast_WatchClusterServer) error {
+	return status.Error(codes.Unavailable, "not implement")
+}
+
 func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
 	return &empty.Empty{}, status.Error(codes.Unavailable, "not implement")
 }

@@ -35,9 +35,15 @@ type GRPCClient struct {
 	client protobuf.BlastClient
 }
 
-func NewGRPCClient(address string) (*GRPCClient, error) {
+func NewGRPCClientCtx() (context.Context, context.CancelFunc) {
 	baseCtx := context.TODO()
-	ctx, cancel := context.WithCancel(baseCtx)
+	return context.WithCancel(baseCtx)
+}
+
+func NewGRPCClient(address string) (*GRPCClient, error) {
+	//baseCtx := context.TODO()
+	//ctx, cancel := context.WithCancel(baseCtx)
+	ctx, cancel := NewGRPCClientCtx()
 
 	dialOpts := []grpc.DialOption{
 		grpc.WithInsecure(),
@@ -183,6 +189,18 @@ func (c *GRPCClient) GetCluster(opts ...grpc.CallOption) (map[string]interface{}
 	cluster := *ins.(*map[string]interface{})
 
 	return cluster, nil
+}
+
+func (c *GRPCClient) WatchCluster(opts ...grpc.CallOption) (protobuf.Blast_WatchClusterClient, error) {
+	req := &empty.Empty{}
+
+	watchClient, err := c.client.WatchCluster(c.ctx, req, opts...)
+	if err != nil {
+		st, _ := status.FromError(err)
+		return nil, errors.New(st.Message())
+	}
+
+	return watchClient, nil
 }
 
 func (c *GRPCClient) Snapshot(opts ...grpc.CallOption) error {

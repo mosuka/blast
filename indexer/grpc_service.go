@@ -19,6 +19,7 @@ import (
 	"io"
 	"log"
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/blevesearch/bleve"
@@ -43,6 +44,12 @@ type GRPCService struct {
 
 	peers       map[string]interface{}
 	peerClients map[string]*GRPCClient
+
+	clusterChans map[chan protobuf.GetClusterResponse]struct{}
+	clusterMutex sync.RWMutex
+
+	watchManagersStopCh chan struct{}
+	watchManagersDoneCh chan struct{}
 
 	managers       map[string]interface{}
 	managerClients map[string]*GRPCClient
@@ -76,10 +83,6 @@ func (s *GRPCService) Stop() error {
 	return nil
 }
 
-func (s *GRPCService) startWatchManagers(checkInterval time.Duration) {
-
-}
-
 func (s *RaftServer) updateCluster() error {
 	//if s.managerAddr != "" {
 	//	mc, err := manager.NewGRPCClient(s.managerAddr)
@@ -106,6 +109,48 @@ func (s *RaftServer) updateCluster() error {
 	//}
 
 	return nil
+}
+
+func (s *GRPCService) startWatchManagers(checkInterval time.Duration) {
+	s.watchPeersStopCh = make(chan struct{})
+	s.watchPeersDoneCh = make(chan struct{})
+
+	s.logger.Printf("[INFO] start watching a cluster")
+
+	defer func() {
+		close(s.watchPeersDoneCh)
+	}()
+
+	ticker := time.NewTicker(checkInterval)
+	defer ticker.Stop()
+
+	seedClient, err := NewGRPCClient(s.managerAddr)
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return
+	}
+	cluster, err := seedClient.GetCluster()
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return
+	}
+	for id, metadata := range cluster {
+		if s.managerAddr == metadata.(map[string]interface{})["grpc_addr"] {
+			s.managerClients[id] = seedClient
+		}
+	}
+
+	for {
+		select {
+		case <-s.watchPeersStopCh:
+			s.logger.Print("[DEBUG] receive request that stop watching a cluster")
+			return
+		case <-ticker.C:
+			seedClient.GetCluster()
+		default:
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
 }
 
 func (s *GRPCService) startWatchPeers(checkInterval time.Duration) {
@@ -199,11 +244,11 @@ func (s *GRPCService) startWatchPeers(checkInterval time.Duration) {
 				}
 			}
 
-			// keep current peer nodes
-			s.peers = peers
-
 			// update master cluster state
 			// TODO
+
+			// keep current peer nodes
+			s.peers = peers
 		default:
 			time.Sleep(100 * time.Millisecond)
 		}
@@ -398,6 +443,30 @@ func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*protob
 	resp.Cluster = clusterAny
 
 	return resp, nil
+}
+
+func (s *GRPCService) WatchCluster(req *empty.Empty, server protobuf.Blast_WatchClusterServer) error {
+	chans := make(chan protobuf.GetClusterResponse)
+
+	s.clusterMutex.Lock()
+	s.clusterChans[chans] = struct{}{}
+	s.clusterMutex.Unlock()
+
+	defer func() {
+		s.clusterMutex.Lock()
+		delete(s.clusterChans, chans)
+		s.clusterMutex.Unlock()
+		close(chans)
+	}()
+
+	for resp := range chans {
+		err := server.Send(&resp)
+		if err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+	}
+
+	return nil
 }
 
 func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
