@@ -22,11 +22,11 @@ package index;
 option go_package = "github.com/mosuka/blast/protobuf";
 
 service Blast {
-    rpc GetMetadata (GetMetadataRequest) returns (GetMetadataResponse) {}
-    rpc GetNodeState (GetNodeStateRequest) returns (GetNodeStateResponse) {}
-
     rpc LivenessProbe (google.protobuf.Empty) returns (LivenessProbeResponse) {}
     rpc ReadinessProbe (google.protobuf.Empty) returns (ReadinessProbeResponse) {}
+
+    rpc GetMetadata (GetMetadataRequest) returns (GetMetadataResponse) {}
+    rpc GetNodeState (GetNodeStateRequest) returns (GetNodeStateResponse) {}
 
     rpc GetNode (GetNodeRequest) returns (GetNodeResponse) {}
     rpc SetNode (SetNodeRequest) returns (google.protobuf.Empty) {}
@@ -48,6 +48,26 @@ service Blast {
 
     rpc GetIndexConfig (google.protobuf.Empty) returns (GetIndexConfigResponse) {}
     rpc GetIndexStats (google.protobuf.Empty) returns (GetIndexStatsResponse) {}
+}
+
+// use for health check
+message LivenessProbeResponse {
+    enum State {
+        UNKNOWN = 0;
+        ALIVE = 1;
+        DEAD = 2;
+    }
+    State state = 1;
+}
+
+// use for health check
+message ReadinessProbeResponse {
+    enum State {
+        UNKNOWN = 0;
+        READY = 1;
+        NOT_READY = 2;
+    }
+    State state = 1;
 }
 
 message GetMetadataRequest {
@@ -91,26 +111,6 @@ message DeleteNodeRequest {
 // use for raft cluster status
 message GetClusterResponse {
     google.protobuf.Any cluster = 1;
-}
-
-// use for health check
-message LivenessProbeResponse {
-    enum State {
-        UNKNOWN = 0;
-        ALIVE = 1;
-        DEAD = 2;
-    }
-    State state = 1;
-}
-
-// use for health check
-message ReadinessProbeResponse {
-    enum State {
-        UNKNOWN = 0;
-        READY = 1;
-        NOT_READY = 2;
-    }
-    State state = 1;
 }
 
 message GetStateRequest {

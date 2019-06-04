@@ -238,7 +238,16 @@ $ make \
 Running a Blast index node is easy. Start Blast data node like so:
 
 ```bash
-$ ./bin/blast-indexer start --node-id=indexer1 --bind-addr=:6060 --grpc-addr=:7070 --http-addr=:8080 --data-dir=/tmp/blast/indexer1 --index-mapping-file=./example/index_mapping.json --index-type=upside_down --index-storage-type=boltdb
+$ ./bin/blast-indexer start \
+                      --node-id=indexer1 \
+                      --bind-addr=:6060 \
+                      --grpc-addr=:7070 \
+                      --http-addr=:8080 \
+                      --data-dir=/tmp/blast/indexer1 \
+                      --index-mapping-file=./example/index_mapping.json \
+                      --index-type=upside_down \
+                      --index-storage-type=boltdb \
+                      --log-level=DEBUG
 ```
 
 Please refer to following document for details of index mapping:
@@ -567,14 +576,37 @@ Blast can easily bring up a cluster. Running indexer node in standalone is not f
 At first, start the indexer node in standalone.
 
 ```bash
-$ ./bin/blast-indexer start --node-id=indexer1 --data-dir=/tmp/blast/indexer1 --bind-addr=:6060 --grpc-addr=:7070 --http-addr=:8080 --index-mapping-file=./example/index_mapping.json --index-type=upside_down --index-storage-type=boltdb
+$ ./bin/blast-indexer start \
+                      --node-id=indexer1 \
+                      --data-dir=/tmp/blast/indexer1 \
+                      --bind-addr=:6060 \
+                      --grpc-addr=:7070 \
+                      --http-addr=:8080 \
+                      --index-mapping-file=./example/index_mapping.json \
+                      --index-type=upside_down \
+                      --index-storage-type=boltdb \
+                      --log-level=DEBUG
 ```
 
 Then, start two more indexer nodes.
 
 ```bash
-$ ./bin/blast-indexer start --node-id=indexer2 --data-dir=/tmp/blast/indexer2 --bind-addr=:6061 --grpc-addr=:7071 --http-addr=:8081 --peer-addr=:7070
-$ ./bin/blast-indexer start --node-id=indexer3 --data-dir=/tmp/blast/indexer3 --bind-addr=:6062 --grpc-addr=:7072 --http-addr=:8082 --peer-addr=:7070
+$ ./bin/blast-indexer start \
+                      --peer-addr=:7070 \
+                      --node-id=indexer2 \
+                      --data-dir=/tmp/blast/indexer2 \
+                      --bind-addr=:6061 \
+                      --grpc-addr=:7071 \
+                      --http-addr=:8081 \
+                      --log-level=DEBUG
+$ ./bin/blast-indexer start \
+                      --peer-addr=:7070 \
+                      --node-id=indexer3 \
+                      --data-dir=/tmp/blast/indexer3 \
+                      --bind-addr=:6062 \
+                      --grpc-addr=:7072 \
+                      --http-addr=:8082 \
+                      --log-level=DEBUG
 ```
 
 _Above example shows each Blast node running on the same host, so each node must listen on different ports. This would not be necessary if each node ran on a different host._
@@ -666,19 +698,72 @@ You can see the result in JSON format. The result of the above command is:
 
 
 ```bash
-$ ./bin/blast-manager start --node-id=manager1 --bind-addr=:16060 --grpc-addr=:17070 --http-addr=:18080 --data-dir=/tmp/blast/manager1 --index-mapping-file=./example/index_mapping.json --index-type=upside_down --index-storage-type=boltdb
-$ ./bin/blast-manager start --node-id=manager2 --bind-addr=:16061 --grpc-addr=:17071 --http-addr=:18081 --data-dir=/tmp/blast/manager2 --peer-addr=:17070
-$ ./bin/blast-manager start --node-id=manager3 --bind-addr=:16062 --grpc-addr=:17072 --http-addr=:18082 --data-dir=/tmp/blast/manager3 --peer-addr=:17070
+$ ./bin/blast-manager start \
+                      --node-id=manager1 \
+                      --bind-addr=:16060 \
+                      --grpc-addr=:17070 \
+                      --http-addr=:18080 \
+                      --data-dir=/tmp/blast/manager1 \
+                      --index-mapping-file=./example/index_mapping.json \
+                      --index-type=upside_down \
+                      --index-storage-type=boltdb \
+                      --log-level=:DEBUG
+$ ./bin/blast-manager start \
+                      --peer-addr=:17070 \
+                      --node-id=manager2 \
+                      --bind-addr=:16061 \
+                      --grpc-addr=:17071 \
+                      --http-addr=:18081 \
+                      --data-dir=/tmp/blast/manager2 \
+                      --log-level=DEBUG
+$ ./bin/blast-manager start \
+                      --peer-addr=:17070 \
+                      --node-id=manager3 \
+                      --bind-addr=:16062 \
+                      --grpc-addr=:17072 \
+                      --http-addr=:18082 \
+                      --data-dir=/tmp/blast/manager3 \
+                      --log-level=DEBUG
 ```
 
-```bash
-$ ./bin/blast-federator start --manager-addr=:17070 --grpc-addr=:27070 --http-addr=:28080
-```
 
 ```bash
-$ ./bin/blast-indexer start --manager-addr=:17070 --cluster-id=cluster1 --node-id=indexer1 --bind-addr=:6060 --grpc-addr=:7070 --http-addr=:8080 --data-dir=/tmp/blast/indexer1
-$ ./bin/blast-indexer start --manager-addr=:17070 --cluster-id=cluster2 --node-id=indexer2 --bind-addr=:6061 --grpc-addr=:7071 --http-addr=:8081 --data-dir=/tmp/blast/indexer2
-$ ./bin/blast-indexer start --manager-addr=:17070 --cluster-id=cluster3 --node-id=indexer3 --bind-addr=:6062 --grpc-addr=:7072 --http-addr=:8082 --data-dir=/tmp/blast/indexer3
+$ ./bin/blast-indexer start \
+                      --manager-addr=:17070 \
+                      --cluster-id=cluster1 \
+                      --node-id=indexer1 \
+                      --bind-addr=:6060 \
+                      --grpc-addr=:7070 \
+                      --http-addr=:8080 \
+                      --data-dir=/tmp/blast/indexer1 \
+                      --log-level=DEBUG
+$ ./bin/blast-indexer start \
+                      --manager-addr=:17070 \
+                      --cluster-id=cluster2 \
+                      --node-id=indexer2 \
+                      --bind-addr=:6061 \
+                      --grpc-addr=:7071 \
+                      --http-addr=:8081 \
+                      --data-dir=/tmp/blast/indexer2 \
+                      --log-level=DEBUG
+$ ./bin/blast-indexer start \
+                      --manager-addr=:17070 \
+                      --cluster-id=cluster3 \
+                      --node-id=indexer3 \
+                      --bind-addr=:6062 \
+                      --grpc-addr=:7072 \
+                      --http-addr=:8082 \
+                      --data-dir=/tmp/blast/indexer3 \
+                      --log-level=DEBUG
+```
+
+
+```bash
+$ ./bin/blast-federator start \
+                        --manager-addr=:17070 \
+                        --grpc-addr=:27070 \
+                        --http-addr=:28080 \
+                        --log-level=DEBUG
 ```
 
 

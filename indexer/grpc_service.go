@@ -89,8 +89,10 @@ func (s *GRPCService) Stop() error {
 	s.logger.Print("[INFO] stop watching cluster")
 	s.stopWatchCluster()
 
-	s.logger.Print("[INFO] stop watching managers")
-	s.stopWatchManagers()
+	if s.managerAddr != "" {
+		s.logger.Print("[INFO] stop watching managers")
+		s.stopWatchManagers()
+	}
 
 	return nil
 }
@@ -296,8 +298,10 @@ func (s *GRPCService) stopWatchManagers() {
 	}
 
 	// stop watching managers
-	s.logger.Printf("[INFO] stop watching managers")
-	close(s.watchManagersStopCh)
+	if s.watchManagersStopCh != nil {
+		s.logger.Printf("[INFO] stop watching managers")
+		close(s.watchManagersStopCh)
+	}
 
 	// wait for stop watching managers has done
 	s.logger.Printf("[INFO] wait for stop watching managers has done")
@@ -431,8 +435,10 @@ func (s *GRPCService) stopWatchCluster() {
 	}
 
 	// stop watching peers
-	s.logger.Printf("[INFO] stop watching peers")
-	close(s.watchClusterStopCh)
+	if s.watchClusterStopCh != nil {
+		s.logger.Printf("[INFO] stop watching peers")
+		close(s.watchClusterStopCh)
+	}
 
 	// wait for stop watching peers has done
 	s.logger.Printf("[INFO] wait for stop watching peers has done")

@@ -75,10 +75,6 @@ func (s *GRPCService) Stop() error {
 	return nil
 }
 
-func (s *GRPCService) getLeaderClient() {
-
-}
-
 func (s *GRPCService) startWatchCluster(checkInterval time.Duration) {
 	s.watchClusterStopCh = make(chan struct{})
 	s.watchClusterDoneCh = make(chan struct{})
@@ -206,8 +202,10 @@ func (s *GRPCService) stopWatchCluster() {
 	}
 
 	// stop watching a cluster
-	s.logger.Printf("[INFO] stop watching a cluster")
-	close(s.watchClusterStopCh)
+	if s.watchClusterStopCh != nil {
+		s.logger.Printf("[INFO] stop watching a cluster")
+		close(s.watchClusterStopCh)
+	}
 
 	// wait for stop watching a cluster has done
 	s.logger.Printf("[INFO] wait for stop watching a cluster has done")
