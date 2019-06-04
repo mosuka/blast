@@ -207,6 +207,18 @@ func main() {
 			Action: execCluster,
 		},
 		{
+			Name:  "watchcluster",
+			Usage: "Watch a cluster",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "grpc-addr",
+					Value: ":17070",
+					Usage: "gRPC address to connect to",
+				},
+			},
+			Action: execWatchCluster,
+		},
+		{
 			Name:  "snapshot",
 			Usage: "Create snapshot manually",
 			Flags: []cli.Flag{
