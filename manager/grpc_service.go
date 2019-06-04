@@ -35,15 +35,13 @@ type GRPCService struct {
 	raftServer *RaftServer
 	logger     *log.Logger
 
-	peers            map[string]interface{}
-	peerClients      map[string]*GRPCClient
-	watchPeersStopCh chan struct{}
-	watchPeersDoneCh chan struct{}
-
-	cluster map[string]interface{}
-
-	clusterChans map[chan protobuf.GetClusterResponse]struct{}
-	clusterMutex sync.RWMutex
+	watchClusterStopCh chan struct{}
+	watchClusterDoneCh chan struct{}
+	peers              map[string]interface{}
+	peerClients        map[string]*GRPCClient
+	cluster            map[string]interface{}
+	clusterChans       map[chan protobuf.GetClusterResponse]struct{}
+	clusterMutex       sync.RWMutex
 
 	stateChans map[chan protobuf.WatchStateResponse]struct{}
 	stateMutex sync.RWMutex
@@ -54,11 +52,9 @@ func NewGRPCService(raftServer *RaftServer, logger *log.Logger) (*GRPCService, e
 		raftServer: raftServer,
 		logger:     logger,
 
-		cluster: make(map[string]interface{}, 0),
-
-		peers:       make(map[string]interface{}, 0),
-		peerClients: make(map[string]*GRPCClient, 0),
-
+		peers:        make(map[string]interface{}, 0),
+		peerClients:  make(map[string]*GRPCClient, 0),
+		cluster:      make(map[string]interface{}, 0),
 		clusterChans: make(map[chan protobuf.GetClusterResponse]struct{}),
 
 		stateChans: make(map[chan protobuf.WatchStateResponse]struct{}),
@@ -67,26 +63,26 @@ func NewGRPCService(raftServer *RaftServer, logger *log.Logger) (*GRPCService, e
 
 func (s *GRPCService) Start() error {
 	s.logger.Print("[INFO] start watching cluster")
-	go s.startWatchPeers(500 * time.Millisecond)
+	go s.startWatchCluster(500 * time.Millisecond)
 
 	return nil
 }
 
 func (s *GRPCService) Stop() error {
 	s.logger.Print("[INFO] stop watching cluster")
-	s.stopWatchPeers()
+	s.stopWatchCluster()
 
 	return nil
 }
 
-func (s *GRPCService) startWatchPeers(checkInterval time.Duration) {
-	s.watchPeersStopCh = make(chan struct{})
-	s.watchPeersDoneCh = make(chan struct{})
+func (s *GRPCService) startWatchCluster(checkInterval time.Duration) {
+	s.watchClusterStopCh = make(chan struct{})
+	s.watchClusterDoneCh = make(chan struct{})
 
 	s.logger.Printf("[INFO] start watching a cluster")
 
 	defer func() {
-		close(s.watchPeersDoneCh)
+		close(s.watchClusterDoneCh)
 	}()
 
 	ticker := time.NewTicker(checkInterval)
@@ -94,7 +90,7 @@ func (s *GRPCService) startWatchPeers(checkInterval time.Duration) {
 
 	for {
 		select {
-		case <-s.watchPeersStopCh:
+		case <-s.watchClusterStopCh:
 			s.logger.Print("[DEBUG] receive request that stop watching a cluster")
 			return
 		case <-ticker.C:
@@ -179,7 +175,7 @@ func (s *GRPCService) startWatchPeers(checkInterval time.Duration) {
 			ins, err := protobuf.MarshalAny(resp.Cluster)
 			cluster := *ins.(*map[string]interface{})
 
-			// notify cluster state
+			// notify current cluster
 			if !reflect.DeepEqual(s.cluster, cluster) {
 				for c := range s.clusterChans {
 					c <- *resp
@@ -194,7 +190,7 @@ func (s *GRPCService) startWatchPeers(checkInterval time.Duration) {
 	}
 }
 
-func (s *GRPCService) stopWatchPeers() {
+func (s *GRPCService) stopWatchCluster() {
 	// close clients
 	s.logger.Printf("[INFO] close clients")
 	for _, client := range s.peerClients {
@@ -207,11 +203,11 @@ func (s *GRPCService) stopWatchPeers() {
 
 	// stop watching a cluster
 	s.logger.Printf("[INFO] stop watching a cluster")
-	close(s.watchPeersStopCh)
+	close(s.watchClusterStopCh)
 
 	// wait for stop watching a cluster has done
 	s.logger.Printf("[INFO] wait for stop watching a cluster has done")
-	<-s.watchPeersDoneCh
+	<-s.watchClusterDoneCh
 }
 
 func (s *GRPCService) getMetadata(id string) (map[string]interface{}, error) {

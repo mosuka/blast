@@ -41,15 +41,13 @@ type GRPCService struct {
 	raftServer *RaftServer
 	logger     *log.Logger
 
-	peers            map[string]interface{}
-	peerClients      map[string]*GRPCClient
-	watchPeersStopCh chan struct{}
-	watchPeersDoneCh chan struct{}
-
-	cluster map[string]interface{}
-
-	clusterChans map[chan protobuf.GetClusterResponse]struct{}
-	clusterMutex sync.RWMutex
+	watchClusterStopCh chan struct{}
+	watchClusterDoneCh chan struct{}
+	peers              map[string]interface{}
+	peerClients        map[string]*GRPCClient
+	cluster            map[string]interface{}
+	clusterChans       map[chan protobuf.GetClusterResponse]struct{}
+	clusterMutex       sync.RWMutex
 
 	managers            map[string]interface{}
 	managerClients      map[string]*manager.GRPCClient
@@ -65,11 +63,9 @@ func NewGRPCService(managerAddr string, clusterId string, raftServer *RaftServer
 		raftServer: raftServer,
 		logger:     logger,
 
-		cluster: make(map[string]interface{}, 0),
-
-		peers:       make(map[string]interface{}, 0),
-		peerClients: make(map[string]*GRPCClient, 0),
-
+		peers:        make(map[string]interface{}, 0),
+		peerClients:  make(map[string]*GRPCClient, 0),
+		cluster:      make(map[string]interface{}, 0),
 		clusterChans: make(map[chan protobuf.GetClusterResponse]struct{}),
 
 		managers:       make(map[string]interface{}, 0),
@@ -79,7 +75,7 @@ func NewGRPCService(managerAddr string, clusterId string, raftServer *RaftServer
 
 func (s *GRPCService) Start() error {
 	s.logger.Print("[INFO] start watching cluster")
-	go s.startWatchPeers(500 * time.Millisecond)
+	go s.startWatchCluster(500 * time.Millisecond)
 
 	if s.managerAddr != "" {
 		s.logger.Print("[INFO] start watching managers")
@@ -91,7 +87,7 @@ func (s *GRPCService) Start() error {
 
 func (s *GRPCService) Stop() error {
 	s.logger.Print("[INFO] stop watching cluster")
-	s.stopWatchPeers()
+	s.stopWatchCluster()
 
 	s.logger.Print("[INFO] stop watching managers")
 	s.stopWatchManagers()
@@ -308,14 +304,14 @@ func (s *GRPCService) stopWatchManagers() {
 	<-s.watchManagersDoneCh
 }
 
-func (s *GRPCService) startWatchPeers(checkInterval time.Duration) {
-	s.watchPeersStopCh = make(chan struct{})
-	s.watchPeersDoneCh = make(chan struct{})
+func (s *GRPCService) startWatchCluster(checkInterval time.Duration) {
+	s.watchClusterStopCh = make(chan struct{})
+	s.watchClusterDoneCh = make(chan struct{})
 
 	s.logger.Printf("[INFO] start watching a cluster")
 
 	defer func() {
-		close(s.watchPeersDoneCh)
+		close(s.watchClusterDoneCh)
 	}()
 
 	ticker := time.NewTicker(checkInterval)
@@ -323,7 +319,7 @@ func (s *GRPCService) startWatchPeers(checkInterval time.Duration) {
 
 	for {
 		select {
-		case <-s.watchPeersStopCh:
+		case <-s.watchClusterStopCh:
 			s.logger.Print("[DEBUG] receive request that stop watching a cluster")
 			return
 		case <-ticker.C:
@@ -423,7 +419,7 @@ func (s *GRPCService) startWatchPeers(checkInterval time.Duration) {
 	}
 }
 
-func (s *GRPCService) stopWatchPeers() {
+func (s *GRPCService) stopWatchCluster() {
 	// close clients
 	s.logger.Printf("[INFO] close clients")
 	for _, client := range s.peerClients {
@@ -436,11 +432,11 @@ func (s *GRPCService) stopWatchPeers() {
 
 	// stop watching peers
 	s.logger.Printf("[INFO] stop watching peers")
-	close(s.watchPeersStopCh)
+	close(s.watchClusterStopCh)
 
 	// wait for stop watching peers has done
 	s.logger.Printf("[INFO] wait for stop watching peers has done")
-	<-s.watchPeersDoneCh
+	<-s.watchClusterDoneCh
 }
 
 func (s *GRPCService) getMetadata(id string) (map[string]interface{}, error) {
