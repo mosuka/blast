@@ -36,9 +36,13 @@ type GRPCClient struct {
 	client protobuf.BlastClient
 }
 
-func NewGRPCClient(grpcAddr string) (*GRPCClient, error) {
+func NewGRPCClientCtx() (context.Context, context.CancelFunc) {
 	baseCtx := context.TODO()
-	ctx, cancel := context.WithCancel(baseCtx)
+	return context.WithCancel(baseCtx)
+}
+
+func NewGRPCClient(grpcAddr string) (*GRPCClient, error) {
+	ctx, cancel := NewGRPCClientCtx()
 
 	dialOpts := []grpc.DialOption{
 		grpc.WithInsecure(),

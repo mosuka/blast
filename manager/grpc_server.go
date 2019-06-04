@@ -54,11 +54,13 @@ func NewGRPCServer(grpcAddr string, raftServer *RaftServer, logger *log.Logger) 
 }
 
 func (s *GRPCServer) Start() error {
+	s.logger.Print("[INFO] start service")
 	err := s.service.Start()
 	if err != nil {
 		return err
 	}
 
+	s.logger.Print("[INFO] start server")
 	err = s.server.Serve(s.listener)
 	if err != nil {
 		return err
@@ -75,8 +77,7 @@ func (s *GRPCServer) Stop() error {
 	}
 
 	s.logger.Print("[INFO] stop server")
-	//s.server.GracefulStop() // TODO: graceful stop
-	s.server.Stop()
+	s.server.Stop() // TODO: graceful stop
 
 	return nil
 }

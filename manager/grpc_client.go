@@ -41,8 +41,6 @@ func NewGRPCClientCtx() (context.Context, context.CancelFunc) {
 }
 
 func NewGRPCClient(address string) (*GRPCClient, error) {
-	//baseCtx := context.TODO()
-	//ctx, cancel := context.WithCancel(baseCtx)
 	ctx, cancel := NewGRPCClientCtx()
 
 	dialOpts := []grpc.DialOption{

@@ -195,12 +195,6 @@ func (s *GRPCService) startWatchPeers(checkInterval time.Duration) {
 }
 
 func (s *GRPCService) stopWatchPeers() {
-	s.logger.Printf("[INFO] stop watching a cluster")
-	close(s.watchPeersStopCh)
-	s.logger.Printf("[INFO] wait for stop watching a cluster has done")
-	<-s.watchPeersDoneCh
-	s.logger.Printf("[INFO] cluster watching has been stopped")
-
 	// close clients
 	s.logger.Printf("[INFO] close clients")
 	for _, client := range s.peerClients {
@@ -210,6 +204,14 @@ func (s *GRPCService) stopWatchPeers() {
 			s.logger.Printf("[ERR] %v", err)
 		}
 	}
+
+	// stop watching a cluster
+	s.logger.Printf("[INFO] stop watching a cluster")
+	close(s.watchPeersStopCh)
+
+	// wait for stop watching a cluster has done
+	s.logger.Printf("[INFO] wait for stop watching a cluster has done")
+	<-s.watchPeersDoneCh
 }
 
 func (s *GRPCService) getMetadata(id string) (map[string]interface{}, error) {
