@@ -289,7 +289,7 @@ func (s *RaftServer) deleteMetadata(id string) error {
 }
 
 func (s *RaftServer) setIndexConfig(indexConfig map[string]interface{}) error {
-	err := s.Set("index_config", indexConfig)
+	err := s.SetState("index_config", indexConfig)
 	if err != nil {
 		return err
 	}
@@ -479,7 +479,7 @@ func (s *RaftServer) Snapshot() error {
 	return nil
 }
 
-func (s *RaftServer) Get(key string) (interface{}, error) {
+func (s *RaftServer) GetState(key string) (interface{}, error) {
 	value, err := s.fsm.Get(key)
 	if err != nil {
 		return nil, err
@@ -488,7 +488,7 @@ func (s *RaftServer) Get(key string) (interface{}, error) {
 	return value, nil
 }
 
-func (s *RaftServer) Set(key string, value interface{}) error {
+func (s *RaftServer) SetState(key string, value interface{}) error {
 	if !s.IsLeader() {
 		//// forward to leader node
 		//leaderId, err := s.LeaderID(60 * time.Second)
@@ -550,7 +550,7 @@ func (s *RaftServer) Set(key string, value interface{}) error {
 	return nil
 }
 
-func (s *RaftServer) Delete(key string) error {
+func (s *RaftServer) DeleteState(key string) error {
 	if !s.IsLeader() {
 		//// forward to leader node
 		//leaderId, err := s.LeaderID(60 * time.Second)

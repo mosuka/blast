@@ -75,6 +75,10 @@ func (s *GRPCService) Stop() error {
 	return nil
 }
 
+func (s *GRPCService) getLeaderClient() {
+
+}
+
 func (s *GRPCService) startWatchCluster(checkInterval time.Duration) {
 	s.watchClusterStopCh = make(chan struct{})
 	s.watchClusterDoneCh = make(chan struct{})
@@ -482,7 +486,7 @@ func (s *GRPCService) GetState(ctx context.Context, req *protobuf.GetStateReques
 
 	resp := &protobuf.GetStateResponse{}
 
-	value, err := s.raftServer.Get(req.Key)
+	value, err := s.raftServer.GetState(req.Key)
 	if err != nil {
 		switch err {
 		case blasterrors.ErrNotFound:
@@ -518,7 +522,7 @@ func (s *GRPCService) SetState(ctx context.Context, req *protobuf.SetStateReques
 		return resp, status.Error(codes.Internal, err.Error())
 	}
 
-	err = s.raftServer.Set(req.Key, value)
+	err = s.raftServer.SetState(req.Key, value)
 	if err != nil {
 		switch err {
 		case blasterrors.ErrNotFound:
@@ -552,7 +556,7 @@ func (s *GRPCService) DeleteState(ctx context.Context, req *protobuf.DeleteState
 
 	resp := &empty.Empty{}
 
-	err := s.raftServer.Delete(req.Key)
+	err := s.raftServer.DeleteState(req.Key)
 	if err != nil {
 		switch err {
 		case blasterrors.ErrNotFound:
