@@ -61,7 +61,7 @@ func execSet(c *cli.Context) error {
 		}
 	}()
 
-	err = client.Set(key, value)
+	err = client.SetState(key, value)
 	if err != nil {
 		return err
 	}

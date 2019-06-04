@@ -79,7 +79,7 @@ func (s *Server) Start() {
 		}
 
 		s.logger.Printf("[INFO] get nodes in cluster: %s", s.clusterId)
-		value, err := mc.Get(fmt.Sprintf("cluster_config/clusters/%s/nodes", s.clusterId))
+		value, err := mc.GetState(fmt.Sprintf("cluster_config/clusters/%s/nodes", s.clusterId))
 		if err == errors.ErrNotFound {
 			// cluster does not found
 			s.logger.Printf("[INFO] cluster does not found: %s", s.clusterId)
@@ -128,7 +128,7 @@ func (s *Server) Start() {
 			return
 		}
 
-		value, err := mc.Get("index_config")
+		value, err := mc.GetState("index_config")
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return

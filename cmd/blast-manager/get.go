@@ -39,7 +39,7 @@ func execGet(c *cli.Context) error {
 		}
 	}()
 
-	value, err := client.Get(key)
+	value, err := client.GetState(key)
 	if err != nil {
 		return err
 	}

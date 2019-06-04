@@ -43,7 +43,7 @@ func execDelete(c *cli.Context) error {
 		}
 	}()
 
-	err = client.Delete(key)
+	err = client.DeleteState(key)
 	if err != nil {
 		return err
 	}

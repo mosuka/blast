@@ -234,7 +234,7 @@ func (c *GRPCClient) ReadinessProbe(opts ...grpc.CallOption) (string, error) {
 	return resp.State.String(), nil
 }
 
-func (c *GRPCClient) Get(key string, opts ...grpc.CallOption) (interface{}, error) {
+func (c *GRPCClient) GetState(key string, opts ...grpc.CallOption) (interface{}, error) {
 	req := &protobuf.GetStateRequest{
 		Key: key,
 	}
@@ -256,7 +256,7 @@ func (c *GRPCClient) Get(key string, opts ...grpc.CallOption) (interface{}, erro
 	return value, nil
 }
 
-func (c *GRPCClient) Set(key string, value interface{}, opts ...grpc.CallOption) error {
+func (c *GRPCClient) SetState(key string, value interface{}, opts ...grpc.CallOption) error {
 	valueAny := &any.Any{}
 	err := protobuf.UnmarshalAny(value, valueAny)
 	if err != nil {
@@ -283,7 +283,7 @@ func (c *GRPCClient) Set(key string, value interface{}, opts ...grpc.CallOption)
 	return nil
 }
 
-func (c *GRPCClient) Delete(key string, opts ...grpc.CallOption) error {
+func (c *GRPCClient) DeleteState(key string, opts ...grpc.CallOption) error {
 	req := &protobuf.DeleteStateRequest{
 		Key: key,
 	}

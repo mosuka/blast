@@ -490,39 +490,37 @@ func (s *RaftServer) GetState(key string) (interface{}, error) {
 
 func (s *RaftServer) SetState(key string, value interface{}) error {
 	if !s.IsLeader() {
-		//// forward to leader node
-		//leaderId, err := s.LeaderID(60 * time.Second)
-		//if err != nil {
-		//	return err
-		//}
-		//
-		//leaderNode, err := s.getNode(&blastraft.Node{Id: string(leaderId)})
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return err
-		//}
-		//
-		//client, err := NewGRPCClient(leaderNode.Metadata.GrpcAddr)
-		//defer func() {
-		//	err := client.Close()
-		//	if err != nil {
-		//		s.logger.Printf("[ERR] %v", err)
-		//	}
-		//}()
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return err
-		//}
-		//
-		//err = client.Set(kvp)
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return err
-		//}
-		//
-		//return nil
+		// forward to leader node
+		leaderId, err := s.LeaderID(60 * time.Second)
+		if err != nil {
+			return err
+		}
 
-		return raft.ErrNotLeader
+		leaderMetadata, err := s.getMetadata(string(leaderId))
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			return nil
+		}
+
+		client, err := NewGRPCClient(leaderMetadata["grpc_addr"].(string))
+		defer func() {
+			err := client.Close()
+			if err != nil {
+				s.logger.Printf("[ERR] %v", err)
+			}
+		}()
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			return nil
+		}
+
+		err = client.SetState(key, value)
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			return nil
+		}
+
+		return nil
 	}
 
 	msg, err := newMessage(
@@ -552,39 +550,37 @@ func (s *RaftServer) SetState(key string, value interface{}) error {
 
 func (s *RaftServer) DeleteState(key string) error {
 	if !s.IsLeader() {
-		//// forward to leader node
-		//leaderId, err := s.LeaderID(60 * time.Second)
-		//if err != nil {
-		//	return err
-		//}
-		//
-		//leaderNode, err := s.getNode(&blastraft.Node{Id: string(leaderId)})
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return err
-		//}
-		//
-		//client, err := NewGRPCClient(leaderNode.Metadata.GrpcAddr)
-		//defer func() {
-		//	err := client.Close()
-		//	if err != nil {
-		//		s.logger.Printf("[ERR] %v", err)
-		//	}
-		//}()
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return err
-		//}
-		//
-		//err = client.Delete(kvp)
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return err
-		//}
-		//
-		//return nil
+		// forward to leader node
+		leaderId, err := s.LeaderID(60 * time.Second)
+		if err != nil {
+			return err
+		}
 
-		return raft.ErrNotLeader
+		leaderMetadata, err := s.getMetadata(string(leaderId))
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			return nil
+		}
+
+		client, err := NewGRPCClient(leaderMetadata["grpc_addr"].(string))
+		defer func() {
+			err := client.Close()
+			if err != nil {
+				s.logger.Printf("[ERR] %v", err)
+			}
+		}()
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			return nil
+		}
+
+		err = client.DeleteState(key)
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			return nil
+		}
+
+		return nil
 	}
 
 	msg, err := newMessage(
