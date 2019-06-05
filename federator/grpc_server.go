@@ -54,11 +54,13 @@ func NewGRPCServer(managerAddr string, grpcAddr string, logger *log.Logger) (*GR
 }
 
 func (s *GRPCServer) Start() error {
-	err := s.service.StartWatchCluster()
+	s.logger.Print("[INFO] start service")
+	err := s.service.Start()
 	if err != nil {
 		return err
 	}
 
+	s.logger.Print("[INFO] start server")
 	err = s.server.Serve(s.listener)
 	if err != nil {
 		return err
@@ -68,12 +70,14 @@ func (s *GRPCServer) Start() error {
 }
 
 func (s *GRPCServer) Stop() error {
-	s.server.GracefulStop()
-
-	err := s.service.StopWatchCluster()
+	s.logger.Print("[INFO] stop service")
+	err := s.service.Stop()
 	if err != nil {
 		return err
 	}
+
+	s.logger.Print("[INFO] stop server")
+	s.server.Stop() // TODO: graceful stop
 
 	return nil
 }

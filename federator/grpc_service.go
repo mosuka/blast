@@ -16,13 +16,14 @@ package federator
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"io"
 	"log"
+	"reflect"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/hashicorp/raft"
 	"github.com/mosuka/blast/manager"
 	"github.com/mosuka/blast/protobuf"
 	"google.golang.org/grpc/codes"
@@ -30,114 +31,221 @@ import (
 )
 
 type GRPCService struct {
-	managerAddr   string
-	managerClient *manager.GRPCClient
-	watchClient   protobuf.Blast_WatchStateClient
-	watchStopCh   chan struct{}
-	watchDoneCh   chan struct{}
-	logger        *log.Logger
+	managerAddr string
+
+	logger *log.Logger
+
+	managers            map[string]interface{}
+	managerClients      map[string]*manager.GRPCClient
+	watchManagersStopCh chan struct{}
+	watchManagersDoneCh chan struct{}
 }
 
 func NewGRPCService(managerAddr string, logger *log.Logger) (*GRPCService, error) {
 	return &GRPCService{
 		managerAddr: managerAddr,
-		watchStopCh: make(chan struct{}),
-		watchDoneCh: make(chan struct{}),
 		logger:      logger,
+
+		managers:       make(map[string]interface{}, 0),
+		managerClients: make(map[string]*manager.GRPCClient, 0),
 	}, nil
 }
 
-func (s *GRPCService) watch() {
-	// notify done
-	defer func() { close(s.watchDoneCh) }()
+func (s *GRPCService) Start() error {
+	s.logger.Print("[INFO] start watching managers")
+	go s.startWatchManagers(500 * time.Millisecond)
+
+	return nil
+}
+
+func (s *GRPCService) Stop() error {
+	s.logger.Print("[INFO] stop watching managers")
+	s.stopWatchManagers()
+
+	return nil
+}
+
+func (s *GRPCService) getManagerClient() (*manager.GRPCClient, error) {
+	var client *manager.GRPCClient
+
+	for id, node := range s.managers {
+		state := node.(map[string]interface{})["state"].(string)
+		if state != raft.Shutdown.String() {
+
+			if _, exist := s.managerClients[id]; exist {
+				client = s.managerClients[id]
+				break
+			} else {
+				s.logger.Printf("[DEBUG] %v does not exist", id)
+			}
+		}
+	}
+
+	if client == nil {
+		return nil, errors.New("client does not exist")
+	}
+
+	return client, nil
+}
+
+func (s *GRPCService) getInitialManagers(managerAddr string) (map[string]interface{}, error) {
+	client, err := manager.NewGRPCClient(s.managerAddr)
+	defer func() {
+		err := client.Close()
+		s.logger.Printf("[ERR] %v", err)
+		return
+	}()
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return nil, err
+	}
+
+	managers, err := client.GetCluster()
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return nil, err
+	}
+
+	return managers, nil
+}
+
+func (s *GRPCService) startWatchManagers(checkInterval time.Duration) {
+	s.logger.Printf("[INFO] start watching a cluster")
+
+	s.watchManagersStopCh = make(chan struct{})
+	s.watchManagersDoneCh = make(chan struct{})
+
+	defer func() {
+		close(s.watchManagersDoneCh)
+	}()
+
+	var err error
+
+	// get initial managers
+	s.managers, err = s.getInitialManagers(s.managerAddr)
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return
+	}
+	s.logger.Printf("[DEBUG] %v", s.managers)
+
+	// create clients for managers
+	for id, node := range s.managers {
+		metadata := node.(map[string]interface{})["metadata"].(map[string]interface{})
+
+		s.logger.Printf("[DEBUG] create client for %s", metadata["grpc_addr"].(string))
+
+		client, err := manager.NewGRPCClient(metadata["grpc_addr"].(string))
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			continue
+		}
+		s.managerClients[id] = client
+	}
 
 	for {
 		select {
-		case <-s.watchStopCh:
-			s.logger.Printf("[DEBUG] receive request that stop watching a cluster")
+		case <-s.watchManagersStopCh:
+			s.logger.Print("[DEBUG] receive request that stop watching a cluster")
 			return
 		default:
-			s.logger.Printf("[DEBUG] wait for status update")
-			resp, err := s.watchClient.Recv()
+			// get active client for manager
+			client, err := s.getManagerClient()
+			if err != nil {
+				s.logger.Printf("[ERR] %v", err)
+				continue
+			}
+
+			// create stream
+			stream, err := client.WatchCluster()
+			if err != nil {
+				st, _ := status.FromError(err)
+				switch st.Code() {
+				case codes.Canceled:
+					s.logger.Printf("[DEBUG] %v", err)
+				default:
+					s.logger.Printf("[ERR] %v", err)
+				}
+				continue
+			}
+
+			// wait for receive cluster updates from stream
+			s.logger.Print("[DEBUG] wait for receive cluster updates from stream")
+			resp, err := stream.Recv()
 			if err == io.EOF {
-				s.logger.Printf("[DEBUG] receive EOF")
-				return
+				continue
 			}
 			if err != nil {
 				st, _ := status.FromError(err)
 				switch st.Code() {
 				case codes.Canceled:
-					s.logger.Printf("[DEBUG] %v", st.Message())
-					return
+					s.logger.Printf("[DEBUG] %v", err)
 				default:
 					s.logger.Printf("[ERR] %v", err)
-					continue
 				}
+				continue
 			}
 
-			value, err := protobuf.MarshalAny(resp.Value)
+			// get current manager cluster
+			cluster, err := protobuf.MarshalAny(resp.Cluster)
 			if err != nil {
-				s.logger.Printf("[ERR} %v", err)
+				s.logger.Printf("[ERR] %v", err)
 				continue
 			}
-			if value == nil {
-				s.logger.Printf("[ERR} %v", errors.New("nil"))
+			if cluster == nil {
+				s.logger.Print("[ERR] nil")
 				continue
 			}
+			managers := *cluster.(*map[string]interface{})
 
-			valueBytes, err := json.Marshal(value)
-			if err != nil {
-				s.logger.Printf("[ERR} %v", err)
-				continue
-			}
+			// compare previous manager with current manager
+			if !reflect.DeepEqual(s.managers, managers) {
+				s.logger.Printf("[INFO] %v", managers)
 
-			s.logger.Printf("[DEBUG} %v", string(valueBytes))
+				// close the client for left manager node
+				for id := range s.managers {
+					if _, managerExists := managers[id]; !managerExists {
+						if _, clientExists := s.managerClients[id]; clientExists {
+							client := s.managerClients[id]
+
+							s.logger.Printf("[DEBUG] close client for %s", client.GetAddress())
+							err = client.Close()
+							if err != nil {
+								s.logger.Printf("[ERR] %v", err)
+							}
+
+							delete(s.managerClients, id)
+						}
+					}
+				}
+
+				// keep current manager cluster
+				s.managers = managers
+			}
 		}
 	}
 }
 
-func (s *GRPCService) StartWatchCluster() error {
-	var err error
-
-	s.managerClient, err = manager.NewGRPCClient(s.managerAddr)
-	if err != nil {
-		return err
+func (s *GRPCService) stopWatchManagers() {
+	// close clients
+	s.logger.Printf("[INFO] close clients")
+	for _, client := range s.managerClients {
+		s.logger.Printf("[DEBUG] close client for %s", client.GetAddress())
+		err := client.Close()
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+		}
 	}
 
-	s.watchClient, err = s.managerClient.Watch("/cluster_config/clusters/")
-	if err != nil {
-		return err
+	// stop watching managers
+	if s.watchManagersStopCh != nil {
+		s.logger.Printf("[INFO] stop watching managers")
+		close(s.watchManagersStopCh)
 	}
 
-	s.logger.Printf("[DEBUG] start watching a cluster")
-
-	// start watching a cluster
-	go s.watch()
-
-	s.logger.Printf("[DEBUG] started")
-
-	return nil
-}
-
-func (s *GRPCService) StopWatchCluster() error {
-	s.logger.Printf("[DEBUG] stop watching a cluster")
-
-	// cancel receiving stream
-	s.logger.Printf("[DEBUG] cancel revieving stream")
-	s.managerClient.Cancel()
-
-	// stop watching a cluster
-	close(s.watchStopCh)
-
-	// wait for stop watching a cluster has done
-	<-s.watchDoneCh
-
-	err := s.managerClient.Close()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	// wait for stop watching managers has done
+	s.logger.Printf("[INFO] wait for stop watching managers has done")
+	<-s.watchManagersDoneCh
 }
 
 func (s *GRPCService) GetMetadata(ctx context.Context, req *protobuf.GetMetadataRequest) (*protobuf.GetMetadataResponse, error) {

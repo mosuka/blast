@@ -707,7 +707,7 @@ $ ./bin/blast-manager start \
                       --index-mapping-file=./example/index_mapping.json \
                       --index-type=upside_down \
                       --index-storage-type=boltdb \
-                      --log-level=:DEBUG
+                      --log-level=DEBUG
 $ ./bin/blast-manager start \
                       --peer-addr=:17070 \
                       --node-id=manager2 \

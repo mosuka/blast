@@ -17,6 +17,7 @@ package indexer
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"reflect"
@@ -96,34 +97,6 @@ func (s *GRPCService) Stop() error {
 
 	return nil
 }
-
-//func (s *GRPCService) updateCluster() error {
-//if s.managerAddr != "" {
-//	mc, err := manager.NewGRPCClient(s.managerAddr)
-//	defer func() {
-//		err = mc.Close()
-//		if err != nil {
-//			s.logger.Printf("[ERR] %v", err)
-//			return
-//		}
-//	}()
-//	if err != nil {
-//		return err
-//	}
-//
-//	cluster, err := s.GetCluster()
-//	if err != nil {
-//		return err
-//	}
-//
-//	err = mc.Set(fmt.Sprintf("/cluster_config/clusters/%s", s.clusterId), cluster)
-//	if err != nil {
-//		return err
-//	}
-//}
-
-//return nil
-//}
 
 func (s *GRPCService) getManagerClient() (*manager.GRPCClient, error) {
 	var client *manager.GRPCClient
@@ -288,9 +261,9 @@ func (s *GRPCService) startWatchManagers(checkInterval time.Duration) {
 
 func (s *GRPCService) stopWatchManagers() {
 	// close clients
-	s.logger.Printf("[INFO] close clients")
+	s.logger.Printf("[INFO] close manager clients")
 	for _, client := range s.managerClients {
-		s.logger.Printf("[DEBUG] close client for %s", client.GetAddress())
+		s.logger.Printf("[DEBUG] close manager client for %s", client.GetAddress())
 		err := client.Close()
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
@@ -342,8 +315,9 @@ func (s *GRPCService) startWatchCluster(checkInterval time.Duration) {
 				}
 			}
 
+			// create and close clients for manager
 			if !reflect.DeepEqual(s.peers, peers) {
-				// open clients
+				// create clients
 				for id, metadata := range peers {
 					grpcAddr := metadata.(map[string]interface{})["grpc_addr"].(string)
 
@@ -408,10 +382,24 @@ func (s *GRPCService) startWatchCluster(checkInterval time.Duration) {
 			ins, err := protobuf.MarshalAny(resp.Cluster)
 			cluster := *ins.(*map[string]interface{})
 
-			// notify cluster state
 			if !reflect.DeepEqual(s.cluster, cluster) {
+				// notify cluster state
 				for c := range s.clusterChans {
 					c <- *resp
+				}
+
+				// update cluster to manager
+				if s.raftServer.IsLeader() && s.managerAddr != "" {
+					// get active client for manager
+					client, err := s.getManagerClient()
+					if err != nil {
+						s.logger.Printf("[ERR] %v", err)
+						continue
+					}
+					err = client.SetState(fmt.Sprintf("/cluster_config/clusters/%s", s.clusterId), cluster)
+					if err != nil {
+						continue
+					}
 				}
 
 				// keep current cluster
@@ -425,9 +413,9 @@ func (s *GRPCService) startWatchCluster(checkInterval time.Duration) {
 
 func (s *GRPCService) stopWatchCluster() {
 	// close clients
-	s.logger.Printf("[INFO] close clients")
+	s.logger.Printf("[INFO] close peer clients")
 	for _, client := range s.peerClients {
-		s.logger.Printf("[DEBUG] close client for %s", client.GetAddress())
+		s.logger.Printf("[DEBUG] close peer client for %s", client.GetAddress())
 		err := client.Close()
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)

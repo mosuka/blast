@@ -192,9 +192,9 @@ func (s *GRPCService) startWatchCluster(checkInterval time.Duration) {
 
 func (s *GRPCService) stopWatchCluster() {
 	// close clients
-	s.logger.Printf("[INFO] close clients")
+	s.logger.Printf("[INFO] close peer clients")
 	for _, client := range s.peerClients {
-		s.logger.Printf("[DEBUG] close client for %s", client.GetAddress())
+		s.logger.Printf("[DEBUG] close peer client for %s", client.GetAddress())
 		err := client.Close()
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
