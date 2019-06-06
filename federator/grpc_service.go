@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Minoru Osuka
+//  Copyright (c) 2019 Minoru Osuka
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/hashicorp/raft"
+	"github.com/mosuka/blast/indexer"
 	"github.com/mosuka/blast/manager"
 	"github.com/mosuka/blast/protobuf"
 	"google.golang.org/grpc/codes"
@@ -39,6 +40,11 @@ type GRPCService struct {
 	managerClients      map[string]*manager.GRPCClient
 	watchManagersStopCh chan struct{}
 	watchManagersDoneCh chan struct{}
+
+	indexers            map[string]interface{}
+	indexerClients      map[string]map[string]*indexer.GRPCClient
+	watchIndexersStopCh chan struct{}
+	watchIndexersDoneCh chan struct{}
 }
 
 func NewGRPCService(managerAddr string, logger *log.Logger) (*GRPCService, error) {
@@ -48,6 +54,9 @@ func NewGRPCService(managerAddr string, logger *log.Logger) (*GRPCService, error
 
 		managers:       make(map[string]interface{}, 0),
 		managerClients: make(map[string]*manager.GRPCClient, 0),
+
+		indexers:       make(map[string]interface{}, 0),
+		indexerClients: make(map[string]map[string]*indexer.GRPCClient, 0),
 	}, nil
 }
 
@@ -55,12 +64,18 @@ func (s *GRPCService) Start() error {
 	s.logger.Print("[INFO] start watching managers")
 	go s.startWatchManagers(500 * time.Millisecond)
 
+	s.logger.Print("[INFO] start watching indexers")
+	go s.startWatchIndexers(500 * time.Millisecond)
+
 	return nil
 }
 
 func (s *GRPCService) Stop() error {
 	s.logger.Print("[INFO] stop watching managers")
 	s.stopWatchManagers()
+
+	s.logger.Print("[INFO] stop watching indexers")
+	s.stopWatchIndexers()
 
 	return nil
 }
@@ -146,7 +161,7 @@ func (s *GRPCService) startWatchManagers(checkInterval time.Duration) {
 	for {
 		select {
 		case <-s.watchManagersStopCh:
-			s.logger.Print("[DEBUG] receive request that stop watching a cluster")
+			s.logger.Print("[DEBUG] receive request that stop watching managers")
 			return
 		default:
 			// get active client for manager
@@ -228,9 +243,9 @@ func (s *GRPCService) startWatchManagers(checkInterval time.Duration) {
 
 func (s *GRPCService) stopWatchManagers() {
 	// close clients
-	s.logger.Printf("[INFO] close clients")
+	s.logger.Printf("[INFO] close manager clients")
 	for _, client := range s.managerClients {
-		s.logger.Printf("[DEBUG] close client for %s", client.GetAddress())
+		s.logger.Printf("[DEBUG] close manager client for %s", client.GetAddress())
 		err := client.Close()
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
@@ -246,6 +261,150 @@ func (s *GRPCService) stopWatchManagers() {
 	// wait for stop watching managers has done
 	s.logger.Printf("[INFO] wait for stop watching managers has done")
 	<-s.watchManagersDoneCh
+}
+
+func (s *GRPCService) startWatchIndexers(checkInterval time.Duration) {
+	s.logger.Printf("[INFO] start watching a cluster")
+
+	s.watchIndexersStopCh = make(chan struct{})
+	s.watchIndexersDoneCh = make(chan struct{})
+
+	defer func() {
+		close(s.watchIndexersDoneCh)
+	}()
+
+	// wait for manager available
+	s.logger.Print("[INFO] wait for manager clients are available")
+	for {
+		if len(s.managerClients) > 0 {
+			s.logger.Print("[INFO] manager clients are available")
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	// get active client for manager
+	client, err := s.getManagerClient()
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+	}
+
+	// get initial indexers
+	clusters, err := client.GetState("/cluster_config/clusters/")
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+	}
+	if clusters == nil {
+		s.logger.Print("[ERR] nil")
+	}
+	s.indexers = *clusters.(*map[string]interface{})
+
+	// create clients for indexer
+	for clusterId, ins := range s.indexers {
+		cluster := ins.(map[string]interface{})
+		for nodeId, node := range cluster {
+			metadata := node.(map[string]interface{})["metadata"].(map[string]interface{})
+
+			s.logger.Printf("[DEBUG] create indexer client for %s at %s", metadata["grpc_addr"].(string), clusterId)
+
+			client, err := indexer.NewGRPCClient(metadata["grpc_addr"].(string))
+			if err != nil {
+				s.logger.Printf("[ERR] %v", err)
+				continue
+			}
+
+			s.indexerClients[clusterId] = make(map[string]*indexer.GRPCClient)
+			s.indexerClients[clusterId][nodeId] = client
+		}
+	}
+
+	for {
+		select {
+		case <-s.watchIndexersStopCh:
+			s.logger.Print("[DEBUG] receive request that stop watching indexers")
+			return
+		default:
+			// get active client for manager
+			client, err = s.getManagerClient()
+			if err != nil {
+				s.logger.Printf("[ERR] %v", err)
+				continue
+			}
+
+			// create stream
+			stream, err := client.Watch("/cluster_config/clusters/")
+			if err != nil {
+				st, _ := status.FromError(err)
+				switch st.Code() {
+				case codes.Canceled:
+					s.logger.Printf("[DEBUG] %v", err)
+				default:
+					s.logger.Printf("[ERR] %v", err)
+				}
+				continue
+			}
+
+			// wait for receive cluster updates from stream
+			s.logger.Print("[DEBUG] wait for receive cluster updates from stream")
+			resp, err := stream.Recv()
+			if err == io.EOF {
+				continue
+			}
+			if err != nil {
+				st, _ := status.FromError(err)
+				switch st.Code() {
+				case codes.Canceled:
+					s.logger.Printf("[DEBUG] %v", err)
+				default:
+					s.logger.Printf("[ERR] %v", err)
+				}
+				continue
+			}
+			log.Printf("[DEBUG] %v", resp)
+
+			// get current indexer cluster
+			cluster, err := client.GetState("/cluster_config/clusters/")
+			if err != nil {
+				s.logger.Printf("[ERR] %v", err)
+				continue
+			}
+			if cluster == nil {
+				s.logger.Print("[ERR] nil")
+				continue
+			}
+			indexers := *cluster.(*map[string]interface{})
+
+			// compare previous manager with current manager
+			if !reflect.DeepEqual(s.indexers, indexers) {
+				s.logger.Printf("[INFO] %v", indexers)
+
+			}
+		}
+	}
+}
+
+func (s *GRPCService) stopWatchIndexers() {
+	// close clients
+	s.logger.Printf("[INFO] close indexer clients")
+	for clusterId, cluster := range s.indexerClients {
+		for _, client := range cluster {
+			s.logger.Printf("[DEBUG] close indexer client for %s at %s", client.GetAddress(), clusterId)
+			err := client.Close()
+			if err != nil {
+				s.logger.Printf("[ERR] %v", err)
+			}
+		}
+	}
+
+	// stop watching managers
+	if s.watchIndexersStopCh != nil {
+		s.logger.Printf("[INFO] stop watching indexers")
+		close(s.watchIndexersStopCh)
+	}
+
+	// wait for stop watching indexers has done
+	s.logger.Printf("[INFO] wait for stop watching indexers has done")
+	<-s.watchIndexersDoneCh
 }
 
 func (s *GRPCService) GetMetadata(ctx context.Context, req *protobuf.GetMetadataRequest) (*protobuf.GetMetadataResponse, error) {

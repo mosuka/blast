@@ -163,7 +163,7 @@ func (s *GRPCService) startWatchManagers(checkInterval time.Duration) {
 	s.logger.Printf("[DEBUG] %v", s.managers)
 
 	// create clients for managers
-	for id, node := range s.managers {
+	for nodeId, node := range s.managers {
 		metadata := node.(map[string]interface{})["metadata"].(map[string]interface{})
 
 		s.logger.Printf("[DEBUG] create client for %s", metadata["grpc_addr"].(string))
@@ -173,7 +173,7 @@ func (s *GRPCService) startWatchManagers(checkInterval time.Duration) {
 			s.logger.Printf("[ERR] %v", err)
 			continue
 		}
-		s.managerClients[id] = client
+		s.managerClients[nodeId] = client
 	}
 
 	for {
