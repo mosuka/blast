@@ -27,9 +27,7 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
-
 	"github.com/golang/protobuf/ptypes/any"
-
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/hashicorp/raft"
 	"github.com/mosuka/blast/indexer"

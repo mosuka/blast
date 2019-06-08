@@ -19,9 +19,8 @@ import (
 	"errors"
 	"math"
 
-	"github.com/golang/protobuf/ptypes/any"
-
 	"github.com/blevesearch/bleve"
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
 	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
