@@ -256,7 +256,6 @@ func (c *GRPCClient) GetDocument(id string, opts ...grpc.CallOption) (map[string
 	fields := *ins.(*map[string]interface{})
 
 	return fields, nil
-
 }
 
 func (c *GRPCClient) Search(searchRequest *bleve.SearchRequest, opts ...grpc.CallOption) (*bleve.SearchResult, error) {
@@ -303,7 +302,7 @@ func (c *GRPCClient) IndexDocument(docs []map[string]interface{}, opts ...grpc.C
 
 	for _, doc := range docs {
 		id := doc["id"].(string)
-		fields := doc["fields"].(map[string]interface{})
+		fields := *doc["fields"].(*map[string]interface{})
 
 		fieldsAny := &any.Any{}
 		err := protobuf.UnmarshalAny(&fields, fieldsAny)

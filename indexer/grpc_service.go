@@ -396,6 +396,7 @@ func (s *GRPCService) startWatchCluster(checkInterval time.Duration) {
 						s.logger.Printf("[ERR] %v", err)
 						continue
 					}
+					// TODO: SetState -> SetClusterNode
 					err = client.SetState(fmt.Sprintf("/cluster_config/clusters/%s", s.clusterId), cluster)
 					if err != nil {
 						continue

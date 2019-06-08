@@ -19,11 +19,14 @@ import (
 	"errors"
 	"math"
 
-	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/golang/protobuf/ptypes/any"
 
 	"github.com/blevesearch/bleve"
+	"github.com/golang/protobuf/ptypes/empty"
+	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
@@ -95,76 +98,97 @@ func (c *GRPCClient) ReadinessProbe(opts ...grpc.CallOption) (string, error) {
 }
 
 func (c *GRPCClient) GetDocument(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
-	//retDoc, err := c.client.GetDocument(c.ctx, id, opts...)
-	//if err != nil {
-	//	st, _ := status.FromError(err)
-	//
-	//	switch st.Code() {
-	//	case codes.NotFound:
-	//		return nil, blasterrors.ErrNotFound
-	//	default:
-	//		return nil, errors.New(st.Message())
-	//	}
-	//}
+	req := &protobuf.GetDocumentRequest{
+		Id: id,
+	}
 
-	return nil, nil
+	resp, err := c.client.GetDocument(c.ctx, req, opts...)
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		switch st.Code() {
+		case codes.NotFound:
+			return nil, blasterrors.ErrNotFound
+		default:
+			return nil, errors.New(st.Message())
+		}
+	}
+
+	ins, err := protobuf.MarshalAny(resp.Fields)
+	fields := *ins.(*map[string]interface{})
+
+	return fields, nil
 }
 
 func (c *GRPCClient) Search(searchRequest *bleve.SearchRequest, opts ...grpc.CallOption) (*bleve.SearchResult, error) {
-	//// bleve.SearchRequest -> Any
-	//searchRequestAny := &any.Any{}
-	//err := protobuf.UnmarshalAny(searchRequest, searchRequestAny)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//req := &federation.SearchRequest{
-	//	SearchRequest: searchRequestAny,
-	//}
-	//
-	//resp, err := c.client.Search(c.ctx, req, opts...)
-	//if err != nil {
-	//	st, _ := status.FromError(err)
-	//
-	//	return nil, errors.New(st.Message())
-	//}
-	//
-	//// Any -> bleve.SearchResult
-	//searchResultInstance, err := protobuf.MarshalAny(resp.SearchResult)
-	//if err != nil {
-	//	st, _ := status.FromError(err)
-	//
-	//	return nil, errors.New(st.Message())
-	//}
-	//if searchResultInstance == nil {
-	//	return nil, errors.New("nil")
-	//}
-	//searchResult := searchResultInstance.(*bleve.SearchResult)
+	// bleve.SearchRequest -> Any
+	searchRequestAny := &any.Any{}
+	err := protobuf.UnmarshalAny(searchRequest, searchRequestAny)
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	req := &protobuf.SearchRequest{
+		SearchRequest: searchRequestAny,
+	}
+
+	resp, err := c.client.Search(c.ctx, req, opts...)
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+
+	// Any -> bleve.SearchResult
+	searchResultInstance, err := protobuf.MarshalAny(resp.SearchResult)
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+	if searchResultInstance == nil {
+		return nil, errors.New("nil")
+	}
+	searchResult := searchResultInstance.(*bleve.SearchResult)
+
+	return searchResult, nil
 }
 
 func (c *GRPCClient) IndexDocument(docs []map[string]interface{}, opts ...grpc.CallOption) (int, error) {
-	//stream, err := c.client.Index(c.ctx, opts...)
-	//if err != nil {
-	//	st, _ := status.FromError(err)
-	//
-	//	return nil, errors.New(st.Message())
-	//}
-	//
-	//for _, doc := range docs {
-	//	err := stream.Send(doc)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//}
-	//
-	//rep, err := stream.CloseAndRecv()
-	//if err != nil {
-	//	return nil, err
-	//}
+	stream, err := c.client.IndexDocument(c.ctx, opts...)
+	if err != nil {
+		st, _ := status.FromError(err)
 
-	return -1, nil
+		return -1, errors.New(st.Message())
+	}
+
+	for _, doc := range docs {
+		id := doc["id"].(string)
+		fields := doc["fields"].(map[string]interface{})
+
+		fieldsAny := &any.Any{}
+		err := protobuf.UnmarshalAny(&fields, fieldsAny)
+		if err != nil {
+			return -1, err
+		}
+
+		req := &protobuf.IndexDocumentRequest{
+			Id:     id,
+			Fields: fieldsAny,
+		}
+
+		err = stream.Send(req)
+		if err != nil {
+			return -1, err
+		}
+	}
+
+	resp, err := stream.CloseAndRecv()
+	if err != nil {
+		return -1, err
+	}
+
+	return int(resp.Count), nil
 }
 
 func (c *GRPCClient) DeleteDocument(ids []string, opts ...grpc.CallOption) (int, error) {

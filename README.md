@@ -766,6 +766,18 @@ $ ./bin/blast-federator start \
                         --log-level=DEBUG
 ```
 
+```bash
+$ cat ./example/bulk_index_wiki.json | xargs -0 ./bin/blast-federator index --grpc-addr=:27070
+```
+
+```bash
+$ cat ./example/bulk_delete_wiki.json | xargs -0 ./bin/blast-federator delete --grpc-addr=:27070
+```
+
+```bash
+$ cat ./example/search_request.json | xargs -0 ./bin/blast-federator search --grpc-addr=:27070
+```
+
 
 ## Blast on Docker
 

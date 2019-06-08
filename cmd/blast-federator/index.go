@@ -26,31 +26,26 @@ import (
 
 func execIndex(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
-	id := c.Args().Get(0)
-
-	if c.NArg() == 0 {
-		err := errors.New("arguments are not correct")
-		return err
-	}
 
 	// create documents
 	docs := make([]map[string]interface{}, 0)
 
-	if id == "" {
+	if c.NArg() == 1 {
 		// documents
-		docsStr := c.Args().Get(1)
+		docsStr := c.Args().Get(0)
 
 		err := json.Unmarshal([]byte(docsStr), &docs)
 		if err != nil {
 			return err
 		}
-	} else {
+	} else if c.NArg() == 2 {
 		// document
-		fields := c.Args().Get(1)
+		id := c.Args().Get(0)
+		fieldsSrc := c.Args().Get(1)
 
 		// string -> map[string]interface{}
-		var fieldsMap map[string]interface{}
-		err := json.Unmarshal([]byte(fields), &fieldsMap)
+		var fields map[string]interface{}
+		err := json.Unmarshal([]byte(fieldsSrc), &fields)
 		if err != nil {
 			return err
 		}
@@ -62,6 +57,8 @@ func execIndex(c *cli.Context) error {
 		}
 
 		docs = append(docs, doc)
+	} else {
+		return errors.New("argument error")
 	}
 
 	// create gRPC client
