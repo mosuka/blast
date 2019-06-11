@@ -26,19 +26,22 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/hashicorp/raft"
 	blasterrors "github.com/mosuka/blast/errors"
+	"github.com/mosuka/blast/grpc"
 	"github.com/mosuka/blast/protobuf"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type GRPCService struct {
+	*grpc.Service
+
 	raftServer *RaftServer
 	logger     *log.Logger
 
 	watchClusterStopCh chan struct{}
 	watchClusterDoneCh chan struct{}
 	peers              map[string]interface{}
-	peerClients        map[string]*GRPCClient
+	peerClients        map[string]*grpc.Client
 	cluster            map[string]interface{}
 	clusterChans       map[chan protobuf.GetClusterResponse]struct{}
 	clusterMutex       sync.RWMutex
@@ -53,7 +56,7 @@ func NewGRPCService(raftServer *RaftServer, logger *log.Logger) (*GRPCService, e
 		logger:     logger,
 
 		peers:        make(map[string]interface{}, 0),
-		peerClients:  make(map[string]*GRPCClient, 0),
+		peerClients:  make(map[string]*grpc.Client, 0),
 		cluster:      make(map[string]interface{}, 0),
 		clusterChans: make(map[chan protobuf.GetClusterResponse]struct{}),
 
@@ -74,6 +77,23 @@ func (s *GRPCService) Stop() error {
 
 	return nil
 }
+
+func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*protobuf.LivenessProbeResponse, error) {
+	s.logger.Print("hogehoge")
+	resp := &protobuf.LivenessProbeResponse{
+		State: protobuf.LivenessProbeResponse_ALIVE,
+	}
+
+	return resp, nil
+}
+
+//func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*protobuf.ReadinessProbeResponse, error) {
+//	resp := &protobuf.ReadinessProbeResponse{
+//		State: protobuf.ReadinessProbeResponse_READY,
+//	}
+//
+//	return resp, nil
+//}
 
 func (s *GRPCService) startWatchCluster(checkInterval time.Duration) {
 	s.watchClusterStopCh = make(chan struct{})
@@ -124,7 +144,7 @@ func (s *GRPCService) startWatchCluster(checkInterval time.Duration) {
 							}
 
 							s.logger.Printf("[DEBUG] create client for %s", grpcAddr)
-							newClient, err := NewGRPCClient(grpcAddr)
+							newClient, err := grpc.NewClient(grpcAddr)
 							if err != nil {
 								s.logger.Printf("[ERR] %v", err)
 							}
@@ -136,7 +156,7 @@ func (s *GRPCService) startWatchCluster(checkInterval time.Duration) {
 						}
 					} else {
 						s.logger.Printf("[DEBUG] create client for %s", grpcAddr)
-						newClient, err := NewGRPCClient(grpcAddr)
+						newClient, err := grpc.NewClient(grpcAddr)
 						if err != nil {
 							s.logger.Printf("[ERR] %v", err)
 						}
@@ -167,7 +187,7 @@ func (s *GRPCService) startWatchCluster(checkInterval time.Duration) {
 			}
 
 			// get cluster
-			ctx, _ := NewGRPCClientCtx()
+			ctx, _ := grpc.NewContext()
 			resp, err := s.GetCluster(ctx, &empty.Empty{})
 			if err != nil {
 				s.logger.Printf("[ERR] %v", err)
@@ -212,8 +232,8 @@ func (s *GRPCService) stopWatchCluster() {
 	<-s.watchClusterDoneCh
 }
 
-func (s *GRPCService) getMetadata(id string) (map[string]interface{}, error) {
-	metadata, err := s.raftServer.GetMetadata(id)
+func (s *GRPCService) getMetadata() (map[string]interface{}, error) {
+	metadata, err := s.raftServer.GetMetadata(s.raftServer.id)
 	if err != nil {
 		return nil, err
 	}
@@ -227,14 +247,14 @@ func (s *GRPCService) GetMetadata(ctx context.Context, req *protobuf.GetMetadata
 	var metadata map[string]interface{}
 	var err error
 
-	if req.Id == s.raftServer.id {
-		metadata, err = s.getMetadata(s.raftServer.id)
+	if req.Id == "" || req.Id == s.raftServer.id {
+		metadata, err = s.getMetadata()
 		if err != nil {
 			s.logger.Printf("[ERR] %v: %v", err, s.raftServer.id)
 		}
 	} else {
 		if client, exist := s.peerClients[req.Id]; exist {
-			metadata, err = client.GetMetadata(req.Id)
+			metadata, err = client.GetNodeMetadata(req.Id)
 			if err != nil {
 				s.logger.Printf("[ERR] %v: %v", err, req.Id)
 			}
@@ -262,7 +282,7 @@ func (s *GRPCService) GetNodeState(ctx context.Context, req *protobuf.GetNodeSta
 	state := ""
 	var err error
 
-	if req.Id == s.raftServer.id {
+	if req.Id == "" || req.Id == s.raftServer.id {
 		state = s.getNodeState()
 	} else {
 		if client, exist := s.peerClients[req.Id]; exist {
@@ -278,8 +298,8 @@ func (s *GRPCService) GetNodeState(ctx context.Context, req *protobuf.GetNodeSta
 	return resp, nil
 }
 
-func (s *GRPCService) getNode(id string) (map[string]interface{}, error) {
-	metadata, err := s.getMetadata(id)
+func (s *GRPCService) getNode() (map[string]interface{}, error) {
+	metadata, err := s.getMetadata()
 	if err != nil {
 		return nil, err
 	}
@@ -301,8 +321,8 @@ func (s *GRPCService) GetNode(ctx context.Context, req *protobuf.GetNodeRequest)
 	var state string
 	var err error
 
-	if req.Id == s.raftServer.id {
-		node, err := s.getNode(req.Id)
+	if req.Id == "" || req.Id == s.raftServer.id {
+		node, err := s.getNode()
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 		}
@@ -312,7 +332,7 @@ func (s *GRPCService) GetNode(ctx context.Context, req *protobuf.GetNodeRequest)
 		state = node["state"].(string)
 	} else {
 		if client, exist := s.peerClients[req.Id]; exist {
-			metadata, err = client.GetMetadata(req.Id)
+			metadata, err = client.GetNodeMetadata(req.Id)
 			if err != nil {
 				s.logger.Printf("[ERR] %v", err)
 			}
@@ -383,7 +403,8 @@ func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*protob
 	for id := range servers {
 		node := map[string]interface{}{}
 		if id == s.raftServer.id {
-			node, err = s.getNode(id)
+			//node, err = s.getNode(id)
+			node, err = s.getNode()
 			if err != nil {
 				return resp, err
 			}
@@ -453,22 +474,6 @@ func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Em
 	err := s.raftServer.Snapshot()
 	if err != nil {
 		return resp, status.Error(codes.Internal, err.Error())
-	}
-
-	return resp, nil
-}
-
-func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*protobuf.LivenessProbeResponse, error) {
-	resp := &protobuf.LivenessProbeResponse{
-		State: protobuf.LivenessProbeResponse_ALIVE,
-	}
-
-	return resp, nil
-}
-
-func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*protobuf.ReadinessProbeResponse, error) {
-	resp := &protobuf.ReadinessProbeResponse{
-		State: protobuf.ReadinessProbeResponse_READY,
 	}
 
 	return resp, nil

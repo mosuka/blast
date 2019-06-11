@@ -23,31 +23,34 @@ import (
 	"github.com/urfave/cli"
 )
 
-func execCluster(c *cli.Context) error {
+func execSetNode(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 
-	client, err := grpc.NewClient(grpcAddr)
+	nodeId := c.Args().Get(0)
+
+	metadataStr := c.Args().Get(1)
+
+	var metadata map[string]interface{}
+	err := json.Unmarshal([]byte(metadataStr), &metadata)
+	if err != nil {
+		return err
+	}
+
+	peerClient, err := grpc.NewClient(grpcAddr)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		err := client.Close()
+		err := peerClient.Close()
 		if err != nil {
 			_, _ = fmt.Fprintln(os.Stderr, err)
 		}
 	}()
 
-	cluster, err := client.GetCluster()
+	err = peerClient.SetNode(nodeId, metadata)
 	if err != nil {
 		return err
 	}
-
-	clusterBytes, err := json.MarshalIndent(cluster, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(clusterBytes)))
 
 	return nil
 }

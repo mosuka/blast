@@ -15,7 +15,7 @@
 package main
 
 import (
-	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 
@@ -23,8 +23,14 @@ import (
 	"github.com/urfave/cli"
 )
 
-func execCluster(c *cli.Context) error {
+func execDeleteState(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
+
+	key := c.Args().Get(0)
+	if key == "" {
+		err := errors.New("key argument must be set")
+		return err
+	}
 
 	client, err := grpc.NewClient(grpcAddr)
 	if err != nil {
@@ -37,17 +43,10 @@ func execCluster(c *cli.Context) error {
 		}
 	}()
 
-	cluster, err := client.GetCluster()
+	err = client.DeleteState(key)
 	if err != nil {
 		return err
 	}
-
-	clusterBytes, err := json.MarshalIndent(cluster, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(clusterBytes)))
 
 	return nil
 }

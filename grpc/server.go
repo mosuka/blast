@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package manager
+package grpc
 
 import (
 	"log"
@@ -22,21 +22,16 @@ import (
 	"google.golang.org/grpc"
 )
 
-type GRPCServer struct {
-	service  *GRPCService
+type Server struct {
+	service  protobuf.BlastServer
 	server   *grpc.Server
 	listener net.Listener
 
 	logger *log.Logger
 }
 
-func NewGRPCServer(grpcAddr string, raftServer *RaftServer, logger *log.Logger) (*GRPCServer, error) {
+func NewServer(grpcAddr string, service protobuf.BlastServer, logger *log.Logger) (*Server, error) {
 	server := grpc.NewServer()
-
-	service, err := NewGRPCService(raftServer, logger)
-	if err != nil {
-		return nil, err
-	}
 
 	protobuf.RegisterBlastServer(server, service)
 
@@ -45,7 +40,7 @@ func NewGRPCServer(grpcAddr string, raftServer *RaftServer, logger *log.Logger) 
 		return nil, err
 	}
 
-	return &GRPCServer{
+	return &Server{
 		service:  service,
 		server:   server,
 		listener: listener,
@@ -53,15 +48,9 @@ func NewGRPCServer(grpcAddr string, raftServer *RaftServer, logger *log.Logger) 
 	}, nil
 }
 
-func (s *GRPCServer) Start() error {
-	s.logger.Print("[INFO] start service")
-	err := s.service.Start()
-	if err != nil {
-		return err
-	}
-
+func (s *Server) Start() error {
 	s.logger.Print("[INFO] start server")
-	err = s.server.Serve(s.listener)
+	err := s.server.Serve(s.listener)
 	if err != nil {
 		return err
 	}
@@ -69,15 +58,9 @@ func (s *GRPCServer) Start() error {
 	return nil
 }
 
-func (s *GRPCServer) Stop() error {
+func (s *Server) Stop() error {
 	s.logger.Print("[INFO] stop server")
 	s.server.Stop() // TODO: graceful stop
-
-	s.logger.Print("[INFO] stop service")
-	err := s.service.Stop()
-	if err != nil {
-		return err
-	}
 
 	return nil
 }

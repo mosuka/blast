@@ -22,7 +22,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/grpc"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/urfave/cli"
 )
@@ -36,7 +36,7 @@ func execWatch(c *cli.Context) error {
 		return err
 	}
 
-	client, err := manager.NewGRPCClient(grpcAddr)
+	client, err := grpc.NewClient(grpcAddr)
 	if err != nil {
 		return err
 	}

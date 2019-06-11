@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/grpc"
 	"github.com/urfave/cli"
 )
 
@@ -50,7 +50,7 @@ func execSet(c *cli.Context) error {
 		}
 	}
 
-	client, err := manager.NewGRPCClient(grpcAddr)
+	client, err := grpc.NewClient(grpcAddr)
 	if err != nil {
 		return err
 	}

@@ -16,14 +16,18 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"log"
 	"os"
 
 	"github.com/mosuka/blast/grpc"
+	"github.com/mosuka/blast/protobuf"
 	"github.com/urfave/cli"
 )
 
-func execCluster(c *cli.Context) error {
+func execWatchCluster(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 
 	client, err := grpc.NewClient(grpcAddr)
@@ -37,17 +41,42 @@ func execCluster(c *cli.Context) error {
 		}
 	}()
 
-	cluster, err := client.GetCluster()
+	err = execGetCluster(c)
 	if err != nil {
 		return err
 	}
 
-	clusterBytes, err := json.MarshalIndent(cluster, "", "  ")
+	watchClient, err := client.WatchCluster()
 	if err != nil {
 		return err
 	}
 
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(clusterBytes)))
+	for {
+		resp, err := watchClient.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Println(err.Error())
+			break
+		}
+
+		cluster, err := protobuf.MarshalAny(resp.Cluster)
+		if err != nil {
+			return err
+		}
+		if cluster == nil {
+			return errors.New("nil")
+		}
+
+		var clusterBytes []byte
+		clusterMap := *cluster.(*map[string]interface{})
+		clusterBytes, err = json.MarshalIndent(clusterMap, "", "  ")
+		if err != nil {
+			return err
+		}
+		_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(clusterBytes)))
+	}
 
 	return nil
 }

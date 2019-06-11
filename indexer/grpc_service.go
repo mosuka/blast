@@ -29,7 +29,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/hashicorp/raft"
 	blasterrors "github.com/mosuka/blast/errors"
-	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/grpc"
 	"github.com/mosuka/blast/protobuf"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -51,7 +51,7 @@ type GRPCService struct {
 	clusterMutex       sync.RWMutex
 
 	managers            map[string]interface{}
-	managerClients      map[string]*manager.GRPCClient
+	managerClients      map[string]*grpc.Client
 	watchManagersStopCh chan struct{}
 	watchManagersDoneCh chan struct{}
 }
@@ -70,7 +70,7 @@ func NewGRPCService(managerAddr string, clusterId string, raftServer *RaftServer
 		clusterChans: make(map[chan protobuf.GetClusterResponse]struct{}),
 
 		managers:       make(map[string]interface{}, 0),
-		managerClients: make(map[string]*manager.GRPCClient, 0),
+		managerClients: make(map[string]*grpc.Client, 0),
 	}, nil
 }
 
@@ -98,8 +98,8 @@ func (s *GRPCService) Stop() error {
 	return nil
 }
 
-func (s *GRPCService) getManagerClient() (*manager.GRPCClient, error) {
-	var client *manager.GRPCClient
+func (s *GRPCService) getManagerClient() (*grpc.Client, error) {
+	var client *grpc.Client
 
 	for id, node := range s.managers {
 		state := node.(map[string]interface{})["state"].(string)
@@ -122,7 +122,7 @@ func (s *GRPCService) getManagerClient() (*manager.GRPCClient, error) {
 }
 
 func (s *GRPCService) getInitialManagers(managerAddr string) (map[string]interface{}, error) {
-	client, err := manager.NewGRPCClient(s.managerAddr)
+	client, err := grpc.NewClient(s.managerAddr)
 	defer func() {
 		err := client.Close()
 		s.logger.Printf("[ERR] %v", err)
@@ -168,7 +168,7 @@ func (s *GRPCService) startWatchManagers(checkInterval time.Duration) {
 
 		s.logger.Printf("[DEBUG] create client for %s", metadata["grpc_addr"].(string))
 
-		client, err := manager.NewGRPCClient(metadata["grpc_addr"].(string))
+		client, err := grpc.NewClient(metadata["grpc_addr"].(string))
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			continue

@@ -18,6 +18,7 @@ import (
 	"log"
 
 	accesslog "github.com/mash/go-accesslog"
+	"github.com/mosuka/blast/grpc"
 )
 
 type Server struct {
@@ -28,9 +29,10 @@ type Server struct {
 
 	indexConfig map[string]interface{}
 
-	raftServer *RaftServer
-	grpcServer *GRPCServer
-	httpServer *HTTPServer
+	raftServer  *RaftServer
+	grpcService *GRPCService
+	grpcServer  *grpc.Server
+	httpServer  *HTTPServer
 
 	logger     *log.Logger
 	httpLogger accesslog.Logger
@@ -61,15 +63,30 @@ func (s *Server) Start() {
 		return
 	}
 
-	// create gRPC server
-	s.grpcServer, err = NewGRPCServer(s.metadata["grpc_addr"].(string), s.raftServer, s.logger)
+	// create gRPC service
+	s.grpcService, err = NewGRPCService(s.raftServer, s.logger)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return
 	}
 
+	// create gRPC server
+	s.grpcServer, err = grpc.NewServer(s.metadata["grpc_addr"].(string), s.grpcService, s.logger)
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return
+	}
+
+	//// create HTTP router
+	//router, err := NewRouter(s.metadata["grpc_addr"].(string), s.logger)
+	//if err != nil {
+	//	s.logger.Printf("[ERR] %v", err)
+	//	return
+	//}
+
 	// create HTTP server
 	s.httpServer, err = NewHTTPServer(s.metadata["http_addr"].(string), s.metadata["grpc_addr"].(string), s.logger, s.httpLogger)
+	//s.httpServer, err = http.NewServer(s.metadata["http_addr"].(string), router, s.logger, s.httpLogger)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return
@@ -82,6 +99,16 @@ func (s *Server) Start() {
 		s.logger.Printf("[ERR] %v", err)
 		return
 	}
+
+	// start gRPC service
+	s.logger.Print("[INFO] start gRPC service")
+	go func() {
+		err := s.grpcService.Start()
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			return
+		}
+	}()
 
 	// start gRPC server
 	s.logger.Print("[INFO] start gRPC server")
@@ -101,7 +128,7 @@ func (s *Server) Start() {
 
 	// join to the existing cluster
 	if !bootstrap {
-		client, err := NewGRPCClient(s.peerAddr)
+		client, err := grpc.NewClient(s.peerAddr)
 		defer func() {
 			err := client.Close()
 			if err != nil {
@@ -132,6 +159,13 @@ func (s *Server) Stop() {
 	// stop gRPC server
 	s.logger.Print("[INFO] stop gRPC server")
 	err = s.grpcServer.Stop()
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+	}
+
+	// stop gRPC service
+	s.logger.Print("[INFO] stop gRPC service")
+	err = s.grpcService.Stop()
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 	}

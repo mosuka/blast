@@ -30,8 +30,8 @@ import (
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/hashicorp/raft"
+	"github.com/mosuka/blast/grpc"
 	"github.com/mosuka/blast/indexer"
-	"github.com/mosuka/blast/manager"
 	"github.com/mosuka/blast/protobuf"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -43,7 +43,7 @@ type GRPCService struct {
 	logger *log.Logger
 
 	managers            map[string]interface{}
-	managerClients      map[string]*manager.GRPCClient
+	managerClients      map[string]*grpc.Client
 	watchManagersStopCh chan struct{}
 	watchManagersDoneCh chan struct{}
 
@@ -59,7 +59,7 @@ func NewGRPCService(managerAddr string, logger *log.Logger) (*GRPCService, error
 		logger:      logger,
 
 		managers:       make(map[string]interface{}, 0),
-		managerClients: make(map[string]*manager.GRPCClient, 0),
+		managerClients: make(map[string]*grpc.Client, 0),
 
 		indexers:       make(map[string]interface{}, 0),
 		indexerClients: make(map[string]map[string]*indexer.GRPCClient, 0),
@@ -86,8 +86,8 @@ func (s *GRPCService) Stop() error {
 	return nil
 }
 
-func (s *GRPCService) getManagerClient() (*manager.GRPCClient, error) {
-	var client *manager.GRPCClient
+func (s *GRPCService) getManagerClient() (*grpc.Client, error) {
+	var client *grpc.Client
 
 	for id, node := range s.managers {
 		state := node.(map[string]interface{})["state"].(string)
@@ -110,7 +110,7 @@ func (s *GRPCService) getManagerClient() (*manager.GRPCClient, error) {
 }
 
 func (s *GRPCService) getInitialManagers(managerAddr string) (map[string]interface{}, error) {
-	client, err := manager.NewGRPCClient(s.managerAddr)
+	client, err := grpc.NewClient(s.managerAddr)
 	defer func() {
 		err := client.Close()
 		s.logger.Printf("[ERR] %v", err)
@@ -156,7 +156,7 @@ func (s *GRPCService) startWatchManagers(checkInterval time.Duration) {
 
 		s.logger.Printf("[DEBUG] create client for %s", metadata["grpc_addr"].(string))
 
-		client, err := manager.NewGRPCClient(metadata["grpc_addr"].(string))
+		client, err := grpc.NewClient(metadata["grpc_addr"].(string))
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			continue

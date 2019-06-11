@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/grpc"
 	"github.com/urfave/cli"
 )
 
@@ -26,9 +26,7 @@ func execJoin(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 	peerAddr := c.String("peer-addr")
 
-	// TODO: set target metadeta from CLI
-
-	targetClient, err := manager.NewGRPCClient(grpcAddr)
+	targetClient, err := grpc.NewClient(grpcAddr)
 	if err != nil {
 		return err
 	}
@@ -44,7 +42,7 @@ func execJoin(c *cli.Context) error {
 		return err
 	}
 
-	peerClient, err := manager.NewGRPCClient(peerAddr)
+	peerClient, err := grpc.NewClient(peerAddr)
 	if err != nil {
 		return err
 	}

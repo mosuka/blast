@@ -26,6 +26,7 @@ import (
 	raftboltdb "github.com/hashicorp/raft-boltdb"
 	_ "github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/errors"
+	"github.com/mosuka/blast/grpc"
 )
 
 type RaftServer struct {
@@ -332,7 +333,7 @@ func (s *RaftServer) SetMetadata(id string, metadata map[string]interface{}) err
 			return nil
 		}
 
-		client, err := NewGRPCClient(leaderMetadata["grpc_addr"].(string))
+		client, err := grpc.NewClient(leaderMetadata["grpc_addr"].(string))
 		defer func() {
 			err := client.Close()
 			if err != nil {
@@ -397,7 +398,7 @@ func (s *RaftServer) DeleteMetadata(id string) error {
 			return nil
 		}
 
-		client, err := NewGRPCClient(leaderMetadata["grpc_addr"].(string))
+		client, err := grpc.NewClient(leaderMetadata["grpc_addr"].(string))
 		defer func() {
 			err := client.Close()
 			if err != nil {
@@ -502,7 +503,7 @@ func (s *RaftServer) SetState(key string, value interface{}) error {
 			return nil
 		}
 
-		client, err := NewGRPCClient(leaderMetadata["grpc_addr"].(string))
+		client, err := grpc.NewClient(leaderMetadata["grpc_addr"].(string))
 		defer func() {
 			err := client.Close()
 			if err != nil {
@@ -562,7 +563,7 @@ func (s *RaftServer) DeleteState(key string) error {
 			return nil
 		}
 
-		client, err := NewGRPCClient(leaderMetadata["grpc_addr"].(string))
+		client, err := grpc.NewClient(leaderMetadata["grpc_addr"].(string))
 		defer func() {
 			err := client.Close()
 			if err != nil {

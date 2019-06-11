@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/grpc"
 	"github.com/urfave/cli"
 )
 
@@ -32,7 +32,7 @@ func execNode(c *cli.Context) error {
 		return errors.New("id is required")
 	}
 
-	client, err := manager.NewGRPCClient(grpcAddr)
+	client, err := grpc.NewClient(grpcAddr)
 	if err != nil {
 		return err
 	}

@@ -21,6 +21,7 @@ import (
 
 	"github.com/gorilla/mux"
 	accesslog "github.com/mash/go-accesslog"
+	"github.com/mosuka/blast/grpc"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -28,7 +29,7 @@ type HTTPServer struct {
 	listener net.Listener
 	router   *mux.Router
 
-	grpcClient *GRPCClient
+	grpcClient *grpc.Client
 
 	logger     *log.Logger
 	httpLogger accesslog.Logger
@@ -40,7 +41,7 @@ func NewHTTPServer(httpAddr string, grpcAddr string, logger *log.Logger, httpLog
 		return nil, err
 	}
 
-	grpcClient, err := NewGRPCClient(grpcAddr)
+	grpcClient, err := grpc.NewClient(grpcAddr)
 	if err != nil {
 		return nil, err
 	}

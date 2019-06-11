@@ -20,7 +20,7 @@ import (
 
 	accesslog "github.com/mash/go-accesslog"
 	"github.com/mosuka/blast/errors"
-	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/grpc"
 	"github.com/mosuka/blast/protobuf"
 )
 
@@ -65,7 +65,7 @@ func (s *Server) Start() {
 	if s.managerAddr != "" {
 		s.logger.Printf("[INFO] connect to master %s", s.managerAddr)
 
-		mc, err := manager.NewGRPCClient(s.managerAddr)
+		mc, err := grpc.NewClient(s.managerAddr)
 		defer func() {
 			err = mc.Close()
 			if err != nil {
@@ -115,7 +115,7 @@ func (s *Server) Start() {
 
 	// get index config from manager or peer
 	if s.managerAddr != "" {
-		mc, err := manager.NewGRPCClient(s.managerAddr)
+		mc, err := grpc.NewClient(s.managerAddr)
 		defer func() {
 			err = mc.Close()
 			if err != nil {

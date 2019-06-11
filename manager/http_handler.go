@@ -23,9 +23,52 @@ import (
 
 	"github.com/gorilla/mux"
 	blasterrors "github.com/mosuka/blast/errors"
+	"github.com/mosuka/blast/grpc"
 	blasthttp "github.com/mosuka/blast/http"
 	"github.com/mosuka/blast/version"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
+
+type Router struct {
+	*mux.Router
+
+	grpcClient *grpc.Client
+}
+
+func NewRouter(grpcAddr string, logger *log.Logger) (*Router, error) {
+	grpcClient, err := grpc.NewClient(grpcAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	router := &Router{
+		grpcClient: grpcClient,
+	}
+
+	router.StrictSlash(true)
+
+	router.Handle("/", NewRootHandler(logger)).Methods("GET")
+	router.Handle("/configs", NewPutHandler(grpcClient, logger)).Methods("PUT")
+	router.Handle("/configs", NewGetHandler(grpcClient, logger)).Methods("GET")
+	router.Handle("/configs", NewDeleteHandler(grpcClient, logger)).Methods("DELETE")
+	router.Handle("/configs/{path:.*}", NewPutHandler(grpcClient, logger)).Methods("PUT")
+	router.Handle("/configs/{path:.*}", NewGetHandler(grpcClient, logger)).Methods("GET")
+	router.Handle("/configs/{path:.*}", NewDeleteHandler(grpcClient, logger)).Methods("DELETE")
+	router.Handle("/metrics", promhttp.Handler()).Methods("GET")
+
+	return router, nil
+}
+
+func (r *Router) Close() error {
+	r.grpcClient.Cancel()
+
+	err := r.grpcClient.Close()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 type RootHandler struct {
 	logger *log.Logger
@@ -58,11 +101,11 @@ func (h *RootHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type GetHandler struct {
-	client *GRPCClient
+	client *grpc.Client
 	logger *log.Logger
 }
 
-func NewGetHandler(client *GRPCClient, logger *log.Logger) *GetHandler {
+func NewGetHandler(client *grpc.Client, logger *log.Logger) *GetHandler {
 	return &GetHandler{
 		client: client,
 		logger: logger,
@@ -124,11 +167,11 @@ func (h *GetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type PutHandler struct {
-	client *GRPCClient
+	client *grpc.Client
 	logger *log.Logger
 }
 
-func NewPutHandler(client *GRPCClient, logger *log.Logger) *PutHandler {
+func NewPutHandler(client *grpc.Client, logger *log.Logger) *PutHandler {
 	return &PutHandler{
 		client: client,
 		logger: logger,
@@ -203,11 +246,11 @@ func (h *PutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type DeleteHandler struct {
-	client *GRPCClient
+	client *grpc.Client
 	logger *log.Logger
 }
 
-func NewDeleteHandler(client *GRPCClient, logger *log.Logger) *DeleteHandler {
+func NewDeleteHandler(client *grpc.Client, logger *log.Logger) *DeleteHandler {
 	return &DeleteHandler{
 		client: client,
 		logger: logger,

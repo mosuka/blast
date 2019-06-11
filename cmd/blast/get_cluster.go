@@ -23,7 +23,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func execCluster(c *cli.Context) error {
+func execGetCluster(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 
 	client, err := grpc.NewClient(grpcAddr)

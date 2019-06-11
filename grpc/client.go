@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package manager
+package grpc
 
 import (
 	"context"
@@ -28,20 +28,20 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type GRPCClient struct {
+type Client struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 	conn   *grpc.ClientConn
 	client protobuf.BlastClient
 }
 
-func NewGRPCClientCtx() (context.Context, context.CancelFunc) {
+func NewContext() (context.Context, context.CancelFunc) {
 	baseCtx := context.TODO()
 	return context.WithCancel(baseCtx)
 }
 
-func NewGRPCClient(address string) (*GRPCClient, error) {
-	ctx, cancel := NewGRPCClientCtx()
+func NewClient(address string) (*Client, error) {
+	ctx, cancel := NewContext()
 
 	dialOpts := []grpc.DialOption{
 		grpc.WithInsecure(),
@@ -56,7 +56,7 @@ func NewGRPCClient(address string) (*GRPCClient, error) {
 		return nil, err
 	}
 
-	return &GRPCClient{
+	return &Client{
 		ctx:    ctx,
 		cancel: cancel,
 		conn:   conn,
@@ -64,11 +64,11 @@ func NewGRPCClient(address string) (*GRPCClient, error) {
 	}, nil
 }
 
-func (c *GRPCClient) Cancel() {
+func (c *Client) Cancel() {
 	c.cancel()
 }
 
-func (c *GRPCClient) Close() error {
+func (c *Client) Close() error {
 	c.Cancel()
 	if c.conn != nil {
 		return c.conn.Close()
@@ -77,11 +77,11 @@ func (c *GRPCClient) Close() error {
 	return c.ctx.Err()
 }
 
-func (c *GRPCClient) GetAddress() string {
+func (c *Client) GetAddress() string {
 	return c.conn.Target()
 }
 
-func (c *GRPCClient) GetMetadata(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
+func (c *Client) GetNodeMetadata(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
 	req := &protobuf.GetMetadataRequest{
 		Id: id,
 	}
@@ -104,7 +104,7 @@ func (c *GRPCClient) GetMetadata(id string, opts ...grpc.CallOption) (map[string
 	return metadata, nil
 }
 
-func (c *GRPCClient) GetNodeState(id string, opts ...grpc.CallOption) (string, error) {
+func (c *Client) GetNodeState(id string, opts ...grpc.CallOption) (string, error) {
 	req := &protobuf.GetNodeStateRequest{
 		Id: id,
 	}
@@ -119,7 +119,7 @@ func (c *GRPCClient) GetNodeState(id string, opts ...grpc.CallOption) (string, e
 	return resp.State, nil
 }
 
-func (c *GRPCClient) GetNode(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
+func (c *Client) GetNode(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
 	req := &protobuf.GetNodeRequest{
 		Id: id,
 	}
@@ -142,7 +142,7 @@ func (c *GRPCClient) GetNode(id string, opts ...grpc.CallOption) (map[string]int
 	return node, nil
 }
 
-func (c *GRPCClient) SetNode(id string, metadata map[string]interface{}, opts ...grpc.CallOption) error {
+func (c *Client) SetNode(id string, metadata map[string]interface{}, opts ...grpc.CallOption) error {
 	metadataAny := &any.Any{}
 	err := protobuf.UnmarshalAny(metadata, metadataAny)
 	if err != nil {
@@ -162,7 +162,7 @@ func (c *GRPCClient) SetNode(id string, metadata map[string]interface{}, opts ..
 	return nil
 }
 
-func (c *GRPCClient) DeleteNode(id string, opts ...grpc.CallOption) error {
+func (c *Client) DeleteNode(id string, opts ...grpc.CallOption) error {
 	req := &protobuf.DeleteNodeRequest{
 		Id: id,
 	}
@@ -175,7 +175,7 @@ func (c *GRPCClient) DeleteNode(id string, opts ...grpc.CallOption) error {
 	return nil
 }
 
-func (c *GRPCClient) GetCluster(opts ...grpc.CallOption) (map[string]interface{}, error) {
+func (c *Client) GetCluster(opts ...grpc.CallOption) (map[string]interface{}, error) {
 	resp, err := c.client.GetCluster(c.ctx, &empty.Empty{}, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
@@ -189,7 +189,7 @@ func (c *GRPCClient) GetCluster(opts ...grpc.CallOption) (map[string]interface{}
 	return cluster, nil
 }
 
-func (c *GRPCClient) WatchCluster(opts ...grpc.CallOption) (protobuf.Blast_WatchClusterClient, error) {
+func (c *Client) WatchCluster(opts ...grpc.CallOption) (protobuf.Blast_WatchClusterClient, error) {
 	req := &empty.Empty{}
 
 	watchClient, err := c.client.WatchCluster(c.ctx, req, opts...)
@@ -201,7 +201,7 @@ func (c *GRPCClient) WatchCluster(opts ...grpc.CallOption) (protobuf.Blast_Watch
 	return watchClient, nil
 }
 
-func (c *GRPCClient) Snapshot(opts ...grpc.CallOption) error {
+func (c *Client) Snapshot(opts ...grpc.CallOption) error {
 	_, err := c.client.Snapshot(c.ctx, &empty.Empty{})
 	if err != nil {
 		st, _ := status.FromError(err)
@@ -212,7 +212,7 @@ func (c *GRPCClient) Snapshot(opts ...grpc.CallOption) error {
 	return nil
 }
 
-func (c *GRPCClient) LivenessProbe(opts ...grpc.CallOption) (string, error) {
+func (c *Client) LivenessProbe(opts ...grpc.CallOption) (string, error) {
 	resp, err := c.client.LivenessProbe(c.ctx, &empty.Empty{})
 	if err != nil {
 		st, _ := status.FromError(err)
@@ -223,7 +223,7 @@ func (c *GRPCClient) LivenessProbe(opts ...grpc.CallOption) (string, error) {
 	return resp.State.String(), nil
 }
 
-func (c *GRPCClient) ReadinessProbe(opts ...grpc.CallOption) (string, error) {
+func (c *Client) ReadinessProbe(opts ...grpc.CallOption) (string, error) {
 	resp, err := c.client.ReadinessProbe(c.ctx, &empty.Empty{})
 	if err != nil {
 		st, _ := status.FromError(err)
@@ -234,7 +234,7 @@ func (c *GRPCClient) ReadinessProbe(opts ...grpc.CallOption) (string, error) {
 	return resp.State.String(), nil
 }
 
-func (c *GRPCClient) GetState(key string, opts ...grpc.CallOption) (interface{}, error) {
+func (c *Client) GetState(key string, opts ...grpc.CallOption) (interface{}, error) {
 	req := &protobuf.GetStateRequest{
 		Key: key,
 	}
@@ -256,7 +256,7 @@ func (c *GRPCClient) GetState(key string, opts ...grpc.CallOption) (interface{},
 	return value, nil
 }
 
-func (c *GRPCClient) SetState(key string, value interface{}, opts ...grpc.CallOption) error {
+func (c *Client) SetState(key string, value interface{}, opts ...grpc.CallOption) error {
 	valueAny := &any.Any{}
 	err := protobuf.UnmarshalAny(value, valueAny)
 	if err != nil {
@@ -283,7 +283,7 @@ func (c *GRPCClient) SetState(key string, value interface{}, opts ...grpc.CallOp
 	return nil
 }
 
-func (c *GRPCClient) DeleteState(key string, opts ...grpc.CallOption) error {
+func (c *Client) DeleteState(key string, opts ...grpc.CallOption) error {
 	req := &protobuf.DeleteStateRequest{
 		Key: key,
 	}
@@ -303,7 +303,7 @@ func (c *GRPCClient) DeleteState(key string, opts ...grpc.CallOption) error {
 	return nil
 }
 
-func (c *GRPCClient) Watch(key string, opts ...grpc.CallOption) (protobuf.Blast_WatchStateClient, error) {
+func (c *Client) Watch(key string, opts ...grpc.CallOption) (protobuf.Blast_WatchStateClient, error) {
 	req := &protobuf.WatchStateRequest{
 		Key: key,
 	}

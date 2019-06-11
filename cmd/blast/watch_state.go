@@ -27,8 +27,14 @@ import (
 	"github.com/urfave/cli"
 )
 
-func execWatchCluster(c *cli.Context) error {
+func execWatchState(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
+
+	key := c.String("key")
+	if key == "" {
+		err := errors.New("key argument must be set")
+		return err
+	}
 
 	client, err := grpc.NewClient(grpcAddr)
 	if err != nil {
@@ -41,7 +47,7 @@ func execWatchCluster(c *cli.Context) error {
 		}
 	}()
 
-	watchClient, err := client.WatchCluster()
+	watchClient, err := client.Watch(key)
 	if err != nil {
 		return err
 	}
@@ -56,21 +62,29 @@ func execWatchCluster(c *cli.Context) error {
 			break
 		}
 
-		cluster, err := protobuf.MarshalAny(resp.Cluster)
+		value, err := protobuf.MarshalAny(resp.Value)
 		if err != nil {
 			return err
 		}
-		if cluster == nil {
+		if value == nil {
 			return errors.New("nil")
 		}
 
-		var clusterBytes []byte
-		clusterMap := *cluster.(*map[string]interface{})
-		clusterBytes, err = json.MarshalIndent(clusterMap, "", "  ")
-		if err != nil {
-			return err
+		var valueBytes []byte
+		switch value.(type) {
+		case *map[string]interface{}:
+			valueMap := *value.(*map[string]interface{})
+			valueBytes, err = json.MarshalIndent(valueMap, "", "  ")
+			if err != nil {
+				return err
+			}
+			_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%s %s %v", resp.Command.String(), resp.Key, string(valueBytes)))
+		case *string:
+			valueStr := *value.(*string)
+			_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%s %s %s", resp.Command.String(), resp.Key, valueStr))
+		default:
+			_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%s %s %v", resp.Command.String(), resp.Key, &value))
 		}
-		_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(clusterBytes)))
 	}
 
 	return nil
