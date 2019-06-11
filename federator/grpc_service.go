@@ -338,7 +338,7 @@ func (s *GRPCService) startWatchIndexers(checkInterval time.Duration) {
 			}
 
 			// create stream
-			stream, err := client.Watch("/cluster_config/clusters/")
+			stream, err := client.WatchState("/cluster_config/clusters/")
 			if err != nil {
 				st, _ := status.FromError(err)
 				switch st.Code() {

@@ -47,7 +47,7 @@ func execWatchState(c *cli.Context) error {
 		}
 	}()
 
-	watchClient, err := client.Watch(key)
+	watchClient, err := client.WatchState(key)
 	if err != nil {
 		return err
 	}

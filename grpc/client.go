@@ -303,7 +303,7 @@ func (c *Client) DeleteState(key string, opts ...grpc.CallOption) error {
 	return nil
 }
 
-func (c *Client) Watch(key string, opts ...grpc.CallOption) (protobuf.Blast_WatchStateClient, error) {
+func (c *Client) WatchState(key string, opts ...grpc.CallOption) (protobuf.Blast_WatchStateClient, error) {
 	req := &protobuf.WatchStateRequest{
 		Key: key,
 	}
