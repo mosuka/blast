@@ -30,11 +30,7 @@ import (
 func execWatchState(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 
-	key := c.String("key")
-	if key == "" {
-		err := errors.New("key argument must be set")
-		return err
-	}
+	key := c.Args().Get(0)
 
 	client, err := grpc.NewClient(grpcAddr)
 	if err != nil {

@@ -143,7 +143,9 @@ func (s *GRPCService) getInitialManagers(managerAddr string) (map[string]interfa
 	client, err := grpc.NewClient(s.managerAddr)
 	defer func() {
 		err := client.Close()
-		s.logger.Printf("[ERR] %v", err)
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+		}
 		return
 	}()
 	if err != nil {
@@ -414,8 +416,8 @@ func (s *GRPCService) startWatchCluster(checkInterval time.Duration) {
 						s.logger.Printf("[ERR] %v", err)
 						continue
 					}
-					// TODO: SetState -> SetClusterNode
-					err = client.SetState(fmt.Sprintf("/cluster_config/clusters/%s", s.clusterId), cluster)
+					s.logger.Printf("[DEBUG] update cluster state: %s %v", s.clusterId, cluster)
+					err = client.SetState(fmt.Sprintf("/cluster_config/clusters/%s/nodes", s.clusterId), cluster)
 					if err != nil {
 						continue
 					}

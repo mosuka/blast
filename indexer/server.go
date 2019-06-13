@@ -68,6 +68,7 @@ func (s *Server) Start() {
 
 		mc, err := grpc.NewClient(s.managerAddr)
 		defer func() {
+			s.logger.Printf("[DEBUG] close client for %v", mc.GetAddress())
 			err = mc.Close()
 			if err != nil {
 				s.logger.Printf("[ERR] %v", err)
@@ -80,7 +81,7 @@ func (s *Server) Start() {
 		}
 
 		s.logger.Printf("[INFO] get nodes in cluster: %s", s.clusterId)
-		value, err := mc.GetState(fmt.Sprintf("cluster_config/clusters/%s/nodes", s.clusterId))
+		clusterIntr, err := mc.GetState(fmt.Sprintf("cluster_config/clusters/%s/nodes", s.clusterId))
 		if err == errors.ErrNotFound {
 			// cluster does not found
 			s.logger.Printf("[INFO] cluster does not found: %s", s.clusterId)
@@ -88,18 +89,18 @@ func (s *Server) Start() {
 			s.logger.Printf("[ERR] %v", err)
 			return
 		} else {
-			if value == nil {
+			if clusterIntr == nil {
 				s.logger.Print("[INFO] value is nil")
 			} else {
-				m := *value.(*map[string]interface{})
-				for k, v := range m {
+				cluster := *clusterIntr.(*map[string]interface{})
+				for nodeId, nodeIntr := range cluster {
 					// skip if it is own node id
-					if k == s.id {
+					if nodeId == s.id {
 						continue
 					}
 
 					// get the peer node address
-					metadata := v.(map[string]interface{})
+					metadata := nodeIntr.(map[string]interface{})["metadata"].(map[string]interface{})
 					s.peerAddr = metadata["grpc_addr"].(string)
 
 					s.logger.Printf("[INFO] peer node detected: %s", s.peerAddr)
@@ -118,6 +119,7 @@ func (s *Server) Start() {
 	if s.managerAddr != "" {
 		mc, err := grpc.NewClient(s.managerAddr)
 		defer func() {
+			s.logger.Printf("[DEBUG] close client for %v", mc.GetAddress())
 			err = mc.Close()
 			if err != nil {
 				s.logger.Printf("[ERR] %v", err)

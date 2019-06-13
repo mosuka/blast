@@ -27,13 +27,11 @@ service Blast {
 
     rpc GetMetadata (GetMetadataRequest) returns (GetMetadataResponse) {}
     rpc GetNodeState (GetNodeStateRequest) returns (GetNodeStateResponse) {}
-
     rpc GetNode (GetNodeRequest) returns (GetNodeResponse) {}
     rpc SetNode (SetNodeRequest) returns (google.protobuf.Empty) {}
     rpc DeleteNode (DeleteNodeRequest) returns (google.protobuf.Empty) {}
     rpc GetCluster (google.protobuf.Empty) returns (GetClusterResponse) {}
     rpc WatchCluster (google.protobuf.Empty) returns (stream GetClusterResponse) {}
-
     rpc Snapshot (google.protobuf.Empty) returns (google.protobuf.Empty) {}
 
     rpc GetState (GetStateRequest) returns (GetStateResponse) {}
@@ -45,7 +43,6 @@ service Blast {
     rpc IndexDocument (stream IndexDocumentRequest) returns (IndexDocumentResponse) {}
     rpc DeleteDocument (stream DeleteDocumentRequest) returns (DeleteDocumentResponse) {}
     rpc Search (SearchRequest) returns (SearchResponse) {}
-
     rpc GetIndexConfig (google.protobuf.Empty) returns (GetIndexConfigResponse) {}
     rpc GetIndexStats (google.protobuf.Empty) returns (GetIndexStatsResponse) {}
 }
