@@ -16,7 +16,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 
@@ -24,14 +23,26 @@ import (
 	"github.com/urfave/cli"
 )
 
-func execGet(c *cli.Context) error {
+func execDeleteDocument(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
-	id := c.Args().Get(0)
-	if id == "" {
-		err := errors.New("arguments are not correct")
-		return err
+
+	// create documents
+	ids := make([]string, 0)
+
+	// documents
+	idsStr := c.Args().Get(0)
+
+	err := json.Unmarshal([]byte(idsStr), &ids)
+	if err != nil {
+		switch err.(type) {
+		case *json.SyntaxError:
+			ids = append(ids, idsStr)
+		default:
+			return err
+		}
 	}
 
+	// create client
 	client, err := grpc.NewClient(grpcAddr)
 	if err != nil {
 		return err
@@ -43,17 +54,17 @@ func execGet(c *cli.Context) error {
 		}
 	}()
 
-	fields, err := client.GetDocument(id)
+	result, err := client.DeleteDocument(ids)
 	if err != nil {
 		return err
 	}
 
-	fieldsBytes, err := json.MarshalIndent(fields, "", "  ")
+	resultBytes, err := json.MarshalIndent(result, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(fieldsBytes)))
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resultBytes)))
 
 	return nil
 }

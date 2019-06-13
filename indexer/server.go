@@ -35,9 +35,10 @@ type Server struct {
 
 	indexConfig map[string]interface{}
 
-	raftServer *RaftServer
-	grpcServer *GRPCServer
-	httpServer *HTTPServer
+	raftServer  *RaftServer
+	grpcService *GRPCService
+	grpcServer  *grpc.Server
+	httpServer  *HTTPServer
 
 	logger     *log.Logger
 	httpLogger accesslog.Logger
@@ -138,7 +139,7 @@ func (s *Server) Start() {
 			s.indexConfig = *value.(*map[string]interface{})
 		}
 	} else if s.peerAddr != "" {
-		pc, err := NewGRPCClient(s.peerAddr)
+		pc, err := grpc.NewClient(s.peerAddr)
 		defer func() {
 			err = pc.Close()
 			if err != nil {
@@ -175,8 +176,15 @@ func (s *Server) Start() {
 		return
 	}
 
+	// create gRPC service
+	s.grpcService, err = NewGRPCService(s.managerAddr, s.clusterId, s.raftServer, s.logger)
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return
+	}
+
 	// create gRPC server
-	s.grpcServer, err = NewGRPCServer(s.managerAddr, s.clusterId, s.metadata["grpc_addr"].(string), s.raftServer, s.logger)
+	s.grpcServer, err = grpc.NewServer(s.metadata["grpc_addr"].(string), s.grpcService, s.logger)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return
@@ -197,6 +205,16 @@ func (s *Server) Start() {
 		return
 	}
 
+	// start gRPC service
+	s.logger.Print("[INFO] start gRPC service")
+	go func() {
+		err := s.grpcService.Start()
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			return
+		}
+	}()
+
 	// start gRPC server
 	s.logger.Print("[INFO] start gRPC server")
 	go func() {
@@ -215,7 +233,7 @@ func (s *Server) Start() {
 
 	// join to the existing cluster
 	if !bootstrap {
-		client, err := NewGRPCClient(s.peerAddr)
+		client, err := grpc.NewClient(s.peerAddr)
 		defer func() {
 			err := client.Close()
 			if err != nil {
@@ -246,6 +264,13 @@ func (s *Server) Stop() {
 	// stop gRPC server
 	s.logger.Printf("[INFO] stop gRPC server")
 	err = s.grpcServer.Stop()
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+	}
+
+	// stop gRPC service
+	s.logger.Print("[INFO] stop gRPC service")
+	err = s.grpcService.Stop()
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 	}

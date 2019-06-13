@@ -78,14 +78,14 @@ func (s *GRPCService) Stop() error {
 	return nil
 }
 
-func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*protobuf.LivenessProbeResponse, error) {
-	s.logger.Print("hogehoge")
-	resp := &protobuf.LivenessProbeResponse{
-		State: protobuf.LivenessProbeResponse_ALIVE,
-	}
-
-	return resp, nil
-}
+//func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*protobuf.LivenessProbeResponse, error) {
+//	s.logger.Print("hogehoge")
+//	resp := &protobuf.LivenessProbeResponse{
+//		State: protobuf.LivenessProbeResponse_ALIVE,
+//	}
+//
+//	return resp, nil
+//}
 
 //func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*protobuf.ReadinessProbeResponse, error) {
 //	resp := &protobuf.ReadinessProbeResponse{
@@ -607,26 +607,26 @@ func (s *GRPCService) WatchState(req *protobuf.WatchStateRequest, server protobu
 	return nil
 }
 
-func (s *GRPCService) GetDocument(ctx context.Context, req *protobuf.GetDocumentRequest) (*protobuf.GetDocumentResponse, error) {
-	return &protobuf.GetDocumentResponse{}, status.Error(codes.Unavailable, "not implement")
-}
+//func (s *GRPCService) GetDocument(ctx context.Context, req *protobuf.GetDocumentRequest) (*protobuf.GetDocumentResponse, error) {
+//	return &protobuf.GetDocumentResponse{}, status.Error(codes.Unavailable, "not implement")
+//}
 
-func (s *GRPCService) Search(ctx context.Context, req *protobuf.SearchRequest) (*protobuf.SearchResponse, error) {
-	return &protobuf.SearchResponse{}, status.Error(codes.Unavailable, "not implement")
-}
+//func (s *GRPCService) Search(ctx context.Context, req *protobuf.SearchRequest) (*protobuf.SearchResponse, error) {
+//	return &protobuf.SearchResponse{}, status.Error(codes.Unavailable, "not implement")
+//}
 
-func (s *GRPCService) IndexDocument(stream protobuf.Blast_IndexDocumentServer) error {
-	return status.Error(codes.Unavailable, "not implement")
-}
+//func (s *GRPCService) IndexDocument(stream protobuf.Blast_IndexDocumentServer) error {
+//	return status.Error(codes.Unavailable, "not implement")
+//}
 
-func (s *GRPCService) DeleteDocument(stream protobuf.Blast_DeleteDocumentServer) error {
-	return status.Error(codes.Unavailable, "not implement")
-}
+//func (s *GRPCService) DeleteDocument(stream protobuf.Blast_DeleteDocumentServer) error {
+//	return status.Error(codes.Unavailable, "not implement")
+//}
 
-func (s *GRPCService) GetIndexConfig(ctx context.Context, req *empty.Empty) (*protobuf.GetIndexConfigResponse, error) {
-	return &protobuf.GetIndexConfigResponse{}, status.Error(codes.Unavailable, "not implement")
-}
+//func (s *GRPCService) GetIndexConfig(ctx context.Context, req *empty.Empty) (*protobuf.GetIndexConfigResponse, error) {
+//	return &protobuf.GetIndexConfigResponse{}, status.Error(codes.Unavailable, "not implement")
+//}
 
-func (s *GRPCService) GetIndexStats(ctx context.Context, req *empty.Empty) (*protobuf.GetIndexStatsResponse, error) {
-	return &protobuf.GetIndexStatsResponse{}, status.Error(codes.Unavailable, "not implement")
-}
+//func (s *GRPCService) GetIndexStats(ctx context.Context, req *empty.Empty) (*protobuf.GetIndexStatsResponse, error) {
+//	return &protobuf.GetIndexStatsResponse{}, status.Error(codes.Unavailable, "not implement")
+//}

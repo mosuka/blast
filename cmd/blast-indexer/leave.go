@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mosuka/blast/indexer"
+	"github.com/mosuka/blast/grpc"
 	"github.com/urfave/cli"
 )
 
@@ -26,7 +26,7 @@ func execLeave(c *cli.Context) error {
 	peerAddr := c.String("peer-addr")
 	nodeId := c.Args().Get(0)
 
-	client, err := indexer.NewGRPCClient(peerAddr)
+	client, err := grpc.NewClient(peerAddr)
 	if err != nil {
 		return err
 	}

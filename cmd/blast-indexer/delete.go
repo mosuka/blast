@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mosuka/blast/indexer"
+	"github.com/mosuka/blast/grpc"
 	"github.com/urfave/cli"
 )
 
@@ -43,7 +43,7 @@ func execDelete(c *cli.Context) error {
 	}
 
 	// create client
-	client, err := indexer.NewGRPCClient(grpcAddr)
+	client, err := grpc.NewClient(grpcAddr)
 	if err != nil {
 		return err
 	}

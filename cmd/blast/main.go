@@ -41,7 +41,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":5050",
+					Value: ":5001",
 					Usage: "address to connect to",
 				},
 			},
@@ -53,7 +53,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":5050",
+					Value: ":5001",
 					Usage: "address to connect to",
 				},
 			},
@@ -69,7 +69,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-addr",
-							Value: ":5050",
+							Value: ":5001",
 							Usage: "address to connect to",
 						},
 					},
@@ -82,7 +82,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-addr",
-							Value: ":5050",
+							Value: ":5001",
 							Usage: "address to connect to",
 						},
 					},
@@ -95,7 +95,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-addr",
-							Value: ":5050",
+							Value: ":5001",
 							Usage: "address to connect to",
 						},
 					},
@@ -108,7 +108,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-addr",
-							Value: ":5050",
+							Value: ":5001",
 							Usage: "address to connect to",
 						},
 					},
@@ -120,12 +120,25 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-addr",
-							Value: ":5050",
+							Value: ":5001",
 							Usage: "address to connect to",
 						},
 					},
 					ArgsUsage: "[key]",
 					Action:    execGetState,
+				},
+				{
+					Name:  "document",
+					Usage: "get document",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "grpc-addr",
+							Value: ":5001",
+							Usage: "address to connect to",
+						},
+					},
+					ArgsUsage: "[id]",
+					Action:    execGetDocument,
 				},
 			},
 		},
@@ -139,7 +152,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-addr",
-							Value: ":5050",
+							Value: ":5001",
 							Usage: "address to connect to",
 						},
 					},
@@ -152,7 +165,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-addr",
-							Value: ":5050",
+							Value: ":5001",
 							Usage: "address to connect to",
 						},
 					},
@@ -171,7 +184,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-addr",
-							Value: ":5050",
+							Value: ":5001",
 							Usage: "address to connect to",
 						},
 					},
@@ -184,12 +197,25 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-addr",
-							Value: ":5050",
+							Value: ":5001",
 							Usage: "address to connect to",
 						},
 					},
 					ArgsUsage: "[key] [value]",
 					Action:    execDeleteState,
+				},
+				{
+					Name:  "document",
+					Usage: "delete document",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "grpc-addr",
+							Value: ":5001",
+							Usage: "address to connect to",
+						},
+					},
+					ArgsUsage: "[id] ...",
+					Action:    execDeleteDocument,
 				},
 			},
 		},
@@ -203,7 +229,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-addr",
-							Value: ":5050",
+							Value: ":5001",
 							Usage: "address to connect to",
 						},
 					},
@@ -215,7 +241,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-addr",
-							Value: ":5050",
+							Value: ":5001",
 							Usage: "address to connect to",
 						},
 					},
@@ -230,11 +256,37 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":5050",
+					Value: ":5001",
 					Usage: "address to connect to",
 				},
 			},
 			Action: execSnapshot,
+		},
+		{
+			Name:  "index",
+			Usage: "index documents",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "grpc-addr",
+					Value: ":5001",
+					Usage: "address to connect to",
+				},
+			},
+			ArgsUsage: "[documents | [id] [fields]]",
+			Action:    execIndex,
+		},
+		{
+			Name:  "search",
+			Usage: "search documents",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "grpc-addr",
+					Value: ":5001",
+					Usage: "address to connect to",
+				},
+			},
+			ArgsUsage: "[search request]",
+			Action:    execSearch,
 		},
 	}
 

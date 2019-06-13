@@ -92,58 +92,6 @@ func main() {
 	}
 	app.Commands = []cli.Command{
 		{
-			Name:  "manager",
-			Usage: "Start manager",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "node-id",
-					Value: "",
-					Usage: "Node ID",
-				},
-				cli.StringFlag{
-					Name:  "bind-addr",
-					Value: ":3130",
-					Usage: "Raft bind address",
-				},
-				cli.StringFlag{
-					Name:  "grpc-addr",
-					Value: ":5150",
-					Usage: "gRPC Server listen address",
-				},
-				cli.StringFlag{
-					Name:  "http-addr",
-					Value: ":8180",
-					Usage: "HTTP server listen address",
-				},
-				cli.StringFlag{
-					Name:  "data-dir",
-					Value: "./",
-					Usage: "Data directory",
-				},
-				cli.StringFlag{
-					Name:  "peer-addr",
-					Value: "",
-					Usage: "Existing gRPC server listen address to join to the cluster",
-				},
-				cli.StringFlag{
-					Name:  "index-mapping-file",
-					Value: "",
-					Usage: "Path to a file containing a JSON representation of an index mapping to use",
-				},
-				cli.StringFlag{
-					Name:  "index-type",
-					Value: bleve.Config.DefaultIndexType,
-					Usage: "Index storage type to use",
-				},
-				cli.StringFlag{
-					Name:  "index-storage-type",
-					Value: bleve.Config.DefaultKVStore,
-					Usage: "Index storage type to use",
-				},
-			},
-			Action: startManager,
-		},
-		{
 			Name:  "indexer",
 			Usage: "Start indexer",
 			Flags: []cli.Flag{
@@ -164,17 +112,17 @@ func main() {
 				},
 				cli.StringFlag{
 					Name:  "bind-addr",
-					Value: ":3030",
+					Value: ":5000",
 					Usage: "Raft bind address",
 				},
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":5050",
+					Value: ":5001",
 					Usage: "gRPC Server listen address",
 				},
 				cli.StringFlag{
 					Name:  "http-addr",
-					Value: ":8080",
+					Value: ":5002",
 					Usage: "HTTP server listen address",
 				},
 				cli.StringFlag{
@@ -206,22 +154,74 @@ func main() {
 			Action: startIndexer,
 		},
 		{
+			Name:  "manager",
+			Usage: "Start manager",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "node-id",
+					Value: "",
+					Usage: "Node ID",
+				},
+				cli.StringFlag{
+					Name:  "bind-addr",
+					Value: ":15000",
+					Usage: "Raft bind address",
+				},
+				cli.StringFlag{
+					Name:  "grpc-addr",
+					Value: ":15001",
+					Usage: "gRPC Server listen address",
+				},
+				cli.StringFlag{
+					Name:  "http-addr",
+					Value: ":15002",
+					Usage: "HTTP server listen address",
+				},
+				cli.StringFlag{
+					Name:  "data-dir",
+					Value: "./",
+					Usage: "Data directory",
+				},
+				cli.StringFlag{
+					Name:  "peer-addr",
+					Value: "",
+					Usage: "Existing gRPC server listen address to join to the cluster",
+				},
+				cli.StringFlag{
+					Name:  "index-mapping-file",
+					Value: "",
+					Usage: "Path to a file containing a JSON representation of an index mapping to use",
+				},
+				cli.StringFlag{
+					Name:  "index-type",
+					Value: bleve.Config.DefaultIndexType,
+					Usage: "Index storage type to use",
+				},
+				cli.StringFlag{
+					Name:  "index-storage-type",
+					Value: bleve.Config.DefaultKVStore,
+					Usage: "Index storage type to use",
+				},
+			},
+			Action: startManager,
+		},
+		{
 			Name:  "dispatcher",
 			Usage: "Start dispatcher",
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "manager-addr",
-					Value: ":5150",
+					Value: ":15001",
 					Usage: "Manager address",
 				},
 				cli.StringFlag{
 					Name:  "grpc-addr",
-					Value: ":5250",
+					Value: ":25001",
 					Usage: "gRPC Server listen address",
 				},
 				cli.StringFlag{
 					Name:  "http-addr",
-					Value: ":8280",
+					Value: ":25002",
 					Usage: "HTTP server listen address",
 				},
 			},

@@ -31,7 +31,6 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/hashicorp/raft"
 	"github.com/mosuka/blast/grpc"
-	"github.com/mosuka/blast/indexer"
 	"github.com/mosuka/blast/protobuf"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -48,7 +47,7 @@ type GRPCService struct {
 	watchManagersDoneCh chan struct{}
 
 	indexers            map[string]interface{}
-	indexerClients      map[string]map[string]*indexer.GRPCClient
+	indexerClients      map[string]map[string]*grpc.Client
 	watchIndexersStopCh chan struct{}
 	watchIndexersDoneCh chan struct{}
 }
@@ -62,7 +61,7 @@ func NewGRPCService(managerAddr string, logger *log.Logger) (*GRPCService, error
 		managerClients: make(map[string]*grpc.Client, 0),
 
 		indexers:       make(map[string]interface{}, 0),
-		indexerClients: make(map[string]map[string]*indexer.GRPCClient, 0),
+		indexerClients: make(map[string]map[string]*grpc.Client, 0),
 	}, nil
 }
 
@@ -313,13 +312,13 @@ func (s *GRPCService) startWatchIndexers(checkInterval time.Duration) {
 
 			s.logger.Printf("[DEBUG] create indexer client for %s at %s", metadata["grpc_addr"].(string), clusterId)
 
-			client, err := indexer.NewGRPCClient(metadata["grpc_addr"].(string))
+			client, err := grpc.NewClient(metadata["grpc_addr"].(string))
 			if err != nil {
 				s.logger.Printf("[ERR] %v", err)
 				continue
 			}
 
-			s.indexerClients[clusterId] = make(map[string]*indexer.GRPCClient)
+			s.indexerClients[clusterId] = make(map[string]*grpc.Client)
 			s.indexerClients[clusterId][nodeId] = client
 		}
 	}
@@ -413,8 +412,8 @@ func (s *GRPCService) stopWatchIndexers() {
 	<-s.watchIndexersDoneCh
 }
 
-func (s *GRPCService) getIndexerClients() map[string]*indexer.GRPCClient {
-	indexerClients := make(map[string]*indexer.GRPCClient, 0)
+func (s *GRPCService) getIndexerClients() map[string]*grpc.Client {
+	indexerClients := make(map[string]*grpc.Client, 0)
 
 	for clusterId, cluster := range s.indexerClients {
 
@@ -522,7 +521,7 @@ func (s *GRPCService) GetDocument(ctx context.Context, req *protobuf.GetDocument
 	wg := &sync.WaitGroup{}
 	for clusterId, client := range indexerClients {
 		wg.Add(1)
-		go func(clusterId string, client *indexer.GRPCClient, id string, respChan chan respVal) {
+		go func(clusterId string, client *grpc.Client, id string, respChan chan respVal) {
 			// index documents
 			fields, err := client.GetDocument(id)
 			wg.Done()
@@ -596,7 +595,7 @@ func (s *GRPCService) Search(ctx context.Context, req *protobuf.SearchRequest) (
 	wg := &sync.WaitGroup{}
 	for clusterId, client := range indexerClients {
 		wg.Add(1)
-		go func(clusterId string, client *indexer.GRPCClient, searchRequest *bleve.SearchRequest, respChan chan respVal) {
+		go func(clusterId string, client *grpc.Client, searchRequest *bleve.SearchRequest, respChan chan respVal) {
 			// index documents
 			searchResult, err := client.Search(searchRequest)
 			wg.Done()
@@ -777,7 +776,7 @@ func (s *GRPCService) DeleteDocument(stream protobuf.Blast_DeleteDocumentServer)
 	wg := &sync.WaitGroup{}
 	for clusterId, client := range indexerClients {
 		wg.Add(1)
-		go func(clusterId string, client *indexer.GRPCClient, ids []string, respChan chan respVal) {
+		go func(clusterId string, client *grpc.Client, ids []string, respChan chan respVal) {
 			// index documents
 			count, err := client.DeleteDocument(ids)
 			wg.Done()

@@ -36,6 +36,8 @@ import (
 )
 
 type GRPCService struct {
+	*grpc.Service
+
 	managerAddr string
 	clusterId   string
 
@@ -45,7 +47,7 @@ type GRPCService struct {
 	watchClusterStopCh chan struct{}
 	watchClusterDoneCh chan struct{}
 	peers              map[string]interface{}
-	peerClients        map[string]*GRPCClient
+	peerClients        map[string]*grpc.Client
 	cluster            map[string]interface{}
 	clusterChans       map[chan protobuf.GetClusterResponse]struct{}
 	clusterMutex       sync.RWMutex
@@ -65,7 +67,7 @@ func NewGRPCService(managerAddr string, clusterId string, raftServer *RaftServer
 		logger:     logger,
 
 		peers:        make(map[string]interface{}, 0),
-		peerClients:  make(map[string]*GRPCClient, 0),
+		peerClients:  make(map[string]*grpc.Client, 0),
 		cluster:      make(map[string]interface{}, 0),
 		clusterChans: make(map[chan protobuf.GetClusterResponse]struct{}),
 
@@ -97,6 +99,22 @@ func (s *GRPCService) Stop() error {
 
 	return nil
 }
+
+//func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*protobuf.LivenessProbeResponse, error) {
+//	resp := &protobuf.LivenessProbeResponse{
+//		State: protobuf.LivenessProbeResponse_ALIVE,
+//	}
+//
+//	return resp, nil
+//}
+
+//func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*protobuf.ReadinessProbeResponse, error) {
+//	resp := &protobuf.ReadinessProbeResponse{
+//		State: protobuf.ReadinessProbeResponse_READY,
+//	}
+//
+//	return resp, nil
+//}
 
 func (s *GRPCService) getManagerClient() (*grpc.Client, error) {
 	var client *grpc.Client
@@ -331,7 +349,7 @@ func (s *GRPCService) startWatchCluster(checkInterval time.Duration) {
 							}
 
 							s.logger.Printf("[DEBUG] create client for %s", grpcAddr)
-							newClient, err := NewGRPCClient(grpcAddr)
+							newClient, err := grpc.NewClient(grpcAddr)
 							if err != nil {
 								s.logger.Printf("[ERR] %v", err)
 							}
@@ -343,7 +361,7 @@ func (s *GRPCService) startWatchCluster(checkInterval time.Duration) {
 						}
 					} else {
 						s.logger.Printf("[DEBUG] create client for %s", grpcAddr)
-						newClient, err := NewGRPCClient(grpcAddr)
+						newClient, err := grpc.NewClient(grpcAddr)
 						if err != nil {
 							s.logger.Printf("[ERR] %v", err)
 						}
@@ -374,7 +392,7 @@ func (s *GRPCService) startWatchCluster(checkInterval time.Duration) {
 			}
 
 			// get cluster
-			ctx, _ := NewGRPCClientCtx()
+			ctx, _ := grpc.NewContext()
 			resp, err := s.GetCluster(ctx, &empty.Empty{})
 			if err != nil {
 				s.logger.Printf("[ERR] %v", err)
@@ -434,8 +452,8 @@ func (s *GRPCService) stopWatchCluster() {
 	<-s.watchClusterDoneCh
 }
 
-func (s *GRPCService) getMetadata(id string) (map[string]interface{}, error) {
-	metadata, err := s.raftServer.GetMetadata(id)
+func (s *GRPCService) getMetadata() (map[string]interface{}, error) {
+	metadata, err := s.raftServer.GetMetadata(s.raftServer.id)
 	if err != nil {
 		return nil, err
 	}
@@ -449,14 +467,14 @@ func (s *GRPCService) GetMetadata(ctx context.Context, req *protobuf.GetMetadata
 	var metadata map[string]interface{}
 	var err error
 
-	if req.Id == s.raftServer.id {
-		metadata, err = s.getMetadata(req.Id)
+	if req.Id == "" || req.Id == s.raftServer.id {
+		metadata, err = s.getMetadata()
 		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
+			s.logger.Printf("[ERR] %v: %v", err, s.raftServer.id)
 		}
 	} else {
 		if client, exist := s.peerClients[req.Id]; exist {
-			metadata, err = client.GetMetadata(req.Id)
+			metadata, err = client.GetNodeMetadata(req.Id)
 			if err != nil {
 				s.logger.Printf("[ERR] %v: %v", err, req.Id)
 			}
@@ -500,8 +518,8 @@ func (s *GRPCService) GetNodeState(ctx context.Context, req *protobuf.GetNodeSta
 	return resp, nil
 }
 
-func (s *GRPCService) getNode(id string) (map[string]interface{}, error) {
-	metadata, err := s.getMetadata(id)
+func (s *GRPCService) getNode() (map[string]interface{}, error) {
+	metadata, err := s.getMetadata()
 	if err != nil {
 		return nil, err
 	}
@@ -523,16 +541,18 @@ func (s *GRPCService) GetNode(ctx context.Context, req *protobuf.GetNodeRequest)
 	var state string
 	var err error
 
-	if req.Id == s.raftServer.id {
-		metadata, err = s.getMetadata(req.Id)
+	if req.Id == "" || req.Id == s.raftServer.id {
+		node, err := s.getNode()
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 		}
 
-		state = s.getNodeState()
+		metadata = node["metadata"].(map[string]interface{})
+
+		state = node["state"].(string)
 	} else {
 		if client, exist := s.peerClients[req.Id]; exist {
-			metadata, err = client.GetMetadata(req.Id)
+			metadata, err = client.GetNodeMetadata(req.Id)
 			if err != nil {
 				s.logger.Printf("[ERR] %v", err)
 			}
@@ -603,7 +623,8 @@ func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*protob
 	for id := range servers {
 		node := map[string]interface{}{}
 		if id == s.raftServer.id {
-			node, err = s.getNode(id)
+			//node, err = s.getNode(id)
+			node, err = s.getNode()
 			if err != nil {
 				return resp, err
 			}
@@ -673,37 +694,21 @@ func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Em
 	return resp, nil
 }
 
-func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*protobuf.LivenessProbeResponse, error) {
-	resp := &protobuf.LivenessProbeResponse{
-		State: protobuf.LivenessProbeResponse_ALIVE,
-	}
+//func (s *GRPCService) GetState(ctx context.Context, req *protobuf.GetStateRequest) (*protobuf.GetStateResponse, error) {
+//	return &protobuf.GetStateResponse{}, status.Error(codes.Unavailable, "not implement")
+//}
 
-	return resp, nil
-}
+//func (s *GRPCService) SetState(ctx context.Context, req *protobuf.SetStateRequest) (*empty.Empty, error) {
+//	return &empty.Empty{}, status.Error(codes.Unavailable, "not implement")
+//}
 
-func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*protobuf.ReadinessProbeResponse, error) {
-	resp := &protobuf.ReadinessProbeResponse{
-		State: protobuf.ReadinessProbeResponse_READY,
-	}
+//func (s *GRPCService) DeleteState(ctx context.Context, req *protobuf.DeleteStateRequest) (*empty.Empty, error) {
+//	return &empty.Empty{}, status.Error(codes.Unavailable, "not implement")
+//}
 
-	return resp, nil
-}
-
-func (s *GRPCService) GetState(ctx context.Context, req *protobuf.GetStateRequest) (*protobuf.GetStateResponse, error) {
-	return &protobuf.GetStateResponse{}, status.Error(codes.Unavailable, "not implement")
-}
-
-func (s *GRPCService) SetState(ctx context.Context, req *protobuf.SetStateRequest) (*empty.Empty, error) {
-	return &empty.Empty{}, status.Error(codes.Unavailable, "not implement")
-}
-
-func (s *GRPCService) DeleteState(ctx context.Context, req *protobuf.DeleteStateRequest) (*empty.Empty, error) {
-	return &empty.Empty{}, status.Error(codes.Unavailable, "not implement")
-}
-
-func (s *GRPCService) WatchState(req *protobuf.WatchStateRequest, server protobuf.Blast_WatchStateServer) error {
-	return status.Error(codes.Unavailable, "not implement")
-}
+//func (s *GRPCService) WatchState(req *protobuf.WatchStateRequest, server protobuf.Blast_WatchStateServer) error {
+//	return status.Error(codes.Unavailable, "not implement")
+//}
 
 func (s *GRPCService) GetDocument(ctx context.Context, req *protobuf.GetDocumentRequest) (*protobuf.GetDocumentResponse, error) {
 	start := time.Now()

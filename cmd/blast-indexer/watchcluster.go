@@ -22,7 +22,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/mosuka/blast/indexer"
+	"github.com/mosuka/blast/grpc"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/urfave/cli"
 )
@@ -30,7 +30,7 @@ import (
 func execWatchCluster(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 
-	client, err := indexer.NewGRPCClient(grpcAddr)
+	client, err := grpc.NewClient(grpcAddr)
 	if err != nil {
 		return err
 	}

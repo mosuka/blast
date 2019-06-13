@@ -19,6 +19,7 @@ import (
 	"errors"
 	"math"
 
+	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
 	blasterrors "github.com/mosuka/blast/errors"
@@ -315,4 +316,147 @@ func (c *Client) WatchState(key string, opts ...grpc.CallOption) (protobuf.Blast
 	}
 
 	return watchClient, nil
+}
+
+func (c *Client) GetDocument(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
+	req := &protobuf.GetDocumentRequest{
+		Id: id,
+	}
+
+	resp, err := c.client.GetDocument(c.ctx, req, opts...)
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		switch st.Code() {
+		case codes.NotFound:
+			return nil, blasterrors.ErrNotFound
+		default:
+			return nil, errors.New(st.Message())
+		}
+	}
+
+	ins, err := protobuf.MarshalAny(resp.Fields)
+	fields := *ins.(*map[string]interface{})
+
+	return fields, nil
+}
+
+func (c *Client) Search(searchRequest *bleve.SearchRequest, opts ...grpc.CallOption) (*bleve.SearchResult, error) {
+	// bleve.SearchRequest -> Any
+	searchRequestAny := &any.Any{}
+	err := protobuf.UnmarshalAny(searchRequest, searchRequestAny)
+	if err != nil {
+		return nil, err
+	}
+
+	req := &protobuf.SearchRequest{
+		SearchRequest: searchRequestAny,
+	}
+
+	resp, err := c.client.Search(c.ctx, req, opts...)
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+
+	// Any -> bleve.SearchResult
+	searchResultInstance, err := protobuf.MarshalAny(resp.SearchResult)
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+	if searchResultInstance == nil {
+		return nil, errors.New("nil")
+	}
+	searchResult := searchResultInstance.(*bleve.SearchResult)
+
+	return searchResult, nil
+}
+
+func (c *Client) IndexDocument(docs []map[string]interface{}, opts ...grpc.CallOption) (int, error) {
+	stream, err := c.client.IndexDocument(c.ctx, opts...)
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return -1, errors.New(st.Message())
+	}
+
+	for _, doc := range docs {
+		id := doc["id"].(string)
+		fields := doc["fields"].(map[string]interface{})
+
+		fieldsAny := &any.Any{}
+		err := protobuf.UnmarshalAny(&fields, fieldsAny)
+		if err != nil {
+			return -1, err
+		}
+
+		req := &protobuf.IndexDocumentRequest{
+			Id:     id,
+			Fields: fieldsAny,
+		}
+
+		err = stream.Send(req)
+		if err != nil {
+			return -1, err
+		}
+	}
+
+	resp, err := stream.CloseAndRecv()
+	if err != nil {
+		return -1, err
+	}
+
+	return int(resp.Count), nil
+}
+
+func (c *Client) DeleteDocument(ids []string, opts ...grpc.CallOption) (int, error) {
+	stream, err := c.client.DeleteDocument(c.ctx, opts...)
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return -1, errors.New(st.Message())
+	}
+
+	for _, id := range ids {
+		req := &protobuf.DeleteDocumentRequest{
+			Id: id,
+		}
+
+		err := stream.Send(req)
+		if err != nil {
+			return -1, err
+		}
+	}
+
+	resp, err := stream.CloseAndRecv()
+	if err != nil {
+		return -1, err
+	}
+
+	return int(resp.Count), nil
+}
+
+func (c *Client) GetIndexConfig(opts ...grpc.CallOption) (*protobuf.GetIndexConfigResponse, error) {
+	conf, err := c.client.GetIndexConfig(c.ctx, &empty.Empty{}, opts...)
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+
+	return conf, nil
+}
+
+func (c *Client) GetIndexStats(opts ...grpc.CallOption) (*protobuf.GetIndexStatsResponse, error) {
+	stats, err := c.client.GetIndexStats(c.ctx, &empty.Empty{}, opts...)
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+
+	return stats, nil
 }

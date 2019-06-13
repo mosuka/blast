@@ -77,16 +77,8 @@ func (s *Server) Start() {
 		return
 	}
 
-	//// create HTTP router
-	//router, err := NewRouter(s.metadata["grpc_addr"].(string), s.logger)
-	//if err != nil {
-	//	s.logger.Printf("[ERR] %v", err)
-	//	return
-	//}
-
 	// create HTTP server
 	s.httpServer, err = NewHTTPServer(s.metadata["http_addr"].(string), s.metadata["grpc_addr"].(string), s.logger, s.httpLogger)
-	//s.httpServer, err = http.NewServer(s.metadata["http_addr"].(string), router, s.logger, s.httpLogger)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return

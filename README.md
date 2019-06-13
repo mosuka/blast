@@ -238,16 +238,16 @@ $ make \
 Running a Blast index node is easy. Start Blast data node like so:
 
 ```bash
-$ ./bin/blast-indexer start \
-                      --node-id=indexer1 \
-                      --bind-addr=:6060 \
-                      --grpc-addr=:7070 \
-                      --http-addr=:8080 \
-                      --data-dir=/tmp/blast/indexer1 \
-                      --index-mapping-file=./example/index_mapping.json \
-                      --index-type=upside_down \
-                      --index-storage-type=boltdb \
-                      --log-level=DEBUG
+$ ./bin/blastd \
+    indexer \
+    --node-id=indexer1 \
+    --bind-addr=:5000 \
+    --grpc-addr=:5001 \
+    --http-addr=:5002 \
+    --data-dir=/tmp/blast/indexer1 \
+    --index-mapping-file=./example/index_mapping.json \
+    --index-type=upside_down \
+    --index-storage-type=boltdb
 ```
 
 Please refer to following document for details of index mapping:
@@ -264,7 +264,7 @@ You can now put, get, search and delete the documents via CLI.
 For document indexing, execute the following command:
 
 ```bash
-$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast-indexer index --grpc-addr=:7070 enwiki_1
+$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast index --grpc-addr=:5001 enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -279,7 +279,7 @@ You can see the result in JSON format. The result of the above command is:
 Getting a document is as following:
 
 ```bash
-$ ./bin/blast-indexer get --grpc-addr=:7070 enwiki_1
+$ ./bin/blast get document --grpc-addr=:5001 enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -299,7 +299,7 @@ You can see the result in JSON format. The result of the above command is:
 Searching documents is as like following:
 
 ```bash
-$ cat ./example/search_request.json | xargs -0 ./bin/blast-indexer search --grpc-addr=:7070
+$ cat ./example/search_request.json | xargs -0 ./bin/blast search --grpc-addr=:5001
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -464,15 +464,13 @@ Please refer to following document for details of search request and result:
 Deleting a document is as following:
 
 ```bash
-$ ./bin/blast-indexer delete --grpc-addr=:7070 enwiki_1
+$ ./bin/blast delete document --grpc-addr=:5001 enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
 ```bash
-{
-  "count": 1
-}
+1
 ```
 
 
@@ -481,15 +479,13 @@ You can see the result in JSON format. The result of the above command is:
 Indexing documents in bulk, run the following command:
 
 ```bash
-$ cat ./example/bulk_index_wiki.json | xargs -0 ./bin/blast-indexer index --grpc-addr=:7070
+$ cat ./example/bulk_index_wiki.json | xargs -0 ./bin/blast index --grpc-addr=:5001
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
 ```bash
-{
-  "count": 4
-}
+4
 ```
 
 
@@ -498,21 +494,19 @@ You can see the result in JSON format. The result of the above command is:
 Deleting documents in bulk, run the following command:
 
 ```bash
-$ cat ./example/bulk_delete_wiki.json | xargs -0 ./bin/blast-indexer delete --grpc-addr=:7070
+$ cat ./example/bulk_delete_wiki.json | xargs -0 ./bin/blast delete document --grpc-addr=:5001
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
 ```bash
-{
-  "count": 4
-}
+4
 ```
 
 
 ## Using HTTP REST API
 
-Also you can do above commands via HTTP REST API that listened port 8080.
+Also you can do above commands via HTTP REST API that listened port 5002.
 
 
 ### Indexing a document via HTTP REST API
@@ -520,7 +514,7 @@ Also you can do above commands via HTTP REST API that listened port 8080.
 Indexing a document via HTTP is as following:
 
 ```bash
-$ curl -s -X PUT 'http://127.0.0.1:8080/documents/enwiki_1' -d @./example/doc_enwiki_1.json
+$ curl -s -X PUT 'http://127.0.0.1:5002/documents/enwiki_1' -d @./example/doc_enwiki_1.json
 ```
 
 
@@ -529,7 +523,7 @@ $ curl -s -X PUT 'http://127.0.0.1:8080/documents/enwiki_1' -d @./example/doc_en
 Getting a document via HTTP is as following:
 
 ```bash
-$ curl -s -X GET 'http://127.0.0.1:8080/documents/enwiki_1'
+$ curl -s -X GET 'http://127.0.0.1:5002/documents/enwiki_1'
 ```
 
 
@@ -538,7 +532,7 @@ $ curl -s -X GET 'http://127.0.0.1:8080/documents/enwiki_1'
 Searching documents via HTTP is as following:
 
 ```bash
-$ curl -X POST 'http://127.0.0.1:8080/search' -d @./example/search_request.json
+$ curl -X POST 'http://127.0.0.1:5002/search' -d @./example/search_request.json
 ```
 
 
@@ -547,7 +541,7 @@ $ curl -X POST 'http://127.0.0.1:8080/search' -d @./example/search_request.json
 Deleting a document via HTTP is as following:
 
 ```bash
-$ curl -X DELETE 'http://127.0.0.1:8080/documents/enwiki_1'
+$ curl -X DELETE 'http://127.0.0.1:5002/documents/enwiki_1'
 ```
 
 
@@ -556,7 +550,7 @@ $ curl -X DELETE 'http://127.0.0.1:8080/documents/enwiki_1'
 Indexing documents in bulk via HTTP is as following:
 
 ```bash
-$ curl -s -X PUT 'http://127.0.0.1:8080/documents' -d @./example/bulk_index_wiki.json
+$ curl -s -X PUT 'http://127.0.0.1:5002/documents' -d @./example/bulk_index_wiki.json
 ```
 
 
@@ -565,7 +559,7 @@ $ curl -s -X PUT 'http://127.0.0.1:8080/documents' -d @./example/bulk_index_wiki
 Deleting documents in bulk via HTTP is as following:
 
 ```bash
-$ curl -X DELETE 'http://127.0.0.1:8080/documents' -d @./example/bulk_delete_wiki.json
+$ curl -X DELETE 'http://127.0.0.1:5002/documents' -d @./example/bulk_delete_wiki.json
 ```
 
 
@@ -576,37 +570,38 @@ Blast can easily bring up a cluster. Running indexer node in standalone is not f
 At first, start the indexer node in standalone.
 
 ```bash
-$ ./bin/blast-indexer start \
-                      --node-id=indexer1 \
-                      --data-dir=/tmp/blast/indexer1 \
-                      --bind-addr=:6060 \
-                      --grpc-addr=:7070 \
-                      --http-addr=:8080 \
-                      --index-mapping-file=./example/index_mapping.json \
-                      --index-type=upside_down \
-                      --index-storage-type=boltdb \
-                      --log-level=DEBUG
+$ ./bin/blastd \
+    indexer \
+    --node-id=indexer1 \
+    --bind-addr=:5000 \
+    --grpc-addr=:5001 \
+    --http-addr=:5002 \
+    --data-dir=/tmp/blast/indexer1 \
+    --index-mapping-file=./example/index_mapping.json \
+    --index-type=upside_down \
+    --index-storage-type=boltdb
 ```
 
 Then, start two more indexer nodes.
 
 ```bash
-$ ./bin/blast-indexer start \
-                      --peer-addr=:7070 \
-                      --node-id=indexer2 \
-                      --data-dir=/tmp/blast/indexer2 \
-                      --bind-addr=:6061 \
-                      --grpc-addr=:7071 \
-                      --http-addr=:8081 \
-                      --log-level=DEBUG
-$ ./bin/blast-indexer start \
-                      --peer-addr=:7070 \
-                      --node-id=indexer3 \
-                      --data-dir=/tmp/blast/indexer3 \
-                      --bind-addr=:6062 \
-                      --grpc-addr=:7072 \
-                      --http-addr=:8082 \
-                      --log-level=DEBUG
+$ ./bin/blastd \
+    indexer \
+    --peer-addr=:5001 \
+    --node-id=indexer2 \
+    --bind-addr=:5010 \
+    --grpc-addr=:5011 \
+    --http-addr=:5012 \
+    --data-dir=/tmp/blast/indexer2
+
+$ ./bin/blastd \
+    indexer \
+    --peer-addr=:5001 \
+    --node-id=indexer3 \
+    --bind-addr=:5020 \
+    --grpc-addr=:5021 \
+    --http-addr=:5022 \
+    --data-dir=/tmp/blast/indexer3
 ```
 
 _Above example shows each Blast node running on the same host, so each node must listen on different ports. This would not be necessary if each node ran on a different host._
@@ -616,7 +611,7 @@ So you have a 3-node cluster. That way you can tolerate the failure of 1 node. Y
 
 
 ```bash
-$ ./bin/blast-indexer cluster --grpc-addr=:7070
+$ ./bin/blast get cluster --grpc-addr=:5001
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -624,25 +619,31 @@ You can see the result in JSON format. The result of the above command is:
 ```json
 {
   "indexer1": {
-    "bind_addr": ":6060",
-    "data_dir": "/tmp/blast/indexer1",
-    "grpc_addr": ":7070",
-    "http_addr": ":8080",
-    "leader": true
+    "metadata": {
+      "bind_addr": ":5050",
+      "data_dir": "/tmp/blast/indexer1",
+      "grpc_addr": ":5051",
+      "http_addr": ":5052"
+    },
+    "state": "Leader"
   },
   "indexer2": {
-    "bind_addr": ":6061",
-    "data_dir": "/tmp/blast/indexer2",
-    "grpc_addr": ":7071",
-    "http_addr": ":8081",
-    "leader": false
+    "metadata": {
+      "bind_addr": ":5060",
+      "data_dir": "/tmp/blast/indexer2",
+      "grpc_addr": ":5061",
+      "http_addr": ":5062"
+    },
+    "state": "Follower"
   },
   "indexer3": {
-    "bind_addr": ":6062",
-    "data_dir": "/tmp/blast/indexer3",
-    "grpc_addr": ":7072",
-    "http_addr": ":8082",
-    "leader": false
+    "metadata": {
+      "bind_addr": ":5070",
+      "data_dir": "/tmp/blast/indexer3",
+      "grpc_addr": ":5071",
+      "http_addr": ":5072"
+    },
+    "state": "Follower"
   }
 }
 ```
@@ -652,13 +653,13 @@ Recommend 3 or more odd number of nodes in the cluster. In failure scenarios, da
 The following command indexes documents to any node in the cluster:
 
 ```bash
-$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast-indexer index --grpc-addr=:7070 enwiki_1
+$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast index --grpc-addr=:5001 enwiki_1
 ```
 
 So, you can get the document from the node specified by the above command as follows:
 
 ```bash
-$ ./bin/blast-indexer get --grpc-addr=:7070 enwiki_1
+$ ./bin/blast get document --grpc-addr=:5001 enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -676,8 +677,8 @@ You can see the result in JSON format. The result of the above command is:
 You can also get the same document from other nodes in the cluster as follows:
 
 ```bash
-$ ./bin/blast-indexer get --grpc-addr=:7071 enwiki_1
-$ ./bin/blast-indexer get --grpc-addr=:7072 enwiki_1
+$ ./bin/blast get document --grpc-addr=:5011 enwiki_1
+$ ./bin/blast get document --grpc-addr=:5021 enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -695,87 +696,110 @@ You can see the result in JSON format. The result of the above command is:
 
 ## Cluster federation
 
-
+Bring up the manager cluster.
 
 ```bash
-$ ./bin/blast-manager start \
-                      --node-id=manager1 \
-                      --bind-addr=:16060 \
-                      --grpc-addr=:17070 \
-                      --http-addr=:18080 \
-                      --data-dir=/tmp/blast/manager1 \
-                      --index-mapping-file=./example/index_mapping.json \
-                      --index-type=upside_down \
-                      --index-storage-type=boltdb \
-                      --log-level=DEBUG
 $ ./bin/blastd \
-    --log-level=DEBUG \
     manager \
     --node-id=manager1 \
-    --bind-addr=:16060 \
-    --grpc-addr=:17070 \
-    --http-addr=:18080 \
+    --bind-addr=:15000 \
+    --grpc-addr=:15001 \
+    --http-addr=:15002 \
     --data-dir=/tmp/blast/manager1 \
     --index-mapping-file=./example/index_mapping.json \
     --index-type=upside_down \
     --index-storage-type=boltdb
 
-$ ./bin/blast-manager start \
-                      --peer-addr=:17070 \
-                      --node-id=manager2 \
-                      --bind-addr=:16061 \
-                      --grpc-addr=:17071 \
-                      --http-addr=:18081 \
-                      --data-dir=/tmp/blast/manager2 \
-                      --log-level=DEBUG
-$ ./bin/blast-manager start \
-                      --peer-addr=:17070 \
-                      --node-id=manager3 \
-                      --bind-addr=:16062 \
-                      --grpc-addr=:17072 \
-                      --http-addr=:18082 \
-                      --data-dir=/tmp/blast/manager3 \
-                      --log-level=DEBUG
+$ ./bin/blastd \
+    manager \
+    --peer-addr=:15001 \
+    --node-id=manager2 \
+    --bind-addr=:15010 \
+    --grpc-addr=:15011 \
+    --http-addr=:15012 \
+    --data-dir=/tmp/blast/manager2
+
+$ ./bin/blastd \
+    manager \
+    --peer-addr=:15001 \
+    --node-id=manager3 \
+    --bind-addr=:15020 \
+    --grpc-addr=:15021 \
+    --http-addr=:15022 \
+    --data-dir=/tmp/blast/manager3
 ```
 
 
 ```bash
-$ ./bin/blast-indexer start \
-                      --manager-addr=:17070 \
-                      --cluster-id=cluster1 \
-                      --node-id=indexer1 \
-                      --bind-addr=:6060 \
-                      --grpc-addr=:7070 \
-                      --http-addr=:8080 \
-                      --data-dir=/tmp/blast/indexer1 \
-                      --log-level=DEBUG
-$ ./bin/blast-indexer start \
-                      --manager-addr=:17070 \
-                      --cluster-id=cluster2 \
-                      --node-id=indexer2 \
-                      --bind-addr=:6061 \
-                      --grpc-addr=:7071 \
-                      --http-addr=:8081 \
-                      --data-dir=/tmp/blast/indexer2 \
-                      --log-level=DEBUG
-$ ./bin/blast-indexer start \
-                      --manager-addr=:17070 \
-                      --cluster-id=cluster3 \
-                      --node-id=indexer3 \
-                      --bind-addr=:6062 \
-                      --grpc-addr=:7072 \
-                      --http-addr=:8082 \
-                      --data-dir=/tmp/blast/indexer3 \
-                      --log-level=DEBUG
+$ ./bin/blastd \
+    indexer \
+    --manager-addr=:15001 \
+    --cluster-id=cluster1 \
+    --node-id=indexer1 \
+    --bind-addr=:5000 \
+    --grpc-addr=:5001 \
+    --http-addr=:5002 \
+    --data-dir=/tmp/blast/indexer1
+
+$ ./bin/blastd \
+    indexer \
+    --manager-addr=:15001 \
+    --cluster-id=cluster1 \
+    --node-id=indexer2 \
+    --bind-addr=:5010 \
+    --grpc-addr=:5011 \
+    --http-addr=:5012 \
+    --data-dir=/tmp/blast/indexer2
+
+$ ./bin/blastd \
+    indexer \
+    --manager-addr=:15001 \
+    --cluster-id=cluster1 \
+    --node-id=indexer3 \
+    --bind-addr=:5020 \
+    --grpc-addr=:5021 \
+    --http-addr=:5022 \
+    --data-dir=/tmp/blast/indexer3
+
+
+$ ./bin/blastd \
+    indexer \
+    --manager-addr=:15001 \
+    --cluster-id=cluster2 \
+    --node-id=indexer4 \
+    --bind-addr=:5030 \
+    --grpc-addr=:5031 \
+    --http-addr=:5032 \
+    --data-dir=/tmp/blast/indexer4
+
+$ ./bin/blastd \
+    indexer \
+    --manager-addr=:15001 \
+    --cluster-id=cluster2 \
+    --node-id=indexer5 \
+    --bind-addr=:5040 \
+    --grpc-addr=:5041 \
+    --http-addr=:5042 \
+    --data-dir=/tmp/blast/indexer5
+
+$ ./bin/blastd \
+    indexer \
+    --manager-addr=:15001 \
+    --cluster-id=cluster2 \
+    --node-id=indexer6 \
+    --bind-addr=:5050 \
+    --grpc-addr=:5051 \
+    --http-addr=:5052 \
+    --data-dir=/tmp/blast/indexer6
 ```
 
 
 ```bash
-$ ./bin/blast-federator start \
-                        --manager-addr=:17070 \
-                        --grpc-addr=:27070 \
-                        --http-addr=:28080 \
-                        --log-level=DEBUG
+$ ./bin/blastd \
+    dispatcher \
+    --manager-addr=:15051 \
+    --grpc-addr=:25051 \
+    --http-addr=:25052
 ```
 
 ```bash

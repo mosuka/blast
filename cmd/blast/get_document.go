@@ -24,7 +24,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func execGet(c *cli.Context) error {
+func execGetDocument(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 	id := c.Args().Get(0)
 	if id == "" {
