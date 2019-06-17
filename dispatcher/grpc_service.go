@@ -732,11 +732,8 @@ func (s *GRPCService) DeleteDocument(stream protobuf.Blast_DeleteDocumentServer)
 	close(respChan)
 
 	// summarize responses
-	totalCount := 0
+	totalCount := len(ids)
 	for r := range respChan {
-		if r.count >= 0 {
-			totalCount += r.count
-		}
 		if r.err != nil {
 			s.logger.Printf("[ERR] %s %v", r.clusterId, r.err)
 		}
