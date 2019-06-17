@@ -321,7 +321,10 @@ func (s *GRPCService) startWatchIndexers(checkInterval time.Duration) {
 				continue
 			}
 
-			s.indexerClients[clusterId] = make(map[string]*grpc.Client)
+			if _, exist := s.indexerClients[clusterId]; !exist {
+				s.indexerClients[clusterId] = make(map[string]*grpc.Client)
+			}
+
 			s.indexerClients[clusterId][nodeId] = client
 		}
 	}
@@ -419,13 +422,12 @@ func (s *GRPCService) getIndexerClients() map[string]*grpc.Client {
 	indexerClients := make(map[string]*grpc.Client, 0)
 
 	for clusterId, cluster := range s.indexerClients {
-
 		nodeIds := make([]string, 0)
 		for nodeId := range cluster {
 			nodeIds = append(nodeIds, nodeId)
 		}
 
-		// pick
+		// pick a client at random
 		nodeId := nodeIds[rand.New(rand.NewSource(time.Now().UnixNano())).Intn(len(nodeIds))]
 
 		indexerClients[clusterId] = s.indexerClients[clusterId][nodeId]
@@ -442,8 +444,7 @@ func (s *GRPCService) GetDocument(ctx context.Context, req *protobuf.GetDocument
 
 	// cluster id list sorted by cluster id
 	clusterIds := make([]string, 0)
-	for clusterId, client := range indexerClients {
-		s.logger.Printf("[DEBUG] %s %s", clusterId, client.GetAddress())
+	for clusterId := range indexerClients {
 		clusterIds = append(clusterIds, clusterId)
 		sort.Strings(clusterIds)
 	}
@@ -511,8 +512,7 @@ func (s *GRPCService) Search(ctx context.Context, req *protobuf.SearchRequest) (
 
 	// cluster id list sorted by cluster id
 	clusterIds := make([]string, 0)
-	for clusterId, client := range indexerClients {
-		s.logger.Printf("[DEBUG] %s %s", clusterId, client.GetAddress())
+	for clusterId := range indexerClients {
 		clusterIds = append(clusterIds, clusterId)
 		sort.Strings(clusterIds)
 	}
@@ -684,8 +684,7 @@ func (s *GRPCService) DeleteDocument(stream protobuf.Blast_DeleteDocumentServer)
 
 	// cluster id list sorted by cluster id
 	clusterIds := make([]string, 0)
-	for clusterId, client := range indexerClients {
-		s.logger.Printf("[DEBUG] %s %s", clusterId, client.GetAddress())
+	for clusterId := range indexerClients {
 		clusterIds = append(clusterIds, clusterId)
 		sort.Strings(clusterIds)
 	}
