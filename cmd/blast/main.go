@@ -172,6 +172,19 @@ func main() {
 					ArgsUsage: "[key] [value]",
 					Action:    execSetState,
 				},
+				{
+					Name:  "document",
+					Usage: "set document",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "grpc-addr",
+							Value: ":5001",
+							Usage: "address to connect to",
+						},
+					},
+					ArgsUsage: "[documents | [id] [fields]]",
+					Action:    execSetDocument,
+				},
 			},
 		},
 		{
@@ -261,19 +274,6 @@ func main() {
 				},
 			},
 			Action: execSnapshot,
-		},
-		{
-			Name:  "index",
-			Usage: "index documents",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "grpc-addr",
-					Value: ":5001",
-					Usage: "address to connect to",
-				},
-			},
-			ArgsUsage: "[documents | [id] [fields]]",
-			Action:    execIndex,
 		},
 		{
 			Name:  "search",

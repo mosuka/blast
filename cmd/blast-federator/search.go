@@ -21,7 +21,7 @@ import (
 	"os"
 
 	"github.com/blevesearch/bleve"
-	"github.com/mosuka/blast/federator"
+	"github.com/mosuka/blast/grpc"
 	"github.com/urfave/cli"
 )
 
@@ -43,7 +43,7 @@ func execSearch(c *cli.Context) error {
 		}
 	}
 
-	client, err := federator.NewGRPCClient(grpcAddr)
+	client, err := grpc.NewClient(grpcAddr)
 	if err != nil {
 		return err
 	}

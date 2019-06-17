@@ -784,11 +784,14 @@ func (s *GRPCService) IndexDocument(stream protobuf.Blast_IndexDocumentServer) e
 			return status.Error(codes.Internal, err.Error())
 		}
 
-		fields, err := protobuf.MarshalAny(req.Fields)
+		// fields
+		ins, err := protobuf.MarshalAny(req.Fields)
 		if err != nil {
 			return status.Error(codes.Internal, err.Error())
 		}
+		fields := *ins.(*map[string]interface{})
 
+		// document
 		doc := map[string]interface{}{
 			"id":     req.Id,
 			"fields": fields,

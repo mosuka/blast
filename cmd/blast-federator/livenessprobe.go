@@ -18,14 +18,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mosuka/blast/federator"
+	"github.com/mosuka/blast/grpc"
 	"github.com/urfave/cli"
 )
 
 func execLivenessProbe(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 
-	client, err := federator.NewGRPCClient(grpcAddr)
+	client, err := grpc.NewClient(grpcAddr)
 	if err != nil {
 		return err
 	}

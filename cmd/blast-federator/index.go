@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mosuka/blast/federator"
+	"github.com/mosuka/blast/grpc"
 	"github.com/urfave/cli"
 )
 
@@ -62,7 +62,7 @@ func execIndex(c *cli.Context) error {
 	}
 
 	// create gRPC client
-	client, err := federator.NewGRPCClient(grpcAddr)
+	client, err := grpc.NewClient(grpcAddr)
 	if err != nil {
 		return err
 	}

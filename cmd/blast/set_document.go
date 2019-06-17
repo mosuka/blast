@@ -24,7 +24,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func execIndex(c *cli.Context) error {
+func execSetDocument(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 
 	// create documents

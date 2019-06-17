@@ -166,7 +166,7 @@ You can see the binary file when build successful like so:
 
 ```bash
 $ ls ./bin
-blast-indexer
+blast blastd
 ```
 
 
@@ -233,9 +233,9 @@ $ make \
 
 
 
-## Starting Blast index node
+## Starting Blast in standalone mode
 
-Running a Blast index node is easy. Start Blast data node like so:
+Running a Blast in standalone mode is easy. Start a indexer like so:
 
 ```bash
 $ ./bin/blastd \
@@ -264,7 +264,7 @@ You can now put, get, search and delete the documents via CLI.
 For document indexing, execute the following command:
 
 ```bash
-$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast index --grpc-addr=:5001 enwiki_1
+$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast set document --grpc-addr=:5001 enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -479,7 +479,7 @@ You can see the result in JSON format. The result of the above command is:
 Indexing documents in bulk, run the following command:
 
 ```bash
-$ cat ./example/bulk_index_wiki.json | xargs -0 ./bin/blast index --grpc-addr=:5001
+$ cat ./example/bulk_index_wiki.json | xargs -0 ./bin/blast set document --grpc-addr=:5001
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -563,11 +563,11 @@ $ curl -X DELETE 'http://127.0.0.1:5002/documents' -d @./example/bulk_delete_wik
 ```
 
 
-## Bringing up a cluster
+## Starting Blast in cluster mode
 
-Blast can easily bring up a cluster. Running indexer node in standalone is not fault tolerant. If you need to improve fault tolerance, start two more indexer nodes as follows:
+Blast can easily bring up a cluster. Running a Blast in standalone is not fault tolerant. If you need to improve fault tolerance, start two more indexers as follows:
 
-At first, start the indexer node in standalone.
+First of all, start a indexer in standalone.
 
 ```bash
 $ ./bin/blastd \
@@ -582,7 +582,7 @@ $ ./bin/blastd \
     --index-storage-type=boltdb
 ```
 
-Then, start two more indexer nodes.
+Then, start two more indexers.
 
 ```bash
 $ ./bin/blastd \
@@ -606,7 +606,7 @@ $ ./bin/blastd \
 
 _Above example shows each Blast node running on the same host, so each node must listen on different ports. This would not be necessary if each node ran on a different host._
 
-This instructs each new node to join an existing node, specifying `--peer-addr=:7070`. Each node recognizes the joining clusters when started.
+This instructs each new node to join an existing node, specifying `--peer-addr=:5001`. Each node recognizes the joining clusters when started.
 So you have a 3-node cluster. That way you can tolerate the failure of 1 node. You can check the peers in the cluster with the following command:
 
 
@@ -653,7 +653,7 @@ Recommend 3 or more odd number of nodes in the cluster. In failure scenarios, da
 The following command indexes documents to any node in the cluster:
 
 ```bash
-$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast index --grpc-addr=:5001 enwiki_1
+$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast set document --grpc-addr=:5001 enwiki_1
 ```
 
 So, you can get the document from the node specified by the above command as follows:
@@ -694,9 +694,19 @@ You can see the result in JSON format. The result of the above command is:
 ```
 
 
-## Cluster federation
+## Starting Blast in federated mode (experimental)
 
-Bring up the manager cluster.
+Running a Blast in cluster mode allows you to replicate the index among indexers in a cluster to improve fault tolerance.  
+However, as the index grows, performance degradation can become an issue. Therefore, instead of providing a large single physical index, it is better to distribute indices across multiple indexers.  
+Blast provides a federated mode to enable distributed search and indexing.
+
+Blast provides the following type of node for federation:
+- manager: Manager manage common index mappings to index across multiple indexers. It also manages information and status of clusters that participate in the federation.
+- dispatcher: Dispatcher is responsible for distributed search or indexing of each indexer. In the case of a index request, send document to each cluster based on the document ID. And in the case of a search request, the same query is sent to each cluster, then the search results are merged and returned to the client.
+
+### Bring up the manager cluster.
+
+Manager can also bring up a cluster like an indexer. Specify a common index mapping for federation at startup.
 
 ```bash
 $ ./bin/blastd \
@@ -729,6 +739,10 @@ $ ./bin/blastd \
     --data-dir=/tmp/blast/manager3
 ```
 
+### Bring up the indexer cluster.
+
+Federated mode differs from cluster mode that it specifies the manager in start up to bring up indexer cluster.  
+The following example starts two 3-node clusters.
 
 ```bash
 $ ./bin/blastd \
@@ -793,25 +807,28 @@ $ ./bin/blastd \
     --data-dir=/tmp/blast/indexer6
 ```
 
+### Start up the dispatcher.
+
+Finally, start the dispatcher with a manager that manages the target federation so that it can perform distributed search and indexing.
 
 ```bash
 $ ./bin/blastd \
     dispatcher \
-    --manager-addr=:15051 \
-    --grpc-addr=:25051 \
-    --http-addr=:25052
+    --manager-addr=:15001 \
+    --grpc-addr=:25001 \
+    --http-addr=:25002
 ```
 
 ```bash
-$ cat ./example/bulk_index_wiki.json | xargs -0 ./bin/blast-federator index --grpc-addr=:27070
+$ cat ./example/bulk_index_wiki.json | xargs -0 ./bin/blast set document --grpc-addr=:25001
 ```
 
 ```bash
-$ cat ./example/bulk_delete_wiki.json | xargs -0 ./bin/blast-federator delete --grpc-addr=:27070
+$ cat ./example/bulk_delete_wiki.json | xargs -0 ./bin/blast delete document --grpc-addr=:25001
 ```
 
 ```bash
-$ cat ./example/search_request.json | xargs -0 ./bin/blast-federator search --grpc-addr=:27070
+$ cat ./example/search_request.json | xargs -0 ./bin/blast search --grpc-addr=:25001
 ```
 
 
@@ -845,7 +862,7 @@ $ docker pull mosuka/blast:latest
 ```
 
 
-### Running Blast index node on Docker
+### Running Indexer on Docker
 
 Running a Blast data node on Docker. Start Blast data node like so:
 

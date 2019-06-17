@@ -24,6 +24,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/gorilla/mux"
 	"github.com/mosuka/blast/errors"
+	"github.com/mosuka/blast/grpc"
 	blasthttp "github.com/mosuka/blast/http"
 	"github.com/mosuka/blast/version"
 )
@@ -59,11 +60,11 @@ func (h *RootHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type GetHandler struct {
-	client *GRPCClient
+	client *grpc.Client
 	logger *log.Logger
 }
 
-func NewGetHandler(client *GRPCClient, logger *log.Logger) *GetHandler {
+func NewGetHandler(client *grpc.Client, logger *log.Logger) *GetHandler {
 	return &GetHandler{
 		client: client,
 		logger: logger,
@@ -123,11 +124,11 @@ func (h *GetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type IndexHandler struct {
-	client *GRPCClient
+	client *grpc.Client
 	logger *log.Logger
 }
 
-func NewIndexHandler(client *GRPCClient, logger *log.Logger) *IndexHandler {
+func NewIndexHandler(client *grpc.Client, logger *log.Logger) *IndexHandler {
 	return &IndexHandler{
 		client: client,
 		logger: logger,
@@ -249,11 +250,11 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type DeleteHandler struct {
-	client *GRPCClient
+	client *grpc.Client
 	logger *log.Logger
 }
 
-func NewDeleteHandler(client *GRPCClient, logger *log.Logger) *DeleteHandler {
+func NewDeleteHandler(client *grpc.Client, logger *log.Logger) *DeleteHandler {
 	return &DeleteHandler{
 		client: client,
 		logger: logger,
@@ -352,11 +353,11 @@ func (h *DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type SearchHandler struct {
-	client *GRPCClient
+	client *grpc.Client
 	logger *log.Logger
 }
 
-func NewSearchHandler(client *GRPCClient, logger *log.Logger) *SearchHandler {
+func NewSearchHandler(client *grpc.Client, logger *log.Logger) *SearchHandler {
 	return &SearchHandler{
 		client: client,
 		logger: logger,
