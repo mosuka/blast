@@ -113,7 +113,9 @@ func (s *GRPCService) getInitialManagers(managerAddr string) (map[string]interfa
 	client, err := grpc.NewClient(s.managerAddr)
 	defer func() {
 		err := client.Close()
-		s.logger.Printf("[ERR] %v", err)
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+		}
 		return
 	}()
 	if err != nil {
@@ -343,9 +345,9 @@ func (s *GRPCService) startWatchIndexers(checkInterval time.Duration) {
 				st, _ := status.FromError(err)
 				switch st.Code() {
 				case codes.Canceled:
-					s.logger.Printf("[DEBUG] %v", err)
+					s.logger.Printf("[DEBUG] %s: %v", client.GetAddress(), err)
 				default:
-					s.logger.Printf("[ERR] %v", err)
+					s.logger.Printf("[ERR] %s: %v", client.GetAddress(), err)
 				}
 				continue
 			}
