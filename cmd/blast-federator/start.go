@@ -19,7 +19,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/mosuka/blast/federator"
+	"github.com/mosuka/blast/dispatcher"
 	"github.com/mosuka/logutils"
 	"github.com/urfave/cli"
 )
@@ -62,7 +62,7 @@ func execStart(c *cli.Context) error {
 		httpAccessLogCompress,
 	)
 
-	svr, err := federator.NewServer(managerAddr, grpcAddr, httpAddr, logger, httpAccessLogger)
+	svr, err := dispatcher.NewServer(managerAddr, grpcAddr, httpAddr, logger, httpAccessLogger)
 	if err != nil {
 		return err
 	}
