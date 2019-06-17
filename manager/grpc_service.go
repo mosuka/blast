@@ -16,6 +16,7 @@ package manager
 
 import (
 	"context"
+	"errors"
 	"log"
 	"reflect"
 	"strings"
@@ -65,37 +66,43 @@ func NewGRPCService(raftServer *RaftServer, logger *log.Logger) (*GRPCService, e
 }
 
 func (s *GRPCService) Start() error {
-	s.logger.Print("[INFO] start watching cluster")
-	go s.startWatchCluster(500 * time.Millisecond)
+	s.logger.Print("[INFO] start update cluster")
+	go s.startUpdateCluster(500 * time.Millisecond)
 
 	return nil
 }
 
 func (s *GRPCService) Stop() error {
-	s.logger.Print("[INFO] stop watching cluster")
-	s.stopWatchCluster()
+	s.logger.Print("[INFO] stop update cluster")
+	s.stopUpdateCluster()
 
 	return nil
 }
 
-//func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*protobuf.LivenessProbeResponse, error) {
-//	s.logger.Print("hogehoge")
-//	resp := &protobuf.LivenessProbeResponse{
-//		State: protobuf.LivenessProbeResponse_ALIVE,
-//	}
-//
-//	return resp, nil
-//}
+func (s *GRPCService) getLeaderClient() (*grpc.Client, error) {
+	var client *grpc.Client
 
-//func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*protobuf.ReadinessProbeResponse, error) {
-//	resp := &protobuf.ReadinessProbeResponse{
-//		State: protobuf.ReadinessProbeResponse_READY,
-//	}
-//
-//	return resp, nil
-//}
+	for id, node := range s.cluster {
+		state := node.(map[string]interface{})["state"].(string)
+		if state != raft.Shutdown.String() {
 
-func (s *GRPCService) startWatchCluster(checkInterval time.Duration) {
+			if _, exist := s.peerClients[id]; exist {
+				client = s.peerClients[id]
+				break
+			} else {
+				s.logger.Printf("[DEBUG] %v does not exist", id)
+			}
+		}
+	}
+
+	if client == nil {
+		return nil, errors.New("client does not exist")
+	}
+
+	return client, nil
+}
+
+func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 	s.watchClusterStopCh = make(chan struct{})
 	s.watchClusterDoneCh = make(chan struct{})
 
@@ -210,7 +217,7 @@ func (s *GRPCService) startWatchCluster(checkInterval time.Duration) {
 	}
 }
 
-func (s *GRPCService) stopWatchCluster() {
+func (s *GRPCService) stopUpdateCluster() {
 	// close clients
 	s.logger.Printf("[INFO] close peer clients")
 	for _, client := range s.peerClients {
@@ -369,9 +376,21 @@ func (s *GRPCService) SetNode(ctx context.Context, req *protobuf.SetNodeRequest)
 
 	metadata := *ins.(*map[string]interface{})
 
-	err = s.raftServer.SetMetadata(req.Id, metadata)
-	if err != nil {
-		return resp, status.Error(codes.Internal, err.Error())
+	if s.raftServer.IsLeader() {
+		err = s.raftServer.SetMetadata(req.Id, metadata)
+		if err != nil {
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+	} else {
+		// forward to leader
+		client, err := s.getLeaderClient()
+		if err != nil {
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+		err = client.SetNode(req.Id, metadata)
+		if err != nil {
+			return resp, status.Error(codes.Internal, err.Error())
+		}
 	}
 
 	return resp, nil
@@ -382,9 +401,21 @@ func (s *GRPCService) DeleteNode(ctx context.Context, req *protobuf.DeleteNodeRe
 
 	resp := &empty.Empty{}
 
-	err := s.raftServer.DeleteMetadata(req.Id)
-	if err != nil {
-		return resp, status.Error(codes.Internal, err.Error())
+	if s.raftServer.IsLeader() {
+		err := s.raftServer.DeleteMetadata(req.Id)
+		if err != nil {
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+	} else {
+		// forward to leader
+		client, err := s.getLeaderClient()
+		if err != nil {
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+		err = client.DeleteNode(req.Id)
+		if err != nil {
+			return resp, status.Error(codes.Internal, err.Error())
+		}
 	}
 
 	return resp, nil
@@ -403,7 +434,6 @@ func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*protob
 	for id := range servers {
 		node := map[string]interface{}{}
 		if id == s.raftServer.id {
-			//node, err = s.getNode(id)
 			node, err = s.getNode()
 			if err != nil {
 				return resp, err
@@ -525,12 +555,24 @@ func (s *GRPCService) SetState(ctx context.Context, req *protobuf.SetStateReques
 		return resp, status.Error(codes.Internal, err.Error())
 	}
 
-	err = s.raftServer.SetState(req.Key, value)
-	if err != nil {
-		switch err {
-		case blasterrors.ErrNotFound:
-			return resp, status.Error(codes.NotFound, err.Error())
-		default:
+	if s.raftServer.IsLeader() {
+		err = s.raftServer.SetState(req.Key, value)
+		if err != nil {
+			switch err {
+			case blasterrors.ErrNotFound:
+				return resp, status.Error(codes.NotFound, err.Error())
+			default:
+				return resp, status.Error(codes.Internal, err.Error())
+			}
+		}
+	} else {
+		// forward to leader
+		client, err := s.getLeaderClient()
+		if err != nil {
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+		err = client.SetState(req.Key, value)
+		if err != nil {
 			return resp, status.Error(codes.Internal, err.Error())
 		}
 	}
@@ -559,12 +601,24 @@ func (s *GRPCService) DeleteState(ctx context.Context, req *protobuf.DeleteState
 
 	resp := &empty.Empty{}
 
-	err := s.raftServer.DeleteState(req.Key)
-	if err != nil {
-		switch err {
-		case blasterrors.ErrNotFound:
-			return resp, status.Error(codes.NotFound, err.Error())
-		default:
+	if s.raftServer.IsLeader() {
+		err := s.raftServer.DeleteState(req.Key)
+		if err != nil {
+			switch err {
+			case blasterrors.ErrNotFound:
+				return resp, status.Error(codes.NotFound, err.Error())
+			default:
+				return resp, status.Error(codes.Internal, err.Error())
+			}
+		}
+	} else {
+		// forward to leader
+		client, err := s.getLeaderClient()
+		if err != nil {
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+		err = client.DeleteState(req.Key)
+		if err != nil {
 			return resp, status.Error(codes.Internal, err.Error())
 		}
 	}

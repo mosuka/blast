@@ -775,7 +775,6 @@ $ ./bin/blastd \
     --http-addr=:5022 \
     --data-dir=/tmp/blast/indexer3
 
-
 $ ./bin/blastd \
     indexer \
     --manager-addr=:15001 \
@@ -824,12 +823,13 @@ $ cat ./example/bulk_index_wiki.json | xargs -0 ./bin/blast set document --grpc-
 ```
 
 ```bash
-$ cat ./example/bulk_delete_wiki.json | xargs -0 ./bin/blast delete document --grpc-addr=:25001
+$ cat ./example/search_request.json | xargs -0 ./bin/blast search --grpc-addr=:25001
 ```
 
 ```bash
-$ cat ./example/search_request.json | xargs -0 ./bin/blast search --grpc-addr=:25001
+$ cat ./example/bulk_delete_wiki.json | xargs -0 ./bin/blast delete document --grpc-addr=:25001
 ```
+
 
 
 ## Blast on Docker

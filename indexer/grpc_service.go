@@ -78,11 +78,11 @@ func NewGRPCService(managerAddr string, clusterId string, raftServer *RaftServer
 
 func (s *GRPCService) Start() error {
 	s.logger.Print("[INFO] start watching cluster")
-	go s.startWatchCluster(500 * time.Millisecond)
+	go s.startUpdateCluster(500 * time.Millisecond)
 
 	if s.managerAddr != "" {
 		s.logger.Print("[INFO] start watching managers")
-		go s.startWatchManagers(500 * time.Millisecond)
+		go s.startUpdateManagers(500 * time.Millisecond)
 	}
 
 	return nil
@@ -90,31 +90,15 @@ func (s *GRPCService) Start() error {
 
 func (s *GRPCService) Stop() error {
 	s.logger.Print("[INFO] stop watching cluster")
-	s.stopWatchCluster()
+	s.stopUpdateCluster()
 
 	if s.managerAddr != "" {
 		s.logger.Print("[INFO] stop watching managers")
-		s.stopWatchManagers()
+		s.stopUpdateManagers()
 	}
 
 	return nil
 }
-
-//func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*protobuf.LivenessProbeResponse, error) {
-//	resp := &protobuf.LivenessProbeResponse{
-//		State: protobuf.LivenessProbeResponse_ALIVE,
-//	}
-//
-//	return resp, nil
-//}
-
-//func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*protobuf.ReadinessProbeResponse, error) {
-//	resp := &protobuf.ReadinessProbeResponse{
-//		State: protobuf.ReadinessProbeResponse_READY,
-//	}
-//
-//	return resp, nil
-//}
 
 func (s *GRPCService) getManagerClient() (*grpc.Client, error) {
 	var client *grpc.Client
@@ -162,7 +146,7 @@ func (s *GRPCService) getInitialManagers(managerAddr string) (map[string]interfa
 	return managers, nil
 }
 
-func (s *GRPCService) startWatchManagers(checkInterval time.Duration) {
+func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 	s.logger.Printf("[INFO] start watching a cluster")
 
 	s.watchManagersStopCh = make(chan struct{})
@@ -279,7 +263,7 @@ func (s *GRPCService) startWatchManagers(checkInterval time.Duration) {
 	}
 }
 
-func (s *GRPCService) stopWatchManagers() {
+func (s *GRPCService) stopUpdateManagers() {
 	// close clients
 	s.logger.Printf("[INFO] close manager clients")
 	for _, client := range s.managerClients {
@@ -301,7 +285,30 @@ func (s *GRPCService) stopWatchManagers() {
 	<-s.watchManagersDoneCh
 }
 
-func (s *GRPCService) startWatchCluster(checkInterval time.Duration) {
+func (s *GRPCService) getLeaderClient() (*grpc.Client, error) {
+	var client *grpc.Client
+
+	for id, node := range s.cluster {
+		state := node.(map[string]interface{})["state"].(string)
+		if state != raft.Shutdown.String() {
+
+			if _, exist := s.peerClients[id]; exist {
+				client = s.peerClients[id]
+				break
+			} else {
+				s.logger.Printf("[DEBUG] %v does not exist", id)
+			}
+		}
+	}
+
+	if client == nil {
+		return nil, errors.New("client does not exist")
+	}
+
+	return client, nil
+}
+
+func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 	s.watchClusterStopCh = make(chan struct{})
 	s.watchClusterDoneCh = make(chan struct{})
 
@@ -432,7 +439,7 @@ func (s *GRPCService) startWatchCluster(checkInterval time.Duration) {
 	}
 }
 
-func (s *GRPCService) stopWatchCluster() {
+func (s *GRPCService) stopUpdateCluster() {
 	// close clients
 	s.logger.Printf("[INFO] close peer clients")
 	for _, client := range s.peerClients {
@@ -591,9 +598,21 @@ func (s *GRPCService) SetNode(ctx context.Context, req *protobuf.SetNodeRequest)
 
 	metadata := *ins.(*map[string]interface{})
 
-	err = s.raftServer.SetMetadata(req.Id, metadata)
-	if err != nil {
-		return resp, status.Error(codes.Internal, err.Error())
+	if s.raftServer.IsLeader() {
+		err = s.raftServer.SetMetadata(req.Id, metadata)
+		if err != nil {
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+	} else {
+		// forward to leader
+		client, err := s.getLeaderClient()
+		if err != nil {
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+		err = client.SetNode(req.Id, metadata)
+		if err != nil {
+			return resp, status.Error(codes.Internal, err.Error())
+		}
 	}
 
 	return resp, nil
@@ -604,9 +623,21 @@ func (s *GRPCService) DeleteNode(ctx context.Context, req *protobuf.DeleteNodeRe
 
 	resp := &empty.Empty{}
 
-	err := s.raftServer.DeleteMetadata(req.Id)
-	if err != nil {
-		return resp, status.Error(codes.Internal, err.Error())
+	if s.raftServer.IsLeader() {
+		err := s.raftServer.DeleteMetadata(req.Id)
+		if err != nil {
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+	} else {
+		// forward to leader
+		client, err := s.getLeaderClient()
+		if err != nil {
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+		err = client.DeleteNode(req.Id)
+		if err != nil {
+			return resp, status.Error(codes.Internal, err.Error())
+		}
 	}
 
 	return resp, nil
@@ -695,22 +726,6 @@ func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Em
 
 	return resp, nil
 }
-
-//func (s *GRPCService) GetState(ctx context.Context, req *protobuf.GetStateRequest) (*protobuf.GetStateResponse, error) {
-//	return &protobuf.GetStateResponse{}, status.Error(codes.Unavailable, "not implement")
-//}
-
-//func (s *GRPCService) SetState(ctx context.Context, req *protobuf.SetStateRequest) (*empty.Empty, error) {
-//	return &empty.Empty{}, status.Error(codes.Unavailable, "not implement")
-//}
-
-//func (s *GRPCService) DeleteState(ctx context.Context, req *protobuf.DeleteStateRequest) (*empty.Empty, error) {
-//	return &empty.Empty{}, status.Error(codes.Unavailable, "not implement")
-//}
-
-//func (s *GRPCService) WatchState(req *protobuf.WatchStateRequest, server protobuf.Blast_WatchStateServer) error {
-//	return status.Error(codes.Unavailable, "not implement")
-//}
 
 func (s *GRPCService) GetDocument(ctx context.Context, req *protobuf.GetDocumentRequest) (*protobuf.GetDocumentResponse, error) {
 	start := time.Now()
@@ -801,16 +816,30 @@ func (s *GRPCService) IndexDocument(stream protobuf.Blast_IndexDocumentServer) e
 	}
 
 	// index
-	count, err := s.raftServer.IndexDocument(docs)
-	if err != nil {
-		return status.Error(codes.Internal, err.Error())
+	count := -1
+	var err error
+	if s.raftServer.IsLeader() {
+		count, err = s.raftServer.IndexDocument(docs)
+		if err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+	} else {
+		// forward to leader
+		client, err := s.getLeaderClient()
+		if err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+		count, err = client.IndexDocument(docs)
+		if err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
 	}
 
-	resp := &protobuf.IndexDocumentResponse{
-		Count: int32(count),
-	}
-
-	return stream.SendAndClose(resp)
+	return stream.SendAndClose(
+		&protobuf.IndexDocumentResponse{
+			Count: int32(count),
+		},
+	)
 }
 
 func (s *GRPCService) DeleteDocument(stream protobuf.Blast_DeleteDocumentServer) error {
@@ -829,16 +858,30 @@ func (s *GRPCService) DeleteDocument(stream protobuf.Blast_DeleteDocumentServer)
 	}
 
 	// delete
-	count, err := s.raftServer.DeleteDocument(ids)
-	if err != nil {
-		return status.Error(codes.Internal, err.Error())
+	count := -1
+	var err error
+	if s.raftServer.IsLeader() {
+		count, err = s.raftServer.DeleteDocument(ids)
+		if err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+	} else {
+		// forward to leader
+		client, err := s.getLeaderClient()
+		if err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+		count, err = client.DeleteDocument(ids)
+		if err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
 	}
 
-	resp := &protobuf.DeleteDocumentResponse{
-		Count: int32(count),
-	}
-
-	return stream.SendAndClose(resp)
+	return stream.SendAndClose(
+		&protobuf.DeleteDocumentResponse{
+			Count: int32(count),
+		},
+	)
 }
 
 func (s *GRPCService) GetIndexConfig(ctx context.Context, req *empty.Empty) (*protobuf.GetIndexConfigResponse, error) {

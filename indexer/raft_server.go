@@ -298,38 +298,6 @@ func (s *RaftServer) GetMetadata(id string) (map[string]interface{}, error) {
 
 func (s *RaftServer) SetMetadata(id string, metadata map[string]interface{}) error {
 	if !s.IsLeader() {
-		//// forward to leader node
-		//leaderId, err := s.LeaderID(60 * time.Second)
-		//if err != nil {
-		//	return err
-		//}
-		//
-		//leaderNode, err := s.getNode(&blastraft.Node{Id: string(leaderId)})
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return nil
-		//}
-		//
-		//client, err := NewGRPCClient(leaderNode.Metadata.GrpcAddr)
-		//defer func() {
-		//	err := client.Close()
-		//	if err != nil {
-		//		s.logger.Printf("[ERR] %v", err)
-		//	}
-		//}()
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return nil
-		//}
-		//
-		//err = client.Join(node)
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return nil
-		//}
-		//
-		//return nil
-
 		return raft.ErrNotLeader
 	}
 
@@ -365,38 +333,6 @@ func (s *RaftServer) SetMetadata(id string, metadata map[string]interface{}) err
 
 func (s *RaftServer) DeleteMetadata(id string) error {
 	if !s.IsLeader() {
-		//// forward to leader node
-		//leaderId, err := s.LeaderID(60 * time.Second)
-		//if err != nil {
-		//	return err
-		//}
-		//
-		//leaderNode, err := s.getNode(&blastraft.Node{Id: string(leaderId)})
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return nil
-		//}
-		//
-		//client, err := NewGRPCClient(leaderNode.Metadata.GrpcAddr)
-		//defer func() {
-		//	err := client.Close()
-		//	if err != nil {
-		//		s.logger.Printf("[ERR] %v", err)
-		//	}
-		//}()
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return nil
-		//}
-		//
-		//err = client.Leave(node)
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return nil
-		//}
-		//
-		//return nil
-
 		return raft.ErrNotLeader
 	}
 
@@ -481,39 +417,6 @@ func (s *RaftServer) Search(request *bleve.SearchRequest) (*bleve.SearchResult, 
 
 func (s *RaftServer) IndexDocument(docs []map[string]interface{}) (int, error) {
 	if s.raft.State() != raft.Leader {
-		//// forward to leader node
-		//leaderId, err := s.LeaderID(60 * time.Second)
-		//if err != nil {
-		//	return nil, err
-		//}
-		//
-		//leaderNode, err := s.getNode(&blastraft.Node{Id: string(leaderId)})
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return nil, err
-		//}
-		//
-		//client, err := NewGRPCClient(leaderNode.Metadata.GrpcAddr)
-		//defer func() {
-		//	err := client.Close()
-		//	if err != nil {
-		//		s.logger.Printf("[ERR] %v", err)
-		//	}
-		//}()
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return nil, err
-		//}
-		//
-		//result, err := client.Index(docs)
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return nil, err
-		//}
-		//s.logger.Printf("[DEBUG] %v", result)
-		//
-		//return result, nil
-
 		return -1, raft.ErrNotLeader
 	}
 
@@ -546,39 +449,6 @@ func (s *RaftServer) IndexDocument(docs []map[string]interface{}) (int, error) {
 
 func (s *RaftServer) DeleteDocument(ids []string) (int, error) {
 	if s.raft.State() != raft.Leader {
-		//// forward to leader node
-		//leaderId, err := s.LeaderID(60 * time.Second)
-		//if err != nil {
-		//	return nil, err
-		//}
-		//
-		//leaderNode, err := s.getNode(&blastraft.Node{Id: string(leaderId)})
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return nil, err
-		//}
-		//
-		//client, err := NewGRPCClient(leaderNode.Metadata.GrpcAddr)
-		//defer func() {
-		//	err := client.Close()
-		//	if err != nil {
-		//		s.logger.Printf("[ERR] %v", err)
-		//	}
-		//}()
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return nil, err
-		//}
-		//
-		//result, err := client.Delete(docs)
-		//if err != nil {
-		//	s.logger.Printf("[ERR] %v", err)
-		//	return nil, err
-		//}
-		//s.logger.Printf("[DEBUG] %v", result)
-		//
-		//return result, nil
-
 		return -1, raft.ErrNotLeader
 	}
 

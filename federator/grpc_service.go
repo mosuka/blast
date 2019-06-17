@@ -432,70 +432,6 @@ func (s *GRPCService) getIndexerClients() map[string]*grpc.Client {
 	return indexerClients
 }
 
-//func (s *GRPCService) GetMetadata(ctx context.Context, req *protobuf.GetMetadataRequest) (*protobuf.GetMetadataResponse, error) {
-//	return &protobuf.GetMetadataResponse{}, status.Error(codes.Unavailable, "not implement")
-//}
-
-//func (s *GRPCService) GetNodeState(ctx context.Context, req *protobuf.GetNodeStateRequest) (*protobuf.GetNodeStateResponse, error) {
-//	return &protobuf.GetNodeStateResponse{}, status.Error(codes.Unavailable, "not implement")
-//}
-
-//func (s *GRPCService) GetNode(ctx context.Context, req *protobuf.GetNodeRequest) (*protobuf.GetNodeResponse, error) {
-//	return &protobuf.GetNodeResponse{}, status.Error(codes.Unavailable, "not implement")
-//}
-
-//func (s *GRPCService) SetNode(ctx context.Context, req *protobuf.SetNodeRequest) (*empty.Empty, error) {
-//	return &empty.Empty{}, status.Error(codes.Unavailable, "not implement")
-//}
-
-//func (s *GRPCService) DeleteNode(ctx context.Context, req *protobuf.DeleteNodeRequest) (*empty.Empty, error) {
-//	return &empty.Empty{}, status.Error(codes.Unavailable, "not implement")
-//}
-
-//func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*protobuf.GetClusterResponse, error) {
-//	return &protobuf.GetClusterResponse{}, status.Error(codes.Unavailable, "not implement")
-//}
-
-//func (s *GRPCService) WatchCluster(req *empty.Empty, server protobuf.Blast_WatchClusterServer) error {
-//	return status.Error(codes.Unavailable, "not implement")
-//}
-
-//func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
-//	return &empty.Empty{}, status.Error(codes.Unavailable, "not implement")
-//}
-
-//func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*protobuf.LivenessProbeResponse, error) {
-//	resp := &protobuf.LivenessProbeResponse{
-//		State: protobuf.LivenessProbeResponse_ALIVE,
-//	}
-//
-//	return resp, nil
-//}
-
-//func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*protobuf.ReadinessProbeResponse, error) {
-//	resp := &protobuf.ReadinessProbeResponse{
-//		State: protobuf.ReadinessProbeResponse_READY,
-//	}
-//
-//	return resp, nil
-//}
-
-//func (s *GRPCService) GetState(ctx context.Context, req *protobuf.GetStateRequest) (*protobuf.GetStateResponse, error) {
-//	return &protobuf.GetStateResponse{}, status.Error(codes.Unavailable, "not implement")
-//}
-
-//func (s *GRPCService) SetState(ctx context.Context, req *protobuf.SetStateRequest) (*empty.Empty, error) {
-//	return &empty.Empty{}, status.Error(codes.Unavailable, "not implement")
-//}
-
-//func (s *GRPCService) DeleteState(ctx context.Context, req *protobuf.DeleteStateRequest) (*empty.Empty, error) {
-//	return &empty.Empty{}, status.Error(codes.Unavailable, "not implement")
-//}
-
-//func (s *GRPCService) WatchState(req *protobuf.WatchStateRequest, server protobuf.Blast_WatchStateServer) error {
-//	return status.Error(codes.Unavailable, "not implement")
-//}
-
 func (s *GRPCService) GetDocument(ctx context.Context, req *protobuf.GetDocumentRequest) (*protobuf.GetDocumentResponse, error) {
 	start := time.Now()
 	defer RecordMetrics(start, "get")
@@ -812,11 +748,3 @@ func (s *GRPCService) DeleteDocument(stream protobuf.Blast_DeleteDocumentServer)
 
 	return stream.SendAndClose(resp)
 }
-
-//func (s *GRPCService) GetIndexConfig(ctx context.Context, req *empty.Empty) (*protobuf.GetIndexConfigResponse, error) {
-//	return &protobuf.GetIndexConfigResponse{}, status.Error(codes.Unavailable, "not implement")
-//}
-
-//func (s *GRPCService) GetIndexStats(ctx context.Context, req *empty.Empty) (*protobuf.GetIndexStatsResponse, error) {
-//	return &protobuf.GetIndexStatsResponse{}, status.Error(codes.Unavailable, "not implement")
-//}

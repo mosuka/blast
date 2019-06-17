@@ -26,7 +26,6 @@ import (
 	raftboltdb "github.com/hashicorp/raft-boltdb"
 	_ "github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/errors"
-	"github.com/mosuka/blast/grpc"
 )
 
 type RaftServer struct {
@@ -321,37 +320,7 @@ func (s *RaftServer) GetMetadata(id string) (map[string]interface{}, error) {
 
 func (s *RaftServer) SetMetadata(id string, metadata map[string]interface{}) error {
 	if !s.IsLeader() {
-		// forward to leader node
-		leaderId, err := s.LeaderID(60 * time.Second)
-		if err != nil {
-			return err
-		}
-
-		leaderMetadata, err := s.getMetadata(string(leaderId))
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil
-		}
-
-		client, err := grpc.NewClient(leaderMetadata["grpc_addr"].(string))
-		defer func() {
-			err := client.Close()
-			if err != nil {
-				s.logger.Printf("[ERR] %v", err)
-			}
-		}()
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil
-		}
-
-		err = client.SetNode(id, metadata)
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil
-		}
-
-		return nil
+		return raft.ErrNotLeader
 	}
 
 	cf := s.raft.GetConfiguration()
@@ -386,37 +355,7 @@ func (s *RaftServer) SetMetadata(id string, metadata map[string]interface{}) err
 
 func (s *RaftServer) DeleteMetadata(id string) error {
 	if !s.IsLeader() {
-		// forward to leader node
-		leaderId, err := s.LeaderID(60 * time.Second)
-		if err != nil {
-			return err
-		}
-
-		leaderMetadata, err := s.getMetadata(string(leaderId))
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil
-		}
-
-		client, err := grpc.NewClient(leaderMetadata["grpc_addr"].(string))
-		defer func() {
-			err := client.Close()
-			if err != nil {
-				s.logger.Printf("[ERR] %v", err)
-			}
-		}()
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil
-		}
-
-		err = client.DeleteNode(id)
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil
-		}
-
-		return nil
+		return raft.ErrNotLeader
 	}
 
 	cf := s.raft.GetConfiguration()
@@ -491,37 +430,7 @@ func (s *RaftServer) GetState(key string) (interface{}, error) {
 
 func (s *RaftServer) SetState(key string, value interface{}) error {
 	if !s.IsLeader() {
-		// forward to leader node
-		leaderId, err := s.LeaderID(60 * time.Second)
-		if err != nil {
-			return err
-		}
-
-		leaderMetadata, err := s.getMetadata(string(leaderId))
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil
-		}
-
-		client, err := grpc.NewClient(leaderMetadata["grpc_addr"].(string))
-		defer func() {
-			err := client.Close()
-			if err != nil {
-				s.logger.Printf("[ERR] %v", err)
-			}
-		}()
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil
-		}
-
-		err = client.SetState(key, value)
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil
-		}
-
-		return nil
+		return raft.ErrNotLeader
 	}
 
 	msg, err := newMessage(
@@ -551,37 +460,7 @@ func (s *RaftServer) SetState(key string, value interface{}) error {
 
 func (s *RaftServer) DeleteState(key string) error {
 	if !s.IsLeader() {
-		// forward to leader node
-		leaderId, err := s.LeaderID(60 * time.Second)
-		if err != nil {
-			return err
-		}
-
-		leaderMetadata, err := s.getMetadata(string(leaderId))
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil
-		}
-
-		client, err := grpc.NewClient(leaderMetadata["grpc_addr"].(string))
-		defer func() {
-			err := client.Close()
-			if err != nil {
-				s.logger.Printf("[ERR] %v", err)
-			}
-		}()
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil
-		}
-
-		err = client.DeleteState(key)
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil
-		}
-
-		return nil
+		return raft.ErrNotLeader
 	}
 
 	msg, err := newMessage(
