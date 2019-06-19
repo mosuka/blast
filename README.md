@@ -235,6 +235,8 @@ $ make \
 
 ## Starting Blast in standalone mode
 
+![standalone](https://user-images.githubusercontent.com/970948/59768879-138f5180-92e0-11e9-8b33-c7b1a93e0893.png)
+
 Running a Blast in standalone mode is easy. Start a indexer like so:
 
 ```bash
@@ -565,6 +567,8 @@ $ curl -X DELETE 'http://127.0.0.1:5002/documents' -d @./example/bulk_delete_wik
 
 ## Starting Blast in cluster mode
 
+![cluster](https://user-images.githubusercontent.com/970948/59768677-bf846d00-92df-11e9-8a70-92496ff55ce7.png)
+
 Blast can easily bring up a cluster. Running a Blast in standalone is not fault tolerant. If you need to improve fault tolerance, start two more indexers as follows:
 
 First of all, start a indexer in standalone.
@@ -695,6 +699,8 @@ You can see the result in JSON format. The result of the above command is:
 
 
 ## Starting Blast in federated mode (experimental)
+
+![federation](https://user-images.githubusercontent.com/970948/59768498-6f0d0f80-92df-11e9-8538-2a1c6e44c30a.png)
 
 Running a Blast in cluster mode allows you to replicate the index among indexers in a cluster to improve fault tolerance.  
 However, as the index grows, performance degradation can become an issue. Therefore, instead of providing a large single physical index, it is better to distribute indices across multiple indexers.  
