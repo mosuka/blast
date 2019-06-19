@@ -15,43 +15,55 @@
 package indexer
 
 import (
+	"encoding/json"
 	"errors"
 	"io"
 	"io/ioutil"
 	"log"
+	"sync"
 
 	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve/mapping"
 	"github.com/golang/protobuf/proto"
 	"github.com/hashicorp/raft"
-	blasterrors "github.com/mosuka/blast/errors"
+	"github.com/mosuka/blast/maputils"
 	"github.com/mosuka/blast/protobuf"
-	pbindex "github.com/mosuka/blast/protobuf/index"
-	blastraft "github.com/mosuka/blast/protobuf/raft"
 )
 
 type RaftFSM struct {
+	metadata      maputils.Map
+	metadataMutex sync.RWMutex
+
+	path string
+
 	index *Index
 
-	metadata map[string]*blastraft.Node
+	indexConfig map[string]interface{}
 
 	logger *log.Logger
 }
 
-func NewRaftFSM(path string, indexMapping *mapping.IndexMappingImpl, indexStorageType string, logger *log.Logger) (*RaftFSM, error) {
-	index, err := NewIndex(path, indexMapping, indexStorageType, logger)
-	if err != nil {
-		return nil, err
-	}
-
+func NewRaftFSM(path string, indexConfig map[string]interface{}, logger *log.Logger) (*RaftFSM, error) {
 	return &RaftFSM{
-		metadata: make(map[string]*blastraft.Node, 0),
-		index:    index,
-		logger:   logger,
+		path:        path,
+		indexConfig: indexConfig,
+		logger:      logger,
 	}, nil
 }
 
-func (f *RaftFSM) Close() error {
+func (f *RaftFSM) Start() error {
+	var err error
+
+	f.metadata = maputils.Map{}
+
+	f.index, err = NewIndex(f.path, f.indexConfig, f.logger)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (f *RaftFSM) Stop() error {
 	err := f.index.Close()
 	if err != nil {
 		return err
@@ -60,7 +72,43 @@ func (f *RaftFSM) Close() error {
 	return nil
 }
 
-func (f *RaftFSM) Get(id string) (map[string]interface{}, error) {
+func (f *RaftFSM) GetMetadata(id string) (map[string]interface{}, error) {
+	f.metadataMutex.RLock()
+	defer f.metadataMutex.RUnlock()
+
+	value, err := f.metadata.Get(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return value.(maputils.Map).ToMap(), nil
+}
+
+func (f *RaftFSM) applySetMetadata(id string, value map[string]interface{}) interface{} {
+	f.metadataMutex.RLock()
+	defer f.metadataMutex.RUnlock()
+
+	err := f.metadata.Merge(id, value)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (f *RaftFSM) applyDeleteMetadata(id string) interface{} {
+	f.metadataMutex.RLock()
+	defer f.metadataMutex.RUnlock()
+
+	err := f.metadata.Delete(id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (f *RaftFSM) GetDocument(id string) (map[string]interface{}, error) {
 	fields, err := f.index.Get(id)
 	if err != nil {
 		return nil, err
@@ -69,7 +117,7 @@ func (f *RaftFSM) Get(id string) (map[string]interface{}, error) {
 	return fields, nil
 }
 
-func (f *RaftFSM) applyIndex(id string, fields map[string]interface{}) interface{} {
+func (f *RaftFSM) applyIndexDocument(id string, fields map[string]interface{}) interface{} {
 	f.logger.Printf("[DEBUG] index %s, %v", id, fields)
 
 	err := f.index.Index(id, fields)
@@ -81,7 +129,7 @@ func (f *RaftFSM) applyIndex(id string, fields map[string]interface{}) interface
 	return nil
 }
 
-func (f *RaftFSM) applyDelete(id string) interface{} {
+func (f *RaftFSM) applyDeleteDocument(id string) interface{} {
 	err := f.index.Delete(id)
 	if err != nil {
 		f.logger.Printf("[ERR] %v", err)
@@ -100,114 +148,55 @@ func (f *RaftFSM) Search(request *bleve.SearchRequest) (*bleve.SearchResult, err
 	return result, nil
 }
 
-func (f *RaftFSM) GetMetadata(nodeId string) (*blastraft.Node, error) {
-	node, exists := f.metadata[nodeId]
-	if !exists {
-		return nil, blasterrors.ErrNotFound
-	}
-	if node == nil {
-		return nil, errors.New("nil")
-	}
-	value := node
-
-	return value, nil
-}
-
-func (f *RaftFSM) applySetMetadata(nodeId string, node *blastraft.Node) interface{} {
-	f.metadata[nodeId] = node
-
-	return nil
-}
-
-func (f *RaftFSM) applyDeleteMetadata(nodeId string) interface{} {
-	_, exists := f.metadata[nodeId]
-	if exists {
-		delete(f.metadata, nodeId)
-	}
-
-	return nil
-}
-
 func (f *RaftFSM) Apply(l *raft.Log) interface{} {
-	var c pbindex.IndexCommand
-	err := proto.Unmarshal(l.Data, &c)
+	var msg message
+	err := json.Unmarshal(l.Data, &msg)
 	if err != nil {
 		return err
 	}
 
-	f.logger.Printf("[DEBUG] Apply %v", c)
+	f.logger.Printf("[DEBUG] Apply %v", msg)
 
-	switch c.Type {
-	case pbindex.IndexCommand_SET_METADATA:
-		// Any -> Node
-		nodeInstance, err := protobuf.MarshalAny(c.Data)
+	switch msg.Command {
+	case setNode:
+		var data map[string]interface{}
+		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
 			return err
 		}
-		if nodeInstance == nil {
-			return errors.New("nil")
-		}
-		metadata := nodeInstance.(*blastraft.Node)
-
-		return f.applySetMetadata(metadata.Id, metadata)
-	case pbindex.IndexCommand_DELETE_METADATA:
-		// Any -> Node
-		metadataInstance, err := protobuf.MarshalAny(c.Data)
+		return f.applySetMetadata(data["id"].(string), data["metadata"].(map[string]interface{}))
+	case deleteNode:
+		var data map[string]interface{}
+		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
 			return err
 		}
-		if metadataInstance == nil {
-			return errors.New("nil")
-		}
-		metadata := *metadataInstance.(*blastraft.Node)
-
-		return f.applyDeleteMetadata(metadata.Id)
-	case pbindex.IndexCommand_INDEX_DOCUMENT:
-		// Any -> Document
-		docInstance, err := protobuf.MarshalAny(c.Data)
+		return f.applyDeleteMetadata(data["id"].(string))
+	case indexDocument:
+		var data map[string]interface{}
+		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
 			return err
 		}
-		if docInstance == nil {
-			return errors.New("nil")
-		}
-		doc := *docInstance.(*pbindex.Document)
-
-		// Any -> map[string]interface{}
-		fieldsInstance, err := protobuf.MarshalAny(doc.Fields)
+		return f.applyIndexDocument(data["id"].(string), data["fields"].(map[string]interface{}))
+	case deleteDocument:
+		var data string
+		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
 			return err
 		}
-		if fieldsInstance == nil {
-			return errors.New("nil")
-		}
-		fields := *fieldsInstance.(*map[string]interface{})
-
-		return f.applyIndex(doc.Id, fields)
-	case pbindex.IndexCommand_DELETE_DOCUMENT:
-		// Any -> Document
-		docInstance, err := protobuf.MarshalAny(c.Data)
-		if err != nil {
-			return err
-		}
-		if docInstance == nil {
-			return errors.New("nil")
-		}
-		doc := *docInstance.(*pbindex.Document)
-
-		return f.applyDelete(doc.Id)
+		return f.applyDeleteDocument(data)
 	default:
 		return errors.New("command type not support")
 	}
 }
 
-func (f *RaftFSM) Stats() (map[string]interface{}, error) {
-	stats, err := f.index.Stats()
-	if err != nil {
-		return nil, err
-	}
+func (f *RaftFSM) GetIndexConfig() (map[string]interface{}, error) {
+	return f.index.Config()
+}
 
-	return stats, nil
+func (f *RaftFSM) GetIndexStats() (map[string]interface{}, error) {
+	return f.index.Stats()
 }
 
 func (f *RaftFSM) Snapshot() (raft.FSMSnapshot, error) {
@@ -235,7 +224,7 @@ func (f *RaftFSM) Restore(rc io.ReadCloser) error {
 
 	buff := proto.NewBuffer(data)
 	for {
-		doc := &pbindex.Document{}
+		doc := &protobuf.Document{}
 		err = buff.DecodeMessage(doc)
 		if err == io.ErrUnexpectedEOF {
 			break
@@ -245,7 +234,6 @@ func (f *RaftFSM) Restore(rc io.ReadCloser) error {
 			return err
 		}
 
-		// Any -> map[string]interface{}
 		fields, err := protobuf.MarshalAny(doc.Fields)
 		if err != nil {
 			return err
@@ -296,14 +284,12 @@ func (f *IndexFSMSnapshot) Persist(sink raft.SnapshotSink) error {
 		}
 
 		docCount = docCount + 1
-
-		buff := proto.NewBuffer([]byte{})
-		err := buff.EncodeMessage(doc)
+		docBytes, err := json.Marshal(doc)
 		if err != nil {
 			return err
 		}
 
-		_, err = sink.Write(buff.Bytes())
+		_, err = sink.Write(docBytes)
 		if err != nil {
 			return err
 		}

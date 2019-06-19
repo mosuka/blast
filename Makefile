@@ -29,6 +29,7 @@ PACKAGES = $(shell $(GO) list ./... | grep -v '/vendor/')
 PROTOBUFS = $(shell find . -name '*.proto' -print0 | xargs -0 -n1 dirname | sort | uniq | grep -v /vendor/)
 
 TARGET_PACKAGES = $(shell find . -name 'main.go' -print0 | xargs -0 -n1 dirname | sort | uniq | grep -v /vendor/)
+# TARGET_PACKAGES = $(shell find . -name 'main.go' -print0 | xargs -0 -n1 dirname | sort | uniq | grep -v /vendor/ | grep blast-manager)
 
 ifeq ($(VERSION),)
   VERSION = latest

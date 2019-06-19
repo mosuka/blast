@@ -16,26 +16,10 @@ package protobuf
 
 import (
 	"encoding/json"
-	"reflect"
 
-	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/ptypes/any"
-	"github.com/mosuka/blast/protobuf/index"
-	"github.com/mosuka/blast/protobuf/management"
-	"github.com/mosuka/blast/protobuf/raft"
 	"github.com/mosuka/blast/registry"
 )
-
-func init() {
-	registry.RegisterType("map[string]interface {}", reflect.TypeOf((map[string]interface{})(nil)))
-
-	registry.RegisterType("management.KeyValuePair", reflect.TypeOf(management.KeyValuePair{}))
-	registry.RegisterType("index.Document", reflect.TypeOf(index.Document{}))
-	registry.RegisterType("raft.Node", reflect.TypeOf(raft.Node{}))
-
-	registry.RegisterType("bleve.SearchRequest", reflect.TypeOf(bleve.SearchRequest{}))
-	registry.RegisterType("bleve.SearchResult", reflect.TypeOf(bleve.SearchResult{}))
-}
 
 func MarshalAny(message *any.Any) (interface{}, error) {
 	if message == nil {
@@ -56,17 +40,18 @@ func MarshalAny(message *any.Any) (interface{}, error) {
 }
 
 func UnmarshalAny(instance interface{}, message *any.Any) error {
+	var err error
+
 	if instance == nil {
 		return nil
 	}
 
-	value, err := json.Marshal(instance)
+	message.TypeUrl = registry.TypeNameByInstance(instance)
+
+	message.Value, err = json.Marshal(instance)
 	if err != nil {
 		return err
 	}
-
-	message.TypeUrl = registry.TypeNameByInstance(instance)
-	message.Value = value
 
 	return nil
 }

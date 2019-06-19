@@ -21,99 +21,139 @@ import (
 	"io/ioutil"
 	"log"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/hashicorp/raft"
 	blasterrors "github.com/mosuka/blast/errors"
-	"github.com/mosuka/blast/protobuf"
-	"github.com/mosuka/blast/protobuf/management"
-	pbraft "github.com/mosuka/blast/protobuf/raft"
-	"github.com/mosuka/maputils"
+	"github.com/mosuka/blast/maputils"
 )
 
 type RaftFSM struct {
-	metadata map[string]*pbraft.Node
+	metadata maputils.Map
 
-	federation map[string]interface{}
+	path string
+
+	data maputils.Map
 
 	logger *log.Logger
 }
 
 func NewRaftFSM(path string, logger *log.Logger) (*RaftFSM, error) {
 	return &RaftFSM{
-		metadata:   make(map[string]*pbraft.Node, 0),
-		federation: make(map[string]interface{}, 0),
-		logger:     logger,
+		path:   path,
+		logger: logger,
 	}, nil
 }
 
-func (f *RaftFSM) Close() error {
-	return nil
-}
-
-func (f *RaftFSM) GetMetadata(nodeId string) (*pbraft.Node, error) {
-	node, exists := f.metadata[nodeId]
-	if !exists {
-		return nil, blasterrors.ErrNotFound
-	}
-	if node == nil {
-		return nil, errors.New("nil")
-	}
-	value := node
-
-	return value, nil
-}
-
-func (f *RaftFSM) applySetMetadata(nodeId string, node *pbraft.Node) interface{} {
-	f.metadata[nodeId] = node
+func (f *RaftFSM) Start() error {
+	f.logger.Print("[INFO] initialize data")
+	f.metadata = maputils.Map{}
+	f.data = maputils.Map{}
 
 	return nil
 }
 
-func (f *RaftFSM) applyDeleteMetadata(nodeId string) interface{} {
-	_, exists := f.metadata[nodeId]
-	if exists {
-		delete(f.metadata, nodeId)
+func (f *RaftFSM) Stop() error {
+	return nil
+}
+
+func (f *RaftFSM) GetMetadata(id string) (map[string]interface{}, error) {
+	value, err := f.metadata.Get(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return value.(maputils.Map).ToMap(), nil
+}
+
+func (f *RaftFSM) applySetMetadata(id string, value map[string]interface{}) interface{} {
+	err := f.metadata.Merge(id, value)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (f *RaftFSM) applyDeleteMetadata(id string) interface{} {
+	err := f.metadata.Delete(id)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
 func (f *RaftFSM) Get(key string) (interface{}, error) {
-	nm, err := maputils.NewNestedMap(f.federation)
+	value, err := f.data.Get(key)
 	if err != nil {
-		return nil, err
+		switch err {
+		case maputils.ErrNotFound:
+			return nil, blasterrors.ErrNotFound
+		default:
+			return nil, err
+		}
 	}
 
-	value, err := nm.Get(key)
-	if err == maputils.ErrNotFound {
-		return nil, blasterrors.ErrNotFound
+	var ret interface{}
+	switch value.(type) {
+	case maputils.Map:
+		ret = value.(maputils.Map).ToMap()
+	default:
+		ret = value
 	}
 
-	return value, nil
+	return ret, nil
 }
 
-func (f *RaftFSM) applySet(key string, value interface{}) interface{} {
-	nm, err := maputils.NewNestedMap(f.federation)
-	if err != nil {
-		return err
-	}
-
-	err = nm.Set(key, value)
-	if err != nil {
-		return err
+func (f *RaftFSM) applySet(key string, value interface{}, merge bool) interface{} {
+	if merge {
+		err := f.data.Merge(key, value)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := f.data.Set(key, value)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func (f *RaftFSM) applyDelete(key string) interface{} {
-	nm, err := maputils.NewNestedMap(f.federation)
-	if err != nil {
-		return err
+func (f *RaftFSM) delete(keys []string, data interface{}) (interface{}, error) {
+	var err error
+
+	if len(keys) >= 1 {
+		key := keys[0]
+
+		switch data.(type) {
+		case map[string]interface{}:
+			if _, exist := data.(map[string]interface{})[key]; exist {
+				if len(keys) > 1 {
+					data.(map[string]interface{})[key], err = f.delete(keys[1:], data.(map[string]interface{})[key])
+					if err != nil {
+						return nil, err
+					}
+				} else {
+					mm := data.(map[string]interface{})
+					delete(mm, key)
+					data = mm
+				}
+			} else {
+				return nil, blasterrors.ErrNotFound
+			}
+		}
 	}
 
-	err = nm.Delete(key)
+	return data, nil
+}
+
+func (f *RaftFSM) applyDelete(key string) interface{} {
+	err := f.data.Delete(key)
 	if err != nil {
+		if err == maputils.ErrNotFound {
+			return blasterrors.ErrNotFound
+		}
 		return err
 	}
 
@@ -121,79 +161,58 @@ func (f *RaftFSM) applyDelete(key string) interface{} {
 }
 
 func (f *RaftFSM) Apply(l *raft.Log) interface{} {
-	var c management.ManagementCommand
-	err := proto.Unmarshal(l.Data, &c)
+	var msg message
+	err := json.Unmarshal(l.Data, &msg)
 	if err != nil {
 		return err
 	}
 
-	f.logger.Printf("[DEBUG] Apply %v", c)
-
-	switch c.Type {
-	case management.ManagementCommand_SET_METADATA:
-		// Any -> raft.Node
-		nodeInstance, err := protobuf.MarshalAny(c.Data)
+	switch msg.Command {
+	case setNode:
+		var data map[string]interface{}
+		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
 			return err
 		}
-		if nodeInstance == nil {
-			return errors.New("nil")
-		}
-		node := nodeInstance.(*pbraft.Node)
-
-		return f.applySetMetadata(node.Id, node)
-	case management.ManagementCommand_DELETE_METADATA:
-		// Any -> raft.Node
-		nodeInstance, err := protobuf.MarshalAny(c.Data)
+		return f.applySetMetadata(data["id"].(string), data["metadata"].(map[string]interface{}))
+	case deleteNode:
+		var data map[string]interface{}
+		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
 			return err
 		}
-		if nodeInstance == nil {
-			return errors.New("nil")
-		}
-		node := *nodeInstance.(*pbraft.Node)
-
-		return f.applyDeleteMetadata(node.Id)
-	case management.ManagementCommand_PUT_KEY_VALUE_PAIR:
-		// Any -> federation.Node
-		kvpInstance, err := protobuf.MarshalAny(c.Data)
+		return f.applyDeleteMetadata(data["id"].(string))
+	case setKeyValue:
+		var data map[string]interface{}
+		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
 			return err
 		}
-		if kvpInstance == nil {
-			return errors.New("nil")
-		}
-		kvp := kvpInstance.(*management.KeyValuePair)
 
-		// Any -> interface{}
-		value, err := protobuf.MarshalAny(kvp.Value)
-
-		return f.applySet(kvp.Key, value)
-	case management.ManagementCommand_DELETE_KEY_VALUE_PAIR:
-		// Any -> federation.Node
-		kvpInstance, err := protobuf.MarshalAny(c.Data)
+		return f.applySet(data["key"].(string), data["value"], true)
+	case deleteKeyValue:
+		var data map[string]interface{}
+		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
 			return err
 		}
-		if kvpInstance == nil {
-			return errors.New("nil")
-		}
-		kvp := *kvpInstance.(*management.KeyValuePair)
 
-		return f.applyDelete(kvp.Key)
+		return f.applyDelete(data["key"].(string))
 	default:
 		return errors.New("command type not support")
 	}
 }
 
 func (f *RaftFSM) Snapshot() (raft.FSMSnapshot, error) {
-	return &KVSFSMSnapshot{
-		federation: f.federation,
-		logger:     f.logger,
+	return &RaftFSMSnapshot{
+		data:   f.data,
+		logger: f.logger,
 	}, nil
 }
 
 func (f *RaftFSM) Restore(rc io.ReadCloser) error {
+	f.logger.Print("[INFO] restore data")
+
 	defer func() {
 		err := rc.Close()
 		if err != nil {
@@ -207,26 +226,22 @@ func (f *RaftFSM) Restore(rc io.ReadCloser) error {
 		return err
 	}
 
-	err = json.Unmarshal(data, &f.federation)
+	err = json.Unmarshal(data, &f.data)
 	if err != nil {
 		f.logger.Printf("[ERR] %v", err)
 		return err
 	}
 
-	f.logger.Printf("[INFO] federation was restored: %v", f.federation)
-
 	return nil
 }
 
-// ---------------------
-
-type KVSFSMSnapshot struct {
-	federation map[string]interface{}
-	logger     *log.Logger
+type RaftFSMSnapshot struct {
+	data   maputils.Map
+	logger *log.Logger
 }
 
-func (f *KVSFSMSnapshot) Persist(sink raft.SnapshotSink) error {
-	f.logger.Printf("[INFO] start data persistence")
+func (f *RaftFSMSnapshot) Persist(sink raft.SnapshotSink) error {
+	f.logger.Printf("[INFO] persist data")
 
 	defer func() {
 		err := sink.Close()
@@ -235,7 +250,7 @@ func (f *KVSFSMSnapshot) Persist(sink raft.SnapshotSink) error {
 		}
 	}()
 
-	buff, err := json.Marshal(f.federation)
+	buff, err := json.Marshal(f.data)
 	if err != nil {
 		return err
 	}
@@ -245,11 +260,9 @@ func (f *KVSFSMSnapshot) Persist(sink raft.SnapshotSink) error {
 		return err
 	}
 
-	f.logger.Printf("[INFO] federation was persisted: %v", f.federation)
-
 	return nil
 }
 
-func (f *KVSFSMSnapshot) Release() {
+func (f *RaftFSMSnapshot) Release() {
 	f.logger.Printf("[INFO] release")
 }

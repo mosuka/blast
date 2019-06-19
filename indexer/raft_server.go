@@ -15,73 +15,84 @@
 package indexer
 
 import (
+	"encoding/json"
 	"log"
 	"net"
 	"path/filepath"
 	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve/mapping"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
 	_ "github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/errors"
-	"github.com/mosuka/blast/protobuf"
-	"github.com/mosuka/blast/protobuf/index"
-	blastraft "github.com/mosuka/blast/protobuf/raft"
 )
 
 type RaftServer struct {
-	Node      *blastraft.Node
+	id       string
+	metadata map[string]interface{}
+
 	bootstrap bool
 
 	raft *raft.Raft
 	fsm  *RaftFSM
 
+	indexConfig map[string]interface{}
+
 	logger *log.Logger
 }
 
-func NewRaftServer(node *blastraft.Node, bootstrap bool, indexMapping *mapping.IndexMappingImpl, indexStorageType string, logger *log.Logger) (*RaftServer, error) {
-	fsm, err := NewRaftFSM(filepath.Join(node.DataDir, "index"), indexMapping, indexStorageType, logger)
-	if err != nil {
-		return nil, err
-	}
-
+func NewRaftServer(id string, metadata map[string]interface{}, bootstrap bool, indexConfig map[string]interface{}, logger *log.Logger) (*RaftServer, error) {
 	return &RaftServer{
-		Node:      node,
+		id:       id,
+		metadata: metadata,
+
 		bootstrap: bootstrap,
-		fsm:       fsm,
-		logger:    logger,
+
+		indexConfig: indexConfig,
+		logger:      logger,
 	}, nil
 }
 
 func (s *RaftServer) Start() error {
+	var err error
+
+	s.logger.Print("[INFO] create finite state machine")
+	s.fsm, err = NewRaftFSM(filepath.Join(s.metadata["data_dir"].(string), "index"), s.indexConfig, s.logger)
+	if err != nil {
+		return err
+	}
+
+	s.logger.Print("[INFO] start finite state machine")
+	err = s.fsm.Start()
+	if err != nil {
+		return err
+	}
+
 	config := raft.DefaultConfig()
-	config.LocalID = raft.ServerID(s.Node.Id)
+	config.LocalID = raft.ServerID(s.id)
 	config.SnapshotThreshold = 1024
 	config.Logger = s.logger
 
-	addr, err := net.ResolveTCPAddr("tcp", s.Node.BindAddr)
+	addr, err := net.ResolveTCPAddr("tcp", s.metadata["bind_addr"].(string))
 	if err != nil {
 		return err
 	}
 
 	// create transport
-	transport, err := raft.NewTCPTransportWithLogger(s.Node.BindAddr, addr, 3, 10*time.Second, s.logger)
+	transport, err := raft.NewTCPTransportWithLogger(s.metadata["bind_addr"].(string), addr, 3, 10*time.Second, s.logger)
 	if err != nil {
 		return err
 	}
 
 	// create snapshot store
-	snapshotStore, err := raft.NewFileSnapshotStoreWithLogger(s.Node.DataDir, 2, s.logger)
+	snapshotStore, err := raft.NewFileSnapshotStoreWithLogger(s.metadata["data_dir"].(string), 2, s.logger)
 	if err != nil {
 		return err
 	}
 
 	// create raft log store
-	raftLogStore, err := raftboltdb.NewBoltStore(filepath.Join(s.Node.DataDir, "raft.db"))
+	raftLogStore, err := raftboltdb.NewBoltStore(filepath.Join(s.metadata["data_dir"].(string), "raft.db"))
 	if err != nil {
 		return err
 	}
@@ -110,12 +121,13 @@ func (s *RaftServer) Start() error {
 				s.logger.Printf("[WARN] %v", err)
 			} else {
 				s.logger.Printf("[ERR] %v", err)
-				return nil
+				return err
 			}
 		}
 
 		// set metadata
-		err = s.setMetadata(s.Node.Id, s.Node)
+		s.logger.Print("[INFO] register itself in a cluster")
+		err = s.setMetadata(s.id, s.metadata)
 		if err != nil {
 			s.logger.Printf("[ERR] %v", err)
 			return nil
@@ -126,34 +138,20 @@ func (s *RaftServer) Start() error {
 }
 
 func (s *RaftServer) Stop() error {
-	err := s.fsm.Close()
+	s.logger.Print("[INFO] shutdown Raft")
+	f := s.raft.Shutdown()
+	err := f.Error()
+	if err != nil {
+		return err
+	}
+
+	s.logger.Print("[INFO] stop finite state machine")
+	err = s.fsm.Stop()
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (s *RaftServer) WaitForDetectLeader(timeout time.Duration) error {
-	ticker := time.NewTicker(1000 * time.Millisecond)
-	defer ticker.Stop()
-	timer := time.NewTimer(timeout)
-	defer timer.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			leaderAddr := s.raft.Leader()
-			if leaderAddr != "" {
-				s.logger.Printf("[INFO] detected %v as a leader", leaderAddr)
-				return nil
-			} else {
-				s.logger.Printf("[WARN] %v", errors.ErrNotFoundLeader)
-			}
-		case <-timer.C:
-			return errors.ErrTimeout
-		}
-	}
 }
 
 func (s *RaftServer) LeaderAddress(timeout time.Duration) (raft.ServerAddress, error) {
@@ -176,13 +174,13 @@ func (s *RaftServer) LeaderAddress(timeout time.Duration) (raft.ServerAddress, e
 }
 
 func (s *RaftServer) LeaderID(timeout time.Duration) (raft.ServerID, error) {
-	cf := s.raft.GetConfiguration()
-	err := cf.Error()
+	leaderAddr, err := s.LeaderAddress(timeout)
 	if err != nil {
 		return "", err
 	}
 
-	leaderAddr, err := s.LeaderAddress(timeout)
+	cf := s.raft.GetConfiguration()
+	err = cf.Error()
 	if err != nil {
 		return "", err
 	}
@@ -196,34 +194,54 @@ func (s *RaftServer) LeaderID(timeout time.Duration) (raft.ServerID, error) {
 	return "", errors.ErrNotFoundLeader
 }
 
-func (s *RaftServer) getMetadata(nodeId string) (*blastraft.Node, error) {
-	node, err := s.fsm.GetMetadata(nodeId)
+func (s *RaftServer) Stats() map[string]string {
+	return s.raft.Stats()
+}
+
+func (s *RaftServer) State() string {
+	return s.raft.State().String()
+}
+
+func (s *RaftServer) IsLeader() bool {
+	return s.raft.State() == raft.Leader
+}
+
+func (s *RaftServer) WaitForDetectLeader(timeout time.Duration) error {
+	_, err := s.LeaderAddress(timeout)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *RaftServer) getMetadata(id string) (map[string]interface{}, error) {
+	metadata, err := s.fsm.GetMetadata(id)
 	if err != nil {
 		return nil, err
 	}
 
-	return node, nil
+	return metadata, nil
 }
 
-func (s *RaftServer) setMetadata(nodeId string, node *blastraft.Node) error {
-	// Node -> Any
-	nodeAny := &any.Any{}
-	err := protobuf.UnmarshalAny(node, nodeAny)
+func (s *RaftServer) setMetadata(id string, metadata map[string]interface{}) error {
+	msg, err := newMessage(
+		setNode,
+		map[string]interface{}{
+			"id":       id,
+			"metadata": metadata,
+		},
+	)
 	if err != nil {
 		return err
 	}
 
-	c := &index.IndexCommand{
-		Type: index.IndexCommand_SET_METADATA,
-		Data: nodeAny,
-	}
-
-	msg, err := proto.Marshal(c)
+	msgBytes, err := json.Marshal(msg)
 	if err != nil {
 		return err
 	}
 
-	f := s.raft.Apply(msg, 10*time.Second)
+	f := s.raft.Apply(msgBytes, 10*time.Second)
 	err = f.Error()
 	if err != nil {
 		return err
@@ -232,29 +250,23 @@ func (s *RaftServer) setMetadata(nodeId string, node *blastraft.Node) error {
 	return nil
 }
 
-func (s *RaftServer) deleteMetadata(nodeId string) error {
-	node := &blastraft.Node{
-		Id: nodeId,
-	}
-
-	// Node -> Any
-	nodeAny := &any.Any{}
-	err := protobuf.UnmarshalAny(node, nodeAny)
+func (s *RaftServer) deleteMetadata(id string) error {
+	msg, err := newMessage(
+		deleteNode,
+		map[string]interface{}{
+			"id": id,
+		},
+	)
 	if err != nil {
 		return err
 	}
 
-	c := &index.IndexCommand{
-		Type: index.IndexCommand_DELETE_METADATA,
-		Data: nodeAny,
-	}
-
-	msg, err := proto.Marshal(c)
+	msgBytes, err := json.Marshal(msg)
 	if err != nil {
 		return err
 	}
 
-	f := s.raft.Apply(msg, 10*time.Second)
+	f := s.raft.Apply(msgBytes, 10*time.Second)
 	err = f.Error()
 	if err != nil {
 		return err
@@ -263,39 +275,30 @@ func (s *RaftServer) deleteMetadata(nodeId string) error {
 	return nil
 }
 
-func (s *RaftServer) Join(node *blastraft.Node) error {
-	if s.raft.State() != raft.Leader {
-		// forward to leader node
-		leaderId, err := s.LeaderID(60 * time.Second)
-		if err != nil {
-			return err
-		}
+func (s *RaftServer) GetMetadata(id string) (map[string]interface{}, error) {
+	cf := s.raft.GetConfiguration()
+	err := cf.Error()
+	if err != nil {
+		return nil, err
+	}
 
-		node, err := s.getMetadata(string(leaderId))
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil
-		}
-
-		client, err := NewGRPCClient(string(node.GrpcAddr))
-		defer func() {
-			err := client.Close()
+	var metadata map[string]interface{}
+	for _, server := range cf.Configuration().Servers {
+		if server.ID == raft.ServerID(id) {
+			metadata, err = s.getMetadata(id)
 			if err != nil {
-				s.logger.Printf("[ERR] %v", err)
+				return nil, err
 			}
-		}()
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil
+			break
 		}
+	}
 
-		err = client.Join(node)
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil
-		}
+	return metadata, nil
+}
 
-		return nil
+func (s *RaftServer) SetMetadata(id string, metadata map[string]interface{}) error {
+	if !s.IsLeader() {
+		return raft.ErrNotLeader
 	}
 
 	cf := s.raft.GetConfiguration()
@@ -305,62 +308,32 @@ func (s *RaftServer) Join(node *blastraft.Node) error {
 	}
 
 	for _, server := range cf.Configuration().Servers {
-		if server.ID == raft.ServerID(node.Id) {
-			s.logger.Printf("[INFO] node %s already joined the cluster", node.Id)
+		if server.ID == raft.ServerID(id) {
+			s.logger.Printf("[INFO] node %v already joined the cluster", id)
 			return nil
 		}
 	}
 
-	f := s.raft.AddVoter(raft.ServerID(node.Id), raft.ServerAddress(node.BindAddr), 0, 0)
+	f := s.raft.AddVoter(raft.ServerID(id), raft.ServerAddress(metadata["bind_addr"].(string)), 0, 0)
 	err = f.Error()
 	if err != nil {
 		return err
 	}
 
 	// set metadata
-	err = s.setMetadata(node.Id, node)
+	err = s.setMetadata(id, metadata)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return nil
 	}
 
-	s.logger.Printf("[INFO] node %s at %s joined successfully", node.Id, node.BindAddr)
+	s.logger.Printf("[INFO] node %v joined successfully", id)
 	return nil
 }
 
-func (s *RaftServer) Leave(node *blastraft.Node) error {
-	if s.raft.State() != raft.Leader {
-		// forward to leader node
-		leaderId, err := s.LeaderID(60 * time.Second)
-		if err != nil {
-			return err
-		}
-
-		node, err := s.getMetadata(string(leaderId))
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil
-		}
-
-		client, err := NewGRPCClient(string(node.GrpcAddr))
-		defer func() {
-			err := client.Close()
-			if err != nil {
-				s.logger.Printf("[ERR] %v", err)
-			}
-		}()
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil
-		}
-
-		err = client.Leave(node)
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil
-		}
-
-		return nil
+func (s *RaftServer) DeleteMetadata(id string) error {
+	if !s.IsLeader() {
+		return raft.ErrNotLeader
 	}
 
 	cf := s.raft.GetConfiguration()
@@ -370,97 +343,48 @@ func (s *RaftServer) Leave(node *blastraft.Node) error {
 	}
 
 	for _, server := range cf.Configuration().Servers {
-		if server.ID == raft.ServerID(node.Id) {
+		if server.ID == raft.ServerID(id) {
 			f := s.raft.RemoveServer(server.ID, 0, 0)
 			err = f.Error()
 			if err != nil {
 				return err
 			}
 
-			s.logger.Printf("[INFO] node %s leaved successfully", node.Id)
+			s.logger.Printf("[INFO] node %v leaved successfully", id)
 			return nil
 		}
 	}
 
 	// delete metadata
-	err = s.deleteMetadata(node.Id)
+	err = s.deleteMetadata(id)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return nil
 	}
 
-	s.logger.Printf("[INFO] node %s does not exists in the cluster", node.Id)
+	s.logger.Printf("[INFO] node %v does not exists in the cluster", id)
 	return nil
 }
 
-func (s *RaftServer) GetNode() (*blastraft.Node, error) {
+func (s *RaftServer) GetServers() (map[string]interface{}, error) {
 	cf := s.raft.GetConfiguration()
 	err := cf.Error()
 	if err != nil {
 		return nil, err
 	}
 
-	leaderAddr, err := s.LeaderAddress(60 * time.Second)
-	if err != nil {
-		return nil, err
-	}
-
-	node := &blastraft.Node{}
+	servers := map[string]interface{}{}
 	for _, server := range cf.Configuration().Servers {
-		if server.ID == raft.ServerID(s.Node.Id) {
-			node.Id = string(server.ID)
-			node.BindAddr = string(server.Address)
-			node.Leader = server.Address == leaderAddr
-
-			nodeInfo, err := s.getMetadata(node.Id)
-			if err != nil {
-				s.logger.Printf("[WARN] %v", err)
-				break
-			}
-			node.GrpcAddr = nodeInfo.GrpcAddr
-			node.HttpAddr = nodeInfo.HttpAddr
-			node.DataDir = nodeInfo.DataDir
-			break
-		}
-	}
-
-	return node, nil
-}
-
-func (s *RaftServer) GetCluster() (*blastraft.Cluster, error) {
-	cf := s.raft.GetConfiguration()
-	err := cf.Error()
-	if err != nil {
-		return nil, err
-	}
-
-	leaderAddr, err := s.LeaderAddress(60 * time.Second)
-	if err != nil {
-		return nil, err
-	}
-
-	nodes := make([]*blastraft.Node, 0)
-	for _, server := range cf.Configuration().Servers {
-		node := &blastraft.Node{}
-		node.Id = string(server.ID)
-		node.BindAddr = string(server.Address)
-		node.Leader = server.Address == leaderAddr
-
-		nodeInfo, err := s.getMetadata(node.Id)
+		metadata, err := s.GetMetadata(string(server.ID))
 		if err != nil {
-			s.logger.Printf("[WARN] %v", err)
+			s.logger.Printf("[DEBUG] %v", err)
 			continue
 		}
-		node.GrpcAddr = nodeInfo.GrpcAddr
-		node.HttpAddr = nodeInfo.HttpAddr
-		node.DataDir = nodeInfo.DataDir
 
-		nodes = append(nodes, node)
+		servers[string(server.ID)] = metadata
 	}
 
-	return &blastraft.Cluster{
-		Nodes: nodes,
-	}, nil
+	return servers, nil
 }
 
 func (s *RaftServer) Snapshot() error {
@@ -473,25 +397,13 @@ func (s *RaftServer) Snapshot() error {
 	return nil
 }
 
-func (s *RaftServer) Get(doc *index.Document) (*index.Document, error) {
-	fieldsMap, err := s.fsm.Get(doc.Id)
+func (s *RaftServer) GetDocument(id string) (map[string]interface{}, error) {
+	fields, err := s.fsm.GetDocument(id)
 	if err != nil {
 		return nil, err
 	}
 
-	// map[string]interface{} -> Any
-	fieldsAny := &any.Any{}
-	err = protobuf.UnmarshalAny(fieldsMap, fieldsAny)
-	if err != nil {
-		return nil, err
-	}
-
-	retDoc := &index.Document{
-		Id:     doc.Id,
-		Fields: fieldsAny,
-	}
-
-	return retDoc, nil
+	return fields, nil
 }
 
 func (s *RaftServer) Search(request *bleve.SearchRequest) (*bleve.SearchResult, error) {
@@ -503,159 +415,83 @@ func (s *RaftServer) Search(request *bleve.SearchRequest) (*bleve.SearchResult, 
 	return result, nil
 }
 
-func (s *RaftServer) Index(docs []*index.Document) (*index.UpdateResult, error) {
+func (s *RaftServer) IndexDocument(docs []map[string]interface{}) (int, error) {
 	if s.raft.State() != raft.Leader {
-		// forward to leader node
-		leaderId, err := s.LeaderID(60 * time.Second)
-		if err != nil {
-			return nil, err
-		}
-
-		node, err := s.getMetadata(string(leaderId))
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil, err
-		}
-
-		client, err := NewGRPCClient(string(node.GrpcAddr))
-		defer func() {
-			err := client.Close()
-			if err != nil {
-				s.logger.Printf("[ERR] %v", err)
-			}
-		}()
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil, err
-		}
-
-		result, err := client.Index(docs)
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil, err
-		}
-		s.logger.Printf("[DEBUG] %v", result)
-
-		return result, nil
+		return -1, raft.ErrNotLeader
 	}
 
-	count := int32(0)
+	count := 0
 	for _, doc := range docs {
-		// Document -> Any
-		docAny := &any.Any{}
-		err := protobuf.UnmarshalAny(doc, docAny)
+		msg, err := newMessage(
+			indexDocument,
+			doc,
+		)
 		if err != nil {
-			return nil, err
+			return -1, err
 		}
 
-		c := &index.IndexCommand{
-			Type: index.IndexCommand_INDEX_DOCUMENT,
-			Data: docAny,
-		}
-
-		msg, err := proto.Marshal(c)
+		msgBytes, err := json.Marshal(msg)
 		if err != nil {
-			return nil, err
+			return -1, err
 		}
 
-		f := s.raft.Apply(msg, 10*time.Second)
+		f := s.raft.Apply(msgBytes, 10*time.Second)
 		err = f.Error()
 		if err != nil {
-			return nil, err
+			return -1, err
 		}
 
 		count++
 	}
 
-	return &index.UpdateResult{
-		Count: count,
-	}, nil
+	return count, nil
 }
 
-func (s *RaftServer) Delete(docs []*index.Document) (*index.UpdateResult, error) {
+func (s *RaftServer) DeleteDocument(ids []string) (int, error) {
 	if s.raft.State() != raft.Leader {
-		// forward to leader node
-		leaderId, err := s.LeaderID(60 * time.Second)
-		if err != nil {
-			return nil, err
-		}
-
-		node, err := s.getMetadata(string(leaderId))
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil, err
-		}
-
-		client, err := NewGRPCClient(string(node.GrpcAddr))
-		defer func() {
-			err := client.Close()
-			if err != nil {
-				s.logger.Printf("[ERR] %v", err)
-			}
-		}()
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil, err
-		}
-
-		result, err := client.Delete(docs)
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-			return nil, err
-		}
-		s.logger.Printf("[DEBUG] %v", result)
-
-		return result, nil
+		return -1, raft.ErrNotLeader
 	}
 
-	count := int32(0)
-	for _, doc := range docs {
-		// Document -> Any
-		docAny := &any.Any{}
-		err := protobuf.UnmarshalAny(doc, docAny)
+	count := 0
+	for _, id := range ids {
+		msg, err := newMessage(
+			deleteDocument,
+			id,
+		)
 		if err != nil {
-			return nil, err
+			return -1, err
 		}
 
-		c := &index.IndexCommand{
-			Type: index.IndexCommand_DELETE_DOCUMENT,
-			Data: docAny,
-		}
-
-		msg, err := proto.Marshal(c)
+		msgBytes, err := json.Marshal(msg)
 		if err != nil {
-			return nil, err
+			return -1, err
 		}
 
-		f := s.raft.Apply(msg, 10*time.Second)
+		f := s.raft.Apply(msgBytes, 10*time.Second)
 		err = f.Error()
 		if err != nil {
-			return nil, err
+			return -1, err
 		}
 
 		count++
 	}
 
-	return &index.UpdateResult{
-		Count: count,
-	}, nil
+	return count, nil
 }
 
-func (s *RaftServer) Stats() (*index.Stats, error) {
-	statsMap, err := s.fsm.Stats()
+func (s *RaftServer) GetIndexConfig() (map[string]interface{}, error) {
+	indexConfig, err := s.fsm.GetIndexConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	// map[string]interface{} -> Any
-	statsAny := &any.Any{}
-	err = protobuf.UnmarshalAny(statsMap, statsAny)
+	return indexConfig, nil
+}
+
+func (s *RaftServer) GetIndexStats() (map[string]interface{}, error) {
+	indexStats, err := s.fsm.GetIndexStats()
 	if err != nil {
 		return nil, err
-	}
-
-	indexStats := &index.Stats{
-		Stats: statsAny,
 	}
 
 	return indexStats, nil

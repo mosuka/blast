@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+### Changed
+
+## [v0.6.0] - 2019-06-19
+
+### Added
+
+- Add federated search #30
 - Add cluster manager (#48)
 - Add KVS HTTP handlers #46
 

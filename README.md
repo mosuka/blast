@@ -166,7 +166,7 @@ You can see the binary file when build successful like so:
 
 ```bash
 $ ls ./bin
-blast-indexer
+blast blastd
 ```
 
 
@@ -233,12 +233,21 @@ $ make \
 
 
 
-## Starting Blast index node
+## Starting Blast in standalone mode
 
-Running a Blast index node is easy. Start Blast data node like so:
+Running a Blast in standalone mode is easy. Start a indexer like so:
 
 ```bash
-$ ./bin/blast-indexer start --node-id=indexer1 --data-dir=/tmp/blast/indexer1 --bind-addr=:6060 --grpc-addr=:5050 --http-addr=:8080 --index-mapping-file=./example/index_mapping.json
+$ ./bin/blastd \
+    indexer \
+    --node-id=indexer1 \
+    --bind-addr=:5000 \
+    --grpc-addr=:5001 \
+    --http-addr=:5002 \
+    --data-dir=/tmp/blast/indexer1 \
+    --index-mapping-file=./example/index_mapping.json \
+    --index-type=upside_down \
+    --index-storage-type=boltdb
 ```
 
 Please refer to following document for details of index mapping:
@@ -255,15 +264,13 @@ You can now put, get, search and delete the documents via CLI.
 For document indexing, execute the following command:
 
 ```bash
-$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast-indexer index --grpc-addr=:5050 --id=enwiki_1
+$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast set document --grpc-addr=:5001 enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
 ```bash
-{
-  "count": 1
-}
+1
 ```
 
 
@@ -272,7 +279,7 @@ You can see the result in JSON format. The result of the above command is:
 Getting a document is as following:
 
 ```bash
-$ ./bin/blast-indexer get --grpc-addr=:5050 --id=enwiki_1
+$ ./bin/blast get document --grpc-addr=:5001 enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -280,7 +287,6 @@ You can see the result in JSON format. The result of the above command is:
 ```json
 {
   "_type": "enwiki",
-  "contributor": "unknown",
   "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
   "timestamp": "2018-07-04T05:41:00Z",
   "title_en": "Search engine (computing)"
@@ -293,7 +299,7 @@ You can see the result in JSON format. The result of the above command is:
 Searching documents is as like following:
 
 ```bash
-$ cat ./example/search_request.json | xargs -0 ./bin/blast-indexer search --grpc-addr=:5050
+$ cat ./example/search_request.json | xargs -0 ./bin/blast search --grpc-addr=:5001
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -351,9 +357,9 @@ You can see the result in JSON format. The result of the above command is:
   },
   "hits": [
     {
-      "index": "/tmp/blast/index1/index",
+      "index": "/tmp/blast/indexer1/index",
       "id": "enwiki_1",
-      "score": 0.09634961191421738,
+      "score": 0.09703538256409851,
       "locations": {
         "text_en": {
           "search": [
@@ -411,7 +417,6 @@ You can see the result in JSON format. The result of the above command is:
       ],
       "fields": {
         "_type": "enwiki",
-        "contributor": "unknown",
         "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
         "timestamp": "2018-07-04T05:41:00Z",
         "title_en": "Search engine (computing)"
@@ -419,20 +424,14 @@ You can see the result in JSON format. The result of the above command is:
     }
   ],
   "total_hits": 1,
-  "max_score": 0.09634961191421738,
-  "took": 362726,
+  "max_score": 0.09703538256409851,
+  "took": 201951,
   "facets": {
     "Contributor count": {
       "field": "contributor",
-      "total": 1,
-      "missing": 0,
-      "other": 0,
-      "terms": [
-        {
-          "term": "unknown",
-          "count": 1
-        }
-      ]
+      "total": 0,
+      "missing": 1,
+      "other": 0
     },
     "Timestamp range": {
       "field": "timestamp",
@@ -465,15 +464,13 @@ Please refer to following document for details of search request and result:
 Deleting a document is as following:
 
 ```bash
-$ ./bin/blast-indexer delete --grpc-addr=:5050 --id=enwiki_1
+$ ./bin/blast delete document --grpc-addr=:5001 enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
 ```bash
-{
-  "count": 1
-}
+1
 ```
 
 
@@ -482,15 +479,13 @@ You can see the result in JSON format. The result of the above command is:
 Indexing documents in bulk, run the following command:
 
 ```bash
-$ cat ./example/docs_wiki.json | xargs -0 ./bin/blast-indexer index --grpc-addr=:5050
+$ cat ./example/bulk_index_wiki.json | xargs -0 ./bin/blast set document --grpc-addr=:5001
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
 ```bash
-{
-  "count": 4
-}
+4
 ```
 
 
@@ -499,21 +494,19 @@ You can see the result in JSON format. The result of the above command is:
 Deleting documents in bulk, run the following command:
 
 ```bash
-$ cat ./example/docs_wiki.json | xargs -0 ./bin/blast-indexer delete --grpc-addr=:5050
+$ cat ./example/bulk_delete_wiki.json | xargs -0 ./bin/blast delete document --grpc-addr=:5001
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
 ```bash
-{
-  "count": 4
-}
+4
 ```
 
 
 ## Using HTTP REST API
 
-Also you can do above commands via HTTP REST API that listened port 8080.
+Also you can do above commands via HTTP REST API that listened port 5002.
 
 
 ### Indexing a document via HTTP REST API
@@ -521,7 +514,7 @@ Also you can do above commands via HTTP REST API that listened port 8080.
 Indexing a document via HTTP is as following:
 
 ```bash
-$ curl -s -X PUT 'http://127.0.0.1:8080/documents/enwiki_1' -d @./example/doc_enwiki_1.json
+$ curl -X PUT 'http://127.0.0.1:5002/documents/enwiki_1' -d @./example/doc_enwiki_1.json
 ```
 
 
@@ -530,7 +523,7 @@ $ curl -s -X PUT 'http://127.0.0.1:8080/documents/enwiki_1' -d @./example/doc_en
 Getting a document via HTTP is as following:
 
 ```bash
-$ curl -s -X GET 'http://127.0.0.1:8080/documents/enwiki_1'
+$ curl -X GET 'http://127.0.0.1:5002/documents/enwiki_1'
 ```
 
 
@@ -539,7 +532,7 @@ $ curl -s -X GET 'http://127.0.0.1:8080/documents/enwiki_1'
 Searching documents via HTTP is as following:
 
 ```bash
-$ curl -X POST 'http://127.0.0.1:8080/search' -d @./example/search_request.json
+$ curl -X POST 'http://127.0.0.1:5002/search' -d @./example/search_request.json
 ```
 
 
@@ -548,7 +541,7 @@ $ curl -X POST 'http://127.0.0.1:8080/search' -d @./example/search_request.json
 Deleting a document via HTTP is as following:
 
 ```bash
-$ curl -X DELETE 'http://127.0.0.1:8080/documents/enwiki_1'
+$ curl -X DELETE 'http://127.0.0.1:5002/documents/enwiki_1'
 ```
 
 
@@ -557,7 +550,7 @@ $ curl -X DELETE 'http://127.0.0.1:8080/documents/enwiki_1'
 Indexing documents in bulk via HTTP is as following:
 
 ```bash
-$ curl -s -X PUT 'http://127.0.0.1:8080/documents' -d @./example/docs_wiki.json
+$ curl -X PUT 'http://127.0.0.1:5002/documents' -d @./example/bulk_index_wiki.json
 ```
 
 
@@ -566,56 +559,92 @@ $ curl -s -X PUT 'http://127.0.0.1:8080/documents' -d @./example/docs_wiki.json
 Deleting documents in bulk via HTTP is as following:
 
 ```bash
-$ curl -X DELETE 'http://127.0.0.1:8080/documents' -d @./example/docs_wiki.json
+$ curl -X DELETE 'http://127.0.0.1:5002/documents' -d @./example/bulk_delete_wiki.json
 ```
 
 
-## Bringing up a cluster
+## Starting Blast in cluster mode
 
-Blast is easy to bring up the cluster. Blast data node is already running, but that is not fault tolerant. If you need to increase the fault tolerance, bring up 2 more data nodes like so:
+Blast can easily bring up a cluster. Running a Blast in standalone is not fault tolerant. If you need to improve fault tolerance, start two more indexers as follows:
+
+First of all, start a indexer in standalone.
 
 ```bash
-$ ./bin/blast-indexer start --node-id=indexer2 --data-dir=/tmp/blast/indexer2 --bind-addr=:6061 --grpc-addr=:5051 --http-addr=:8081 --index-mapping-file=./example/index_mapping.json --join-addr=:5050
-$ ./bin/blast-indexer start --node-id=indexer3 --data-dir=/tmp/blast/indexer3 --bind-addr=:6062 --grpc-addr=:5052 --http-addr=:8082 --index-mapping-file=./example/index_mapping.json --join-addr=:5050
+$ ./bin/blastd \
+    indexer \
+    --node-id=indexer1 \
+    --bind-addr=:5000 \
+    --grpc-addr=:5001 \
+    --http-addr=:5002 \
+    --data-dir=/tmp/blast/indexer1 \
+    --index-mapping-file=./example/index_mapping.json \
+    --index-type=upside_down \
+    --index-storage-type=boltdb
+```
+
+Then, start two more indexers.
+
+```bash
+$ ./bin/blastd \
+    indexer \
+    --peer-addr=:5001 \
+    --node-id=indexer2 \
+    --bind-addr=:5010 \
+    --grpc-addr=:5011 \
+    --http-addr=:5012 \
+    --data-dir=/tmp/blast/indexer2
+
+$ ./bin/blastd \
+    indexer \
+    --peer-addr=:5001 \
+    --node-id=indexer3 \
+    --bind-addr=:5020 \
+    --grpc-addr=:5021 \
+    --http-addr=:5022 \
+    --data-dir=/tmp/blast/indexer3
 ```
 
 _Above example shows each Blast node running on the same host, so each node must listen on different ports. This would not be necessary if each node ran on a different host._
 
-This instructs each new node to join an existing node, each node recognizes the joining clusters when started.
-So you have a 3-node cluster. That way you can tolerate the failure of 1 node. You can check the peers with the following command:
+This instructs each new node to join an existing node, specifying `--peer-addr=:5001`. Each node recognizes the joining clusters when started.
+So you have a 3-node cluster. That way you can tolerate the failure of 1 node. You can check the peers in the cluster with the following command:
+
 
 ```bash
-$ ./bin/blast-indexer cluster --grpc-addr=:5050
+$ ./bin/blast get cluster --grpc-addr=:5001
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
 ```json
 {
-  "nodes": [
-    {
-      "id": "index1",
-      "bind_addr": ":6060",
-      "grpc_addr": ":5050",
-      "http_addr": ":8080",
-      "leader": true,
-      "data_dir": "/tmp/blast/index1"
-    },
-    {
-      "id": "index2",
-      "bind_addr": ":6061",
+  "indexer1": {
+    "metadata": {
+      "bind_addr": ":5050",
+      "data_dir": "/tmp/blast/indexer1",
       "grpc_addr": ":5051",
-      "http_addr": ":8081",
-      "data_dir": "/tmp/blast/index2"
+      "http_addr": ":5052"
     },
-    {
-      "id": "index3",
-      "bind_addr": ":6062",
-      "grpc_addr": ":5052",
-      "http_addr": ":8082",
-      "data_dir": "/tmp/blast/index3"
-    }
-  ]
+    "state": "Leader"
+  },
+  "indexer2": {
+    "metadata": {
+      "bind_addr": ":5060",
+      "data_dir": "/tmp/blast/indexer2",
+      "grpc_addr": ":5061",
+      "http_addr": ":5062"
+    },
+    "state": "Follower"
+  },
+  "indexer3": {
+    "metadata": {
+      "bind_addr": ":5070",
+      "data_dir": "/tmp/blast/indexer3",
+      "grpc_addr": ":5071",
+      "http_addr": ":5072"
+    },
+    "state": "Follower"
+  }
 }
 ```
 
@@ -624,13 +653,13 @@ Recommend 3 or more odd number of nodes in the cluster. In failure scenarios, da
 The following command indexes documents to any node in the cluster:
 
 ```bash
-$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast-indexer index --grpc-addr=:5050 enwiki_1
+$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast set document --grpc-addr=:5001 enwiki_1
 ```
 
 So, you can get the document from the node specified by the above command as follows:
 
 ```bash
-$ ./bin/blast-indexer get --grpc-addr=:5050 enwiki_1
+$ ./bin/blast get document --grpc-addr=:5001 enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -648,8 +677,8 @@ You can see the result in JSON format. The result of the above command is:
 You can also get the same document from other nodes in the cluster as follows:
 
 ```bash
-$ ./bin/blast-indexer get --grpc-addr=:5051 enwiki_1
-$ ./bin/blast-indexer get --grpc-addr=:5052 enwiki_1
+$ ./bin/blast get document --grpc-addr=:5011 enwiki_1
+$ ./bin/blast get document --grpc-addr=:5021 enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -663,6 +692,144 @@ You can see the result in JSON format. The result of the above command is:
   "title_en": "Search engine (computing)"
 }
 ```
+
+
+## Starting Blast in federated mode (experimental)
+
+Running a Blast in cluster mode allows you to replicate the index among indexers in a cluster to improve fault tolerance.  
+However, as the index grows, performance degradation can become an issue. Therefore, instead of providing a large single physical index, it is better to distribute indices across multiple indexers.  
+Blast provides a federated mode to enable distributed search and indexing.
+
+Blast provides the following type of node for federation:
+- manager: Manager manage common index mappings to index across multiple indexers. It also manages information and status of clusters that participate in the federation.
+- dispatcher: Dispatcher is responsible for distributed search or indexing of each indexer. In the case of a index request, send document to each cluster based on the document ID. And in the case of a search request, the same query is sent to each cluster, then the search results are merged and returned to the client.
+
+### Bring up the manager cluster.
+
+Manager can also bring up a cluster like an indexer. Specify a common index mapping for federation at startup.
+
+```bash
+$ ./bin/blastd \
+    manager \
+    --node-id=manager1 \
+    --bind-addr=:15000 \
+    --grpc-addr=:15001 \
+    --http-addr=:15002 \
+    --data-dir=/tmp/blast/manager1 \
+    --index-mapping-file=./example/index_mapping.json \
+    --index-type=upside_down \
+    --index-storage-type=boltdb
+
+$ ./bin/blastd \
+    manager \
+    --peer-addr=:15001 \
+    --node-id=manager2 \
+    --bind-addr=:15010 \
+    --grpc-addr=:15011 \
+    --http-addr=:15012 \
+    --data-dir=/tmp/blast/manager2
+
+$ ./bin/blastd \
+    manager \
+    --peer-addr=:15001 \
+    --node-id=manager3 \
+    --bind-addr=:15020 \
+    --grpc-addr=:15021 \
+    --http-addr=:15022 \
+    --data-dir=/tmp/blast/manager3
+```
+
+### Bring up the indexer cluster.
+
+Federated mode differs from cluster mode that it specifies the manager in start up to bring up indexer cluster.  
+The following example starts two 3-node clusters.
+
+```bash
+$ ./bin/blastd \
+    indexer \
+    --manager-addr=:15001 \
+    --cluster-id=cluster1 \
+    --node-id=indexer1 \
+    --bind-addr=:5000 \
+    --grpc-addr=:5001 \
+    --http-addr=:5002 \
+    --data-dir=/tmp/blast/indexer1
+
+$ ./bin/blastd \
+    indexer \
+    --manager-addr=:15001 \
+    --cluster-id=cluster1 \
+    --node-id=indexer2 \
+    --bind-addr=:5010 \
+    --grpc-addr=:5011 \
+    --http-addr=:5012 \
+    --data-dir=/tmp/blast/indexer2
+
+$ ./bin/blastd \
+    indexer \
+    --manager-addr=:15001 \
+    --cluster-id=cluster1 \
+    --node-id=indexer3 \
+    --bind-addr=:5020 \
+    --grpc-addr=:5021 \
+    --http-addr=:5022 \
+    --data-dir=/tmp/blast/indexer3
+
+$ ./bin/blastd \
+    indexer \
+    --manager-addr=:15001 \
+    --cluster-id=cluster2 \
+    --node-id=indexer4 \
+    --bind-addr=:5030 \
+    --grpc-addr=:5031 \
+    --http-addr=:5032 \
+    --data-dir=/tmp/blast/indexer4
+
+$ ./bin/blastd \
+    indexer \
+    --manager-addr=:15001 \
+    --cluster-id=cluster2 \
+    --node-id=indexer5 \
+    --bind-addr=:5040 \
+    --grpc-addr=:5041 \
+    --http-addr=:5042 \
+    --data-dir=/tmp/blast/indexer5
+
+$ ./bin/blastd \
+    indexer \
+    --manager-addr=:15001 \
+    --cluster-id=cluster2 \
+    --node-id=indexer6 \
+    --bind-addr=:5050 \
+    --grpc-addr=:5051 \
+    --http-addr=:5052 \
+    --data-dir=/tmp/blast/indexer6
+```
+
+### Start up the dispatcher.
+
+Finally, start the dispatcher with a manager that manages the target federation so that it can perform distributed search and indexing.
+
+```bash
+$ ./bin/blastd \
+    dispatcher \
+    --manager-addr=:15001 \
+    --grpc-addr=:25001 \
+    --http-addr=:25002
+```
+
+```bash
+$ cat ./example/bulk_index_wiki.json | xargs -0 ./bin/blast set document --grpc-addr=:25001
+```
+
+```bash
+$ cat ./example/search_request.json | xargs -0 ./bin/blast search --grpc-addr=:25001
+```
+
+```bash
+$ cat ./example/bulk_delete_wiki.json | xargs -0 ./bin/blast delete document --grpc-addr=:25001
+```
+
 
 
 ## Blast on Docker
@@ -695,20 +862,20 @@ $ docker pull mosuka/blast:latest
 ```
 
 
-### Running Blast index node on Docker
+### Running Indexer on Docker
 
 Running a Blast data node on Docker. Start Blast data node like so:
 
 ```bash
 $ docker run --rm --name blast-indexer1 \
-    -p 5050:5050 \
     -p 6060:6060 \
+    -p 7070:7070 \
     -p 8080:8080 \
     -v $(pwd)/example:/opt/blast/example \
     mosuka/blast:latest blast-indexer start \
       --node-id=blast-indexer1 \
       --bind-addr=:6060 \
-      --grpc-addr=:5050 \
+      --grpc-addr=:7070 \
       --http-addr=:8080 \
       --data-dir=/tmp/blast/indexer1 \
       --index-mapping-file=/opt/blast/example/index_mapping.json \
@@ -718,7 +885,7 @@ $ docker run --rm --name blast-indexer1 \
 You can execute the command in docker container as follows:
 
 ```bash
-$ docker exec -it blast-indexer1 blast-indexer node --grpc-addr=:5050
+$ docker exec -it blast-indexer1 blast-indexer node --grpc-addr=:7070
 ```
 
 
@@ -752,7 +919,7 @@ $ ./WikiExtractor.py -o ~/tmp/enwiki --json ~/tmp/enwiki-20190101-pages-articles
 
 ### Indexing wikipedia dump
 
-```bash
+```shell
 $ for FILE in $(find ~/tmp/enwiki -type f -name '*' | sort)
   do
     echo "Indexing ${FILE}"

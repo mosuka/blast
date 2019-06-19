@@ -22,7 +22,7 @@ import (
 
 var (
 	namespace = "blast"
-	subsystem = "index"
+	subsystem = "indexer"
 
 	DurationSeconds = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{

@@ -8,12 +8,14 @@
     "*"
   ],
   "sort": [
-    "-_score"
+    "-_score",
+    "_id",
+    "-timestamp"
   ],
   "facets": {
-    "Contributor count": {
+    "Type count": {
       "size": 10,
-      "field": "contributor"
+      "field": "_type"
     },
     "Timestamp range": {
       "size": 10,

@@ -22,7 +22,7 @@ import (
 
 var (
 	namespace = "blast"
-	subsystem = "federation"
+	subsystem = "manager"
 
 	DurationSeconds = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
