@@ -67,7 +67,7 @@ COPY --from=0 /go/src/github.com/blevesearch/cld2/cld2/internal/*.so /usr/local/
 COPY --from=0 /go/src/github.com/mosuka/blast/bin/* /usr/bin/
 COPY --from=0 /go/src/github.com/mosuka/blast/docker-entrypoint.sh /usr/bin/
 
-EXPOSE 5050 6060 8080
+EXPOSE 5000 5001 5002
 
 ENTRYPOINT [ "/usr/bin/docker-entrypoint.sh" ]
-CMD        [ "blast-indexer", "--help" ]
+CMD        [ "blastd", "--help" ]

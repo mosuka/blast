@@ -874,15 +874,15 @@ Running a Blast data node on Docker. Start Blast data node like so:
 
 ```bash
 $ docker run --rm --name blast-indexer1 \
-    -p 6060:6060 \
-    -p 7070:7070 \
-    -p 8080:8080 \
+    -p 5000:5000 \
+    -p 5001:5001 \
+    -p 5002:5002 \
     -v $(pwd)/example:/opt/blast/example \
-    mosuka/blast:latest blast-indexer start \
+    mosuka/blast:latest blastd indexer \
       --node-id=blast-indexer1 \
-      --bind-addr=:6060 \
-      --grpc-addr=:7070 \
-      --http-addr=:8080 \
+      --bind-addr=:5000 \
+      --grpc-addr=:5001 \
+      --http-addr=:5002 \
       --data-dir=/tmp/blast/indexer1 \
       --index-mapping-file=/opt/blast/example/index_mapping.json \
       --index-storage-type=leveldb
