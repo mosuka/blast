@@ -26,6 +26,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/blevesearch/bleve/search"
+
+	"github.com/mosuka/blast/sortutils"
+
 	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/hashicorp/raft"
@@ -523,19 +527,27 @@ func (s *GRPCService) Search(ctx context.Context, req *protobuf.SearchRequest) (
 		err          error
 	}
 
-	searchRequest, err := protobuf.MarshalAny(req.SearchRequest)
+	// create response channel
+	respChan := make(chan respVal, len(clusterIds))
+
+	// create search request
+	ins, err := protobuf.MarshalAny(req.SearchRequest)
 	if err != nil {
 		return resp, err
 	}
+	searchRequest := ins.(*bleve.SearchRequest)
 
-	// create response channel
-	respChan := make(chan respVal, len(clusterIds))
+	// change to distributed search request
+	from := searchRequest.From
+	size := searchRequest.Size
+	searchRequest.From = 0
+	searchRequest.Size = from + size
 
 	wg := &sync.WaitGroup{}
 	for clusterId, client := range indexerClients {
 		wg.Add(1)
 		go func(clusterId string, client *grpc.Client, searchRequest *bleve.SearchRequest, respChan chan respVal) {
-			// index documents
+			s.logger.Printf("[DEBUG] search %s", client.GetAddress())
 			searchResult, err := client.Search(searchRequest)
 			wg.Done()
 			respChan <- respVal{
@@ -543,12 +555,16 @@ func (s *GRPCService) Search(ctx context.Context, req *protobuf.SearchRequest) (
 				searchResult: searchResult,
 				err:          err,
 			}
-		}(clusterId, client, searchRequest.(*bleve.SearchRequest), respChan)
+		}(clusterId, client, searchRequest, respChan)
 	}
 	wg.Wait()
 
 	// close response channel
 	close(respChan)
+
+	// revert to original search request
+	searchRequest.From = from
+	searchRequest.Size = size
 
 	// summarize responses
 	var searchResult *bleve.SearchResult
@@ -564,6 +580,43 @@ func (s *GRPCService) Search(ctx context.Context, req *protobuf.SearchRequest) (
 			s.logger.Printf("[ERR] %s %v", r.clusterId, r.err)
 		}
 	}
+
+	// handle case where no results were successful
+	if searchResult == nil {
+		searchResult = &bleve.SearchResult{
+			Status: &bleve.SearchStatus{
+				Errors: make(map[string]error),
+			},
+		}
+	}
+
+	// sort all hits with the requested order
+	if len(searchRequest.Sort) > 0 {
+		sorter := sortutils.NewMultiSearchHitSorter(searchRequest.Sort, searchResult.Hits)
+		sort.Sort(sorter)
+	}
+
+	// now skip over the correct From
+	if searchRequest.From > 0 && len(searchResult.Hits) > searchRequest.From {
+		searchResult.Hits = searchResult.Hits[searchRequest.From:]
+	} else if searchRequest.From > 0 {
+		searchResult.Hits = search.DocumentMatchCollection{}
+	}
+
+	// now trim to the correct size
+	if searchRequest.Size > 0 && len(searchResult.Hits) > searchRequest.Size {
+		searchResult.Hits = searchResult.Hits[0:searchRequest.Size]
+	}
+
+	// fix up facets
+	for name, fr := range searchRequest.Facets {
+		searchResult.Facets.Fixup(name, fr.Size)
+	}
+
+	// fix up original request
+	searchResult.Request = searchRequest
+	searchDuration := time.Since(start)
+	searchResult.Took = searchDuration
 
 	searchResultAny := &any.Any{}
 	err = protobuf.UnmarshalAny(searchResult, searchResultAny)
