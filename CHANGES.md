@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Update Dockerfile #62
+
 ## [v0.6.0] - 2019-06-19
 
 ### Added
