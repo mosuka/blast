@@ -514,7 +514,7 @@ Also you can do above commands via HTTP REST API that listened port 5002.
 Indexing a document via HTTP is as following:
 
 ```bash
-$ curl -s -X PUT 'http://127.0.0.1:5002/documents/enwiki_1' -d @./example/doc_enwiki_1.json
+$ curl -X PUT 'http://127.0.0.1:5002/documents/enwiki_1' -d @./example/doc_enwiki_1.json
 ```
 
 
@@ -523,7 +523,7 @@ $ curl -s -X PUT 'http://127.0.0.1:5002/documents/enwiki_1' -d @./example/doc_en
 Getting a document via HTTP is as following:
 
 ```bash
-$ curl -s -X GET 'http://127.0.0.1:5002/documents/enwiki_1'
+$ curl -X GET 'http://127.0.0.1:5002/documents/enwiki_1'
 ```
 
 
@@ -550,7 +550,7 @@ $ curl -X DELETE 'http://127.0.0.1:5002/documents/enwiki_1'
 Indexing documents in bulk via HTTP is as following:
 
 ```bash
-$ curl -s -X PUT 'http://127.0.0.1:5002/documents' -d @./example/bulk_index_wiki.json
+$ curl -X PUT 'http://127.0.0.1:5002/documents' -d @./example/bulk_index_wiki.json
 ```
 
 

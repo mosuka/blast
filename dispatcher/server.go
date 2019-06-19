@@ -19,6 +19,7 @@ import (
 
 	accesslog "github.com/mash/go-accesslog"
 	"github.com/mosuka/blast/grpc"
+	"github.com/mosuka/blast/http"
 )
 
 type Server struct {
@@ -30,7 +31,8 @@ type Server struct {
 
 	grpcService *GRPCService
 	grpcServer  *grpc.Server
-	httpServer  *HTTPServer
+	httpRouter  *http.Router
+	httpServer  *http.Server
 
 	logger     *log.Logger
 	httpLogger accesslog.Logger
@@ -67,8 +69,15 @@ func (s *Server) Start() {
 		return
 	}
 
+	// create HTTP router
+	s.httpRouter, err = NewRouter(s.grpcAddr, s.logger)
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return
+	}
+
 	// create HTTP server
-	s.httpServer, err = NewHTTPServer(s.httpAddr, s.grpcAddr, s.logger, s.httpLogger)
+	s.httpServer, err = http.NewServer(s.httpAddr, s.httpRouter, s.logger, s.httpLogger)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return
@@ -102,11 +111,15 @@ func (s *Server) Start() {
 }
 
 func (s *Server) Stop() {
-	s.logger.Printf("[INFO] stop coordinator")
-
 	// stop HTTP server
 	s.logger.Printf("[INFO] stop HTTP server")
 	err := s.httpServer.Stop()
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+	}
+
+	// stop HTTP router
+	err = s.httpRouter.Close()
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 	}

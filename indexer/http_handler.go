@@ -27,7 +27,28 @@ import (
 	"github.com/mosuka/blast/grpc"
 	blasthttp "github.com/mosuka/blast/http"
 	"github.com/mosuka/blast/version"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
+
+func NewRouter(grpcAddr string, logger *log.Logger) (*blasthttp.Router, error) {
+	router, err := blasthttp.NewRouter(grpcAddr, logger)
+	if err != nil {
+		return nil, err
+	}
+
+	router.StrictSlash(true)
+
+	router.Handle("/", NewRootHandler(logger)).Methods("GET")
+	router.Handle("/documents", NewSetDocumentHandler(router.GRPCClient, logger)).Methods("PUT")
+	router.Handle("/documents", NewDeleteDocumentHandler(router.GRPCClient, logger)).Methods("DELETE")
+	router.Handle("/documents/{id}", NewGetDocumentHandler(router.GRPCClient, logger)).Methods("GET")
+	router.Handle("/documents/{id}", NewSetDocumentHandler(router.GRPCClient, logger)).Methods("PUT")
+	router.Handle("/documents/{id}", NewDeleteDocumentHandler(router.GRPCClient, logger)).Methods("DELETE")
+	router.Handle("/search", NewSearchHandler(router.GRPCClient, logger)).Methods("POST")
+	router.Handle("/metrics", promhttp.Handler()).Methods("GET")
+
+	return router, nil
+}
 
 type RootHandler struct {
 	logger *log.Logger
@@ -64,7 +85,7 @@ type GetHandler struct {
 	logger *log.Logger
 }
 
-func NewGetHandler(client *grpc.Client, logger *log.Logger) *GetHandler {
+func NewGetDocumentHandler(client *grpc.Client, logger *log.Logger) *GetHandler {
 	return &GetHandler{
 		client: client,
 		logger: logger,
@@ -130,7 +151,7 @@ type IndexHandler struct {
 	logger *log.Logger
 }
 
-func NewIndexHandler(client *grpc.Client, logger *log.Logger) *IndexHandler {
+func NewSetDocumentHandler(client *grpc.Client, logger *log.Logger) *IndexHandler {
 	return &IndexHandler{
 		client: client,
 		logger: logger,
@@ -256,7 +277,7 @@ type DeleteHandler struct {
 	logger *log.Logger
 }
 
-func NewDeleteHandler(client *grpc.Client, logger *log.Logger) *DeleteHandler {
+func NewDeleteDocumentHandler(client *grpc.Client, logger *log.Logger) *DeleteHandler {
 	return &DeleteHandler{
 		client: client,
 		logger: logger,

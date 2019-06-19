@@ -21,6 +21,7 @@ import (
 	accesslog "github.com/mash/go-accesslog"
 	"github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/grpc"
+	"github.com/mosuka/blast/http"
 	"github.com/mosuka/blast/protobuf"
 )
 
@@ -38,7 +39,8 @@ type Server struct {
 	raftServer  *RaftServer
 	grpcService *GRPCService
 	grpcServer  *grpc.Server
-	httpServer  *HTTPServer
+	httpRouter  *http.Router
+	httpServer  *http.Server
 
 	logger     *log.Logger
 	httpLogger accesslog.Logger
@@ -192,8 +194,15 @@ func (s *Server) Start() {
 		return
 	}
 
+	// create HTTP router
+	s.httpRouter, err = NewRouter(s.metadata["grpc_addr"].(string), s.logger)
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+		return
+	}
+
 	// create HTTP server
-	s.httpServer, err = NewHTTPServer(s.metadata["http_addr"].(string), s.metadata["grpc_addr"].(string), s.logger, s.httpLogger)
+	s.httpServer, err = http.NewServer(s.metadata["http_addr"].(string), s.httpRouter, s.logger, s.httpLogger)
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 		return
@@ -259,6 +268,12 @@ func (s *Server) Stop() {
 	// stop HTTP server
 	s.logger.Printf("[INFO] stop HTTP server")
 	err := s.httpServer.Stop()
+	if err != nil {
+		s.logger.Printf("[ERR] %v", err)
+	}
+
+	// stop HTTP router
+	err = s.httpRouter.Close()
 	if err != nil {
 		s.logger.Printf("[ERR] %v", err)
 	}

@@ -29,45 +29,24 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-type Router struct {
-	*mux.Router
-
-	grpcClient *grpc.Client
-}
-
-func NewRouter(grpcAddr string, logger *log.Logger) (*Router, error) {
-	grpcClient, err := grpc.NewClient(grpcAddr)
+func NewRouter(grpcAddr string, logger *log.Logger) (*blasthttp.Router, error) {
+	router, err := blasthttp.NewRouter(grpcAddr, logger)
 	if err != nil {
 		return nil, err
-	}
-
-	router := &Router{
-		grpcClient: grpcClient,
 	}
 
 	router.StrictSlash(true)
 
 	router.Handle("/", NewRootHandler(logger)).Methods("GET")
-	router.Handle("/configs", NewPutHandler(grpcClient, logger)).Methods("PUT")
-	router.Handle("/configs", NewGetHandler(grpcClient, logger)).Methods("GET")
-	router.Handle("/configs", NewDeleteHandler(grpcClient, logger)).Methods("DELETE")
-	router.Handle("/configs/{path:.*}", NewPutHandler(grpcClient, logger)).Methods("PUT")
-	router.Handle("/configs/{path:.*}", NewGetHandler(grpcClient, logger)).Methods("GET")
-	router.Handle("/configs/{path:.*}", NewDeleteHandler(grpcClient, logger)).Methods("DELETE")
+	router.Handle("/configs", NewPutHandler(router.GRPCClient, logger)).Methods("PUT")
+	router.Handle("/configs", NewGetHandler(router.GRPCClient, logger)).Methods("GET")
+	router.Handle("/configs", NewDeleteHandler(router.GRPCClient, logger)).Methods("DELETE")
+	router.Handle("/configs/{path:.*}", NewPutHandler(router.GRPCClient, logger)).Methods("PUT")
+	router.Handle("/configs/{path:.*}", NewGetHandler(router.GRPCClient, logger)).Methods("GET")
+	router.Handle("/configs/{path:.*}", NewDeleteHandler(router.GRPCClient, logger)).Methods("DELETE")
 	router.Handle("/metrics", promhttp.Handler()).Methods("GET")
 
 	return router, nil
-}
-
-func (r *Router) Close() error {
-	r.grpcClient.Cancel()
-
-	err := r.grpcClient.Close()
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 type RootHandler struct {

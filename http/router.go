@@ -16,51 +16,34 @@ package http
 
 import (
 	"log"
-	"net"
-	"net/http"
 
-	accesslog "github.com/mash/go-accesslog"
+	"github.com/gorilla/mux"
+	"github.com/mosuka/blast/grpc"
 )
 
-type Server struct {
-	listener net.Listener
-	router   *Router
+type Router struct {
+	mux.Router
 
+	GRPCClient *grpc.Client
 	logger     *log.Logger
-	httpLogger accesslog.Logger
 }
 
-func NewServer(httpAddr string, router *Router, logger *log.Logger, httpLogger accesslog.Logger) (*Server, error) {
-	listener, err := net.Listen("tcp", httpAddr)
+func NewRouter(grpcAddr string, logger *log.Logger) (*Router, error) {
+	grpcClient, err := grpc.NewClient(grpcAddr)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Server{
-		listener:   listener,
-		router:     router,
+	return &Router{
+		GRPCClient: grpcClient,
 		logger:     logger,
-		httpLogger: httpLogger,
 	}, nil
 }
 
-func (s *Server) Start() error {
-	err := http.Serve(
-		s.listener,
-		accesslog.NewLoggingHandler(
-			s.router,
-			s.httpLogger,
-		),
-	)
-	if err != nil {
-		return err
-	}
+func (r *Router) Close() error {
+	r.GRPCClient.Cancel()
 
-	return nil
-}
-
-func (s *Server) Stop() error {
-	err := s.listener.Close()
+	err := r.GRPCClient.Close()
 	if err != nil {
 		return err
 	}
