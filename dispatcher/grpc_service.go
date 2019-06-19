@@ -26,15 +26,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/blevesearch/bleve/search"
-
-	"github.com/mosuka/blast/sortutils"
-
 	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/search"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/hashicorp/raft"
 	"github.com/mosuka/blast/grpc"
 	"github.com/mosuka/blast/protobuf"
+	"github.com/mosuka/blast/sortutils"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
