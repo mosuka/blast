@@ -59,7 +59,9 @@ $ sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 90
 $ sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 90
 
 $ export GOPATH=${HOME}/go
-$ go get -u -v github.com/blevesearch/cld2
+$ mkdir -p ${GOPATH}/src/github.com/blevesearch
+$ cd ${GOPATH}/src/github.com/blevesearch
+$ git clone https://github.com/blevesearch/cld2.git
 $ cd ${GOPATH}/src/github.com/blevesearch/cld2
 $ git clone https://github.com/CLD2Owners/cld2.git
 $ cd cld2/internal
