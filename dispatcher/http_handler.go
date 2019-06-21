@@ -235,7 +235,7 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// index documents in bulk
-	result, err := h.client.IndexDocument(docs)
+	count, err := h.client.IndexDocument(docs)
 	if err != nil {
 		httpStatus = http.StatusInternalServerError
 
@@ -252,7 +252,11 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	content, err = json.MarshalIndent(result, "", "  ")
+	// create JSON content
+	msgMap := map[string]interface{}{
+		"count": count,
+	}
+	content, err = json.MarshalIndent(msgMap, "", "  ")
 	if err != nil {
 		httpStatus = http.StatusInternalServerError
 
@@ -338,7 +342,7 @@ func (h *DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// delete documents in bulk
-	result, err := h.client.DeleteDocument(ids)
+	count, err := h.client.DeleteDocument(ids)
 	if err != nil {
 		httpStatus = http.StatusInternalServerError
 
@@ -355,7 +359,11 @@ func (h *DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	content, err = json.MarshalIndent(result, "", "  ")
+	// create JSON content
+	msgMap := map[string]interface{}{
+		"count": count,
+	}
+	content, err = json.MarshalIndent(msgMap, "", "  ")
 	if err != nil {
 		httpStatus = http.StatusInternalServerError
 
