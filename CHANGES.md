@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Add GEO search example #65
+
 ### Changed
 
 ## [v0.6.1] - 2019-06-21
