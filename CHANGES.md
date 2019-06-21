@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Fix HTTP response into JSON format #64
 - Update Dockerfile #62
 
 ## [v0.6.0] - 2019-06-19
