@@ -249,7 +249,7 @@ $ ./bin/blastd \
     --grpc-addr=:5001 \
     --http-addr=:5002 \
     --data-dir=/tmp/blast/indexer1 \
-    --index-mapping-file=./example/index_mapping.json \
+    --index-mapping-file=./example/wiki_index_mapping.json \
     --index-type=upside_down \
     --index-storage-type=boltdb
 ```
@@ -268,7 +268,7 @@ You can now put, get, search and delete the documents via CLI.
 For document indexing, execute the following command:
 
 ```bash
-$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast set document --grpc-addr=:5001 enwiki_1
+$ cat ./example/wiki_doc_enwiki_1.json | xargs -0 ./bin/blast set document --grpc-addr=:5001 enwiki_1
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -303,7 +303,7 @@ You can see the result in JSON format. The result of the above command is:
 Searching documents is as like following:
 
 ```bash
-$ cat ./example/search_request.json | xargs -0 ./bin/blast search --grpc-addr=:5001
+$ cat ./example/wiki_search_request.json | xargs -0 ./bin/blast search --grpc-addr=:5001
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -483,7 +483,7 @@ You can see the result in JSON format. The result of the above command is:
 Indexing documents in bulk, run the following command:
 
 ```bash
-$ cat ./example/bulk_index_wiki.json | xargs -0 ./bin/blast set document --grpc-addr=:5001
+$ cat ./example/wiki_bulk_index.json | xargs -0 ./bin/blast set document --grpc-addr=:5001
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -498,7 +498,7 @@ You can see the result in JSON format. The result of the above command is:
 Deleting documents in bulk, run the following command:
 
 ```bash
-$ cat ./example/bulk_delete_wiki.json | xargs -0 ./bin/blast delete document --grpc-addr=:5001
+$ cat ./example/wiki_bulk_delete.json | xargs -0 ./bin/blast delete document --grpc-addr=:5001
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -518,7 +518,7 @@ Also you can do above commands via HTTP REST API that listened port 5002.
 Indexing a document via HTTP is as following:
 
 ```bash
-$ curl -X PUT 'http://127.0.0.1:5002/documents/enwiki_1' -d @./example/doc_enwiki_1.json
+$ curl -X PUT 'http://127.0.0.1:5002/documents/enwiki_1' -d @./example/wiki_doc_enwiki_1.json
 ```
 
 
@@ -536,7 +536,7 @@ $ curl -X GET 'http://127.0.0.1:5002/documents/enwiki_1'
 Searching documents via HTTP is as following:
 
 ```bash
-$ curl -X POST 'http://127.0.0.1:5002/search' -d @./example/search_request.json
+$ curl -X POST 'http://127.0.0.1:5002/search' -d @./example/wiki_search_request.json
 ```
 
 
@@ -554,7 +554,7 @@ $ curl -X DELETE 'http://127.0.0.1:5002/documents/enwiki_1'
 Indexing documents in bulk via HTTP is as following:
 
 ```bash
-$ curl -X PUT 'http://127.0.0.1:5002/documents' -d @./example/bulk_index_wiki.json
+$ curl -X PUT 'http://127.0.0.1:5002/documents' -d @./example/wiki_bulk_index.json
 ```
 
 
@@ -563,7 +563,7 @@ $ curl -X PUT 'http://127.0.0.1:5002/documents' -d @./example/bulk_index_wiki.js
 Deleting documents in bulk via HTTP is as following:
 
 ```bash
-$ curl -X DELETE 'http://127.0.0.1:5002/documents' -d @./example/bulk_delete_wiki.json
+$ curl -X DELETE 'http://127.0.0.1:5002/documents' -d @./example/wiki_bulk_delete.json
 ```
 
 
@@ -583,7 +583,7 @@ $ ./bin/blastd \
     --grpc-addr=:5001 \
     --http-addr=:5002 \
     --data-dir=/tmp/blast/indexer1 \
-    --index-mapping-file=./example/index_mapping.json \
+    --index-mapping-file=./example/wiki_index_mapping.json \
     --index-type=upside_down \
     --index-storage-type=boltdb
 ```
@@ -659,7 +659,7 @@ Recommend 3 or more odd number of nodes in the cluster. In failure scenarios, da
 The following command indexes documents to any node in the cluster:
 
 ```bash
-$ cat ./example/doc_enwiki_1.json | xargs -0 ./bin/blast set document --grpc-addr=:5001 enwiki_1
+$ cat ./example/wiki_doc_enwiki_1.json | xargs -0 ./bin/blast set document --grpc-addr=:5001 enwiki_1
 ```
 
 So, you can get the document from the node specified by the above command as follows:
@@ -724,7 +724,7 @@ $ ./bin/blastd \
     --grpc-addr=:15001 \
     --http-addr=:15002 \
     --data-dir=/tmp/blast/manager1 \
-    --index-mapping-file=./example/index_mapping.json \
+    --index-mapping-file=./example/wiki_index_mapping.json \
     --index-type=upside_down \
     --index-storage-type=boltdb
 
@@ -827,15 +827,15 @@ $ ./bin/blastd \
 ```
 
 ```bash
-$ cat ./example/bulk_index_wiki.json | xargs -0 ./bin/blast set document --grpc-addr=:25001
+$ cat ./example/wiki_bulk_index.json | xargs -0 ./bin/blast set document --grpc-addr=:25001
 ```
 
 ```bash
-$ cat ./example/search_request.json | xargs -0 ./bin/blast search --grpc-addr=:25001
+$ cat ./example/wiki_search_request.json | xargs -0 ./bin/blast search --grpc-addr=:25001
 ```
 
 ```bash
-$ cat ./example/bulk_delete_wiki.json | xargs -0 ./bin/blast delete document --grpc-addr=:25001
+$ cat ./example/wiki_bulk_delete.json | xargs -0 ./bin/blast delete document --grpc-addr=:25001
 ```
 
 
@@ -886,7 +886,7 @@ $ docker run --rm --name blast-indexer1 \
       --grpc-addr=:5001 \
       --http-addr=:5002 \
       --data-dir=/tmp/blast/indexer1 \
-      --index-mapping-file=/opt/blast/example/index_mapping.json \
+      --index-mapping-file=/opt/blast/example/wiki_index_mapping.json \
       --index-storage-type=leveldb
 ```
 
@@ -935,4 +935,41 @@ $ for FILE in $(find ~/tmp/enwiki -type f -name '*' | sort)
     DOCS=$(cat ${FILE} | jq -r '. + {fields: {url: .url, title_en: .title, text_en: .text, timestamp: "'${TIMESTAMP}'", _type: "enwiki"}} | del(.url) | del(.title) | del(.text) | del(.fields.id)' | jq -s)
     curl -s -X PUT -H 'Content-Type: application/json' "http://127.0.0.1:8080/documents" -d "${DOCS}"
   done
+```
+
+
+## GEO example
+
+This section explain how to index GEO data to Blast.
+
+### Starting Indexer with GEO index mapping
+
+```bash
+$ ./bin/blastd \
+    indexer \
+    --node-id=indexer1 \
+    --bind-addr=:5000 \
+    --grpc-addr=:5001 \
+    --http-addr=:5002 \
+    --data-dir=/tmp/blast/indexer1 \
+    --index-mapping-file=./example/geo_index_mapping.json \
+    --index-type=upside_down \
+    --index-storage-type=boltdb
+```
+
+### Indexing example GEO data
+
+```bash
+$ cat ./example/geo_doc1.json | xargs -0 ./bin/blast set document --grpc-addr=:5001 geo_doc1
+$ cat ./example/geo_doc2.json | xargs -0 ./bin/blast set document --grpc-addr=:5001 geo_doc2
+$ cat ./example/geo_doc3.json | xargs -0 ./bin/blast set document --grpc-addr=:5001 geo_doc3
+$ cat ./example/geo_doc4.json | xargs -0 ./bin/blast set document --grpc-addr=:5001 geo_doc4
+$ cat ./example/geo_doc5.json | xargs -0 ./bin/blast set document --grpc-addr=:5001 geo_doc5
+$ cat ./example/geo_doc6.json | xargs -0 ./bin/blast set document --grpc-addr=:5001 geo_doc6
+```
+
+### Searching example GEO data
+
+```bash
+$ cat ./example/geo_search_request.json | xargs -0 ./bin/blast search --grpc-addr=:5001
 ```
