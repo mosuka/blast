@@ -940,11 +940,11 @@ $ for FILE in $(find ~/tmp/enwiki -type f -name '*' | sort)
 ```
 
 
-## GEO example
+## Spatial/Geospatial search example
 
-This section explain how to index GEO data to Blast.
+This section explain how to index Spatial/Geospatial data to Blast.
 
-### Starting Indexer with GEO index mapping
+### Starting Indexer with Spatial/Geospatial index mapping
 
 ```bash
 $ ./bin/blastd \
@@ -959,7 +959,7 @@ $ ./bin/blastd \
     --index-storage-type=boltdb
 ```
 
-### Indexing example GEO data
+### Indexing example Spatial/Geospatial data
 
 ```bash
 $ cat ./example/geo_doc1.json | xargs -0 ./bin/blast set document --grpc-addr=:5001 geo_doc1
@@ -970,7 +970,7 @@ $ cat ./example/geo_doc5.json | xargs -0 ./bin/blast set document --grpc-addr=:5
 $ cat ./example/geo_doc6.json | xargs -0 ./bin/blast set document --grpc-addr=:5001 geo_doc6
 ```
 
-### Searching example GEO data
+### Searching example Spatial/Geospatial data
 
 ```bash
 $ cat ./example/geo_search_request.json | xargs -0 ./bin/blast search --grpc-addr=:5001
