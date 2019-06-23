@@ -27,14 +27,16 @@ Blast makes it easy for programmers to develop search applications with advanced
 
 ## Features
 
-- Full-text search and indexing
-- Faceting
-- Result highlighting
-- Easy deployment
-- Bringing up cluster
+- Full-text search/indexing
+- Faceted search
+- Spatial/Geospatial search
+- Search result highlighting
+- Distributed search/indexing
 - Index replication
+- Bringing up cluster
+- Cluster Federation
 - An easy-to-use HTTP API
-- CLI is also available
+- CLI is available
 - Docker container image is available
 
 
