@@ -1217,8 +1217,6 @@ const _ = grpc.SupportPackageIsVersion4
 type BlastClient interface {
 	LivenessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*LivenessProbeResponse, error)
 	ReadinessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ReadinessProbeResponse, error)
-	//    rpc GetMetadata (GetMetadataRequest) returns (GetMetadataResponse) {}
-	//    rpc GetNodeState (GetNodeStateRequest) returns (GetNodeStateResponse) {}
 	GetNode(ctx context.Context, in *GetNodeRequest, opts ...grpc.CallOption) (*GetNodeResponse, error)
 	SetNode(ctx context.Context, in *SetNodeRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	DeleteNode(ctx context.Context, in *DeleteNodeRequest, opts ...grpc.CallOption) (*empty.Empty, error)
@@ -1507,8 +1505,6 @@ func (c *blastClient) GetIndexStats(ctx context.Context, in *empty.Empty, opts .
 type BlastServer interface {
 	LivenessProbe(context.Context, *empty.Empty) (*LivenessProbeResponse, error)
 	ReadinessProbe(context.Context, *empty.Empty) (*ReadinessProbeResponse, error)
-	//    rpc GetMetadata (GetMetadataRequest) returns (GetMetadataResponse) {}
-	//    rpc GetNodeState (GetNodeStateRequest) returns (GetNodeStateResponse) {}
 	GetNode(context.Context, *GetNodeRequest) (*GetNodeResponse, error)
 	SetNode(context.Context, *SetNodeRequest) (*empty.Empty, error)
 	DeleteNode(context.Context, *DeleteNodeRequest) (*empty.Empty, error)
