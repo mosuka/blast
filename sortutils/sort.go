@@ -34,9 +34,16 @@ func NewMultiSearchHitSorter(sort search.SortOrder, hits search.DocumentMatchCol
 	}
 }
 
-func (m *MultiSearchHitSorter) Len() int      { return len(m.hits) }
-func (m *MultiSearchHitSorter) Swap(i, j int) { m.hits[i], m.hits[j] = m.hits[j], m.hits[i] }
+func (m *MultiSearchHitSorter) Len() int {
+	return len(m.hits)
+}
+
+func (m *MultiSearchHitSorter) Swap(i, j int) {
+	m.hits[i], m.hits[j] = m.hits[j], m.hits[i]
+}
+
 func (m *MultiSearchHitSorter) Less(i, j int) bool {
 	c := m.sort.Compare(m.cachedScoring, m.cachedDesc, m.hits[i], m.hits[j])
+
 	return c < 0
 }
