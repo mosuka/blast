@@ -25,8 +25,8 @@ service Blast {
     rpc LivenessProbe (google.protobuf.Empty) returns (LivenessProbeResponse) {}
     rpc ReadinessProbe (google.protobuf.Empty) returns (ReadinessProbeResponse) {}
 
-    rpc GetMetadata (GetMetadataRequest) returns (GetMetadataResponse) {}
-    rpc GetNodeState (GetNodeStateRequest) returns (GetNodeStateResponse) {}
+//    rpc GetMetadata (GetMetadataRequest) returns (GetMetadataResponse) {}
+//    rpc GetNodeState (GetNodeStateRequest) returns (GetNodeStateResponse) {}
     rpc GetNode (GetNodeRequest) returns (GetNodeResponse) {}
     rpc SetNode (SetNodeRequest) returns (google.protobuf.Empty) {}
     rpc DeleteNode (DeleteNodeRequest) returns (google.protobuf.Empty) {}
@@ -67,21 +67,21 @@ message ReadinessProbeResponse {
     State state = 1;
 }
 
-message GetMetadataRequest {
-    string id = 1;
-}
+//message GetMetadataRequest {
+//    string id = 1;
+//}
 
-message GetMetadataResponse {
-    google.protobuf.Any metadata = 1;
-}
+//message GetMetadataResponse {
+//    google.protobuf.Any metadata = 1;
+//}
 
-message GetNodeStateRequest {
-    string id = 1;
-}
+//message GetNodeStateRequest {
+//    string id = 1;
+//}
 
-message GetNodeStateResponse {
-    string state = 1;
-}
+//message GetNodeStateResponse {
+//    string state = 1;
+//}
 
 // use for raft cluster status
 message GetNodeRequest {

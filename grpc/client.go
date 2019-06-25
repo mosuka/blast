@@ -82,44 +82,6 @@ func (c *Client) GetAddress() string {
 	return c.conn.Target()
 }
 
-func (c *Client) GetNodeMetadata(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
-	req := &protobuf.GetMetadataRequest{
-		Id: id,
-	}
-
-	resp, err := c.client.GetMetadata(c.ctx, req, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return nil, errors.New(st.Message())
-	}
-
-	ins, err := protobuf.MarshalAny(resp.Metadata)
-
-	var metadata map[string]interface{}
-	if ins == nil {
-		return nil, errors.New("nil")
-	}
-	metadata = *ins.(*map[string]interface{})
-
-	return metadata, nil
-}
-
-func (c *Client) GetNodeState(id string, opts ...grpc.CallOption) (string, error) {
-	req := &protobuf.GetNodeStateRequest{
-		Id: id,
-	}
-
-	resp, err := c.client.GetNodeState(c.ctx, req, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return "", errors.New(st.Message())
-	}
-
-	return resp.State, nil
-}
-
 func (c *Client) GetNode(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
 	req := &protobuf.GetNodeRequest{
 		Id: id,

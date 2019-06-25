@@ -49,14 +49,6 @@ func (s *Service) ReadinessProbe(ctx context.Context, req *empty.Empty) (*protob
 	return resp, nil
 }
 
-func (s *Service) GetMetadata(ctx context.Context, req *protobuf.GetMetadataRequest) (*protobuf.GetMetadataResponse, error) {
-	return &protobuf.GetMetadataResponse{}, status.Error(codes.Unavailable, "not implement")
-}
-
-func (s *Service) GetNodeState(ctx context.Context, req *protobuf.GetNodeStateRequest) (*protobuf.GetNodeStateResponse, error) {
-	return &protobuf.GetNodeStateResponse{}, status.Error(codes.Unavailable, "not implement")
-}
-
 func (s *Service) GetNode(ctx context.Context, req *protobuf.GetNodeRequest) (*protobuf.GetNodeResponse, error) {
 	return &protobuf.GetNodeResponse{}, status.Error(codes.Unavailable, "not implement")
 }

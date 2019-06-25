@@ -64,32 +64,6 @@ func main() {
 			Usage: "get",
 			Subcommands: []cli.Command{
 				{
-					Name:  "metadata",
-					Usage: "get node metadata",
-					Flags: []cli.Flag{
-						cli.StringFlag{
-							Name:  "grpc-addr",
-							Value: ":5001",
-							Usage: "address to connect to",
-						},
-					},
-					ArgsUsage: "[id]",
-					Action:    execGetMetadata,
-				},
-				{
-					Name:  "nodestate",
-					Usage: "get node state",
-					Flags: []cli.Flag{
-						cli.StringFlag{
-							Name:  "grpc-addr",
-							Value: ":5001",
-							Usage: "address to connect to",
-						},
-					},
-					ArgsUsage: "[id]",
-					Action:    execGetNodeState,
-				},
-				{
 					Name:  "node",
 					Usage: "get node",
 					Flags: []cli.Flag{

@@ -406,8 +406,8 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 			if err != nil {
 				s.logger.Printf("[ERR] %v", err)
 			}
-			ins, err := protobuf.MarshalAny(resp.Cluster)
-			cluster := *ins.(*map[string]interface{})
+			clusterInter, err := protobuf.MarshalAny(resp.Cluster)
+			cluster := *clusterInter.(*map[string]interface{})
 
 			if !reflect.DeepEqual(s.cluster, cluster) {
 				// notify cluster state
@@ -461,83 +461,39 @@ func (s *GRPCService) stopUpdateCluster() {
 	<-s.watchClusterDoneCh
 }
 
-func (s *GRPCService) getMetadata() (map[string]interface{}, error) {
+func (s *GRPCService) getSelfNode() (map[string]interface{}, error) {
 	metadata, err := s.raftServer.GetMetadata(s.raftServer.id)
 	if err != nil {
-		return nil, err
+		s.logger.Printf("[ERR] %v", err)
 	}
-
-	return metadata, nil
-}
-
-func (s *GRPCService) GetMetadata(ctx context.Context, req *protobuf.GetMetadataRequest) (*protobuf.GetMetadataResponse, error) {
-	resp := &protobuf.GetMetadataResponse{}
-
-	var metadata map[string]interface{}
-	var err error
-
-	if req.Id == "" || req.Id == s.raftServer.id {
-		metadata, err = s.getMetadata()
-		if err != nil {
-			s.logger.Printf("[ERR] %v: %v", err, s.raftServer.id)
-		}
-	} else {
-		if client, exist := s.peerClients[req.Id]; exist {
-			metadata, err = client.GetNodeMetadata(req.Id)
-			if err != nil {
-				s.logger.Printf("[ERR] %v: %v", err, req.Id)
-			}
-		}
-	}
-
-	metadataAny := &any.Any{}
-	err = protobuf.UnmarshalAny(metadata, metadataAny)
-	if err != nil {
-		return resp, status.Error(codes.Internal, err.Error())
-	}
-
-	resp.Metadata = metadataAny
-
-	return resp, nil
-}
-
-func (s *GRPCService) getNodeState() string {
-	return s.raftServer.State()
-}
-
-func (s *GRPCService) GetNodeState(ctx context.Context, req *protobuf.GetNodeStateRequest) (*protobuf.GetNodeStateResponse, error) {
-	resp := &protobuf.GetNodeStateResponse{}
-
-	state := ""
-	var err error
-
-	if req.Id == s.raftServer.id {
-		state = s.getNodeState()
-	} else {
-		if client, exist := s.peerClients[req.Id]; exist {
-			state, err = client.GetNodeState(req.Id)
-			if err != nil {
-				return resp, status.Error(codes.Internal, err.Error())
-			}
-		}
-	}
-
-	resp.State = state
-
-	return resp, nil
-}
-
-func (s *GRPCService) getNode() (map[string]interface{}, error) {
-	metadata, err := s.getMetadata()
-	if err != nil {
-		return nil, err
-	}
-
-	state := s.getNodeState()
 
 	node := map[string]interface{}{
 		"metadata": metadata,
-		"state":    state,
+		"state":    s.raftServer.State(),
+	}
+
+	return node, nil
+}
+
+func (s *GRPCService) getPeerNode(id string) (map[string]interface{}, error) {
+	var node map[string]interface{}
+	var err error
+
+	if client, exist := s.peerClients[id]; exist {
+		node, err = client.GetNode(id)
+		if err != nil {
+			s.logger.Printf("[ERR] %v", err)
+			node = map[string]interface{}{
+				"metadata": map[string]interface{}{},
+				"state":    raft.Shutdown.String(),
+			}
+		}
+	} else {
+		s.logger.Printf("[ERR] %v does not exist", id)
+		node = map[string]interface{}{
+			"metadata": map[string]interface{}{},
+			"state":    "Gone",
+		}
 	}
 
 	return node, nil
@@ -546,38 +502,34 @@ func (s *GRPCService) getNode() (map[string]interface{}, error) {
 func (s *GRPCService) GetNode(ctx context.Context, req *protobuf.GetNodeRequest) (*protobuf.GetNodeResponse, error) {
 	resp := &protobuf.GetNodeResponse{}
 
-	var metadata map[string]interface{}
-	var state string
+	var node map[string]interface{}
 	var err error
-
 	if req.Id == "" || req.Id == s.raftServer.id {
-		node, err := s.getNode()
-		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
-		}
-
-		metadata = node["metadata"].(map[string]interface{})
-
-		state = node["state"].(string)
+		node, err = s.getSelfNode()
 	} else {
-		if client, exist := s.peerClients[req.Id]; exist {
-			metadata, err = client.GetNodeMetadata(req.Id)
-			if err != nil {
-				s.logger.Printf("[ERR] %v", err)
-			}
-
-			state, err = client.GetNodeState(req.Id)
-			if err != nil {
-				s.logger.Printf("[ERR] %v", err)
-				state = raft.Shutdown.String()
-			}
-		}
+		node, err = s.getPeerNode(req.Id)
+	}
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
 	}
 
 	metadataAny := &any.Any{}
-	err = protobuf.UnmarshalAny(metadata, metadataAny)
-	if err != nil {
-		return resp, status.Error(codes.Internal, err.Error())
+	state := "Gone"
+	if node != nil {
+		if _, exist := node["metadata"]; exist {
+			if node["metadata"] != nil {
+				err = protobuf.UnmarshalAny(node["metadata"].(map[string]interface{}), metadataAny)
+				if err != nil {
+					return resp, status.Error(codes.Internal, err.Error())
+				}
+			}
+		}
+
+		if _, exist := node["state"]; exist {
+			if node["state"] != nil {
+				state = node["state"].(string)
+			}
+		}
 	}
 
 	resp.Metadata = metadataAny
@@ -587,8 +539,6 @@ func (s *GRPCService) GetNode(ctx context.Context, req *protobuf.GetNodeRequest)
 }
 
 func (s *GRPCService) SetNode(ctx context.Context, req *protobuf.SetNodeRequest) (*empty.Empty, error) {
-	s.logger.Printf("[INFO] %v", req)
-
 	resp := &empty.Empty{}
 
 	ins, err := protobuf.MarshalAny(req.Metadata)
@@ -619,8 +569,6 @@ func (s *GRPCService) SetNode(ctx context.Context, req *protobuf.SetNodeRequest)
 }
 
 func (s *GRPCService) DeleteNode(ctx context.Context, req *protobuf.DeleteNodeRequest) (*empty.Empty, error) {
-	s.logger.Printf("[INFO] leave %v", req)
-
 	resp := &empty.Empty{}
 
 	if s.raftServer.IsLeader() {
@@ -652,28 +600,21 @@ func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*protob
 	}
 
 	cluster := map[string]interface{}{}
-
 	for id := range servers {
-		node := map[string]interface{}{}
-		if id == s.raftServer.id {
-			//node, err = s.getNode(id)
-			node, err = s.getNode()
-			if err != nil {
-				return resp, err
-			}
-		} else {
-			r, err := s.GetNode(ctx, &protobuf.GetNodeRequest{Id: id})
-			if err != nil {
-				return resp, err
-			}
+		nodeResp, err := s.GetNode(ctx, &protobuf.GetNodeRequest{Id: id})
+		if err != nil {
+			return resp, status.Error(codes.Internal, err.Error())
+		}
 
-			ins, err := protobuf.MarshalAny(r.Metadata)
-			metadata := *ins.(*map[string]interface{})
+		metadataIntr, err := protobuf.MarshalAny(nodeResp.Metadata)
+		if err != nil {
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+		metadata := *metadataIntr.(*map[string]interface{})
 
-			node = map[string]interface{}{
-				"metadata": metadata,
-				"state":    r.State,
-			}
+		node := map[string]interface{}{
+			"metadata": metadata,
+			"state":    nodeResp.State,
 		}
 
 		cluster[id] = node
