@@ -434,11 +434,9 @@ func (s *GRPCService) WatchCluster(req *empty.Empty, server protobuf.Blast_Watch
 }
 
 func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
-	start := time.Now()
 	s.stateMutex.Lock()
 	defer func() {
 		s.stateMutex.Unlock()
-		RecordMetrics(start, "snapshot")
 	}()
 
 	resp := &empty.Empty{}
@@ -452,11 +450,9 @@ func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Em
 }
 
 func (s *GRPCService) GetState(ctx context.Context, req *protobuf.GetStateRequest) (*protobuf.GetStateResponse, error) {
-	start := time.Now()
 	s.stateMutex.RLock()
 	defer func() {
 		s.stateMutex.RUnlock()
-		RecordMetrics(start, "get")
 	}()
 
 	resp := &protobuf.GetStateResponse{}
@@ -483,11 +479,9 @@ func (s *GRPCService) GetState(ctx context.Context, req *protobuf.GetStateReques
 }
 
 func (s *GRPCService) SetState(ctx context.Context, req *protobuf.SetStateRequest) (*empty.Empty, error) {
-	start := time.Now()
 	s.stateMutex.Lock()
 	defer func() {
 		s.stateMutex.Unlock()
-		RecordMetrics(start, "set")
 	}()
 
 	resp := &empty.Empty{}
@@ -532,11 +526,9 @@ func (s *GRPCService) SetState(ctx context.Context, req *protobuf.SetStateReques
 }
 
 func (s *GRPCService) DeleteState(ctx context.Context, req *protobuf.DeleteStateRequest) (*empty.Empty, error) {
-	start := time.Now()
 	s.stateMutex.Lock()
 	defer func() {
 		s.stateMutex.Unlock()
-		RecordMetrics(start, "delete")
 	}()
 
 	s.logger.Printf("[INFO] set %v", req)

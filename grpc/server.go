@@ -18,6 +18,13 @@ import (
 	"log"
 	"net"
 
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	//grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	//grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	//grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
+	//grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	//grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/mosuka/blast/protobuf"
 	"google.golang.org/grpc"
 )
@@ -31,9 +38,29 @@ type Server struct {
 }
 
 func NewServer(grpcAddr string, service protobuf.BlastServer, logger *log.Logger) (*Server, error) {
-	server := grpc.NewServer()
+	server := grpc.NewServer(
+		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+			//grpc_ctxtags.StreamServerInterceptor(),
+			//grpc_opentracing.StreamServerInterceptor(),
+			grpc_prometheus.StreamServerInterceptor,
+			//grpc_zap.StreamServerInterceptor(zapLogger),
+			//grpc_auth.StreamServerInterceptor(myAuthFunction),
+			//grpc_recovery.StreamServerInterceptor(),
+		)),
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			//grpc_ctxtags.UnaryServerInterceptor(),
+			//grpc_opentracing.UnaryServerInterceptor(),
+			grpc_prometheus.UnaryServerInterceptor,
+			//grpc_zap.UnaryServerInterceptor(zapLogger),
+			//grpc_auth.UnaryServerInterceptor(myAuthFunction),
+			//grpc_recovery.UnaryServerInterceptor(),
+		)),
+	)
 
 	protobuf.RegisterBlastServer(server, service)
+
+	grpc_prometheus.EnableHandlingTimeHistogram()
+	grpc_prometheus.Register(server)
 
 	listener, err := net.Listen("tcp", grpcAddr)
 	if err != nil {

@@ -19,7 +19,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/mux"
 	blasterrors "github.com/mosuka/blast/errors"
@@ -60,12 +59,12 @@ func NewRootHandler(logger *log.Logger) *RootHandler {
 }
 
 func (h *RootHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
+	//start := time.Now()
 	status := http.StatusOK
 	content := make([]byte, 0)
 	defer func() {
 		blasthttp.WriteResponse(w, content, status, h.logger)
-		blasthttp.RecordMetrics(start, status, w, r, h.logger)
+		//blasthttp.RecordMetrics(start, status, w, r, h.logger)
 	}()
 
 	msgMap := map[string]interface{}{
@@ -92,12 +91,12 @@ func NewGetHandler(client *grpc.Client, logger *log.Logger) *GetHandler {
 }
 
 func (h *GetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
+	//start := time.Now()
 	httpStatus := http.StatusOK
 	content := make([]byte, 0)
 	defer func() {
 		blasthttp.WriteResponse(w, content, httpStatus, h.logger)
-		blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
+		//blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
 	}()
 
 	vars := mux.Vars(r)
@@ -158,12 +157,12 @@ func NewPutHandler(client *grpc.Client, logger *log.Logger) *PutHandler {
 }
 
 func (h *PutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
+	//start := time.Now()
 	httpStatus := http.StatusOK
 	content := make([]byte, 0)
 	defer func() {
 		blasthttp.WriteResponse(w, content, httpStatus, h.logger)
-		blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
+		//blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
 	}()
 
 	vars := mux.Vars(r)
@@ -237,12 +236,12 @@ func NewDeleteHandler(client *grpc.Client, logger *log.Logger) *DeleteHandler {
 }
 
 func (h *DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
+	//start := time.Now()
 	httpStatus := http.StatusOK
 	content := make([]byte, 0)
 	defer func() {
 		blasthttp.WriteResponse(w, content, httpStatus, h.logger)
-		blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
+		//blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
 	}()
 
 	vars := mux.Vars(r)

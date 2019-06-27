@@ -209,6 +209,10 @@ func (i *Index) SnapshotItems() <-chan *protobuf.Document {
 
 		dr, err := r.DocIDReaderAll()
 		for {
+			if dr == nil {
+				i.logger.Printf("[ERR] %v", err)
+				break
+			}
 			id, err := dr.Next()
 			if id == nil {
 				i.logger.Print("[DEBUG] finished to read all document ids")

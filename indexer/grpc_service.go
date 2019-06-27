@@ -656,8 +656,6 @@ func (s *GRPCService) WatchCluster(req *empty.Empty, server protobuf.Blast_Watch
 }
 
 func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
-	s.logger.Printf("[INFO] %v", req)
-
 	resp := &empty.Empty{}
 
 	err := s.raftServer.Snapshot()
@@ -669,11 +667,6 @@ func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Em
 }
 
 func (s *GRPCService) GetDocument(ctx context.Context, req *protobuf.GetDocumentRequest) (*protobuf.GetDocumentResponse, error) {
-	start := time.Now()
-	defer RecordMetrics(start, "get")
-
-	s.logger.Printf("[INFO] get %v", req)
-
 	resp := &protobuf.GetDocumentResponse{}
 
 	fields, err := s.raftServer.GetDocument(req.Id)
@@ -698,11 +691,6 @@ func (s *GRPCService) GetDocument(ctx context.Context, req *protobuf.GetDocument
 }
 
 func (s *GRPCService) Search(ctx context.Context, req *protobuf.SearchRequest) (*protobuf.SearchResponse, error) {
-	start := time.Now()
-	defer RecordMetrics(start, "search")
-
-	s.logger.Printf("[INFO] search %v", req)
-
 	resp := &protobuf.SearchResponse{}
 
 	// Any -> bleve.SearchRequest
@@ -826,14 +814,7 @@ func (s *GRPCService) DeleteDocument(stream protobuf.Blast_DeleteDocumentServer)
 }
 
 func (s *GRPCService) GetIndexConfig(ctx context.Context, req *empty.Empty) (*protobuf.GetIndexConfigResponse, error) {
-	start := time.Now()
-	defer RecordMetrics(start, "indexconfig")
-
 	resp := &protobuf.GetIndexConfigResponse{}
-
-	s.logger.Printf("[INFO] stats %v", req)
-
-	var err error
 
 	indexConfig, err := s.raftServer.GetIndexConfig()
 	if err != nil {
@@ -852,14 +833,7 @@ func (s *GRPCService) GetIndexConfig(ctx context.Context, req *empty.Empty) (*pr
 }
 
 func (s *GRPCService) GetIndexStats(ctx context.Context, req *empty.Empty) (*protobuf.GetIndexStatsResponse, error) {
-	start := time.Now()
-	defer RecordMetrics(start, "indexstats")
-
 	resp := &protobuf.GetIndexStatsResponse{}
-
-	s.logger.Printf("[INFO] stats %v", req)
-
-	var err error
 
 	indexStats, err := s.raftServer.GetIndexStats()
 	if err != nil {

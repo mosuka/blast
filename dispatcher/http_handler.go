@@ -19,7 +19,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/blevesearch/bleve"
 	"github.com/gorilla/mux"
@@ -61,12 +60,12 @@ func NewRootHandler(logger *log.Logger) *RootHandler {
 }
 
 func (h *RootHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
+	//start := time.Now()
 	status := http.StatusOK
 	content := make([]byte, 0)
 	defer func() {
 		blasthttp.WriteResponse(w, content, status, h.logger)
-		blasthttp.RecordMetrics(start, status, w, r, h.logger)
+		//blasthttp.RecordMetrics(start, status, w, r, h.logger)
 	}()
 
 	msgMap := map[string]interface{}{
@@ -93,12 +92,12 @@ func NewGetDocumentHandler(client *grpc.Client, logger *log.Logger) *GetHandler 
 }
 
 func (h *GetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
+	//start := time.Now()
 	httpStatus := http.StatusOK
 	content := make([]byte, 0)
 	defer func() {
 		blasthttp.WriteResponse(w, content, httpStatus, h.logger)
-		blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
+		//blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
 	}()
 
 	vars := mux.Vars(r)
@@ -157,12 +156,12 @@ func NewSetDocumentHandler(client *grpc.Client, logger *log.Logger) *IndexHandle
 }
 
 func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
+	//start := time.Now()
 	httpStatus := http.StatusOK
 	content := make([]byte, 0)
 	defer func() {
 		blasthttp.WriteResponse(w, content, httpStatus, h.logger)
-		blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
+		//blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
 	}()
 
 	// create documents
@@ -287,12 +286,12 @@ func NewDeleteDocumentHandler(client *grpc.Client, logger *log.Logger) *DeleteHa
 }
 
 func (h *DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
+	//start := time.Now()
 	httpStatus := http.StatusOK
 	content := make([]byte, 0)
 	defer func() {
 		blasthttp.WriteResponse(w, content, httpStatus, h.logger)
-		blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
+		//blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
 	}()
 
 	// create documents
@@ -394,12 +393,12 @@ func NewSearchHandler(client *grpc.Client, logger *log.Logger) *SearchHandler {
 }
 
 func (h *SearchHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
+	//start := time.Now()
 	httpStatus := http.StatusOK
 	content := make([]byte, 0)
 	defer func() {
 		blasthttp.WriteResponse(w, content, httpStatus, h.logger)
-		blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
+		//blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
 	}()
 
 	searchRequestBytes, err := ioutil.ReadAll(r.Body)

@@ -439,9 +439,6 @@ func (s *GRPCService) getIndexerClients() map[string]*grpc.Client {
 }
 
 func (s *GRPCService) GetDocument(ctx context.Context, req *protobuf.GetDocumentRequest) (*protobuf.GetDocumentResponse, error) {
-	start := time.Now()
-	defer RecordMetrics(start, "get")
-
 	indexerClients := s.getIndexerClients()
 
 	// cluster id list sorted by cluster id
@@ -506,7 +503,6 @@ func (s *GRPCService) GetDocument(ctx context.Context, req *protobuf.GetDocument
 
 func (s *GRPCService) Search(ctx context.Context, req *protobuf.SearchRequest) (*protobuf.SearchResponse, error) {
 	start := time.Now()
-	defer RecordMetrics(start, "search")
 
 	resp := &protobuf.SearchResponse{}
 
