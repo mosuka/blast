@@ -16,9 +16,10 @@ package http
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strconv"
+
+	"go.uber.org/zap"
 )
 
 func NewJSONMessage(msgMap map[string]interface{}) ([]byte, error) {
@@ -30,13 +31,13 @@ func NewJSONMessage(msgMap map[string]interface{}) ([]byte, error) {
 	return content, nil
 }
 
-func WriteResponse(w http.ResponseWriter, content []byte, status int, logger *log.Logger) {
+func WriteResponse(w http.ResponseWriter, content []byte, status int, logger *zap.Logger) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Content-Length", strconv.FormatInt(int64(len(content)), 10))
 	w.WriteHeader(status)
 	_, err := w.Write(content)
 	if err != nil {
-		logger.Printf("[ERR] handler: Failed to write content: %s", err.Error())
+		logger.Error(err.Error())
 	}
 
 	return

@@ -17,8 +17,8 @@ package indexer
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
+	"time"
 
 	"github.com/blevesearch/bleve"
 	"github.com/gorilla/mux"
@@ -27,9 +27,10 @@ import (
 	blasthttp "github.com/mosuka/blast/http"
 	"github.com/mosuka/blast/version"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.uber.org/zap"
 )
 
-func NewRouter(grpcAddr string, logger *log.Logger) (*blasthttp.Router, error) {
+func NewRouter(grpcAddr string, logger *zap.Logger) (*blasthttp.Router, error) {
 	router, err := blasthttp.NewRouter(grpcAddr, logger)
 	if err != nil {
 		return nil, err
@@ -50,23 +51,21 @@ func NewRouter(grpcAddr string, logger *log.Logger) (*blasthttp.Router, error) {
 }
 
 type RootHandler struct {
-	logger *log.Logger
+	logger *zap.Logger
 }
 
-func NewRootHandler(logger *log.Logger) *RootHandler {
+func NewRootHandler(logger *zap.Logger) *RootHandler {
 	return &RootHandler{
 		logger: logger,
 	}
 }
 
 func (h *RootHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	//start := time.Now()
+	start := time.Now()
 	status := http.StatusOK
 	content := make([]byte, 0)
-	defer func() {
-		blasthttp.WriteResponse(w, content, status, h.logger)
-		//blasthttp.RecordMetrics(start, status, w, r, h.logger)
-	}()
+
+	defer blasthttp.RecordMetrics(start, status, w, r)
 
 	msgMap := map[string]interface{}{
 		"version": version.Version,
@@ -75,16 +74,18 @@ func (h *RootHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	content, err := blasthttp.NewJSONMessage(msgMap)
 	if err != nil {
-		h.logger.Printf("[ERR] %v", err)
+		h.logger.Error(err.Error())
 	}
+
+	blasthttp.WriteResponse(w, content, status, h.logger)
 }
 
 type GetHandler struct {
 	client *grpc.Client
-	logger *log.Logger
+	logger *zap.Logger
 }
 
-func NewGetDocumentHandler(client *grpc.Client, logger *log.Logger) *GetHandler {
+func NewGetDocumentHandler(client *grpc.Client, logger *zap.Logger) *GetHandler {
 	return &GetHandler{
 		client: client,
 		logger: logger,
@@ -92,13 +93,11 @@ func NewGetDocumentHandler(client *grpc.Client, logger *log.Logger) *GetHandler 
 }
 
 func (h *GetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	//start := time.Now()
-	httpStatus := http.StatusOK
+	start := time.Now()
+	status := http.StatusOK
 	content := make([]byte, 0)
-	defer func() {
-		blasthttp.WriteResponse(w, content, httpStatus, h.logger)
-		//blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
-	}()
+
+	defer blasthttp.RecordMetrics(start, status, w, r)
 
 	vars := mux.Vars(r)
 
@@ -108,49 +107,53 @@ func (h *GetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch err {
 		case errors.ErrNotFound:
-			httpStatus = http.StatusNotFound
+			status = http.StatusNotFound
 		default:
-			httpStatus = http.StatusInternalServerError
+			status = http.StatusInternalServerError
 		}
 
 		msgMap := map[string]interface{}{
 			"message": err.Error(),
-			"status":  httpStatus,
+			"status":  status,
 		}
 
 		content, err = blasthttp.NewJSONMessage(msgMap)
 		if err != nil {
-			h.logger.Printf("[ERR] %v", err)
+			h.logger.Error(err.Error())
 		}
 
+		blasthttp.WriteResponse(w, content, status, h.logger)
 		return
 	}
 
 	// map[string]interface{} -> bytes
 	content, err = json.MarshalIndent(fields, "", "  ")
 	if err != nil {
-		httpStatus = http.StatusInternalServerError
+		status = http.StatusInternalServerError
 
 		msgMap := map[string]interface{}{
 			"message": err.Error(),
-			"status":  httpStatus,
+			"status":  status,
 		}
 
 		content, err = blasthttp.NewJSONMessage(msgMap)
 		if err != nil {
-			h.logger.Printf("[ERR] %v", err)
+			h.logger.Error(err.Error())
 		}
 
+		blasthttp.WriteResponse(w, content, status, h.logger)
 		return
 	}
+
+	blasthttp.WriteResponse(w, content, status, h.logger)
 }
 
 type IndexHandler struct {
 	client *grpc.Client
-	logger *log.Logger
+	logger *zap.Logger
 }
 
-func NewSetDocumentHandler(client *grpc.Client, logger *log.Logger) *IndexHandler {
+func NewSetDocumentHandler(client *grpc.Client, logger *zap.Logger) *IndexHandler {
 	return &IndexHandler{
 		client: client,
 		logger: logger,
@@ -158,13 +161,11 @@ func NewSetDocumentHandler(client *grpc.Client, logger *log.Logger) *IndexHandle
 }
 
 func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	//start := time.Now()
-	httpStatus := http.StatusOK
+	start := time.Now()
+	status := http.StatusOK
 	content := make([]byte, 0)
-	defer func() {
-		blasthttp.WriteResponse(w, content, httpStatus, h.logger)
-		//blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
-	}()
+
+	defer blasthttp.RecordMetrics(start, status, w, r)
 
 	// create documents
 	docs := make([]map[string]interface{}, 0)
@@ -174,18 +175,19 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		httpStatus = http.StatusInternalServerError
+		status = http.StatusInternalServerError
 
 		msgMap := map[string]interface{}{
 			"message": err.Error(),
-			"status":  httpStatus,
+			"status":  status,
 		}
 
 		content, err = blasthttp.NewJSONMessage(msgMap)
 		if err != nil {
-			h.logger.Printf("[ERR] %v", err)
+			h.logger.Error(err.Error())
 		}
 
+		blasthttp.WriteResponse(w, content, status, h.logger)
 		return
 	}
 
@@ -193,18 +195,19 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Indexing documents in bulk
 		err := json.Unmarshal(bodyBytes, &docs)
 		if err != nil {
-			httpStatus = http.StatusBadRequest
+			status = http.StatusBadRequest
 
 			msgMap := map[string]interface{}{
 				"message": err.Error(),
-				"status":  httpStatus,
+				"status":  status,
 			}
 
 			content, err = blasthttp.NewJSONMessage(msgMap)
 			if err != nil {
-				h.logger.Printf("[ERR] %v", err)
+				h.logger.Error(err.Error())
 			}
 
+			blasthttp.WriteResponse(w, content, status, h.logger)
 			return
 		}
 	} else {
@@ -212,18 +215,19 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		var fields map[string]interface{}
 		err := json.Unmarshal(bodyBytes, &fields)
 		if err != nil {
-			httpStatus = http.StatusBadRequest
+			status = http.StatusBadRequest
 
 			msgMap := map[string]interface{}{
 				"message": err.Error(),
-				"status":  httpStatus,
+				"status":  status,
 			}
 
 			content, err = blasthttp.NewJSONMessage(msgMap)
 			if err != nil {
-				h.logger.Printf("[ERR] %v", err)
+				h.logger.Error(err.Error())
 			}
 
+			blasthttp.WriteResponse(w, content, status, h.logger)
 			return
 		}
 
@@ -238,18 +242,19 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// index documents in bulk
 	count, err := h.client.IndexDocument(docs)
 	if err != nil {
-		httpStatus = http.StatusInternalServerError
+		status = http.StatusInternalServerError
 
 		msgMap := map[string]interface{}{
 			"message": err.Error(),
-			"status":  httpStatus,
+			"status":  status,
 		}
 
 		content, err = blasthttp.NewJSONMessage(msgMap)
 		if err != nil {
-			h.logger.Printf("[ERR] %v", err)
+			h.logger.Error(err.Error())
 		}
 
+		blasthttp.WriteResponse(w, content, status, h.logger)
 		return
 	}
 
@@ -259,28 +264,31 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	content, err = json.MarshalIndent(msgMap, "", "  ")
 	if err != nil {
-		httpStatus = http.StatusInternalServerError
+		status = http.StatusInternalServerError
 
 		msgMap := map[string]interface{}{
 			"message": err.Error(),
-			"status":  httpStatus,
+			"status":  status,
 		}
 
 		content, err = blasthttp.NewJSONMessage(msgMap)
 		if err != nil {
-			h.logger.Printf("[ERR] %v", err)
+			h.logger.Error(err.Error())
 		}
 
+		blasthttp.WriteResponse(w, content, status, h.logger)
 		return
 	}
+
+	blasthttp.WriteResponse(w, content, status, h.logger)
 }
 
 type DeleteHandler struct {
 	client *grpc.Client
-	logger *log.Logger
+	logger *zap.Logger
 }
 
-func NewDeleteDocumentHandler(client *grpc.Client, logger *log.Logger) *DeleteHandler {
+func NewDeleteDocumentHandler(client *grpc.Client, logger *zap.Logger) *DeleteHandler {
 	return &DeleteHandler{
 		client: client,
 		logger: logger,
@@ -288,13 +296,11 @@ func NewDeleteDocumentHandler(client *grpc.Client, logger *log.Logger) *DeleteHa
 }
 
 func (h *DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	//start := time.Now()
-	httpStatus := http.StatusOK
+	start := time.Now()
+	status := http.StatusOK
 	content := make([]byte, 0)
-	defer func() {
-		blasthttp.WriteResponse(w, content, httpStatus, h.logger)
-		//blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
-	}()
+
+	defer blasthttp.RecordMetrics(start, status, w, r)
 
 	// create documents
 	ids := make([]string, 0)
@@ -304,18 +310,19 @@ func (h *DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		httpStatus = http.StatusInternalServerError
+		status = http.StatusInternalServerError
 
 		msgMap := map[string]interface{}{
 			"message": err.Error(),
-			"status":  httpStatus,
+			"status":  status,
 		}
 
 		content, err = blasthttp.NewJSONMessage(msgMap)
 		if err != nil {
-			h.logger.Printf("[ERR] %v", err)
+			h.logger.Error(err.Error())
 		}
 
+		blasthttp.WriteResponse(w, content, status, h.logger)
 		return
 	}
 
@@ -323,18 +330,19 @@ func (h *DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Deleting documents in bulk
 		err := json.Unmarshal(bodyBytes, &ids)
 		if err != nil {
-			httpStatus = http.StatusBadRequest
+			status = http.StatusBadRequest
 
 			msgMap := map[string]interface{}{
 				"message": err.Error(),
-				"status":  httpStatus,
+				"status":  status,
 			}
 
 			content, err = blasthttp.NewJSONMessage(msgMap)
 			if err != nil {
-				h.logger.Printf("[ERR] %v", err)
+				h.logger.Error(err.Error())
 			}
 
+			blasthttp.WriteResponse(w, content, status, h.logger)
 			return
 		}
 	} else {
@@ -345,18 +353,19 @@ func (h *DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// delete documents in bulk
 	count, err := h.client.DeleteDocument(ids)
 	if err != nil {
-		httpStatus = http.StatusInternalServerError
+		status = http.StatusInternalServerError
 
 		msgMap := map[string]interface{}{
 			"message": err.Error(),
-			"status":  httpStatus,
+			"status":  status,
 		}
 
 		content, err = blasthttp.NewJSONMessage(msgMap)
 		if err != nil {
-			h.logger.Printf("[ERR] %v", err)
+			h.logger.Error(err.Error())
 		}
 
+		blasthttp.WriteResponse(w, content, status, h.logger)
 		return
 	}
 
@@ -366,28 +375,31 @@ func (h *DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	content, err = json.MarshalIndent(msgMap, "", "  ")
 	if err != nil {
-		httpStatus = http.StatusInternalServerError
+		status = http.StatusInternalServerError
 
 		msgMap := map[string]interface{}{
 			"message": err.Error(),
-			"status":  httpStatus,
+			"status":  status,
 		}
 
 		content, err = blasthttp.NewJSONMessage(msgMap)
 		if err != nil {
-			h.logger.Printf("[ERR] %v", err)
+			h.logger.Error(err.Error())
 		}
 
+		blasthttp.WriteResponse(w, content, status, h.logger)
 		return
 	}
+
+	blasthttp.WriteResponse(w, content, status, h.logger)
 }
 
 type SearchHandler struct {
 	client *grpc.Client
-	logger *log.Logger
+	logger *zap.Logger
 }
 
-func NewSearchHandler(client *grpc.Client, logger *log.Logger) *SearchHandler {
+func NewSearchHandler(client *grpc.Client, logger *zap.Logger) *SearchHandler {
 	return &SearchHandler{
 		client: client,
 		logger: logger,
@@ -395,28 +407,27 @@ func NewSearchHandler(client *grpc.Client, logger *log.Logger) *SearchHandler {
 }
 
 func (h *SearchHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	//start := time.Now()
-	httpStatus := http.StatusOK
+	start := time.Now()
+	status := http.StatusOK
 	content := make([]byte, 0)
-	defer func() {
-		blasthttp.WriteResponse(w, content, httpStatus, h.logger)
-		//blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
-	}()
+
+	defer blasthttp.RecordMetrics(start, status, w, r)
 
 	searchRequestBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		httpStatus = http.StatusInternalServerError
+		status = http.StatusInternalServerError
 
 		msgMap := map[string]interface{}{
 			"message": err.Error(),
-			"status":  httpStatus,
+			"status":  status,
 		}
 
 		content, err = blasthttp.NewJSONMessage(msgMap)
 		if err != nil {
-			h.logger.Printf("[ERR] %v", err)
+			h.logger.Error(err.Error())
 		}
 
+		blasthttp.WriteResponse(w, content, status, h.logger)
 		return
 	}
 
@@ -425,54 +436,58 @@ func (h *SearchHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if len(searchRequestBytes) > 0 {
 		err := json.Unmarshal(searchRequestBytes, searchRequest)
 		if err != nil {
-			httpStatus = http.StatusBadRequest
+			status = http.StatusBadRequest
 
 			msgMap := map[string]interface{}{
 				"message": err.Error(),
-				"status":  httpStatus,
+				"status":  status,
 			}
 
 			content, err = blasthttp.NewJSONMessage(msgMap)
 			if err != nil {
-				h.logger.Printf("[ERR] %v", err)
+				h.logger.Error(err.Error())
 			}
 
+			blasthttp.WriteResponse(w, content, status, h.logger)
 			return
 		}
 	}
 
 	searchResult, err := h.client.Search(searchRequest)
 	if err != nil {
-		httpStatus = http.StatusInternalServerError
+		status = http.StatusInternalServerError
 
 		msgMap := map[string]interface{}{
 			"message": err.Error(),
-			"status":  httpStatus,
+			"status":  status,
 		}
 
 		content, err = blasthttp.NewJSONMessage(msgMap)
 		if err != nil {
-			h.logger.Printf("[ERR] %v", err)
+			h.logger.Error(err.Error())
 		}
 
+		blasthttp.WriteResponse(w, content, status, h.logger)
 		return
 	}
 
 	content, err = json.MarshalIndent(&searchResult, "", "  ")
 	if err != nil {
-		httpStatus = http.StatusInternalServerError
+		status = http.StatusInternalServerError
 
 		msgMap := map[string]interface{}{
 			"message": err.Error(),
-			"status":  httpStatus,
+			"status":  status,
 		}
 
 		content, err = blasthttp.NewJSONMessage(msgMap)
 		if err != nil {
-			h.logger.Printf("[ERR] %v", err)
+			h.logger.Error(err.Error())
 		}
 
+		blasthttp.WriteResponse(w, content, status, h.logger)
 		return
 	}
 
+	blasthttp.WriteResponse(w, content, status, h.logger)
 }

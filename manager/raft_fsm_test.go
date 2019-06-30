@@ -16,10 +16,11 @@ package manager
 
 import (
 	"io/ioutil"
-	"log"
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/mosuka/blast/logutils"
 )
 
 func TestRaftFSM_GetNode(t *testing.T) {
@@ -34,7 +35,7 @@ func TestRaftFSM_GetNode(t *testing.T) {
 		}
 	}()
 
-	logger := log.New(os.Stderr, "", 0)
+	logger := logutils.NewLogger("DEBUG", "", 100, 5, 3, false)
 
 	fsm, err := NewRaftFSM(tmp, logger)
 	if err != nil {
@@ -96,7 +97,7 @@ func TestRaftFSM_SetNode(t *testing.T) {
 		}
 	}()
 
-	logger := log.New(os.Stderr, "", 0)
+	logger := logutils.NewLogger("DEBUG", "", 100, 5, 3, false)
 
 	fsm, err := NewRaftFSM(tmp, logger)
 	if err != nil {
@@ -178,7 +179,7 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 		}
 	}()
 
-	logger := log.New(os.Stderr, "", 0)
+	logger := logutils.NewLogger("DEBUG", "", 100, 5, 3, false)
 
 	fsm, err := NewRaftFSM(tmp, logger)
 	if err != nil {
@@ -250,7 +251,7 @@ func TestRaftFSM_Get(t *testing.T) {
 		}
 	}()
 
-	logger := log.New(os.Stderr, "", 0)
+	logger := logutils.NewLogger("DEBUG", "", 100, 5, 3, false)
 
 	fsm, err := NewRaftFSM(tmp, logger)
 	if err != nil {
@@ -293,7 +294,7 @@ func TestRaftFSM_Set(t *testing.T) {
 		}
 	}()
 
-	logger := log.New(os.Stderr, "", 0)
+	logger := logutils.NewLogger("DEBUG", "", 100, 5, 3, false)
 
 	fsm, err := NewRaftFSM(tmp, logger)
 	if err != nil {
@@ -432,7 +433,7 @@ func TestRaftFSM_Delete(t *testing.T) {
 		}
 	}()
 
-	logger := log.New(os.Stderr, "", 0)
+	logger := logutils.NewLogger("DEBUG", "", 100, 5, 3, false)
 
 	fsm, err := NewRaftFSM(tmp, logger)
 	if err != nil {

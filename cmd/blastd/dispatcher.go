@@ -20,7 +20,7 @@ import (
 	"syscall"
 
 	"github.com/mosuka/blast/dispatcher"
-	"github.com/mosuka/logutils"
+	"github.com/mosuka/blast/logutils"
 	"github.com/urfave/cli"
 )
 

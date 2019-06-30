@@ -19,24 +19,23 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
-	"log"
 
 	"github.com/hashicorp/raft"
 	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/maputils"
+	"go.uber.org/zap"
 )
 
 type RaftFSM struct {
 	metadata maputils.Map
 
 	path string
-
 	data maputils.Map
 
-	logger *log.Logger
+	logger *zap.Logger
 }
 
-func NewRaftFSM(path string, logger *log.Logger) (*RaftFSM, error) {
+func NewRaftFSM(path string, logger *zap.Logger) (*RaftFSM, error) {
 	return &RaftFSM{
 		path:   path,
 		logger: logger,
@@ -44,8 +43,10 @@ func NewRaftFSM(path string, logger *log.Logger) (*RaftFSM, error) {
 }
 
 func (f *RaftFSM) Start() error {
-	f.logger.Print("[INFO] initialize data")
+	f.logger.Info("initialize metadata")
 	f.metadata = maputils.Map{}
+
+	f.logger.Info("initialize store data")
 	f.data = maputils.Map{}
 
 	return nil
@@ -58,6 +59,7 @@ func (f *RaftFSM) Stop() error {
 func (f *RaftFSM) GetMetadata(id string) (map[string]interface{}, error) {
 	value, err := f.metadata.Get(id)
 	if err != nil {
+		f.logger.Error(err.Error(), zap.String("id", id))
 		return nil, err
 	}
 
@@ -67,6 +69,7 @@ func (f *RaftFSM) GetMetadata(id string) (map[string]interface{}, error) {
 func (f *RaftFSM) applySetMetadata(id string, value map[string]interface{}) interface{} {
 	err := f.metadata.Merge(id, value)
 	if err != nil {
+		f.logger.Error(err.Error(), zap.String("id", id), zap.Any("value", value))
 		return err
 	}
 
@@ -76,6 +79,7 @@ func (f *RaftFSM) applySetMetadata(id string, value map[string]interface{}) inte
 func (f *RaftFSM) applyDeleteMetadata(id string) interface{} {
 	err := f.metadata.Delete(id)
 	if err != nil {
+		f.logger.Error(err.Error(), zap.String("id", id))
 		return err
 	}
 
@@ -87,8 +91,10 @@ func (f *RaftFSM) Get(key string) (interface{}, error) {
 	if err != nil {
 		switch err {
 		case maputils.ErrNotFound:
+			f.logger.Debug("key does not found in the store data", zap.String("key", key))
 			return nil, blasterrors.ErrNotFound
 		default:
+			f.logger.Error(err.Error(), zap.String("key", key))
 			return nil, err
 		}
 	}
@@ -108,11 +114,13 @@ func (f *RaftFSM) applySet(key string, value interface{}, merge bool) interface{
 	if merge {
 		err := f.data.Merge(key, value)
 		if err != nil {
+			f.logger.Error(err.Error(), zap.String("key", key), zap.Any("value", value), zap.Bool("merge", merge))
 			return err
 		}
 	} else {
 		err := f.data.Set(key, value)
 		if err != nil {
+			f.logger.Error(err.Error(), zap.String("key", key), zap.Any("value", value), zap.Bool("merge", merge))
 			return err
 		}
 	}
@@ -151,10 +159,14 @@ func (f *RaftFSM) delete(keys []string, data interface{}) (interface{}, error) {
 func (f *RaftFSM) applyDelete(key string) interface{} {
 	err := f.data.Delete(key)
 	if err != nil {
-		if err == maputils.ErrNotFound {
+		switch err {
+		case maputils.ErrNotFound:
+			f.logger.Debug("key does not found in the store data", zap.String("key", key))
 			return blasterrors.ErrNotFound
+		default:
+			f.logger.Error(err.Error(), zap.String("key", key))
+			return err
 		}
-		return err
 	}
 
 	return nil
@@ -164,6 +176,7 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 	var msg message
 	err := json.Unmarshal(l.Data, &msg)
 	if err != nil {
+		f.logger.Error(err.Error())
 		return err
 	}
 
@@ -172,6 +185,7 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 		var data map[string]interface{}
 		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
+			f.logger.Error(err.Error())
 			return err
 		}
 		return f.applySetMetadata(data["id"].(string), data["metadata"].(map[string]interface{}))
@@ -179,6 +193,7 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 		var data map[string]interface{}
 		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
+			f.logger.Error(err.Error())
 			return err
 		}
 		return f.applyDeleteMetadata(data["id"].(string))
@@ -186,24 +201,28 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 		var data map[string]interface{}
 		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
+			f.logger.Error(err.Error())
 			return err
 		}
-
 		return f.applySet(data["key"].(string), data["value"], true)
 	case deleteKeyValue:
 		var data map[string]interface{}
 		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
+			f.logger.Error(err.Error())
 			return err
 		}
-
 		return f.applyDelete(data["key"].(string))
 	default:
-		return errors.New("command type not support")
+		err = errors.New("command type not support")
+		f.logger.Error(err.Error())
+		return err
 	}
 }
 
 func (f *RaftFSM) Snapshot() (raft.FSMSnapshot, error) {
+	f.logger.Info("snapshot")
+
 	return &RaftFSMSnapshot{
 		data:   f.data,
 		logger: f.logger,
@@ -211,24 +230,24 @@ func (f *RaftFSM) Snapshot() (raft.FSMSnapshot, error) {
 }
 
 func (f *RaftFSM) Restore(rc io.ReadCloser) error {
-	f.logger.Print("[INFO] restore data")
+	f.logger.Info("restore")
 
 	defer func() {
 		err := rc.Close()
 		if err != nil {
-			f.logger.Printf("[ERR] %v", err)
+			f.logger.Error(err.Error())
 		}
 	}()
 
 	data, err := ioutil.ReadAll(rc)
 	if err != nil {
-		f.logger.Printf("[ERR] %v", err)
+		f.logger.Error(err.Error())
 		return err
 	}
 
 	err = json.Unmarshal(data, &f.data)
 	if err != nil {
-		f.logger.Printf("[ERR] %v", err)
+		f.logger.Error(err.Error())
 		return err
 	}
 
@@ -237,26 +256,28 @@ func (f *RaftFSM) Restore(rc io.ReadCloser) error {
 
 type RaftFSMSnapshot struct {
 	data   maputils.Map
-	logger *log.Logger
+	logger *zap.Logger
 }
 
 func (f *RaftFSMSnapshot) Persist(sink raft.SnapshotSink) error {
-	f.logger.Printf("[INFO] persist data")
+	f.logger.Info("persist")
 
 	defer func() {
 		err := sink.Close()
 		if err != nil {
-			f.logger.Printf("[ERR] %v", err)
+			f.logger.Error(err.Error())
 		}
 	}()
 
 	buff, err := json.Marshal(f.data)
 	if err != nil {
+		f.logger.Error(err.Error())
 		return err
 	}
 
 	_, err = sink.Write(buff)
 	if err != nil {
+		f.logger.Error(err.Error())
 		return err
 	}
 
@@ -264,5 +285,5 @@ func (f *RaftFSMSnapshot) Persist(sink raft.SnapshotSink) error {
 }
 
 func (f *RaftFSMSnapshot) Release() {
-	f.logger.Printf("[INFO] release")
+	f.logger.Info("release")
 }

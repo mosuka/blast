@@ -16,14 +16,13 @@ package indexer
 
 import (
 	"encoding/json"
-	"log"
 	"os"
-	"time"
 
 	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/ptypes/any"
 	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
+	"go.uber.org/zap"
 )
 
 type Index struct {
@@ -31,27 +30,53 @@ type Index struct {
 
 	indexConfig map[string]interface{}
 
-	logger *log.Logger
+	logger *zap.Logger
 }
 
-func NewIndex(dir string, indexConfig map[string]interface{}, logger *log.Logger) (*Index, error) {
-	bleve.SetLog(logger)
+func NewIndex(dir string, indexConfig map[string]interface{}, logger *zap.Logger) (*Index, error) {
+	//bleve.SetLog(logger)
 
 	var index bleve.Index
 	_, err := os.Stat(dir)
 	if os.IsNotExist(err) {
-		// create new index
-		indexMappingSrc, err := json.Marshal(indexConfig["index_mapping"])
-		if err != nil {
-			return nil, err
-		}
+		// default index mapping
 		indexMapping := bleve.NewIndexMapping()
-		err = json.Unmarshal(indexMappingSrc, indexMapping)
-		if err != nil {
-			return nil, err
+
+		// index mapping from config
+		indexMappingIntr, ok := indexConfig["index_mapping"]
+		if ok {
+			if indexMappingIntr != nil {
+				indexMappingBytes, err := json.Marshal(indexMappingIntr)
+				if err != nil {
+					logger.Error(err.Error())
+					return nil, err
+				}
+				err = json.Unmarshal(indexMappingBytes, indexMapping)
+				if err != nil {
+					logger.Error(err.Error())
+					return nil, err
+				}
+			}
+		} else {
+			logger.Error("missing index mapping")
 		}
-		index, err = bleve.NewUsing(dir, indexMapping, indexConfig["index_type"].(string), indexConfig["index_storage_type"].(string), nil)
+
+		indexType, ok := indexConfig["index_type"].(string)
+		if !ok {
+			logger.Error("missing index type")
+			indexType = bleve.Config.DefaultIndexType
+		}
+
+		indexStorageType, ok := indexConfig["index_storage_type"].(string)
+		if !ok {
+			logger.Error("missing index storage type")
+			indexStorageType = bleve.Config.DefaultKVStore
+		}
+
+		// create new index
+		index, err = bleve.NewUsing(dir, indexMapping, indexType, indexStorageType, nil)
 		if err != nil {
+			logger.Error(err.Error())
 			return nil, err
 		}
 	} else {
@@ -61,6 +86,7 @@ func NewIndex(dir string, indexConfig map[string]interface{}, logger *log.Logger
 			"error_if_exists":   false,
 		})
 		if err != nil {
+			logger.Error(err.Error())
 			return nil, err
 		}
 	}
@@ -75,6 +101,7 @@ func NewIndex(dir string, indexConfig map[string]interface{}, logger *log.Logger
 func (i *Index) Close() error {
 	err := i.index.Close()
 	if err != nil {
+		i.logger.Error(err.Error())
 		return err
 	}
 
@@ -82,23 +109,20 @@ func (i *Index) Close() error {
 }
 
 func (i *Index) Get(id string) (map[string]interface{}, error) {
-	start := time.Now()
-	defer func() {
-		i.logger.Printf("[DEBUG] get %s %f", id, float64(time.Since(start))/float64(time.Second))
-	}()
-
 	fieldsBytes, err := i.index.GetInternal([]byte(id))
 	if err != nil {
+		i.logger.Error(err.Error())
 		return nil, err
 	}
 	if len(fieldsBytes) <= 0 {
+		i.logger.Error(blasterrors.ErrNotFound.Error())
 		return nil, blasterrors.ErrNotFound
 	}
 
-	// bytes -> map[string]interface{}
 	var fieldsMap map[string]interface{}
 	err = json.Unmarshal(fieldsBytes, &fieldsMap)
 	if err != nil {
+		i.logger.Error(err.Error())
 		return nil, err
 	}
 
@@ -106,14 +130,9 @@ func (i *Index) Get(id string) (map[string]interface{}, error) {
 }
 
 func (i *Index) Search(request *bleve.SearchRequest) (*bleve.SearchResult, error) {
-	start := time.Now()
-	defer func() {
-		rb, _ := json.Marshal(request)
-		i.logger.Printf("[DEBUG] search %s %f", rb, float64(time.Since(start))/float64(time.Second))
-	}()
-
 	result, err := i.index.Search(request)
 	if err != nil {
+		i.logger.Error(err.Error())
 		return nil, err
 	}
 
@@ -121,28 +140,24 @@ func (i *Index) Search(request *bleve.SearchRequest) (*bleve.SearchResult, error
 }
 
 func (i *Index) Index(id string, fields map[string]interface{}) error {
-	start := time.Now()
-	defer func() {
-		i.logger.Printf("[DEBUG] index %s %v %f", id, fields, float64(time.Since(start))/float64(time.Second))
-	}()
-
 	// index
-	i.logger.Printf("[DEBUG] index %s, %v", id, fields)
 	err := i.index.Index(id, fields)
 	if err != nil {
+		i.logger.Error(err.Error())
 		return err
 	}
-	i.logger.Printf("[DEBUG] indexed %s, %v", id, fields)
 
 	// map[string]interface{} -> bytes
 	fieldsBytes, err := json.Marshal(fields)
 	if err != nil {
+		i.logger.Error(err.Error())
 		return err
 	}
 
 	// set original document
 	err = i.index.SetInternal([]byte(id), fieldsBytes)
 	if err != nil {
+		i.logger.Error(err.Error())
 		return err
 	}
 
@@ -150,19 +165,16 @@ func (i *Index) Index(id string, fields map[string]interface{}) error {
 }
 
 func (i *Index) Delete(id string) error {
-	start := time.Now()
-	defer func() {
-		i.logger.Printf("[DEBUG] delete %s %f", id, float64(time.Since(start))/float64(time.Second))
-	}()
-
 	err := i.index.Delete(id)
 	if err != nil {
+		i.logger.Error(err.Error())
 		return err
 	}
 
 	// delete original document
 	err = i.index.SetInternal([]byte(id), nil)
 	if err != nil {
+		i.logger.Error(err.Error())
 		return err
 	}
 
@@ -170,23 +182,11 @@ func (i *Index) Delete(id string) error {
 }
 
 func (i *Index) Config() (map[string]interface{}, error) {
-	start := time.Now()
-	defer func() {
-		i.logger.Printf("[DEBUG] stats %f", float64(time.Since(start))/float64(time.Second))
-	}()
-
 	return i.indexConfig, nil
 }
 
 func (i *Index) Stats() (map[string]interface{}, error) {
-	start := time.Now()
-	defer func() {
-		i.logger.Printf("[DEBUG] stats %f", float64(time.Since(start))/float64(time.Second))
-	}()
-
-	stats := i.index.StatsMap()
-
-	return stats, nil
+	return i.index.StatsMap(), nil
 }
 
 func (i *Index) SnapshotItems() <-chan *protobuf.Document {
@@ -195,13 +195,13 @@ func (i *Index) SnapshotItems() <-chan *protobuf.Document {
 	go func() {
 		idx, _, err := i.index.Advanced()
 		if err != nil {
-			i.logger.Printf("[ERR] %v", err)
+			i.logger.Error(err.Error())
 			return
 		}
 
 		r, err := idx.Reader()
 		if err != nil {
-			i.logger.Printf("[ERR] %v", err)
+			i.logger.Error(err.Error())
 			return
 		}
 
@@ -210,15 +210,15 @@ func (i *Index) SnapshotItems() <-chan *protobuf.Document {
 		dr, err := r.DocIDReaderAll()
 		for {
 			if dr == nil {
-				i.logger.Printf("[ERR] %v", err)
+				i.logger.Error(err.Error())
 				break
 			}
 			id, err := dr.Next()
 			if id == nil {
-				i.logger.Print("[DEBUG] finished to read all document ids")
+				i.logger.Debug("finished to read all document ids")
 				break
 			} else if err != nil {
-				i.logger.Printf("[WARN] %v", err)
+				i.logger.Warn(err.Error())
 				continue
 			}
 
@@ -229,16 +229,15 @@ func (i *Index) SnapshotItems() <-chan *protobuf.Document {
 			var fieldsMap map[string]interface{}
 			err = json.Unmarshal([]byte(fieldsBytes), &fieldsMap)
 			if err != nil {
-				i.logger.Printf("[ERR] %v", err)
+				i.logger.Error(err.Error())
 				break
 			}
-			i.logger.Printf("[DEBUG] %v", fieldsMap)
 
 			// map[string]interface{} -> Any
 			fieldsAny := &any.Any{}
 			err = protobuf.UnmarshalAny(fieldsMap, fieldsAny)
 			if err != nil {
-				i.logger.Printf("[ERR] %v", err)
+				i.logger.Error(err.Error())
 				break
 			}
 
@@ -252,10 +251,10 @@ func (i *Index) SnapshotItems() <-chan *protobuf.Document {
 			docCount = docCount + 1
 		}
 
-		i.logger.Print("[DEBUG] finished to write all documents to channel")
+		i.logger.Debug("finished to write all documents to channel")
 		ch <- nil
 
-		i.logger.Printf("[INFO] snapshot total %d documents", docCount)
+		i.logger.Info("finished to snapshot", zap.Int("count", docCount))
 
 		return
 	}()
