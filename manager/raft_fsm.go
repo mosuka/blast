@@ -66,7 +66,7 @@ func (f *RaftFSM) GetMetadata(id string) (map[string]interface{}, error) {
 	return value.(maputils.Map).ToMap(), nil
 }
 
-func (f *RaftFSM) applySetMetadata(id string, value map[string]interface{}) interface{} {
+func (f *RaftFSM) applySetMetadata(id string, value map[string]interface{}) error {
 	err := f.metadata.Merge(id, value)
 	if err != nil {
 		f.logger.Error(err.Error(), zap.String("id", id), zap.Any("value", value))
@@ -76,7 +76,7 @@ func (f *RaftFSM) applySetMetadata(id string, value map[string]interface{}) inte
 	return nil
 }
 
-func (f *RaftFSM) applyDeleteMetadata(id string) interface{} {
+func (f *RaftFSM) applyDeleteMetadata(id string) error {
 	err := f.metadata.Delete(id)
 	if err != nil {
 		f.logger.Error(err.Error(), zap.String("id", id))
@@ -110,7 +110,7 @@ func (f *RaftFSM) Get(key string) (interface{}, error) {
 	return ret, nil
 }
 
-func (f *RaftFSM) applySet(key string, value interface{}, merge bool) interface{} {
+func (f *RaftFSM) applySet(key string, value interface{}, merge bool) error {
 	if merge {
 		err := f.data.Merge(key, value)
 		if err != nil {
@@ -156,7 +156,8 @@ func (f *RaftFSM) delete(keys []string, data interface{}) (interface{}, error) {
 	return data, nil
 }
 
-func (f *RaftFSM) applyDelete(key string) interface{} {
+//func (f *RaftFSM) applyDelete(key string) interface{} {
+func (f *RaftFSM) applyDelete(key string) error {
 	err := f.data.Delete(key)
 	if err != nil {
 		switch err {
@@ -170,6 +171,10 @@ func (f *RaftFSM) applyDelete(key string) interface{} {
 	}
 
 	return nil
+}
+
+type fsmResponse struct {
+	error error
 }
 
 func (f *RaftFSM) Apply(l *raft.Log) interface{} {
@@ -186,37 +191,45 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
 			f.logger.Error(err.Error())
-			return err
+			return &fsmResponse{error: err}
 		}
-		return f.applySetMetadata(data["id"].(string), data["metadata"].(map[string]interface{}))
+
+		err = f.applySetMetadata(data["id"].(string), data["metadata"].(map[string]interface{}))
+		return &fsmResponse{error: err}
 	case deleteNode:
 		var data map[string]interface{}
 		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
 			f.logger.Error(err.Error())
-			return err
+			return &fsmResponse{error: err}
 		}
-		return f.applyDeleteMetadata(data["id"].(string))
+
+		err = f.applyDeleteMetadata(data["id"].(string))
+		return &fsmResponse{error: err}
 	case setKeyValue:
 		var data map[string]interface{}
 		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
 			f.logger.Error(err.Error())
-			return err
+			return &fsmResponse{error: err}
 		}
-		return f.applySet(data["key"].(string), data["value"], true)
+
+		err = f.applySet(data["key"].(string), data["value"], true)
+		return &fsmResponse{error: err}
 	case deleteKeyValue:
 		var data map[string]interface{}
 		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
 			f.logger.Error(err.Error())
-			return err
+			return &fsmResponse{error: err}
 		}
-		return f.applyDelete(data["key"].(string))
+
+		err = f.applyDelete(data["key"].(string))
+		return &fsmResponse{error: err}
 	default:
-		err = errors.New("command type not support")
+		err = errors.New("unsupported command")
 		f.logger.Error(err.Error())
-		return err
+		return &fsmResponse{error: err}
 	}
 }
 

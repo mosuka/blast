@@ -87,7 +87,7 @@ func (f *RaftFSM) GetMetadata(id string) (map[string]interface{}, error) {
 	return value.(maputils.Map).ToMap(), nil
 }
 
-func (f *RaftFSM) applySetMetadata(id string, value map[string]interface{}) interface{} {
+func (f *RaftFSM) applySetMetadata(id string, value map[string]interface{}) error {
 	f.metadataMutex.RLock()
 	defer f.metadataMutex.RUnlock()
 
@@ -125,7 +125,7 @@ func (f *RaftFSM) GetDocument(id string) (map[string]interface{}, error) {
 	return fields, nil
 }
 
-func (f *RaftFSM) applyIndexDocument(id string, fields map[string]interface{}) interface{} {
+func (f *RaftFSM) applyIndexDocument(id string, fields map[string]interface{}) error {
 	f.logger.Debug("apply to index a document", zap.String("id", id), zap.Any("fields", fields))
 
 	err := f.index.Index(id, fields)
@@ -137,7 +137,7 @@ func (f *RaftFSM) applyIndexDocument(id string, fields map[string]interface{}) i
 	return nil
 }
 
-func (f *RaftFSM) applyDeleteDocument(id string) interface{} {
+func (f *RaftFSM) applyDeleteDocument(id string) error {
 	f.logger.Debug("apply to delete a document", zap.String("id", id))
 
 	err := f.index.Delete(id)
@@ -161,6 +161,10 @@ func (f *RaftFSM) Search(request *bleve.SearchRequest) (*bleve.SearchResult, err
 	return result, nil
 }
 
+type fsmResponse struct {
+	error error
+}
+
 func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 	f.logger.Debug("apply a message")
 
@@ -176,9 +180,11 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
 			f.logger.Error(err.Error())
-			return err
+			return &fsmResponse{error: err}
 		}
-		return f.applySetMetadata(data["id"].(string), data["metadata"].(map[string]interface{}))
+
+		err = f.applySetMetadata(data["id"].(string), data["metadata"].(map[string]interface{}))
+		return &fsmResponse{error: err}
 	case deleteNode:
 		var data map[string]interface{}
 		err := json.Unmarshal(msg.Data, &data)
@@ -192,21 +198,25 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
 			f.logger.Error(err.Error())
-			return err
+			return &fsmResponse{error: err}
 		}
-		return f.applyIndexDocument(data["id"].(string), data["fields"].(map[string]interface{}))
+
+		err = f.applyIndexDocument(data["id"].(string), data["fields"].(map[string]interface{}))
+		return &fsmResponse{error: err}
 	case deleteDocument:
 		var data string
 		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
 			f.logger.Error(err.Error())
-			return err
+			return &fsmResponse{error: err}
 		}
-		return f.applyDeleteDocument(data)
+
+		err = f.applyDeleteDocument(data)
+		return &fsmResponse{error: err}
 	default:
-		err = errors.New("command type not support")
+		err = errors.New("unsupported command")
 		f.logger.Error(err.Error())
-		return err
+		return &fsmResponse{error: err}
 	}
 }
 

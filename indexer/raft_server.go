@@ -283,6 +283,11 @@ func (s *RaftServer) setMetadata(id string, metadata map[string]interface{}) err
 		s.logger.Error(err.Error())
 		return err
 	}
+	err = f.Response().(*fsmResponse).error
+	if err != nil {
+		s.logger.Error(err.Error())
+		return err
+	}
 
 	return nil
 }
@@ -309,6 +314,11 @@ func (s *RaftServer) deleteMetadata(id string) error {
 
 	f := s.raft.Apply(msgBytes, 10*time.Second)
 	err = f.Error()
+	if err != nil {
+		s.logger.Error(err.Error())
+		return err
+	}
+	err = f.Response().(*fsmResponse).error
 	if err != nil {
 		s.logger.Error(err.Error())
 		return err
@@ -505,6 +515,11 @@ func (s *RaftServer) IndexDocument(docs []map[string]interface{}) (int, error) {
 			s.logger.Error(err.Error())
 			return -1, err
 		}
+		err = f.Response().(*fsmResponse).error
+		if err != nil {
+			s.logger.Error(err.Error())
+			return -1, err
+		}
 
 		count++
 	}
@@ -537,6 +552,11 @@ func (s *RaftServer) DeleteDocument(ids []string) (int, error) {
 
 		f := s.raft.Apply(msgBytes, 10*time.Second)
 		err = f.Error()
+		if err != nil {
+			s.logger.Error(err.Error())
+			return -1, err
+		}
+		err = f.Response().(*fsmResponse).error
 		if err != nil {
 			s.logger.Error(err.Error())
 			return -1, err
