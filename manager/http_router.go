@@ -17,7 +17,6 @@ package manager
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
 
@@ -27,9 +26,10 @@ import (
 	blasthttp "github.com/mosuka/blast/http"
 	"github.com/mosuka/blast/version"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.uber.org/zap"
 )
 
-func NewRouter(grpcAddr string, logger *log.Logger) (*blasthttp.Router, error) {
+func NewRouter(grpcAddr string, logger *zap.Logger) (*blasthttp.Router, error) {
 	router, err := blasthttp.NewRouter(grpcAddr, logger)
 	if err != nil {
 		return nil, err
@@ -50,10 +50,10 @@ func NewRouter(grpcAddr string, logger *log.Logger) (*blasthttp.Router, error) {
 }
 
 type RootHandler struct {
-	logger *log.Logger
+	logger *zap.Logger
 }
 
-func NewRootHandler(logger *log.Logger) *RootHandler {
+func NewRootHandler(logger *zap.Logger) *RootHandler {
 	return &RootHandler{
 		logger: logger,
 	}
@@ -63,10 +63,8 @@ func (h *RootHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	status := http.StatusOK
 	content := make([]byte, 0)
-	defer func() {
-		blasthttp.WriteResponse(w, content, status, h.logger)
-		blasthttp.RecordMetrics(start, status, w, r, h.logger)
-	}()
+
+	defer blasthttp.RecordMetrics(start, status, w, r)
 
 	msgMap := map[string]interface{}{
 		"version": version.Version,
@@ -75,16 +73,18 @@ func (h *RootHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	content, err := blasthttp.NewJSONMessage(msgMap)
 	if err != nil {
-		h.logger.Printf("[ERR] %v", err)
+		h.logger.Error(err.Error())
 	}
+
+	blasthttp.WriteResponse(w, content, status, h.logger)
 }
 
 type GetHandler struct {
 	client *grpc.Client
-	logger *log.Logger
+	logger *zap.Logger
 }
 
-func NewGetHandler(client *grpc.Client, logger *log.Logger) *GetHandler {
+func NewGetHandler(client *grpc.Client, logger *zap.Logger) *GetHandler {
 	return &GetHandler{
 		client: client,
 		logger: logger,
@@ -93,12 +93,10 @@ func NewGetHandler(client *grpc.Client, logger *log.Logger) *GetHandler {
 
 func (h *GetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
-	httpStatus := http.StatusOK
+	status := http.StatusOK
 	content := make([]byte, 0)
-	defer func() {
-		blasthttp.WriteResponse(w, content, httpStatus, h.logger)
-		blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
-	}()
+
+	defer blasthttp.RecordMetrics(start, status, w, r)
 
 	vars := mux.Vars(r)
 
@@ -108,49 +106,53 @@ func (h *GetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch err {
 		case blasterrors.ErrNotFound:
-			httpStatus = http.StatusNotFound
+			status = http.StatusNotFound
 		default:
-			httpStatus = http.StatusInternalServerError
+			status = http.StatusInternalServerError
 		}
 
 		msgMap := map[string]interface{}{
 			"message": err.Error(),
-			"status":  httpStatus,
+			"status":  status,
 		}
 
 		content, err = blasthttp.NewJSONMessage(msgMap)
 		if err != nil {
-			h.logger.Printf("[ERR] %v", err)
+			h.logger.Error(err.Error())
 		}
 
+		blasthttp.WriteResponse(w, content, status, h.logger)
 		return
 	}
 
 	// interface{} -> []byte
 	content, err = json.MarshalIndent(value, "", "  ")
 	if err != nil {
-		httpStatus = http.StatusInternalServerError
+		status = http.StatusInternalServerError
 
 		msgMap := map[string]interface{}{
 			"message": err.Error(),
-			"status":  httpStatus,
+			"status":  status,
 		}
 
 		content, err = blasthttp.NewJSONMessage(msgMap)
 		if err != nil {
-			h.logger.Printf("[ERR] %v", err)
+			h.logger.Error(err.Error())
 		}
 
+		blasthttp.WriteResponse(w, content, status, h.logger)
 		return
 	}
+
+	blasthttp.WriteResponse(w, content, status, h.logger)
 }
 
 type PutHandler struct {
 	client *grpc.Client
-	logger *log.Logger
+	logger *zap.Logger
 }
 
-func NewPutHandler(client *grpc.Client, logger *log.Logger) *PutHandler {
+func NewPutHandler(client *grpc.Client, logger *zap.Logger) *PutHandler {
 	return &PutHandler{
 		client: client,
 		logger: logger,
@@ -159,12 +161,10 @@ func NewPutHandler(client *grpc.Client, logger *log.Logger) *PutHandler {
 
 func (h *PutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
-	httpStatus := http.StatusOK
+	status := http.StatusOK
 	content := make([]byte, 0)
-	defer func() {
-		blasthttp.WriteResponse(w, content, httpStatus, h.logger)
-		blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
-	}()
+
+	defer blasthttp.RecordMetrics(start, status, w, r)
 
 	vars := mux.Vars(r)
 
@@ -172,18 +172,19 @@ func (h *PutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		httpStatus = http.StatusInternalServerError
+		status = http.StatusInternalServerError
 
 		msgMap := map[string]interface{}{
 			"message": err.Error(),
-			"status":  httpStatus,
+			"status":  status,
 		}
 
 		content, err = blasthttp.NewJSONMessage(msgMap)
 		if err != nil {
-			h.logger.Printf("[ERR] %v", err)
+			h.logger.Error(err.Error())
 		}
 
+		blasthttp.WriteResponse(w, content, status, h.logger)
 		return
 	}
 
@@ -191,45 +192,49 @@ func (h *PutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var value interface{}
 	err = json.Unmarshal(bodyBytes, &value)
 	if err != nil {
-		httpStatus = http.StatusBadRequest
+		status = http.StatusBadRequest
 
 		msgMap := map[string]interface{}{
 			"message": err.Error(),
-			"status":  httpStatus,
+			"status":  status,
 		}
 
 		content, err = blasthttp.NewJSONMessage(msgMap)
 		if err != nil {
-			h.logger.Printf("[ERR] %v", err)
+			h.logger.Error(err.Error())
 		}
 
+		blasthttp.WriteResponse(w, content, status, h.logger)
 		return
 	}
 
 	err = h.client.SetState(key, value)
 	if err != nil {
-		httpStatus = http.StatusInternalServerError
+		status = http.StatusInternalServerError
 
 		msgMap := map[string]interface{}{
 			"message": err.Error(),
-			"status":  httpStatus,
+			"status":  status,
 		}
 
 		content, err = blasthttp.NewJSONMessage(msgMap)
 		if err != nil {
-			h.logger.Printf("[ERR] %v", err)
+			h.logger.Error(err.Error())
 		}
 
+		blasthttp.WriteResponse(w, content, status, h.logger)
 		return
 	}
+
+	blasthttp.WriteResponse(w, content, status, h.logger)
 }
 
 type DeleteHandler struct {
 	client *grpc.Client
-	logger *log.Logger
+	logger *zap.Logger
 }
 
-func NewDeleteHandler(client *grpc.Client, logger *log.Logger) *DeleteHandler {
+func NewDeleteHandler(client *grpc.Client, logger *zap.Logger) *DeleteHandler {
 	return &DeleteHandler{
 		client: client,
 		logger: logger,
@@ -238,12 +243,10 @@ func NewDeleteHandler(client *grpc.Client, logger *log.Logger) *DeleteHandler {
 
 func (h *DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
-	httpStatus := http.StatusOK
+	status := http.StatusOK
 	content := make([]byte, 0)
-	defer func() {
-		blasthttp.WriteResponse(w, content, httpStatus, h.logger)
-		blasthttp.RecordMetrics(start, httpStatus, w, r, h.logger)
-	}()
+
+	defer blasthttp.RecordMetrics(start, status, w, r)
 
 	vars := mux.Vars(r)
 
@@ -251,18 +254,21 @@ func (h *DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	err := h.client.DeleteState(key)
 	if err != nil {
-		httpStatus = http.StatusInternalServerError
+		status = http.StatusInternalServerError
 
 		msgMap := map[string]interface{}{
 			"message": err.Error(),
-			"status":  httpStatus,
+			"status":  status,
 		}
 
 		content, err = blasthttp.NewJSONMessage(msgMap)
 		if err != nil {
-			h.logger.Printf("[ERR] %v", err)
+			h.logger.Error(err.Error())
 		}
 
+		blasthttp.WriteResponse(w, content, status, h.logger)
 		return
 	}
+
+	blasthttp.WriteResponse(w, content, status, h.logger)
 }

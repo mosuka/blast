@@ -15,7 +15,6 @@
 package http
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -24,14 +23,14 @@ import (
 )
 
 var (
-	namespace = "blast"
-	subsystem = "http"
+	namespace = "http"
+	subsystem = "server"
 
 	DurationSeconds = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: subsystem,
-			Name:      "duration_seconds",
+			Name:      "handling_seconds",
 			Help:      "The invocation duration in seconds.",
 		},
 		[]string{
@@ -43,25 +42,13 @@ var (
 		prometheus.CounterOpts{
 			Namespace: namespace,
 			Subsystem: subsystem,
-			Name:      "requests_total",
+			Name:      "handled_total",
 			Help:      "The number of requests.",
 		},
 		[]string{
 			"request_uri",
-			"method",
-		},
-	)
-
-	ResponsesTotal = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: namespace,
-			Subsystem: subsystem,
-			Name:      "responses_total",
-			Help:      "The number of responses.",
-		},
-		[]string{
-			"request_uri",
-			"status",
+			"http_method",
+			"http_status",
 		},
 	)
 
@@ -69,12 +56,12 @@ var (
 		prometheus.CounterOpts{
 			Namespace: namespace,
 			Subsystem: subsystem,
-			Name:      "requests_bytes_total",
+			Name:      "requests_received_bytes",
 			Help:      "A summary of the invocation requests bytes.",
 		},
 		[]string{
 			"request_uri",
-			"method",
+			"http_method",
 		},
 	)
 
@@ -82,12 +69,12 @@ var (
 		prometheus.CounterOpts{
 			Namespace: namespace,
 			Subsystem: subsystem,
-			Name:      "responses_bytes_total",
+			Name:      "responses_sent_bytes",
 			Help:      "A summary of the invocation responses bytes.",
 		},
 		[]string{
 			"request_uri",
-			"method",
+			"http_method",
 		},
 	)
 )
@@ -95,19 +82,19 @@ var (
 func init() {
 	prometheus.MustRegister(DurationSeconds)
 	prometheus.MustRegister(RequestsTotal)
-	prometheus.MustRegister(ResponsesTotal)
 	prometheus.MustRegister(RequestsBytesTotal)
 	prometheus.MustRegister(ResponsesBytesTotal)
 }
 
-func RecordMetrics(start time.Time, status int, writer http.ResponseWriter, request *http.Request, logger *log.Logger) {
+func RecordMetrics(start time.Time, status int, writer http.ResponseWriter, request *http.Request) {
 	DurationSeconds.With(prometheus.Labels{"request_uri": request.RequestURI}).Observe(float64(time.Since(start)) / float64(time.Second))
-	RequestsTotal.With(prometheus.Labels{"request_uri": request.RequestURI, "method": request.Method}).Inc()
-	ResponsesTotal.With(prometheus.Labels{"request_uri": request.RequestURI, "status": strconv.Itoa(status)}).Inc()
-	RequestsBytesTotal.With(prometheus.Labels{"request_uri": request.RequestURI, "method": request.Method}).Add(float64(request.ContentLength))
+
+	RequestsTotal.With(prometheus.Labels{"request_uri": request.RequestURI, "http_method": request.Method, "http_status": strconv.Itoa(status)}).Inc()
+
+	RequestsBytesTotal.With(prometheus.Labels{"request_uri": request.RequestURI, "http_method": request.Method}).Add(float64(request.ContentLength))
+
 	contentLength, err := strconv.ParseFloat(writer.Header().Get("Content-Length"), 64)
-	if err != nil {
-		logger.Printf("[ERR] Failed to parse content length: %v", err)
+	if err == nil {
+		ResponsesBytesTotal.With(prometheus.Labels{"request_uri": request.RequestURI, "http_method": request.Method}).Add(contentLength)
 	}
-	ResponsesBytesTotal.With(prometheus.Labels{"request_uri": request.RequestURI, "method": request.Method}).Add(contentLength)
 }

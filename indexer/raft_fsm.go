@@ -19,7 +19,6 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
-	"log"
 	"sync"
 
 	"github.com/blevesearch/bleve"
@@ -27,6 +26,7 @@ import (
 	"github.com/hashicorp/raft"
 	"github.com/mosuka/blast/maputils"
 	"github.com/mosuka/blast/protobuf"
+	"go.uber.org/zap"
 )
 
 type RaftFSM struct {
@@ -39,10 +39,10 @@ type RaftFSM struct {
 
 	indexConfig map[string]interface{}
 
-	logger *log.Logger
+	logger *zap.Logger
 }
 
-func NewRaftFSM(path string, indexConfig map[string]interface{}, logger *log.Logger) (*RaftFSM, error) {
+func NewRaftFSM(path string, indexConfig map[string]interface{}, logger *zap.Logger) (*RaftFSM, error) {
 	return &RaftFSM{
 		path:        path,
 		indexConfig: indexConfig,
@@ -57,6 +57,7 @@ func (f *RaftFSM) Start() error {
 
 	f.index, err = NewIndex(f.path, f.indexConfig, f.logger)
 	if err != nil {
+		f.logger.Error(err.Error())
 		return err
 	}
 
@@ -66,6 +67,7 @@ func (f *RaftFSM) Start() error {
 func (f *RaftFSM) Stop() error {
 	err := f.index.Close()
 	if err != nil {
+		f.logger.Error(err.Error())
 		return err
 	}
 
@@ -78,18 +80,20 @@ func (f *RaftFSM) GetMetadata(id string) (map[string]interface{}, error) {
 
 	value, err := f.metadata.Get(id)
 	if err != nil {
+		f.logger.Error(err.Error())
 		return nil, err
 	}
 
 	return value.(maputils.Map).ToMap(), nil
 }
 
-func (f *RaftFSM) applySetMetadata(id string, value map[string]interface{}) interface{} {
+func (f *RaftFSM) applySetMetadata(id string, value map[string]interface{}) error {
 	f.metadataMutex.RLock()
 	defer f.metadataMutex.RUnlock()
 
 	err := f.metadata.Merge(id, value)
 	if err != nil {
+		f.logger.Error(err.Error())
 		return err
 	}
 
@@ -102,6 +106,7 @@ func (f *RaftFSM) applyDeleteMetadata(id string) interface{} {
 
 	err := f.metadata.Delete(id)
 	if err != nil {
+		f.logger.Error(err.Error())
 		return err
 	}
 
@@ -109,30 +114,35 @@ func (f *RaftFSM) applyDeleteMetadata(id string) interface{} {
 }
 
 func (f *RaftFSM) GetDocument(id string) (map[string]interface{}, error) {
+	f.logger.Debug("get a document", zap.String("id", id))
+
 	fields, err := f.index.Get(id)
 	if err != nil {
+		f.logger.Error(err.Error())
 		return nil, err
 	}
 
 	return fields, nil
 }
 
-func (f *RaftFSM) applyIndexDocument(id string, fields map[string]interface{}) interface{} {
-	f.logger.Printf("[DEBUG] index %s, %v", id, fields)
+func (f *RaftFSM) applyIndexDocument(id string, fields map[string]interface{}) error {
+	f.logger.Debug("apply to index a document", zap.String("id", id), zap.Any("fields", fields))
 
 	err := f.index.Index(id, fields)
 	if err != nil {
-		f.logger.Printf("[ERR] %v", err)
+		f.logger.Error(err.Error())
 		return err
 	}
 
 	return nil
 }
 
-func (f *RaftFSM) applyDeleteDocument(id string) interface{} {
+func (f *RaftFSM) applyDeleteDocument(id string) error {
+	f.logger.Debug("apply to delete a document", zap.String("id", id))
+
 	err := f.index.Delete(id)
 	if err != nil {
-		f.logger.Printf("[ERR] %v", err)
+		f.logger.Error(err.Error())
 		return err
 	}
 
@@ -140,35 +150,46 @@ func (f *RaftFSM) applyDeleteDocument(id string) interface{} {
 }
 
 func (f *RaftFSM) Search(request *bleve.SearchRequest) (*bleve.SearchResult, error) {
+	f.logger.Debug("search documents")
+
 	result, err := f.index.Search(request)
 	if err != nil {
+		f.logger.Error(err.Error())
 		return nil, err
 	}
 
 	return result, nil
 }
 
+type fsmResponse struct {
+	error error
+}
+
 func (f *RaftFSM) Apply(l *raft.Log) interface{} {
+	f.logger.Debug("apply a message")
+
 	var msg message
 	err := json.Unmarshal(l.Data, &msg)
 	if err != nil {
 		return err
 	}
 
-	f.logger.Printf("[DEBUG] Apply %v", msg)
-
 	switch msg.Command {
 	case setNode:
 		var data map[string]interface{}
 		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
-			return err
+			f.logger.Error(err.Error())
+			return &fsmResponse{error: err}
 		}
-		return f.applySetMetadata(data["id"].(string), data["metadata"].(map[string]interface{}))
+
+		err = f.applySetMetadata(data["id"].(string), data["metadata"].(map[string]interface{}))
+		return &fsmResponse{error: err}
 	case deleteNode:
 		var data map[string]interface{}
 		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
+			f.logger.Error(err.Error())
 			return err
 		}
 		return f.applyDeleteMetadata(data["id"].(string))
@@ -176,18 +197,26 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 		var data map[string]interface{}
 		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
-			return err
+			f.logger.Error(err.Error())
+			return &fsmResponse{error: err}
 		}
-		return f.applyIndexDocument(data["id"].(string), data["fields"].(map[string]interface{}))
+
+		err = f.applyIndexDocument(data["id"].(string), data["fields"].(map[string]interface{}))
+		return &fsmResponse{error: err}
 	case deleteDocument:
 		var data string
 		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
-			return err
+			f.logger.Error(err.Error())
+			return &fsmResponse{error: err}
 		}
-		return f.applyDeleteDocument(data)
+
+		err = f.applyDeleteDocument(data)
+		return &fsmResponse{error: err}
 	default:
-		return errors.New("command type not support")
+		err = errors.New("unsupported command")
+		f.logger.Error(err.Error())
+		return &fsmResponse{error: err}
 	}
 }
 
@@ -210,13 +239,13 @@ func (f *RaftFSM) Restore(rc io.ReadCloser) error {
 	defer func() {
 		err := rc.Close()
 		if err != nil {
-			f.logger.Printf("[ERR] %v", err)
+			f.logger.Error(err.Error())
 		}
 	}()
 
 	data, err := ioutil.ReadAll(rc)
 	if err != nil {
-		f.logger.Printf("[ERR] %v", err)
+		f.logger.Error(err.Error())
 		return err
 	}
 
@@ -230,30 +259,31 @@ func (f *RaftFSM) Restore(rc io.ReadCloser) error {
 			break
 		}
 		if err != nil {
-			f.logger.Printf("[ERR] %v", err)
-			return err
+			f.logger.Error(err.Error())
+			continue
 		}
 
 		fields, err := protobuf.MarshalAny(doc.Fields)
 		if err != nil {
-			return err
+			f.logger.Error(err.Error())
+			continue
 		}
 		if fields == nil {
-			return nil
+			f.logger.Error("value is nil")
+			continue
 		}
 		fieldsMap := *fields.(*map[string]interface{})
 
 		err = f.index.Index(doc.Id, fieldsMap)
 		if err != nil {
-			f.logger.Printf("[ERR] %v", err)
-			return err
+			f.logger.Error(err.Error())
+			continue
 		}
 
-		f.logger.Printf("[DEBUG] restore %v %v", doc.Id, doc.Fields)
 		docCount = docCount + 1
 	}
 
-	f.logger.Printf("[INFO] %d documents were restored", docCount)
+	f.logger.Info("restore", zap.Int("count", docCount))
 
 	return nil
 }
@@ -262,14 +292,14 @@ func (f *RaftFSM) Restore(rc io.ReadCloser) error {
 
 type IndexFSMSnapshot struct {
 	index  *Index
-	logger *log.Logger
+	logger *zap.Logger
 }
 
 func (f *IndexFSMSnapshot) Persist(sink raft.SnapshotSink) error {
 	defer func() {
 		err := sink.Close()
 		if err != nil {
-			f.logger.Printf("[ERR] %v", err)
+			f.logger.Error(err.Error())
 		}
 	}()
 
@@ -283,22 +313,26 @@ func (f *IndexFSMSnapshot) Persist(sink raft.SnapshotSink) error {
 			break
 		}
 
-		docCount = docCount + 1
 		docBytes, err := json.Marshal(doc)
 		if err != nil {
-			return err
+			f.logger.Error(err.Error())
+			continue
 		}
 
 		_, err = sink.Write(docBytes)
 		if err != nil {
-			return err
+			f.logger.Error(err.Error())
+			continue
 		}
+
+		docCount = docCount + 1
 	}
-	f.logger.Printf("[INFO] %d documents were persisted", docCount)
+
+	f.logger.Info("persist", zap.Int("count", docCount))
 
 	return nil
 }
 
 func (f *IndexFSMSnapshot) Release() {
-	f.logger.Printf("[INFO] release")
+	f.logger.Info("release")
 }

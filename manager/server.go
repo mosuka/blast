@@ -15,11 +15,10 @@
 package manager
 
 import (
-	"log"
-
 	accesslog "github.com/mash/go-accesslog"
 	"github.com/mosuka/blast/grpc"
 	"github.com/mosuka/blast/http"
+	"go.uber.org/zap"
 )
 
 type Server struct {
@@ -36,11 +35,11 @@ type Server struct {
 	httpRouter  *http.Router
 	httpServer  *http.Server
 
-	logger     *log.Logger
+	logger     *zap.Logger
 	httpLogger accesslog.Logger
 }
 
-func NewServer(id string, metadata map[string]interface{}, peerAddr string, indexConfig map[string]interface{}, logger *log.Logger, httpLogger accesslog.Logger) (*Server, error) {
+func NewServer(id string, metadata map[string]interface{}, peerAddr string, indexConfig map[string]interface{}, logger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
 	return &Server{
 		id:          id,
 		metadata:    metadata,
@@ -56,73 +55,73 @@ func (s *Server) Start() {
 
 	// bootstrap node?
 	bootstrap := s.peerAddr == ""
-	s.logger.Printf("[INFO] bootstrap: %v", bootstrap)
+	s.logger.Info("bootstrap", zap.Bool("bootstrap", bootstrap))
 
 	// create raft server
 	s.raftServer, err = NewRaftServer(s.id, s.metadata, bootstrap, s.indexConfig, s.logger)
 	if err != nil {
-		s.logger.Printf("[ERR] %v", err)
+		s.logger.Fatal(err.Error())
 		return
 	}
 
 	// create gRPC service
 	s.grpcService, err = NewGRPCService(s.raftServer, s.logger)
 	if err != nil {
-		s.logger.Printf("[ERR] %v", err)
+		s.logger.Fatal(err.Error())
 		return
 	}
 
 	// create gRPC server
 	s.grpcServer, err = grpc.NewServer(s.metadata["grpc_addr"].(string), s.grpcService, s.logger)
 	if err != nil {
-		s.logger.Printf("[ERR] %v", err)
+		s.logger.Fatal(err.Error())
 		return
 	}
 
 	// create HTTP router
 	s.httpRouter, err = NewRouter(s.metadata["grpc_addr"].(string), s.logger)
 	if err != nil {
-		s.logger.Printf("[ERR] %v", err)
+		s.logger.Fatal(err.Error())
 		return
 	}
 
 	// create HTTP server
 	s.httpServer, err = http.NewServer(s.metadata["http_addr"].(string), s.httpRouter, s.logger, s.httpLogger)
 	if err != nil {
-		s.logger.Printf("[ERR] %v", err)
+		s.logger.Error(err.Error())
 		return
 	}
 
 	// start Raft server
-	s.logger.Print("[INFO] start Raft server")
+	s.logger.Info("start Raft server")
 	err = s.raftServer.Start()
 	if err != nil {
-		s.logger.Printf("[ERR] %v", err)
+		s.logger.Fatal(err.Error())
 		return
 	}
 
 	// start gRPC service
-	s.logger.Print("[INFO] start gRPC service")
+	s.logger.Info("start gRPC service")
 	go func() {
 		err := s.grpcService.Start()
 		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
+			s.logger.Fatal(err.Error())
 			return
 		}
 	}()
 
 	// start gRPC server
-	s.logger.Print("[INFO] start gRPC server")
+	s.logger.Info("start gRPC server")
 	go func() {
 		err := s.grpcServer.Start()
 		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
+			s.logger.Fatal(err.Error())
 			return
 		}
 	}()
 
 	// start HTTP server
-	s.logger.Print("[INFO] start HTTP server")
+	s.logger.Info("start HTTP server")
 	go func() {
 		_ = s.httpServer.Start()
 	}()
@@ -133,54 +132,49 @@ func (s *Server) Start() {
 		defer func() {
 			err := client.Close()
 			if err != nil {
-				s.logger.Printf("[ERR] %v", err)
+				s.logger.Error(err.Error())
 			}
 		}()
 		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
+			s.logger.Fatal(err.Error())
 			return
 		}
 
 		err = client.SetNode(s.id, s.metadata)
 		if err != nil {
-			s.logger.Printf("[ERR] %v", err)
+			s.logger.Fatal(err.Error())
 			return
 		}
 	}
 }
 
 func (s *Server) Stop() {
-	// stop HTTP server
-	s.logger.Print("[INFO] stop HTTP server")
+	s.logger.Info("stop HTTP server")
 	err := s.httpServer.Stop()
 	if err != nil {
-		s.logger.Printf("[ERR] %v", err)
+		s.logger.Error(err.Error())
 	}
 
-	// stop HTTP router
 	err = s.httpRouter.Close()
 	if err != nil {
-		s.logger.Printf("[ERR] %v", err)
+		s.logger.Error(err.Error())
 	}
 
-	// stop gRPC server
-	s.logger.Print("[INFO] stop gRPC server")
+	s.logger.Info("stop gRPC server")
 	err = s.grpcServer.Stop()
 	if err != nil {
-		s.logger.Printf("[ERR] %v", err)
+		s.logger.Error(err.Error())
 	}
 
-	// stop gRPC service
-	s.logger.Print("[INFO] stop gRPC service")
+	s.logger.Info("stop gRPC service")
 	err = s.grpcService.Stop()
 	if err != nil {
-		s.logger.Printf("[ERR] %v", err)
+		s.logger.Error(err.Error())
 	}
 
-	// stop Raft server
-	s.logger.Print("[INFO] stop Raft server")
+	s.logger.Info("stop Raft server")
 	err = s.raftServer.Stop()
 	if err != nil {
-		s.logger.Printf("[ERR] %v", err)
+		s.logger.Error(err.Error())
 	}
 }

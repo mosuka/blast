@@ -22,8 +22,8 @@ import (
 	"syscall"
 
 	"github.com/blevesearch/bleve/mapping"
+	"github.com/mosuka/blast/logutils"
 	"github.com/mosuka/blast/manager"
-	"github.com/mosuka/logutils"
 	"github.com/urfave/cli"
 )
 

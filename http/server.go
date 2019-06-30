@@ -15,22 +15,22 @@
 package http
 
 import (
-	"log"
 	"net"
 	"net/http"
 
 	accesslog "github.com/mash/go-accesslog"
+	"go.uber.org/zap"
 )
 
 type Server struct {
 	listener net.Listener
 	router   *Router
 
-	logger     *log.Logger
+	logger     *zap.Logger
 	httpLogger accesslog.Logger
 }
 
-func NewServer(httpAddr string, router *Router, logger *log.Logger, httpLogger accesslog.Logger) (*Server, error) {
+func NewServer(httpAddr string, router *Router, logger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
 	listener, err := net.Listen("tcp", httpAddr)
 	if err != nil {
 		return nil, err

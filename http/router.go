@@ -15,29 +15,30 @@
 package http
 
 import (
-	"log"
-
 	"github.com/gorilla/mux"
 	"github.com/mosuka/blast/grpc"
+	"go.uber.org/zap"
 )
 
 type Router struct {
 	mux.Router
 
 	GRPCClient *grpc.Client
-	logger     *log.Logger
+	logger     *zap.Logger
 }
 
-func NewRouter(grpcAddr string, logger *log.Logger) (*Router, error) {
+func NewRouter(grpcAddr string, logger *zap.Logger) (*Router, error) {
 	grpcClient, err := grpc.NewClient(grpcAddr)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Router{
+	router := &Router{
 		GRPCClient: grpcClient,
 		logger:     logger,
-	}, nil
+	}
+
+	return router, nil
 }
 
 func (r *Router) Close() error {
