@@ -401,24 +401,40 @@ func (c *Client) DeleteDocument(ids []string, opts ...grpc.CallOption) (int, err
 	return int(resp.Count), nil
 }
 
-func (c *Client) GetIndexConfig(opts ...grpc.CallOption) (*protobuf.GetIndexConfigResponse, error) {
-	conf, err := c.client.GetIndexConfig(c.ctx, &empty.Empty{}, opts...)
+func (c *Client) GetIndexConfig(opts ...grpc.CallOption) (map[string]interface{}, error) {
+	resp, err := c.client.GetIndexConfig(c.ctx, &empty.Empty{}, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
 		return nil, errors.New(st.Message())
 	}
 
-	return conf, nil
+	indexConfigIntr, err := protobuf.MarshalAny(resp.IndexConfig)
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+	indexConfig := *indexConfigIntr.(*map[string]interface{})
+
+	return indexConfig, nil
 }
 
-func (c *Client) GetIndexStats(opts ...grpc.CallOption) (*protobuf.GetIndexStatsResponse, error) {
-	stats, err := c.client.GetIndexStats(c.ctx, &empty.Empty{}, opts...)
+func (c *Client) GetIndexStats(opts ...grpc.CallOption) (map[string]interface{}, error) {
+	resp, err := c.client.GetIndexStats(c.ctx, &empty.Empty{}, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
 		return nil, errors.New(st.Message())
 	}
 
-	return stats, nil
+	indexStatsIntr, err := protobuf.MarshalAny(resp.IndexStats)
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+	indexStats := *indexStatsIntr.(*map[string]interface{})
+
+	return indexStats, nil
 }

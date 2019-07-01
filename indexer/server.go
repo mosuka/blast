@@ -21,7 +21,6 @@ import (
 	"github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/grpc"
 	"github.com/mosuka/blast/http"
-	"github.com/mosuka/blast/protobuf"
 	"go.uber.org/zap"
 )
 
@@ -164,19 +163,19 @@ func (s *Server) Start() {
 		}
 
 		s.logger.Debug("pull index config from cluster peer", zap.String("address", pc.GetAddress()))
-		resp, err := pc.GetIndexConfig()
+		s.indexConfig, err = pc.GetIndexConfig()
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return
 		}
 
-		ins, err := protobuf.MarshalAny(resp.IndexConfig)
-		if err != nil {
-			s.logger.Fatal(err.Error())
-			return
-		}
-
-		s.indexConfig = *ins.(*map[string]interface{})
+		//ins, err := protobuf.MarshalAny(resp.IndexConfig)
+		//if err != nil {
+		//	s.logger.Fatal(err.Error())
+		//	return
+		//}
+		//
+		//s.indexConfig = *ins.(*map[string]interface{})
 	}
 
 	var err error
