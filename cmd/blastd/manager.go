@@ -129,7 +129,7 @@ func startManager(c *cli.Context) error {
 		"index_storage_type": indexStorageType,
 	}
 
-	svr, err := manager.NewServer(nodeId, metadata, peerAddr, indexConfig, logger, httpAccessLogger)
+	svr, err := manager.NewServer(nodeId, metadata, peerAddr, indexConfig, logger.Named(nodeId), httpAccessLogger)
 	if err != nil {
 		return err
 	}
