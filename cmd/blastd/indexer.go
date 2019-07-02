@@ -132,7 +132,7 @@ func startIndexer(c *cli.Context) error {
 		"index_storage_type": indexStorageType,
 	}
 
-	svr, err := indexer.NewServer(managerAddr, clusterId, nodeId, metadata, peerAddr, indexConfig, logger, httpAccessLogger)
+	svr, err := indexer.NewServer(managerAddr, clusterId, nodeId, metadata, peerAddr, indexConfig, logger.Named(nodeId), httpAccessLogger)
 	if err != nil {
 		return err
 	}

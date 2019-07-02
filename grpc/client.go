@@ -18,10 +18,12 @@ import (
 	"context"
 	"errors"
 	"math"
+	"time"
 
 	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
+	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
 	"google.golang.org/grpc"
@@ -38,11 +40,21 @@ type Client struct {
 
 func NewContext() (context.Context, context.CancelFunc) {
 	baseCtx := context.TODO()
-	return context.WithCancel(baseCtx)
+	return context.WithTimeout(baseCtx, 60*time.Second)
 }
 
 func NewClient(address string) (*Client, error) {
 	ctx, cancel := NewContext()
+
+	streamRetryOpts := []grpc_retry.CallOption{
+		grpc_retry.Disable(),
+	}
+
+	unaryRetryOpts := []grpc_retry.CallOption{
+		grpc_retry.WithBackoff(grpc_retry.BackoffLinear(100 * time.Millisecond)),
+		grpc_retry.WithCodes(codes.Unavailable),
+		grpc_retry.WithMax(100),
+	}
 
 	dialOpts := []grpc.DialOption{
 		grpc.WithInsecure(),
@@ -50,6 +62,8 @@ func NewClient(address string) (*Client, error) {
 			grpc.MaxCallSendMsgSize(math.MaxInt32),
 			grpc.MaxCallRecvMsgSize(math.MaxInt32),
 		),
+		grpc.WithStreamInterceptor(grpc_retry.StreamClientInterceptor(streamRetryOpts...)),
+		grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(unaryRetryOpts...)),
 	}
 
 	conn, err := grpc.DialContext(ctx, address, dialOpts...)
@@ -401,24 +415,40 @@ func (c *Client) DeleteDocument(ids []string, opts ...grpc.CallOption) (int, err
 	return int(resp.Count), nil
 }
 
-func (c *Client) GetIndexConfig(opts ...grpc.CallOption) (*protobuf.GetIndexConfigResponse, error) {
-	conf, err := c.client.GetIndexConfig(c.ctx, &empty.Empty{}, opts...)
+func (c *Client) GetIndexConfig(opts ...grpc.CallOption) (map[string]interface{}, error) {
+	resp, err := c.client.GetIndexConfig(c.ctx, &empty.Empty{}, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
 		return nil, errors.New(st.Message())
 	}
 
-	return conf, nil
+	indexConfigIntr, err := protobuf.MarshalAny(resp.IndexConfig)
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+	indexConfig := *indexConfigIntr.(*map[string]interface{})
+
+	return indexConfig, nil
 }
 
-func (c *Client) GetIndexStats(opts ...grpc.CallOption) (*protobuf.GetIndexStatsResponse, error) {
-	stats, err := c.client.GetIndexStats(c.ctx, &empty.Empty{}, opts...)
+func (c *Client) GetIndexStats(opts ...grpc.CallOption) (map[string]interface{}, error) {
+	resp, err := c.client.GetIndexStats(c.ctx, &empty.Empty{}, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
 		return nil, errors.New(st.Message())
 	}
 
-	return stats, nil
+	indexStatsIntr, err := protobuf.MarshalAny(resp.IndexStats)
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return nil, errors.New(st.Message())
+	}
+	indexStats := *indexStatsIntr.(*map[string]interface{})
+
+	return indexStats, nil
 }

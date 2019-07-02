@@ -509,6 +509,18 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 					c <- *resp
 				}
 
+				// update the cluster config to manager if it is a leader
+				if s.managerAddr != "" && s.raftServer.IsLeader() {
+					client, err := s.getManagerClient()
+					if err != nil {
+						s.logger.Error(err.Error())
+					}
+					err = client.SetState(fmt.Sprintf("cluster_config/clusters/%s/nodes", s.clusterId), cluster)
+					if err != nil {
+						s.logger.Error(err.Error())
+					}
+				}
+
 				// keep current cluster
 				s.cluster = cluster
 				s.logger.Debug("cluster", zap.Any("cluster", cluster))
@@ -654,6 +666,7 @@ func (s *GRPCService) SetNode(ctx context.Context, req *protobuf.SetNodeRequest)
 			s.logger.Error(err.Error())
 			return resp, status.Error(codes.Internal, err.Error())
 		}
+
 	}
 
 	return resp, nil
