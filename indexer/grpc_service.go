@@ -510,7 +510,7 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 					c <- *resp
 				}
 
-				// update cluster config to manager if leader
+				// update the cluster config to manager if it is a leader
 				if s.raftServer.IsLeader() {
 					client, err := s.getManagerClient()
 					if err != nil {

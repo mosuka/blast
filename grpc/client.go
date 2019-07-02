@@ -18,10 +18,12 @@ import (
 	"context"
 	"errors"
 	"math"
+	"time"
 
 	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
+	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
 	"google.golang.org/grpc"
@@ -38,11 +40,17 @@ type Client struct {
 
 func NewContext() (context.Context, context.CancelFunc) {
 	baseCtx := context.TODO()
-	return context.WithCancel(baseCtx)
+	return context.WithTimeout(baseCtx, 60*time.Second)
 }
 
 func NewClient(address string) (*Client, error) {
 	ctx, cancel := NewContext()
+
+	retryOpts := []grpc_retry.CallOption{
+		grpc_retry.WithBackoff(grpc_retry.BackoffLinear(100 * time.Millisecond)),
+		grpc_retry.WithCodes(codes.Unavailable),
+		grpc_retry.WithMax(100),
+	}
 
 	dialOpts := []grpc.DialOption{
 		grpc.WithInsecure(),
@@ -50,6 +58,8 @@ func NewClient(address string) (*Client, error) {
 			grpc.MaxCallSendMsgSize(math.MaxInt32),
 			grpc.MaxCallRecvMsgSize(math.MaxInt32),
 		),
+		grpc.WithStreamInterceptor(grpc_retry.StreamClientInterceptor(retryOpts...)),
+		grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(retryOpts...)),
 	}
 
 	conn, err := grpc.DialContext(ctx, address, dialOpts...)
