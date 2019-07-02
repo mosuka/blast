@@ -46,7 +46,11 @@ func NewContext() (context.Context, context.CancelFunc) {
 func NewClient(address string) (*Client, error) {
 	ctx, cancel := NewContext()
 
-	retryOpts := []grpc_retry.CallOption{
+	streamRetryOpts := []grpc_retry.CallOption{
+		grpc_retry.Disable(),
+	}
+
+	unaryRetryOpts := []grpc_retry.CallOption{
 		grpc_retry.WithBackoff(grpc_retry.BackoffLinear(100 * time.Millisecond)),
 		grpc_retry.WithCodes(codes.Unavailable),
 		grpc_retry.WithMax(100),
@@ -58,8 +62,8 @@ func NewClient(address string) (*Client, error) {
 			grpc.MaxCallSendMsgSize(math.MaxInt32),
 			grpc.MaxCallRecvMsgSize(math.MaxInt32),
 		),
-		grpc.WithStreamInterceptor(grpc_retry.StreamClientInterceptor(retryOpts...)),
-		grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(retryOpts...)),
+		grpc.WithStreamInterceptor(grpc_retry.StreamClientInterceptor(streamRetryOpts...)),
+		grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(unaryRetryOpts...)),
 	}
 
 	conn, err := grpc.DialContext(ctx, address, dialOpts...)
