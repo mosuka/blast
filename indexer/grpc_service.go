@@ -17,7 +17,6 @@ package indexer
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"reflect"
 	"sync"
