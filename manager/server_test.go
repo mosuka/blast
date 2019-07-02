@@ -32,13 +32,11 @@ import (
 	"github.com/mosuka/blast/testutils"
 )
 
-func TestStandalone(t *testing.T) {
+func TestManagerStandalone(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// index config
 	indexMappingFile := filepath.Join(curDir, "../example/wiki_index_mapping.json")
-	indexType := "upside_down"
-	indexStorageType := "boltdb"
 	indexMapping := mapping.NewIndexMapping()
 	if indexMappingFile != "" {
 		_, err := os.Stat(indexMappingFile)
@@ -78,6 +76,10 @@ func TestStandalone(t *testing.T) {
 	if err != nil {
 		t.Errorf("%v", err)
 	}
+
+	indexType := "upside_down"
+	indexStorageType := "boltdb"
+
 	indexConfig := map[string]interface{}{
 		"index_mapping":      indexMappingMap,
 		"index_type":         indexType,
@@ -161,10 +163,10 @@ func TestStandalone(t *testing.T) {
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	exp1 := protobuf.LivenessProbeResponse_ALIVE.String()
-	act1 := liveness
-	if exp1 != act1 {
-		t.Errorf("expected content to see %v, saw %v", exp1, act1)
+	expLiveness := protobuf.LivenessProbeResponse_ALIVE.String()
+	actLiveness := liveness
+	if expLiveness != actLiveness {
+		t.Errorf("expected content to see %v, saw %v", expLiveness, actLiveness)
 	}
 
 	// readiness
@@ -172,10 +174,10 @@ func TestStandalone(t *testing.T) {
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	exp2 := protobuf.ReadinessProbeResponse_READY.String()
-	act2 := readiness
-	if exp1 != act1 {
-		t.Errorf("expected content to see %v, saw %v", exp2, act2)
+	expReadiness := protobuf.ReadinessProbeResponse_READY.String()
+	actReadiness := readiness
+	if expLiveness != actLiveness {
+		t.Errorf("expected content to see %v, saw %v", expReadiness, actReadiness)
 	}
 
 	// get node
@@ -183,7 +185,7 @@ func TestStandalone(t *testing.T) {
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	exp3 := map[string]interface{}{
+	expNode := map[string]interface{}{
 		"metadata": map[string]interface{}{
 			"bind_addr": bindAddr,
 			"grpc_addr": grpcAddr,
@@ -192,9 +194,9 @@ func TestStandalone(t *testing.T) {
 		},
 		"state": "Leader",
 	}
-	act3 := node
-	if !reflect.DeepEqual(exp3, act3) {
-		t.Errorf("expected content to see %v, saw %v", exp3, act3)
+	actNode := node
+	if !reflect.DeepEqual(expNode, actNode) {
+		t.Errorf("expected content to see %v, saw %v", expNode, actNode)
 	}
 
 	// get cluster
@@ -202,7 +204,7 @@ func TestStandalone(t *testing.T) {
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	exp4 := map[string]interface{}{
+	expCluster := map[string]interface{}{
 		nodeId: map[string]interface{}{
 			"metadata": map[string]interface{}{
 				"bind_addr": bindAddr,
@@ -213,69 +215,69 @@ func TestStandalone(t *testing.T) {
 			"state": "Leader",
 		},
 	}
-	act4 := cluster
-	if !reflect.DeepEqual(exp4, act4) {
-		t.Errorf("expected content to see %v, saw %v", exp4, act4)
+	actCluster := cluster
+	if !reflect.DeepEqual(expCluster, actCluster) {
+		t.Errorf("expected content to see %v, saw %v", expCluster, actCluster)
 	}
 
 	// get index mapping
-	val5, err := client.GetState("index_config/index_mapping")
+	indexMapping1, err := client.GetState("index_config/index_mapping")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	exp5 := indexMappingMap
-	act5 := *val5.(*map[string]interface{})
-	if !reflect.DeepEqual(exp5, act5) {
-		t.Errorf("expected content to see %v, saw %v", exp5, act5)
+	expIndexMapping := indexMappingMap
+	actIndexMapping := *indexMapping1.(*map[string]interface{})
+	if !reflect.DeepEqual(expIndexMapping, actIndexMapping) {
+		t.Errorf("expected content to see %v, saw %v", expIndexMapping, actIndexMapping)
 	}
 
 	// get index type
-	val6, err := client.GetState("index_config/index_type")
+	indexType1, err := client.GetState("index_config/index_type")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	exp6 := indexType
-	act6 := *val6.(*string)
-	if exp6 != act6 {
-		t.Errorf("expected content to see %v, saw %v", exp6, act6)
+	expIndexType := indexType
+	actIndexType := *indexType1.(*string)
+	if expIndexType != actIndexType {
+		t.Errorf("expected content to see %v, saw %v", expIndexType, actIndexType)
 	}
 
 	// get index storage type
-	val7, err := client.GetState("index_config/index_storage_type")
+	indexStorageType1, err := client.GetState("index_config/index_storage_type")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	exp7 := indexStorageType
-	act7 := *val7.(*string)
-	if exp7 != act7 {
-		t.Errorf("expected content to see %v, saw %v", exp7, act7)
+	expIndexStorageType := indexStorageType
+	actIndexStorageType := *indexStorageType1.(*string)
+	if expIndexStorageType != actIndexStorageType {
+		t.Errorf("expected content to see %v, saw %v", expIndexStorageType, actIndexStorageType)
 	}
 
 	// set value
-	err = client.SetState("test/key8", "val8")
+	err = client.SetState("test/key1", "val1")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	val8, err := client.GetState("test/key8")
+	val1, err := client.GetState("test/key1")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	exp8 := "val8"
-	act8 := *val8.(*string)
-	if exp8 != act8 {
-		t.Errorf("expected content to see %v, saw %v", exp8, act8)
+	expVal1 := "val1"
+	actVal1 := *val1.(*string)
+	if expVal1 != actVal1 {
+		t.Errorf("expected content to see %v, saw %v", expVal1, actVal1)
 	}
 
 	// delete value
-	err = client.DeleteState("test/key8")
+	err = client.DeleteState("test/key1")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	val9, err := client.GetState("test/key8")
+	val1, err = client.GetState("test/key1")
 	if err != blasterrors.ErrNotFound {
 		t.Errorf("%v", err)
 	}
-	if val9 != nil {
+	if val1 != nil {
 		t.Errorf("%v", err)
 	}
 
@@ -286,7 +288,7 @@ func TestStandalone(t *testing.T) {
 	}
 }
 
-func TestCluster(t *testing.T) {
+func TestManagerCluster(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// index config
