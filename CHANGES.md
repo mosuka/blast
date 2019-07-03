@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Improve indexing performance #71
+
 ## [v0.7.0] - 2019-07-03
 
 ### Added
