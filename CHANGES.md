@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Add raft-badger #69
+
 ### Changed
 
 ## [v0.7.0] - 2019-07-03
