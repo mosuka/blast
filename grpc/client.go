@@ -40,7 +40,8 @@ type Client struct {
 
 func NewContext() (context.Context, context.CancelFunc) {
 	baseCtx := context.TODO()
-	return context.WithTimeout(baseCtx, 60*time.Second)
+	//return context.WithTimeout(baseCtx, 60*time.Second)
+	return context.WithCancel(baseCtx)
 }
 
 func NewClient(address string) (*Client, error) {
