@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
-- Migrate to grpc-middleware #67
+- Migrate grpc-middleware #68
 
 ## [v0.6.1] - 2019-06-21
 
