@@ -19,15 +19,17 @@ import (
 	"errors"
 	"io/ioutil"
 	"net"
+	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/blevesearch/bleve"
 	"github.com/hashicorp/raft"
-	raftboltdb "github.com/hashicorp/raft-boltdb"
+	raftbadgerdb "github.com/markthethomas/raft-badger"
 	_ "github.com/mosuka/blast/config"
 	blasterrors "github.com/mosuka/blast/errors"
 	"go.uber.org/zap"
+	//raftmdb "github.com/hashicorp/raft-mdb"
 )
 
 type RaftServer struct {
@@ -115,7 +117,14 @@ func (s *RaftServer) Start() error {
 
 	logStore := filepath.Join(dataDir, "raft.db")
 	s.logger.Info("create Raft log store", zap.String("path", logStore))
-	raftLogStore, err := raftboltdb.NewBoltStore(logStore)
+	//raftLogStore, err := raftboltdb.NewBoltStore(logStore)
+	err = os.MkdirAll(filepath.Join(logStore, "badger"), 0755)
+	if err != nil {
+		s.logger.Fatal(err.Error())
+		return err
+	}
+	raftLogStore, err := raftbadgerdb.NewBadgerStore(logStore)
+	//raftLogStore, err := raftmdb.NewMDBStore(logStore)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return err
