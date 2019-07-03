@@ -140,22 +140,11 @@ func (i *Index) Search(request *bleve.SearchRequest) (*bleve.SearchResult, error
 }
 
 func (i *Index) Index(id string, fields map[string]interface{}) error {
-	// index
-	err := i.index.Index(id, fields)
-	if err != nil {
-		i.logger.Error(err.Error())
-		return err
+	doc := map[string]interface{}{
+		"id":     id,
+		"fields": fields,
 	}
-
-	// map[string]interface{} -> bytes
-	fieldsBytes, err := json.Marshal(fields)
-	if err != nil {
-		i.logger.Error(err.Error())
-		return err
-	}
-
-	// set original document
-	err = i.index.SetInternal([]byte(id), fieldsBytes)
+	_, err := i.BulkIndex([]map[string]interface{}{doc})
 	if err != nil {
 		i.logger.Error(err.Error())
 		return err
@@ -164,21 +153,79 @@ func (i *Index) Index(id string, fields map[string]interface{}) error {
 	return nil
 }
 
-func (i *Index) Delete(id string) error {
-	err := i.index.Delete(id)
-	if err != nil {
-		i.logger.Error(err.Error())
-		return err
+func (i *Index) BulkIndex(docs []map[string]interface{}) (int, error) {
+	batch := i.index.NewBatch()
+
+	count := 0
+
+	for _, doc := range docs {
+		id, ok := doc["id"].(string)
+		if !ok {
+			i.logger.Error("missing document id")
+			continue
+		}
+		fields, ok := doc["fields"].(map[string]interface{})
+		if !ok {
+			i.logger.Error("missing document fields")
+			continue
+		}
+		err := batch.Index(id, fields)
+		if err != nil {
+			i.logger.Error(err.Error())
+			continue
+		}
+
+		// set original document
+		fieldsBytes, err := json.Marshal(fields)
+		if err != nil {
+			i.logger.Error(err.Error())
+			continue
+		}
+		batch.SetInternal([]byte(id), fieldsBytes)
+
+		count++
 	}
 
-	// delete original document
-	err = i.index.SetInternal([]byte(id), nil)
+	err := i.index.Batch(batch)
+	if err != nil {
+		i.logger.Error(err.Error())
+		return -1, err
+	}
+
+	return count, nil
+}
+
+func (i *Index) Delete(id string) error {
+	_, err := i.BulkDelete([]string{id})
 	if err != nil {
 		i.logger.Error(err.Error())
 		return err
 	}
 
 	return nil
+}
+
+func (i *Index) BulkDelete(ids []string) (int, error) {
+	batch := i.index.NewBatch()
+
+	count := 0
+
+	for _, id := range ids {
+		batch.Delete(id)
+
+		// delete original document
+		batch.SetInternal([]byte(id), nil)
+
+		count++
+	}
+
+	err := i.index.Batch(batch)
+	if err != nil {
+		i.logger.Error(err.Error())
+		return -1, err
+	}
+
+	return count, nil
 }
 
 func (i *Index) Config() (map[string]interface{}, error) {

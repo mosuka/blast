@@ -114,8 +114,6 @@ func (f *RaftFSM) applyDeleteMetadata(id string) interface{} {
 }
 
 func (f *RaftFSM) GetDocument(id string) (map[string]interface{}, error) {
-	f.logger.Debug("get a document", zap.String("id", id))
-
 	fields, err := f.index.Get(id)
 	if err != nil {
 		f.logger.Error(err.Error())
@@ -126,8 +124,6 @@ func (f *RaftFSM) GetDocument(id string) (map[string]interface{}, error) {
 }
 
 func (f *RaftFSM) applyIndexDocument(id string, fields map[string]interface{}) error {
-	f.logger.Debug("apply to index a document", zap.String("id", id), zap.Any("fields", fields))
-
 	err := f.index.Index(id, fields)
 	if err != nil {
 		f.logger.Error(err.Error())
@@ -137,9 +133,17 @@ func (f *RaftFSM) applyIndexDocument(id string, fields map[string]interface{}) e
 	return nil
 }
 
-func (f *RaftFSM) applyDeleteDocument(id string) error {
-	f.logger.Debug("apply to delete a document", zap.String("id", id))
+func (f *RaftFSM) applyIndexDocuments(docs []map[string]interface{}) (int, error) {
+	count, err := f.index.BulkIndex(docs)
+	if err != nil {
+		f.logger.Error(err.Error())
+		return -1, err
+	}
 
+	return count, nil
+}
+
+func (f *RaftFSM) applyDeleteDocument(id string) error {
 	err := f.index.Delete(id)
 	if err != nil {
 		f.logger.Error(err.Error())
@@ -149,9 +153,17 @@ func (f *RaftFSM) applyDeleteDocument(id string) error {
 	return nil
 }
 
-func (f *RaftFSM) Search(request *bleve.SearchRequest) (*bleve.SearchResult, error) {
-	f.logger.Debug("search documents")
+func (f *RaftFSM) applyDeleteDocuments(ids []string) (int, error) {
+	count, err := f.index.BulkDelete(ids)
+	if err != nil {
+		f.logger.Error(err.Error())
+		return -1, err
+	}
 
+	return count, nil
+}
+
+func (f *RaftFSM) Search(request *bleve.SearchRequest) (*bleve.SearchResult, error) {
 	result, err := f.index.Search(request)
 	if err != nil {
 		f.logger.Error(err.Error())
@@ -165,9 +177,17 @@ type fsmResponse struct {
 	error error
 }
 
-func (f *RaftFSM) Apply(l *raft.Log) interface{} {
-	f.logger.Debug("apply a message")
+type fsmIndexDocumentResponse struct {
+	count int
+	error error
+}
 
+type fsmDeleteDocumentResponse struct {
+	count int
+	error error
+}
+
+func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 	var msg message
 	err := json.Unmarshal(l.Data, &msg)
 	if err != nil {
@@ -182,7 +202,6 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
-
 		err = f.applySetMetadata(data["id"].(string), data["metadata"].(map[string]interface{}))
 		return &fsmResponse{error: err}
 	case deleteNode:
@@ -194,25 +213,23 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 		}
 		return f.applyDeleteMetadata(data["id"].(string))
 	case indexDocument:
-		var data map[string]interface{}
+		var data []map[string]interface{}
 		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
 			f.logger.Error(err.Error())
-			return &fsmResponse{error: err}
+			return &fsmIndexDocumentResponse{count: -1, error: err}
 		}
-
-		err = f.applyIndexDocument(data["id"].(string), data["fields"].(map[string]interface{}))
-		return &fsmResponse{error: err}
+		count, err := f.applyIndexDocuments(data)
+		return &fsmIndexDocumentResponse{count: count, error: err}
 	case deleteDocument:
-		var data string
+		var data []string
 		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
 			f.logger.Error(err.Error())
-			return &fsmResponse{error: err}
+			return &fsmDeleteDocumentResponse{count: -1, error: err}
 		}
-
-		err = f.applyDeleteDocument(data)
-		return &fsmResponse{error: err}
+		count, err := f.applyDeleteDocuments(data)
+		return &fsmDeleteDocumentResponse{count: count, error: err}
 	default:
 		err = errors.New("unsupported command")
 		f.logger.Error(err.Error())

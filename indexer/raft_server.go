@@ -501,39 +501,34 @@ func (s *RaftServer) IndexDocument(docs []map[string]interface{}) (int, error) {
 		return -1, raft.ErrNotLeader
 	}
 
-	count := 0
-	for _, doc := range docs {
-		msg, err := newMessage(
-			indexDocument,
-			doc,
-		)
-		if err != nil {
-			s.logger.Error(err.Error())
-			return -1, err
-		}
-
-		msgBytes, err := json.Marshal(msg)
-		if err != nil {
-			s.logger.Error(err.Error())
-			return -1, err
-		}
-
-		f := s.raft.Apply(msgBytes, 10*time.Second)
-		err = f.Error()
-		if err != nil {
-			s.logger.Error(err.Error())
-			return -1, err
-		}
-		err = f.Response().(*fsmResponse).error
-		if err != nil {
-			s.logger.Error(err.Error())
-			return -1, err
-		}
-
-		count++
+	msg, err := newMessage(
+		indexDocument,
+		docs,
+	)
+	if err != nil {
+		s.logger.Error(err.Error())
+		return -1, err
 	}
 
-	return count, nil
+	msgBytes, err := json.Marshal(msg)
+	if err != nil {
+		s.logger.Error(err.Error())
+		return -1, err
+	}
+
+	f := s.raft.Apply(msgBytes, 10*time.Second)
+	err = f.Error()
+	if err != nil {
+		s.logger.Error(err.Error())
+		return -1, err
+	}
+	err = f.Response().(*fsmIndexDocumentResponse).error
+	if err != nil {
+		s.logger.Error(err.Error())
+		return -1, err
+	}
+
+	return f.Response().(*fsmIndexDocumentResponse).count, nil
 }
 
 func (s *RaftServer) DeleteDocument(ids []string) (int, error) {
@@ -542,39 +537,34 @@ func (s *RaftServer) DeleteDocument(ids []string) (int, error) {
 		return -1, raft.ErrNotLeader
 	}
 
-	count := 0
-	for _, id := range ids {
-		msg, err := newMessage(
-			deleteDocument,
-			id,
-		)
-		if err != nil {
-			s.logger.Error(err.Error())
-			return -1, err
-		}
-
-		msgBytes, err := json.Marshal(msg)
-		if err != nil {
-			s.logger.Error(err.Error())
-			return -1, err
-		}
-
-		f := s.raft.Apply(msgBytes, 10*time.Second)
-		err = f.Error()
-		if err != nil {
-			s.logger.Error(err.Error())
-			return -1, err
-		}
-		err = f.Response().(*fsmResponse).error
-		if err != nil {
-			s.logger.Error(err.Error())
-			return -1, err
-		}
-
-		count++
+	msg, err := newMessage(
+		deleteDocument,
+		ids,
+	)
+	if err != nil {
+		s.logger.Error(err.Error())
+		return -1, err
 	}
 
-	return count, nil
+	msgBytes, err := json.Marshal(msg)
+	if err != nil {
+		s.logger.Error(err.Error())
+		return -1, err
+	}
+
+	f := s.raft.Apply(msgBytes, 10*time.Second)
+	err = f.Error()
+	if err != nil {
+		s.logger.Error(err.Error())
+		return -1, err
+	}
+	err = f.Response().(*fsmDeleteDocumentResponse).error
+	if err != nil {
+		s.logger.Error(err.Error())
+		return -1, err
+	}
+
+	return f.Response().(*fsmDeleteDocumentResponse).count, nil
 }
 
 func (s *RaftServer) GetIndexConfig() (map[string]interface{}, error) {
