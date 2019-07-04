@@ -22,10 +22,10 @@ import (
 )
 
 type Server struct {
-	id       string
-	metadata map[string]interface{}
-
-	peerAddr string
+	id              string
+	metadata        map[string]interface{}
+	raftStorageType string
+	peerAddr        string
 
 	indexConfig map[string]interface{}
 
@@ -39,14 +39,15 @@ type Server struct {
 	httpLogger accesslog.Logger
 }
 
-func NewServer(id string, metadata map[string]interface{}, peerAddr string, indexConfig map[string]interface{}, logger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
+func NewServer(id string, metadata map[string]interface{}, raftStorageType string, peerAddr string, indexConfig map[string]interface{}, logger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
 	return &Server{
-		id:          id,
-		metadata:    metadata,
-		peerAddr:    peerAddr,
-		indexConfig: indexConfig,
-		logger:      logger,
-		httpLogger:  httpLogger,
+		id:              id,
+		metadata:        metadata,
+		raftStorageType: raftStorageType,
+		peerAddr:        peerAddr,
+		indexConfig:     indexConfig,
+		logger:          logger,
+		httpLogger:      httpLogger,
 	}, nil
 }
 
@@ -58,7 +59,7 @@ func (s *Server) Start() {
 	s.logger.Info("bootstrap", zap.Bool("bootstrap", bootstrap))
 
 	// create raft server
-	s.raftServer, err = NewRaftServer(s.id, s.metadata, bootstrap, s.indexConfig, s.logger)
+	s.raftServer, err = NewRaftServer(s.id, s.metadata, s.raftStorageType, bootstrap, s.indexConfig, s.logger)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return

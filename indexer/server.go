@@ -28,10 +28,10 @@ type Server struct {
 	managerAddr string
 	clusterId   string
 
-	id       string
-	metadata map[string]interface{}
-
-	peerAddr string
+	id              string
+	metadata        map[string]interface{}
+	raftStorageType string
+	peerAddr        string
 
 	indexConfig map[string]interface{}
 
@@ -45,15 +45,15 @@ type Server struct {
 	httpLogger accesslog.Logger
 }
 
-func NewServer(managerAddr string, clusterId string, id string, metadata map[string]interface{}, peerAddr string, indexConfig map[string]interface{}, logger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
+func NewServer(managerAddr string, clusterId string, id string, metadata map[string]interface{}, raftStorageType, peerAddr string, indexConfig map[string]interface{}, logger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
 	return &Server{
 		managerAddr: managerAddr,
 		clusterId:   clusterId,
 
-		id:       id,
-		metadata: metadata,
-
-		peerAddr: peerAddr,
+		id:              id,
+		metadata:        metadata,
+		raftStorageType: raftStorageType,
+		peerAddr:        peerAddr,
 
 		indexConfig: indexConfig,
 
@@ -168,20 +168,12 @@ func (s *Server) Start() {
 			s.logger.Fatal(err.Error())
 			return
 		}
-
-		//ins, err := protobuf.MarshalAny(resp.IndexConfig)
-		//if err != nil {
-		//	s.logger.Fatal(err.Error())
-		//	return
-		//}
-		//
-		//s.indexConfig = *ins.(*map[string]interface{})
 	}
 
 	var err error
 
 	// create raft server
-	s.raftServer, err = NewRaftServer(s.id, s.metadata, bootstrap, s.indexConfig, s.logger)
+	s.raftServer, err = NewRaftServer(s.id, s.metadata, s.raftStorageType, bootstrap, s.indexConfig, s.logger)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return
