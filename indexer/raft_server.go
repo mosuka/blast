@@ -25,6 +25,7 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/hashicorp/raft"
+	raftboltdb "github.com/hashicorp/raft-boltdb"
 	raftbadgerdb "github.com/markthethomas/raft-badger"
 	_ "github.com/mosuka/blast/config"
 	blasterrors "github.com/mosuka/blast/errors"
@@ -33,10 +34,10 @@ import (
 )
 
 type RaftServer struct {
-	id       string
-	metadata map[string]interface{}
-
-	bootstrap bool
+	id              string
+	metadata        map[string]interface{}
+	raftStorageType string
+	bootstrap       bool
 
 	raft *raft.Raft
 	fsm  *RaftFSM
@@ -46,12 +47,12 @@ type RaftServer struct {
 	logger *zap.Logger
 }
 
-func NewRaftServer(id string, metadata map[string]interface{}, bootstrap bool, indexConfig map[string]interface{}, logger *zap.Logger) (*RaftServer, error) {
+func NewRaftServer(id string, metadata map[string]interface{}, raftStorageType string, bootstrap bool, indexConfig map[string]interface{}, logger *zap.Logger) (*RaftServer, error) {
 	return &RaftServer{
-		id:       id,
-		metadata: metadata,
-
-		bootstrap: bootstrap,
+		id:              id,
+		metadata:        metadata,
+		raftStorageType: raftStorageType,
+		bootstrap:       bootstrap,
 
 		indexConfig: indexConfig,
 		logger:      logger,
@@ -107,7 +108,7 @@ func (s *RaftServer) Start() error {
 		return err
 	}
 
-	snapshotPath := filepath.Join(dataDir, "snapshots")
+	snapshotPath := dataDir
 	s.logger.Info("create snapshot store", zap.String("path", snapshotPath))
 	snapshotStore, err := raft.NewFileSnapshotStore(snapshotPath, 2, ioutil.Discard)
 	if err != nil {
@@ -115,26 +116,59 @@ func (s *RaftServer) Start() error {
 		return err
 	}
 
-	logStore := filepath.Join(dataDir, "raft.db")
-	s.logger.Info("create Raft log store", zap.String("path", logStore))
-	//raftLogStore, err := raftboltdb.NewBoltStore(logStore)
-	err = os.MkdirAll(filepath.Join(logStore, "badger"), 0755)
-	if err != nil {
-		s.logger.Fatal(err.Error())
-		return err
-	}
-	raftLogStore, err := raftbadgerdb.NewBadgerStore(logStore)
-	//raftLogStore, err := raftmdb.NewMDBStore(logStore)
-	if err != nil {
-		s.logger.Fatal(err.Error())
-		return err
-	}
-
 	s.logger.Info("create Raft machine")
-	s.raft, err = raft.NewRaft(config, s.fsm, raftLogStore, raftLogStore, snapshotStore, transport)
-	if err != nil {
-		s.logger.Fatal(err.Error())
-		return err
+	switch s.raftStorageType {
+	case "boltdb":
+		logStorePath := filepath.Join(dataDir, "raft", "boltdb.db")
+		err = os.MkdirAll(filepath.Join(dataDir, "raft"), 0755)
+		if err != nil {
+			s.logger.Fatal(err.Error())
+			return err
+		}
+		logStore, err := raftboltdb.NewBoltStore(logStorePath)
+		if err != nil {
+			s.logger.Fatal(err.Error())
+			return err
+		}
+		s.raft, err = raft.NewRaft(config, s.fsm, logStore, logStore, snapshotStore, transport)
+		if err != nil {
+			s.logger.Fatal(err.Error())
+			return err
+		}
+	case "badger":
+		logStorePath := filepath.Join(dataDir, "raft")
+		err = os.MkdirAll(filepath.Join(logStorePath, "badger"), 0755)
+		if err != nil {
+			s.logger.Fatal(err.Error())
+			return err
+		}
+		logStore, err := raftbadgerdb.NewBadgerStore(logStorePath)
+		if err != nil {
+			s.logger.Fatal(err.Error())
+			return err
+		}
+		s.raft, err = raft.NewRaft(config, s.fsm, logStore, logStore, snapshotStore, transport)
+		if err != nil {
+			s.logger.Fatal(err.Error())
+			return err
+		}
+	default:
+		logStorePath := filepath.Join(dataDir, "raft", "boltdb.db")
+		err = os.MkdirAll(filepath.Join(dataDir, "raft"), 0755)
+		if err != nil {
+			s.logger.Fatal(err.Error())
+			return err
+		}
+		logStore, err := raftboltdb.NewBoltStore(logStorePath)
+		if err != nil {
+			s.logger.Fatal(err.Error())
+			return err
+		}
+		s.raft, err = raft.NewRaft(config, s.fsm, logStore, logStore, snapshotStore, transport)
+		if err != nil {
+			s.logger.Fatal(err.Error())
+			return err
+		}
 	}
 
 	if s.bootstrap {

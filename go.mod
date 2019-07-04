@@ -22,7 +22,8 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
-	github.com/hashicorp/raft v1.0.0
+	github.com/hashicorp/raft v1.1.0
+	github.com/hashicorp/raft-boltdb v0.0.0-20190605210249-ef2e128ed477
 	github.com/hashicorp/raft-mdb v0.0.0-20180824152511-9ee9663b6ffa
 	github.com/ikawaha/kagome.ipadic v1.0.1 // indirect
 	github.com/imdario/mergo v0.3.7
@@ -31,7 +32,6 @@ require (
 	github.com/mash/go-accesslog v0.0.0-20180522074327-610c2be04217
 	github.com/mosuka/bbadger v0.0.0-20190319122948-67a91aedfe68
 	github.com/natefinch/lumberjack v2.0.0+incompatible
-	github.com/pascaldekloe/goe v0.1.0 // indirect
 	github.com/prometheus/client_golang v0.9.2
 	github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90 // indirect
 	github.com/prometheus/common v0.2.0 // indirect
@@ -46,7 +46,6 @@ require (
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.10.0
 	golang.org/x/net v0.0.0-20190327214358-63eda1eb0650 // indirect
-	golang.org/x/sys v0.0.0-20190329044733-9eb1bfa1ce65 // indirect
 	google.golang.org/genproto v0.0.0-20190327125643-d831d65fe17d // indirect
 	google.golang.org/grpc v1.19.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect

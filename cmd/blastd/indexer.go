@@ -49,6 +49,7 @@ func startIndexer(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 	httpAddr := c.String("http-addr")
 	dataDir := c.String("data-dir")
+	raftStorageType := c.String("raft-storage-type")
 	peerAddr := c.String("peer-addr")
 
 	indexMappingFile := c.String("index-mapping-file")
@@ -132,7 +133,7 @@ func startIndexer(c *cli.Context) error {
 		"index_storage_type": indexStorageType,
 	}
 
-	svr, err := indexer.NewServer(managerAddr, clusterId, nodeId, metadata, peerAddr, indexConfig, logger.Named(nodeId), httpAccessLogger)
+	svr, err := indexer.NewServer(managerAddr, clusterId, nodeId, metadata, raftStorageType, peerAddr, indexConfig, logger.Named(nodeId), httpAccessLogger)
 	if err != nil {
 		return err
 	}

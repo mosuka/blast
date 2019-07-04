@@ -131,6 +131,11 @@ func main() {
 					Usage: "Data directory",
 				},
 				cli.StringFlag{
+					Name:  "raft-storage-type",
+					Value: "boltdb",
+					Usage: "Raft log storage type to use",
+				},
+				cli.StringFlag{
 					Name:  "peer-addr",
 					Value: "",
 					Usage: "Existing gRPC server listen address to join to the cluster",
@@ -181,6 +186,11 @@ func main() {
 					Name:  "data-dir",
 					Value: "./",
 					Usage: "Data directory",
+				},
+				cli.StringFlag{
+					Name:  "raft-storage-type",
+					Value: "boltdb",
+					Usage: "Raft log storage type to use",
 				},
 				cli.StringFlag{
 					Name:  "peer-addr",
