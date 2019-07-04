@@ -17,10 +17,12 @@ package indexer
 import (
 	"encoding/json"
 	"os"
+	"time"
 
 	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/document"
 	"github.com/golang/protobuf/ptypes/any"
-	blasterrors "github.com/mosuka/blast/errors"
+	"github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
 	"go.uber.org/zap"
 )
@@ -109,24 +111,49 @@ func (i *Index) Close() error {
 }
 
 func (i *Index) Get(id string) (map[string]interface{}, error) {
-	fieldsBytes, err := i.index.GetInternal([]byte(id))
+	doc, err := i.index.Document(id)
 	if err != nil {
 		i.logger.Error(err.Error())
 		return nil, err
 	}
-	if len(fieldsBytes) <= 0 {
-		i.logger.Error(blasterrors.ErrNotFound.Error())
-		return nil, blasterrors.ErrNotFound
+	if doc == nil {
+		return nil, errors.ErrNotFound
 	}
 
-	var fieldsMap map[string]interface{}
-	err = json.Unmarshal(fieldsBytes, &fieldsMap)
-	if err != nil {
-		i.logger.Error(err.Error())
-		return nil, err
+	fields := make(map[string]interface{}, 0)
+	for _, f := range doc.Fields {
+		var v interface{}
+		switch field := f.(type) {
+		case *document.TextField:
+			v = string(field.Value())
+		case *document.NumericField:
+			n, err := field.Number()
+			if err == nil {
+				v = n
+			}
+		case *document.DateTimeField:
+			d, err := field.DateTime()
+			if err == nil {
+				v = d.Format(time.RFC3339Nano)
+			}
+		}
+		existing, existed := fields[f.Name()]
+		if existed {
+			switch existing := existing.(type) {
+			case []interface{}:
+				fields[f.Name()] = append(existing, v)
+			case interface{}:
+				arr := make([]interface{}, 2)
+				arr[0] = existing
+				arr[1] = v
+				fields[f.Name()] = arr
+			}
+		} else {
+			fields[f.Name()] = v
+		}
 	}
 
-	return fieldsMap, nil
+	return fields, nil
 }
 
 func (i *Index) Search(request *bleve.SearchRequest) (*bleve.SearchResult, error) {
@@ -174,15 +201,6 @@ func (i *Index) BulkIndex(docs []map[string]interface{}) (int, error) {
 			i.logger.Error(err.Error())
 			continue
 		}
-
-		// set original document
-		fieldsBytes, err := json.Marshal(fields)
-		if err != nil {
-			i.logger.Error(err.Error())
-			continue
-		}
-		batch.SetInternal([]byte(id), fieldsBytes)
-
 		count++
 	}
 
@@ -212,10 +230,6 @@ func (i *Index) BulkDelete(ids []string) (int, error) {
 
 	for _, id := range ids {
 		batch.Delete(id)
-
-		// delete original document
-		batch.SetInternal([]byte(id), nil)
-
 		count++
 	}
 
