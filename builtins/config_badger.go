@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+// +build badger full
+
+package builtins
 
 import (
-	_ "github.com/blevesearch/bleve/config"
+	_ "github.com/mosuka/bbadger"
 )

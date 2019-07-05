@@ -27,7 +27,7 @@ import (
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
 	raftbadgerdb "github.com/markthethomas/raft-badger"
-	_ "github.com/mosuka/blast/config"
+	_ "github.com/mosuka/blast/builtins"
 	blasterrors "github.com/mosuka/blast/errors"
 	"go.uber.org/zap"
 	//raftmdb "github.com/hashicorp/raft-mdb"
