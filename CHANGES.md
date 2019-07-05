@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Improve indexing performance #71
 - Remove original document #72
+- Rename config package to builtins #75
 
 ## [v0.7.0] - 2019-07-03
 
