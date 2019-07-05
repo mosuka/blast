@@ -42,10 +42,11 @@ type Server struct {
 	httpServer  *http.Server
 
 	logger     *zap.Logger
+	grpcLogger *zap.Logger
 	httpLogger accesslog.Logger
 }
 
-func NewServer(managerAddr string, clusterId string, id string, metadata map[string]interface{}, raftStorageType, peerAddr string, indexConfig map[string]interface{}, logger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
+func NewServer(managerAddr string, clusterId string, id string, metadata map[string]interface{}, raftStorageType, peerAddr string, indexConfig map[string]interface{}, logger *zap.Logger, grpcLogger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
 	return &Server{
 		managerAddr: managerAddr,
 		clusterId:   clusterId,
@@ -58,6 +59,7 @@ func NewServer(managerAddr string, clusterId string, id string, metadata map[str
 		indexConfig: indexConfig,
 
 		logger:     logger,
+		grpcLogger: grpcLogger,
 		httpLogger: httpLogger,
 	}, nil
 }
@@ -193,7 +195,7 @@ func (s *Server) Start() {
 	}
 
 	// create gRPC server
-	s.grpcServer, err = grpc.NewServer(grpcAddr, s.grpcService, s.logger)
+	s.grpcServer, err = grpc.NewServer(grpcAddr, s.grpcService, s.grpcLogger)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return
