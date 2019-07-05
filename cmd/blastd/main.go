@@ -60,6 +60,35 @@ func main() {
 			Usage: "Compress a log file",
 		},
 		cli.StringFlag{
+			Name:  "grpc-log-level",
+			Value: "INFO",
+			Usage: "gRPC log level",
+		},
+		cli.StringFlag{
+			Name:  "grpc-log-file",
+			Value: os.Stderr.Name(),
+			Usage: "gRPC log file",
+		},
+		cli.IntFlag{
+			Name:  "grpc-log-max-size",
+			Value: 500,
+			Usage: "Max size of a log file (megabytes)",
+		},
+		cli.IntFlag{
+			Name:  "grpc-log-max-backups",
+			Value: 3,
+			Usage: "Max backup count of log files",
+		},
+		cli.IntFlag{
+			Name:  "grpc-log-max-age",
+			Value: 30,
+			Usage: "Max age of a log file (days)",
+		},
+		cli.BoolFlag{
+			Name:  "grpc-log-compress",
+			Usage: "Compress a log file",
+		},
+		cli.StringFlag{
 			Name:  "http-access-log-file",
 			Value: os.Stderr.Name(),
 			Usage: "HTTP access log file",

@@ -87,7 +87,10 @@ func TestManagerStandalone(t *testing.T) {
 	}
 
 	// create logger
-	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+
+	// create gRPC logger
+	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create HTTP access logger
 	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
@@ -135,7 +138,7 @@ func TestManagerStandalone(t *testing.T) {
 		"data_dir":  dataDir,
 	}
 
-	server, err := NewServer(nodeId, metadata, "boltdb", peerAddr, indexConfig, logger.Named(nodeId), httpAccessLogger)
+	server, err := NewServer(nodeId, metadata, "boltdb", peerAddr, indexConfig, logger.Named(nodeId), grpcLogger.Named(nodeId), httpAccessLogger)
 	defer func() {
 		server.Stop()
 	}()
@@ -341,7 +344,10 @@ func TestManagerCluster(t *testing.T) {
 	}
 
 	// create logger
-	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+
+	// create logger
+	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create HTTP access logger
 	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
@@ -380,7 +386,7 @@ func TestManagerCluster(t *testing.T) {
 		"http_addr": manager1HttpAddr,
 		"data_dir":  manager1DataDir,
 	}
-	manager1, err := NewServer(manager1NodeId, manager1Metadata, "boltdb", manager1PeerAddr, indexConfig, logger.Named(manager1NodeId), httpAccessLogger)
+	manager1, err := NewServer(manager1NodeId, manager1Metadata, "boltdb", manager1PeerAddr, indexConfig, logger.Named(manager1NodeId), grpcLogger.Named(manager1NodeId), httpAccessLogger)
 	defer func() {
 		manager1.Stop()
 	}()
@@ -422,7 +428,7 @@ func TestManagerCluster(t *testing.T) {
 		"http_addr": manager2HttpAddr,
 		"data_dir":  manager2DataDir,
 	}
-	manager2, err := NewServer(manager2NodeId, manager2Metadata, "boltdb", manager2PeerAddr, nil, logger.Named(manager2NodeId), httpAccessLogger)
+	manager2, err := NewServer(manager2NodeId, manager2Metadata, "boltdb", manager2PeerAddr, nil, logger.Named(manager2NodeId), grpcLogger.Named(manager1NodeId), httpAccessLogger)
 	defer func() {
 		manager2.Stop()
 	}()
@@ -464,7 +470,7 @@ func TestManagerCluster(t *testing.T) {
 		"http_addr": manager3HttpAddr,
 		"data_dir":  manager3DataDir,
 	}
-	manager3, err := NewServer(manager3NodeId, manager3Metadata, "boltdb", manager3PeerAddr, nil, logger.Named(manager3NodeId), httpAccessLogger)
+	manager3, err := NewServer(manager3NodeId, manager3Metadata, "boltdb", manager3PeerAddr, nil, logger.Named(manager3NodeId), grpcLogger.Named(manager1NodeId), httpAccessLogger)
 	defer func() {
 		manager3.Stop()
 	}()

@@ -34,10 +34,11 @@ type Server struct {
 	httpServer  *http.Server
 
 	logger     *zap.Logger
+	grpcLogger *zap.Logger
 	httpLogger accesslog.Logger
 }
 
-func NewServer(managerAddr string, grpcAddr string, httpAddr string, logger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
+func NewServer(managerAddr string, grpcAddr string, httpAddr string, logger *zap.Logger, grpcLogger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
 	return &Server{
 		managerAddr: managerAddr,
 
@@ -45,6 +46,7 @@ func NewServer(managerAddr string, grpcAddr string, httpAddr string, logger *zap
 		httpAddr: httpAddr,
 
 		logger:     logger,
+		grpcLogger: grpcLogger,
 		httpLogger: httpLogger,
 	}, nil
 }
@@ -60,7 +62,7 @@ func (s *Server) Start() {
 	}
 
 	// create gRPC server
-	s.grpcServer, err = grpc.NewServer(s.grpcAddr, s.grpcService, s.logger)
+	s.grpcServer, err = grpc.NewServer(s.grpcAddr, s.grpcService, s.grpcLogger)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return

@@ -87,7 +87,10 @@ func TestIndexserStandalone(t *testing.T) {
 	}
 
 	// create logger
-	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+
+	// create logger
+	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create HTTP access logger
 	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
@@ -133,7 +136,7 @@ func TestIndexserStandalone(t *testing.T) {
 		"data_dir":  dataDir,
 	}
 
-	server, err := NewServer("", "", nodeId, metadata, "boltdb", peerAddr, indexConfig, logger, httpAccessLogger)
+	server, err := NewServer("", "", nodeId, metadata, "boltdb", peerAddr, indexConfig, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server.Stop()
 	}()

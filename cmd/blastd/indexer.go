@@ -35,6 +35,13 @@ func startIndexer(c *cli.Context) error {
 	logMaxAge := c.GlobalInt("log-max-age")
 	logCompress := c.GlobalBool("log-compress")
 
+	grpcLogLevel := c.GlobalString("grpc-log-level")
+	grpcLogFilename := c.GlobalString("grpc-log-file")
+	grpcLogMaxSize := c.GlobalInt("grpc-log-max-size")
+	grpcLogMaxBackups := c.GlobalInt("grpc-log-max-backups")
+	grpcLogMaxAge := c.GlobalInt("grpc-log-max-age")
+	grpcLogCompress := c.GlobalBool("grpc-log-compress")
+
 	httpAccessLogFilename := c.GlobalString("http-access-log-file")
 	httpAccessLogMaxSize := c.GlobalInt("http-access-log-max-size")
 	httpAccessLogMaxBackups := c.GlobalInt("http-access-log-max-backups")
@@ -64,6 +71,16 @@ func startIndexer(c *cli.Context) error {
 		logMaxBackups,
 		logMaxAge,
 		logCompress,
+	)
+
+	// create logger
+	grpcLogger := logutils.NewGRPCLogger(
+		grpcLogLevel,
+		grpcLogFilename,
+		grpcLogMaxSize,
+		grpcLogMaxBackups,
+		grpcLogMaxAge,
+		grpcLogCompress,
 	)
 
 	// create HTTP access logger
@@ -133,7 +150,7 @@ func startIndexer(c *cli.Context) error {
 		"index_storage_type": indexStorageType,
 	}
 
-	svr, err := indexer.NewServer(managerAddr, clusterId, nodeId, metadata, raftStorageType, peerAddr, indexConfig, logger.Named(nodeId), httpAccessLogger)
+	svr, err := indexer.NewServer(managerAddr, clusterId, nodeId, metadata, raftStorageType, peerAddr, indexConfig, logger.Named(nodeId), grpcLogger.Named(nodeId), httpAccessLogger)
 	if err != nil {
 		return err
 	}
