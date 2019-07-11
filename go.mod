@@ -38,6 +38,7 @@ require (
 	github.com/prometheus/procfs v0.0.0-20190322151404-55ae3d9d5573 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20190321074620-2f0d2b0e0001 // indirect
 	github.com/stretchr/objx v0.1.1
+	github.com/stretchr/testify v1.3.0
 	github.com/syndtr/goleveldb v1.0.0 // indirect
 	github.com/tebeka/snowball v0.0.0-20130405174319-16e884df4e19 // indirect
 	github.com/tecbot/gorocksdb v0.0.0-20181010114359-8752a9433481 // indirect

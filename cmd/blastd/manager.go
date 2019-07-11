@@ -15,13 +15,14 @@
 package main
 
 import (
-	"encoding/json"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/blevesearch/bleve/mapping"
+	"github.com/mosuka/blast/indexutils"
+
+	"github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/logutils"
 	"github.com/mosuka/blast/manager"
 	"github.com/urfave/cli"
@@ -89,65 +90,56 @@ func startManager(c *cli.Context) error {
 		httpAccessLogCompress,
 	)
 
-	// metadata
-	metadata := map[string]interface{}{
-		"bind_addr": bindAddr,
-		"grpc_addr": grpcAddr,
-		"http_addr": httpAddr,
-		"data_dir":  dataDir,
-	}
-
-	// index mapping
-	indexMapping := mapping.NewIndexMapping()
-	if indexMappingFile != "" {
-		_, err := os.Stat(indexMappingFile)
-		if err == nil {
-			// read index mapping file
-			f, err := os.Open(indexMappingFile)
-			if err != nil {
-				return err
-			}
-			defer func() {
-				_ = f.Close()
-			}()
-
-			b, err := ioutil.ReadAll(f)
-			if err != nil {
-				return err
-			}
-
-			err = json.Unmarshal(b, indexMapping)
-			if err != nil {
-				return err
-			}
-		} else if os.IsNotExist(err) {
+	// create cluster config
+	clusterConfig := config.DefaultClusterConfig()
+	if peerAddr != "" {
+		err := clusterConfig.SetPeerAddr(peerAddr)
+		if err != nil {
 			return err
 		}
 	}
-	err := indexMapping.Validate()
+
+	// create node config
+	nodeConfig := config.NewNodeConfigFromMap(
+		map[string]interface{}{
+			"node_id":           nodeId,
+			"bind_addr":         bindAddr,
+			"grpc_addr":         grpcAddr,
+			"http_addr":         httpAddr,
+			"data_dir":          dataDir,
+			"raft_storage_type": raftStorageType,
+		},
+	)
+
+	var err error
+
+	// create index mapping
+	var indexMapping *mapping.IndexMappingImpl
+	if indexMappingFile != "" {
+		indexMapping, err = indexutils.NewIndexMappingFromFile(indexMappingFile)
+		if err != nil {
+			return err
+		}
+	} else {
+		indexMapping = mapping.NewIndexMapping()
+	}
+
+	// create index config
+	indexConfig := config.DefaultIndexConfig()
+	err = indexConfig.SetIndexMapping(indexMapping)
+	if err != nil {
+		return err
+	}
+	err = indexConfig.SetIndexType(indexType)
+	if err != nil {
+		return err
+	}
+	err = indexConfig.SetIndexStorageType(indexStorageType)
 	if err != nil {
 		return err
 	}
 
-	// IndexMappingImpl -> JSON
-	indexMappingJSON, err := json.Marshal(indexMapping)
-	if err != nil {
-		return err
-	}
-	// JSON -> map[string]interface{}
-	var indexMappingMap map[string]interface{}
-	err = json.Unmarshal(indexMappingJSON, &indexMappingMap)
-	if err != nil {
-		return err
-	}
-
-	indexConfig := map[string]interface{}{
-		"index_mapping":      indexMappingMap,
-		"index_type":         indexType,
-		"index_storage_type": indexStorageType,
-	}
-
-	svr, err := manager.NewServer(nodeId, metadata, raftStorageType, peerAddr, indexConfig, logger.Named(nodeId), grpcLogger.Named(nodeId), httpAccessLogger)
+	svr, err := manager.NewServer(clusterConfig, nodeConfig, indexConfig, logger.Named(nodeId), grpcLogger.Named(nodeId), httpAccessLogger)
 	if err != nil {
 		return err
 	}

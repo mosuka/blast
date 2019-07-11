@@ -627,29 +627,35 @@ You can see the result in JSON format. The result of the above command is:
 ```json
 {
   "indexer1": {
-    "metadata": {
-      "bind_addr": ":5050",
+    "node_config": {
+      "bind_addr": ":5000",
       "data_dir": "/tmp/blast/indexer1",
-      "grpc_addr": ":5051",
-      "http_addr": ":5052"
+      "grpc_addr": ":5001",
+      "http_addr": ":5002",
+      "node_id": "indexer1",
+      "raft_storage_type": "boltdb"
     },
     "state": "Leader"
   },
   "indexer2": {
-    "metadata": {
-      "bind_addr": ":5060",
+    "node_config": {
+      "bind_addr": ":5010",
       "data_dir": "/tmp/blast/indexer2",
-      "grpc_addr": ":5061",
-      "http_addr": ":5062"
+      "grpc_addr": ":5011",
+      "http_addr": ":5012",
+      "node_id": "indexer2",
+      "raft_storage_type": "boltdb"
     },
     "state": "Follower"
   },
   "indexer3": {
-    "metadata": {
-      "bind_addr": ":5070",
+    "node_config": {
+      "bind_addr": ":5020",
       "data_dir": "/tmp/blast/indexer3",
-      "grpc_addr": ":5071",
-      "http_addr": ":5072"
+      "grpc_addr": ":5021",
+      "http_addr": ":5022",
+      "node_id": "indexer3",
+      "raft_storage_type": "boltdb"
     },
     "state": "Follower"
   }
@@ -726,6 +732,7 @@ $ ./bin/blastd \
     --grpc-addr=:15001 \
     --http-addr=:15002 \
     --data-dir=/tmp/blast/manager1 \
+    --raft-storage-type=badger \
     --index-mapping-file=./example/wiki_index_mapping.json \
     --index-type=upside_down \
     --index-storage-type=boltdb
@@ -737,7 +744,8 @@ $ ./bin/blastd \
     --bind-addr=:15010 \
     --grpc-addr=:15011 \
     --http-addr=:15012 \
-    --data-dir=/tmp/blast/manager2
+    --data-dir=/tmp/blast/manager2 \
+    --raft-storage-type=badger
 
 $ ./bin/blastd \
     manager \

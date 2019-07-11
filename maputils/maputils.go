@@ -24,36 +24,6 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-type Map map[string]interface{}
-
-func New() Map {
-	return Map{}
-}
-
-func FromMap(src map[string]interface{}) Map {
-	return normalize(src).(Map)
-}
-
-func FromJSON(src []byte) (Map, error) {
-	m := map[string]interface{}{}
-	err := json.Unmarshal(src, &m)
-	if err != nil {
-		return nil, err
-	}
-
-	return FromMap(m), nil
-}
-
-func FromYAML(src []byte) (Map, error) {
-	m := map[string]interface{}{}
-	err := yaml.Unmarshal(src, &m)
-	if err != nil {
-		return nil, err
-	}
-
-	return FromMap(m), nil
-}
-
 func splitKey(path string) []string {
 	keys := make([]string, 0)
 	for _, k := range strings.Split(path, "/") {
@@ -108,6 +78,36 @@ func makeMap(path string, value interface{}) interface{} {
 	}
 
 	return ret
+}
+
+type Map map[string]interface{}
+
+func New() Map {
+	return Map{}
+}
+
+func FromMap(src map[string]interface{}) Map {
+	return normalize(src).(Map)
+}
+
+func FromJSON(src []byte) (Map, error) {
+	t := map[string]interface{}{}
+	err := json.Unmarshal(src, &t)
+	if err != nil {
+		return nil, err
+	}
+
+	return FromMap(t), nil
+}
+
+func FromYAML(src []byte) (Map, error) {
+	t := map[string]interface{}{}
+	err := yaml.Unmarshal(src, &t)
+	if err != nil {
+		return nil, err
+	}
+
+	return FromMap(t), nil
 }
 
 func (m Map) Has(key string) (bool, error) {

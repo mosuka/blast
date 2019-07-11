@@ -28,34 +28,28 @@ import (
 	raftboltdb "github.com/hashicorp/raft-boltdb"
 	raftbadgerdb "github.com/markthethomas/raft-badger"
 	_ "github.com/mosuka/blast/builtins"
+	"github.com/mosuka/blast/config"
 	blasterrors "github.com/mosuka/blast/errors"
 	"go.uber.org/zap"
 	//raftmdb "github.com/hashicorp/raft-mdb"
 )
 
 type RaftServer struct {
-	id              string
-	metadata        map[string]interface{}
-	raftStorageType string
-	bootstrap       bool
+	nodeConfig  config.NodeConfig
+	indexConfig config.IndexConfig
+	bootstrap   bool
+	logger      *zap.Logger
 
 	raft *raft.Raft
 	fsm  *RaftFSM
-
-	indexConfig map[string]interface{}
-
-	logger *zap.Logger
-	mu     sync.RWMutex
+	mu   sync.RWMutex
 }
 
-func NewRaftServer(id string, metadata map[string]interface{}, raftStorageType string, bootstrap bool, indexConfig map[string]interface{}, logger *zap.Logger) (*RaftServer, error) {
+func NewRaftServer(nodeConfig config.NodeConfig, indexConfig config.IndexConfig, bootstrap bool, logger *zap.Logger) (*RaftServer, error) {
 	return &RaftServer{
-		id:              id,
-		metadata:        metadata,
-		raftStorageType: raftStorageType,
-		bootstrap:       bootstrap,
-
+		nodeConfig:  nodeConfig,
 		indexConfig: indexConfig,
+		bootstrap:   bootstrap,
 		logger:      logger,
 	}, nil
 }
@@ -63,16 +57,16 @@ func NewRaftServer(id string, metadata map[string]interface{}, raftStorageType s
 func (s *RaftServer) Start() error {
 	var err error
 
-	dataDir, ok := s.metadata["data_dir"].(string)
-	if !ok {
-		s.logger.Fatal("missing metadata", zap.String("data_dir", dataDir))
-		return errors.New("missing metadata")
+	dataDir, err := s.nodeConfig.GetDataDir()
+	if err != nil {
+		s.logger.Fatal(err.Error(), zap.String("data_dir", dataDir))
+		return err
 	}
 
-	bindAddr, ok := s.metadata["bind_addr"].(string)
-	if !ok {
-		s.logger.Fatal("missing metadata", zap.String("bind_addr", bindAddr))
-		return errors.New("missing metadata")
+	bindAddr, err := s.nodeConfig.GetBindAddr()
+	if err != nil {
+		s.logger.Fatal(err.Error(), zap.String("bind_addr", bindAddr))
+		return err
 	}
 
 	fsmPath := filepath.Join(dataDir, "store")
@@ -90,11 +84,17 @@ func (s *RaftServer) Start() error {
 		return err
 	}
 
-	s.logger.Info("create Raft config", zap.String("id", s.id))
-	config := raft.DefaultConfig()
-	config.LocalID = raft.ServerID(s.id)
-	config.SnapshotThreshold = 1024
-	config.LogOutput = ioutil.Discard
+	nodeId, err := s.nodeConfig.GetNodeId()
+	if err != nil {
+		s.logger.Fatal(err.Error())
+		return err
+	}
+
+	s.logger.Info("create Raft config", zap.String("id", nodeId))
+	raftConfig := raft.DefaultConfig()
+	raftConfig.LocalID = raft.ServerID(nodeId)
+	raftConfig.SnapshotThreshold = 1024
+	raftConfig.LogOutput = ioutil.Discard
 
 	s.logger.Info("resolve TCP address", zap.String("address", bindAddr))
 	addr, err := net.ResolveTCPAddr("tcp", bindAddr)
@@ -118,8 +118,14 @@ func (s *RaftServer) Start() error {
 		return err
 	}
 
+	raftStorageType, err := s.nodeConfig.GetRaftStorageType()
+	if err != nil {
+		s.logger.Fatal(err.Error())
+		return err
+	}
+
 	s.logger.Info("create Raft machine")
-	switch s.raftStorageType {
+	switch raftStorageType {
 	case "boltdb":
 		logStorePath := filepath.Join(dataDir, "raft", "boltdb.db")
 		err = os.MkdirAll(filepath.Join(dataDir, "raft"), 0755)
@@ -132,7 +138,7 @@ func (s *RaftServer) Start() error {
 			s.logger.Fatal(err.Error())
 			return err
 		}
-		s.raft, err = raft.NewRaft(config, s.fsm, logStore, logStore, snapshotStore, transport)
+		s.raft, err = raft.NewRaft(raftConfig, s.fsm, logStore, logStore, snapshotStore, transport)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return err
@@ -149,7 +155,7 @@ func (s *RaftServer) Start() error {
 			s.logger.Fatal(err.Error())
 			return err
 		}
-		s.raft, err = raft.NewRaft(config, s.fsm, logStore, logStore, snapshotStore, transport)
+		s.raft, err = raft.NewRaft(raftConfig, s.fsm, logStore, logStore, snapshotStore, transport)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return err
@@ -166,7 +172,7 @@ func (s *RaftServer) Start() error {
 			s.logger.Fatal(err.Error())
 			return err
 		}
-		s.raft, err = raft.NewRaft(config, s.fsm, logStore, logStore, snapshotStore, transport)
+		s.raft, err = raft.NewRaft(raftConfig, s.fsm, logStore, logStore, snapshotStore, transport)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return err
@@ -178,7 +184,7 @@ func (s *RaftServer) Start() error {
 		configuration := raft.Configuration{
 			Servers: []raft.Server{
 				{
-					ID:      config.LocalID,
+					ID:      raftConfig.LocalID,
 					Address: transport.LocalAddr(),
 				},
 			},
@@ -193,8 +199,8 @@ func (s *RaftServer) Start() error {
 		}
 
 		// set metadata
-		s.logger.Info("register its own information", zap.String("id", s.id), zap.Any("metadata", s.metadata))
-		err = s.setMetadata(s.id, s.metadata)
+		s.logger.Info("register its own information", zap.String("node_id", nodeId), zap.Any("node_config", s.nodeConfig))
+		err = s.setNodeConfig(nodeId, s.nodeConfig.ToMap())
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return err
@@ -202,7 +208,7 @@ func (s *RaftServer) Start() error {
 
 		// set index config
 		s.logger.Info("register index config")
-		err = s.setIndexConfig(s.indexConfig)
+		err = s.setIndexConfig(s.indexConfig.ToMap())
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return err
@@ -299,22 +305,22 @@ func (s *RaftServer) WaitForDetectLeader(timeout time.Duration) error {
 	return nil
 }
 
-func (s *RaftServer) getMetadata(id string) (map[string]interface{}, error) {
-	metadata, err := s.fsm.GetMetadata(id)
+func (s *RaftServer) getNodeConfig(nodeId string) (map[string]interface{}, error) {
+	nodeConfig, err := s.fsm.GetNodeConfig(nodeId)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return nil, err
 	}
 
-	return metadata, nil
+	return nodeConfig, nil
 }
 
-func (s *RaftServer) setMetadata(id string, metadata map[string]interface{}) error {
+func (s *RaftServer) setNodeConfig(nodeId string, nodeConfig map[string]interface{}) error {
 	msg, err := newMessage(
 		setNode,
 		map[string]interface{}{
-			"id":       id,
-			"metadata": metadata,
+			"node_id":     nodeId,
+			"node_config": nodeConfig,
 		},
 	)
 	if err != nil {
@@ -343,11 +349,11 @@ func (s *RaftServer) setMetadata(id string, metadata map[string]interface{}) err
 	return nil
 }
 
-func (s *RaftServer) deleteMetadata(id string) error {
+func (s *RaftServer) deleteNodeConfig(nodeId string) error {
 	msg, err := newMessage(
 		deleteNode,
 		map[string]interface{}{
-			"id": id,
+			"node_id": nodeId,
 		},
 	)
 	if err != nil {
@@ -386,7 +392,7 @@ func (s *RaftServer) setIndexConfig(indexConfig map[string]interface{}) error {
 	return nil
 }
 
-func (s *RaftServer) GetMetadata(id string) (map[string]interface{}, error) {
+func (s *RaftServer) GetNodeConfig(id string) (map[string]interface{}, error) {
 	cf := s.raft.GetConfiguration()
 	err := cf.Error()
 	if err != nil {
@@ -394,10 +400,10 @@ func (s *RaftServer) GetMetadata(id string) (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	var metadata map[string]interface{}
+	var nodeConfig map[string]interface{}
 	for _, server := range cf.Configuration().Servers {
 		if server.ID == raft.ServerID(id) {
-			metadata, err = s.getMetadata(id)
+			nodeConfig, err = s.getNodeConfig(id)
 			if err != nil {
 				s.logger.Error(err.Error())
 				return nil, err
@@ -406,10 +412,10 @@ func (s *RaftServer) GetMetadata(id string) (map[string]interface{}, error) {
 		}
 	}
 
-	return metadata, nil
+	return nodeConfig, nil
 }
 
-func (s *RaftServer) SetMetadata(id string, metadata map[string]interface{}) error {
+func (s *RaftServer) SetNodeConfig(nodeId string, nodeConfig map[string]interface{}) error {
 	if !s.IsLeader() {
 		s.logger.Warn(raft.ErrNotLeader.Error(), zap.String("state", s.raft.State().String()))
 		return raft.ErrNotLeader
@@ -423,28 +429,28 @@ func (s *RaftServer) SetMetadata(id string, metadata map[string]interface{}) err
 	}
 
 	for _, server := range cf.Configuration().Servers {
-		if server.ID == raft.ServerID(id) {
-			s.logger.Info("node already joined the cluster", zap.String("id", id))
+		if server.ID == raft.ServerID(nodeId) {
+			s.logger.Info("node already joined the cluster", zap.String("id", nodeId))
 			return nil
 		}
 	}
 
-	bindAddr, ok := metadata["bind_addr"].(string)
+	bindAddr, ok := nodeConfig["bind_addr"].(string)
 	if !ok {
 		s.logger.Error("missing metadata", zap.String("bind_addr", bindAddr))
 		return errors.New("missing metadata")
 	}
 
-	s.logger.Info("add voter", zap.String("id", id), zap.String("address", bindAddr))
-	f := s.raft.AddVoter(raft.ServerID(id), raft.ServerAddress(bindAddr), 0, 0)
+	s.logger.Info("add voter", zap.String("nodeId", nodeId), zap.String("address", bindAddr))
+	f := s.raft.AddVoter(raft.ServerID(nodeId), raft.ServerAddress(bindAddr), 0, 0)
 	err = f.Error()
 	if err != nil {
 		s.logger.Error(err.Error())
 		return err
 	}
 
-	// set metadata
-	err = s.setMetadata(id, metadata)
+	// set node config
+	err = s.setNodeConfig(nodeId, nodeConfig)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return err
@@ -453,7 +459,7 @@ func (s *RaftServer) SetMetadata(id string, metadata map[string]interface{}) err
 	return nil
 }
 
-func (s *RaftServer) DeleteMetadata(id string) error {
+func (s *RaftServer) DeleteNodeConfig(nodeId string) error {
 	if !s.IsLeader() {
 		s.logger.Warn(raft.ErrNotLeader.Error(), zap.String("state", s.raft.State().String()))
 		return raft.ErrNotLeader
@@ -467,8 +473,8 @@ func (s *RaftServer) DeleteMetadata(id string) error {
 	}
 
 	for _, server := range cf.Configuration().Servers {
-		if server.ID == raft.ServerID(id) {
-			s.logger.Debug("remove server", zap.String("id", id))
+		if server.ID == raft.ServerID(nodeId) {
+			s.logger.Debug("remove server", zap.String("node_id", nodeId))
 			f := s.raft.RemoveServer(server.ID, 0, 0)
 			err = f.Error()
 			if err != nil {
@@ -479,7 +485,7 @@ func (s *RaftServer) DeleteMetadata(id string) error {
 	}
 
 	// delete metadata
-	err = s.deleteMetadata(id)
+	err = s.deleteNodeConfig(nodeId)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return err
@@ -498,7 +504,7 @@ func (s *RaftServer) GetServers() (map[string]interface{}, error) {
 
 	servers := map[string]interface{}{}
 	for _, server := range cf.Configuration().Servers {
-		metadata, err := s.GetMetadata(string(server.ID))
+		metadata, err := s.GetNodeConfig(string(server.ID))
 		if err != nil {
 			s.logger.Warn(err.Error())
 		}
