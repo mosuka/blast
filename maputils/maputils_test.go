@@ -132,6 +132,178 @@ func Test_makeMap(t *testing.T) {
 	}
 }
 
+func TestMap_FromMap(t *testing.T) {
+	map1 := FromMap(map[string]interface{}{
+		"a": map[string]interface{}{
+			"b": map[string]interface{}{
+				"c": "abc",
+				"d": "abd",
+			},
+			"e": []interface{}{
+				"ae1",
+				"ae2",
+			},
+		},
+	})
+	exp1 := Map{
+		"a": Map{
+			"b": Map{
+				"c": "abc",
+				"d": "abd",
+			},
+			"e": []interface{}{
+				"ae1",
+				"ae2",
+			},
+		},
+	}
+	act1 := map1
+	if !reflect.DeepEqual(exp1, act1) {
+		t.Errorf("expected content to see %v, saw %v", exp1, act1)
+	}
+}
+
+func TestMap_ToMap(t *testing.T) {
+	map1 := Map{
+		"a": Map{
+			"b": Map{
+				"c": "abc",
+				"d": "abd",
+			},
+			"e": []interface{}{
+				"ae1",
+				"ae2",
+			},
+		},
+	}
+	val1 := map1.ToMap()
+	exp1 := map[string]interface{}{
+		"a": map[string]interface{}{
+			"b": map[string]interface{}{
+				"c": "abc",
+				"d": "abd",
+			},
+			"e": []interface{}{
+				"ae1",
+				"ae2",
+			},
+		},
+	}
+	act1 := val1
+	if !reflect.DeepEqual(exp1, act1) {
+		t.Errorf("expected content to see %v, saw %v", exp1, act1)
+	}
+}
+
+func Test_FromYAML(t *testing.T) {
+	map1, err := FromYAML([]byte(`a:
+  b:
+    c: abc
+    d: abd
+  e:
+  - ae1
+  - ae2
+`))
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	exp1 := Map{
+		"a": Map{
+			"b": Map{
+				"c": "abc",
+				"d": "abd",
+			},
+			"e": []interface{}{
+				"ae1",
+				"ae2",
+			},
+		},
+	}
+	act1 := map1
+	if !reflect.DeepEqual(exp1, act1) {
+		t.Errorf("expected content to see %v, saw %v", exp1, act1)
+	}
+}
+
+func Test_ToYAML(t *testing.T) {
+	map1 := Map{
+		"a": Map{
+			"b": Map{
+				"c": "abc",
+				"d": "abd",
+			},
+			"e": []interface{}{
+				"ae1",
+				"ae2",
+			},
+		},
+	}
+
+	val1, err := map1.ToYAML()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	exp1 := []byte(`a:
+  b:
+    c: abc
+    d: abd
+  e:
+  - ae1
+  - ae2
+`)
+	act1 := val1
+	if !bytes.Equal(exp1, act1) {
+		t.Errorf("expected content to see %v, saw %v", exp1, act1)
+	}
+}
+
+func Test_FromJSON(t *testing.T) {
+	map1, err := FromJSON([]byte(`{"a":{"b":{"c":"abc","d":"abd"},"e":["ae1","ae2"]}}`))
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	exp1 := Map{
+		"a": Map{
+			"b": Map{
+				"c": "abc",
+				"d": "abd",
+			},
+			"e": []interface{}{
+				"ae1",
+				"ae2",
+			},
+		},
+	}
+	act1 := map1
+	if !reflect.DeepEqual(exp1, act1) {
+		t.Errorf("expected content to see %v, saw %v", exp1, act1)
+	}
+}
+
+func Test_ToJSON(t *testing.T) {
+	map1 := Map{
+		"a": Map{
+			"b": Map{
+				"c": "abc",
+				"d": "abd",
+			},
+			"e": []interface{}{
+				"ae1",
+				"ae2",
+			},
+		},
+	}
+	val1, err := map1.ToJSON()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	exp1 := []byte(`{"a":{"b":{"c":"abc","d":"abd"},"e":["ae1","ae2"]}}`)
+	act1 := val1
+	if !bytes.Equal(exp1, act1) {
+		t.Errorf("expected content to see %v, saw %v", exp1, act1)
+	}
+}
+
 func Test_Has(t *testing.T) {
 	map1 := Map{
 		"a": Map{
@@ -394,178 +566,6 @@ func Test_Delete(t *testing.T) {
 		t.Errorf("expected content to see %v, saw %v", exp1, act1)
 	}
 
-}
-
-func Test_ToMap(t *testing.T) {
-	map1 := Map{
-		"a": Map{
-			"b": Map{
-				"c": "abc",
-				"d": "abd",
-			},
-			"e": []interface{}{
-				"ae1",
-				"ae2",
-			},
-		},
-	}
-	val1 := map1.ToMap()
-	exp1 := map[string]interface{}{
-		"a": map[string]interface{}{
-			"b": map[string]interface{}{
-				"c": "abc",
-				"d": "abd",
-			},
-			"e": []interface{}{
-				"ae1",
-				"ae2",
-			},
-		},
-	}
-	act1 := val1
-	if !reflect.DeepEqual(exp1, act1) {
-		t.Errorf("expected content to see %v, saw %v", exp1, act1)
-	}
-}
-
-func Test_FromMap(t *testing.T) {
-	map1 := FromMap(map[string]interface{}{
-		"a": map[string]interface{}{
-			"b": map[string]interface{}{
-				"c": "abc",
-				"d": "abd",
-			},
-			"e": []interface{}{
-				"ae1",
-				"ae2",
-			},
-		},
-	})
-	exp1 := Map{
-		"a": Map{
-			"b": Map{
-				"c": "abc",
-				"d": "abd",
-			},
-			"e": []interface{}{
-				"ae1",
-				"ae2",
-			},
-		},
-	}
-	act1 := map1
-	if !reflect.DeepEqual(exp1, act1) {
-		t.Errorf("expected content to see %v, saw %v", exp1, act1)
-	}
-}
-
-func Test_ToJSON(t *testing.T) {
-	map1 := Map{
-		"a": Map{
-			"b": Map{
-				"c": "abc",
-				"d": "abd",
-			},
-			"e": []interface{}{
-				"ae1",
-				"ae2",
-			},
-		},
-	}
-	val1, err := map1.ToJSON()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-	exp1 := []byte(`{"a":{"b":{"c":"abc","d":"abd"},"e":["ae1","ae2"]}}`)
-	act1 := val1
-	if !bytes.Equal(exp1, act1) {
-		t.Errorf("expected content to see %v, saw %v", exp1, act1)
-	}
-}
-
-func Test_FromJSON(t *testing.T) {
-	map1, err := FromJSON([]byte(`{"a":{"b":{"c":"abc","d":"abd"},"e":["ae1","ae2"]}}`))
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-	exp1 := Map{
-		"a": Map{
-			"b": Map{
-				"c": "abc",
-				"d": "abd",
-			},
-			"e": []interface{}{
-				"ae1",
-				"ae2",
-			},
-		},
-	}
-	act1 := map1
-	if !reflect.DeepEqual(exp1, act1) {
-		t.Errorf("expected content to see %v, saw %v", exp1, act1)
-	}
-}
-
-func Test_ToYAML(t *testing.T) {
-	map1 := Map{
-		"a": Map{
-			"b": Map{
-				"c": "abc",
-				"d": "abd",
-			},
-			"e": []interface{}{
-				"ae1",
-				"ae2",
-			},
-		},
-	}
-
-	val1, err := map1.ToYAML()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-	exp1 := []byte(`a:
-  b:
-    c: abc
-    d: abd
-  e:
-  - ae1
-  - ae2
-`)
-	act1 := val1
-	if !bytes.Equal(exp1, act1) {
-		t.Errorf("expected content to see %v, saw %v", exp1, act1)
-	}
-}
-
-func Test_FromYAML(t *testing.T) {
-	map1, err := FromYAML([]byte(`a:
-  b:
-    c: abc
-    d: abd
-  e:
-  - ae1
-  - ae2
-`))
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-	exp1 := Map{
-		"a": Map{
-			"b": Map{
-				"c": "abc",
-				"d": "abd",
-			},
-			"e": []interface{}{
-				"ae1",
-				"ae2",
-			},
-		},
-	}
-	act1 := map1
-	if !reflect.DeepEqual(exp1, act1) {
-		t.Errorf("expected content to see %v, saw %v", exp1, act1)
-	}
 }
 
 //func Test_Get(t *testing.T) {

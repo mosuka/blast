@@ -113,8 +113,8 @@ func (c *Client) GetNode(id string, opts ...grpc.CallOption) (map[string]interfa
 	metadata := *ins.(*map[string]interface{})
 
 	node := map[string]interface{}{
-		"metadata": metadata,
-		"state":    resp.State,
+		"node_config": metadata,
+		"state":       resp.State,
 	}
 
 	return node, nil

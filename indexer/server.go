@@ -18,58 +18,64 @@ import (
 	"fmt"
 
 	accesslog "github.com/mash/go-accesslog"
+	"github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/grpc"
 	"github.com/mosuka/blast/http"
+	"github.com/mosuka/blast/maputils"
 	"go.uber.org/zap"
 )
 
 type Server struct {
-	managerAddr string
-	clusterId   string
+	clusterConfig config.ClusterConfig
+	nodeConfig    config.NodeConfig
+	indexConfig   config.IndexConfig
 
-	id              string
-	metadata        map[string]interface{}
-	raftStorageType string
-	peerAddr        string
-
-	indexConfig map[string]interface{}
+	logger     *zap.Logger
+	grpcLogger *zap.Logger
+	httpLogger accesslog.Logger
 
 	raftServer  *RaftServer
 	grpcService *GRPCService
 	grpcServer  *grpc.Server
 	httpRouter  *http.Router
 	httpServer  *http.Server
-
-	logger     *zap.Logger
-	grpcLogger *zap.Logger
-	httpLogger accesslog.Logger
 }
 
-func NewServer(managerAddr string, clusterId string, id string, metadata map[string]interface{}, raftStorageType, peerAddr string, indexConfig map[string]interface{}, logger *zap.Logger, grpcLogger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
+func NewServer(clusterConfig config.ClusterConfig, nodeConfig config.NodeConfig, indexConfig config.IndexConfig, logger *zap.Logger, grpcLogger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
 	return &Server{
-		managerAddr: managerAddr,
-		clusterId:   clusterId,
-
-		id:              id,
-		metadata:        metadata,
-		raftStorageType: raftStorageType,
-		peerAddr:        peerAddr,
-
-		indexConfig: indexConfig,
-
-		logger:     logger,
-		grpcLogger: grpcLogger,
-		httpLogger: httpLogger,
+		clusterConfig: clusterConfig,
+		nodeConfig:    nodeConfig,
+		indexConfig:   indexConfig,
+		logger:        logger,
+		grpcLogger:    grpcLogger,
+		httpLogger:    httpLogger,
 	}, nil
 }
 
 func (s *Server) Start() {
-	// get peer from manager
-	if s.managerAddr != "" {
-		s.logger.Info("connect to master", zap.String("master_addr", s.managerAddr))
+	managerAddr, err := s.clusterConfig.GetManagerAddr()
+	if err != nil && err != maputils.ErrNotFound {
+		s.logger.Fatal(err.Error())
+		return
+	}
+	clusterId, err := s.clusterConfig.GetClusterId()
+	if err != nil && err != maputils.ErrNotFound {
+		s.logger.Fatal(err.Error())
+		return
+	}
 
-		mc, err := grpc.NewClient(s.managerAddr)
+	nodeId, err := s.nodeConfig.GetNodeId()
+	if err != nil {
+		s.logger.Fatal(err.Error())
+		return
+	}
+
+	// get peer from manager
+	if managerAddr != "" {
+		s.logger.Info("connect to manager", zap.String("manager_addr", managerAddr))
+
+		mc, err := grpc.NewClient(managerAddr)
 		defer func() {
 			s.logger.Debug("close client", zap.String("address", mc.GetAddress()))
 			err = mc.Close()
@@ -83,49 +89,55 @@ func (s *Server) Start() {
 			return
 		}
 
-		s.logger.Info("get nodes in cluster from master", zap.String("master_addr", mc.GetAddress()), zap.String("cluster", s.clusterId))
-		clusterIntr, err := mc.GetState(fmt.Sprintf("cluster_config/clusters/%s/nodes", s.clusterId))
+		clusterIntr, err := mc.GetState(fmt.Sprintf("cluster_config/clusters/%s/nodes", clusterId))
 		if err != nil && err != errors.ErrNotFound {
 			s.logger.Fatal(err.Error())
 			return
 		}
 		if clusterIntr != nil {
 			cluster := *clusterIntr.(*map[string]interface{})
-			for nodeId, nodeIntr := range cluster {
-				if nodeId == s.id {
-					s.logger.Debug("skip own node id", zap.String("id", nodeId))
+			for id, nodeInfoIntr := range cluster {
+				if id == nodeId {
+					s.logger.Debug("skip own node id", zap.String("node_id", id))
 					continue
 				}
 
-				// get the peer node address
-				metadata, ok := nodeIntr.(map[string]interface{})["metadata"].(map[string]interface{})
+				nodeInfo := nodeInfoIntr.(map[string]interface{})
+
+				// get the peer node config
+				nodeConfig, ok := nodeInfo["node_config"].(map[string]interface{})
 				if !ok {
-					s.logger.Error("missing metadata", zap.String("id", nodeId), zap.Any("metadata", metadata))
+					s.logger.Error("missing node config", zap.String("node_id", id), zap.Any("node_config", nodeConfig))
 					continue
 				}
 
-				grpcAddr, ok := metadata["grpc_addr"].(string)
+				// get the peer node gRPC address
+				grpcAddr, ok := nodeConfig["grpc_addr"].(string)
 				if !ok {
-					s.logger.Error("missing gRPC address", zap.String("id", nodeId), zap.String("grpc_addr", grpcAddr))
+					s.logger.Error("missing gRPC address", zap.String("id", id), zap.String("grpc_addr", grpcAddr))
 					continue
 				}
 
-				s.peerAddr = grpcAddr
-
-				s.logger.Info("peer node detected", zap.String("peer_addr", s.peerAddr))
-
+				s.logger.Info("peer node detected", zap.String("peer_addr", grpcAddr))
+				err = s.clusterConfig.SetPeerAddr(grpcAddr)
+				if err != nil {
+					s.logger.Fatal(err.Error())
+					return
+				}
 				break
 			}
 		}
 	}
 
-	// bootstrap node?
-	bootstrap := s.peerAddr == ""
-	s.logger.Info("bootstrap", zap.Bool("bootstrap", bootstrap))
+	peerAddr, err := s.clusterConfig.GetPeerAddr()
+	if err != nil && err != maputils.ErrNotFound {
+		s.logger.Fatal(err.Error())
+		return
+	}
 
-	// get index config from manager or peer
-	if s.managerAddr != "" {
-		mc, err := grpc.NewClient(s.managerAddr)
+	//get index config from manager or peer
+	if managerAddr != "" {
+		mc, err := grpc.NewClient(managerAddr)
 		defer func() {
 			s.logger.Debug("close client", zap.String("address", mc.GetAddress()))
 			err = mc.Close()
@@ -139,18 +151,18 @@ func (s *Server) Start() {
 			return
 		}
 
-		s.logger.Debug("pull index config from master", zap.String("address", mc.GetAddress()))
-		value, err := mc.GetState("index_config")
+		s.logger.Debug("pull index config from manager", zap.String("address", mc.GetAddress()))
+		value, err := mc.GetState("/index_config")
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return
 		}
 
 		if value != nil {
-			s.indexConfig = *value.(*map[string]interface{})
+			s.indexConfig = config.NewIndexConfigFromMap(*value.(*map[string]interface{}))
 		}
-	} else if s.peerAddr != "" {
-		pc, err := grpc.NewClient(s.peerAddr)
+	} else if peerAddr != "" {
+		pc, err := grpc.NewClient(peerAddr)
 		defer func() {
 			s.logger.Debug("close client", zap.String("address", pc.GetAddress()))
 			err = pc.Close()
@@ -165,32 +177,38 @@ func (s *Server) Start() {
 		}
 
 		s.logger.Debug("pull index config from cluster peer", zap.String("address", pc.GetAddress()))
-		s.indexConfig, err = pc.GetIndexConfig()
+		value, err := pc.GetIndexConfig()
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return
 		}
+
+		if value != nil {
+			s.indexConfig = config.NewIndexConfigFromMap(value)
+		}
 	}
 
-	var err error
+	// bootstrap node?
+	bootstrap := peerAddr == ""
+	s.logger.Info("bootstrap", zap.Bool("bootstrap", bootstrap))
 
 	// create raft server
-	s.raftServer, err = NewRaftServer(s.id, s.metadata, s.raftStorageType, bootstrap, s.indexConfig, s.logger)
+	s.raftServer, err = NewRaftServer(s.nodeConfig, s.indexConfig, bootstrap, s.logger)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return
 	}
 
 	// create gRPC service
-	s.grpcService, err = NewGRPCService(s.managerAddr, s.clusterId, s.raftServer, s.logger)
+	s.grpcService, err = NewGRPCService(s.clusterConfig, s.raftServer, s.logger)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return
 	}
 
-	grpcAddr, ok := s.metadata["grpc_addr"].(string)
-	if !ok {
-		s.logger.Fatal("missing gRPC address", zap.String("grpc_addr", grpcAddr))
+	grpcAddr, err := s.nodeConfig.GetGrpcAddr()
+	if err != nil {
+		s.logger.Fatal(err.Error(), zap.String("grpc_addr", grpcAddr))
 		return
 	}
 
@@ -208,9 +226,9 @@ func (s *Server) Start() {
 		return
 	}
 
-	httpAddr, ok := s.metadata["http_addr"].(string)
-	if !ok {
-		s.logger.Fatal("missing HTTP address", zap.String("http_addr", httpAddr))
+	httpAddr, err := s.nodeConfig.GetHttpAddr()
+	if err != nil {
+		s.logger.Fatal(err.Error(), zap.String("http_addr", httpAddr))
 		return
 	}
 
@@ -257,7 +275,7 @@ func (s *Server) Start() {
 
 	// join to the existing cluster
 	if !bootstrap {
-		client, err := grpc.NewClient(s.peerAddr)
+		client, err := grpc.NewClient(peerAddr)
 		defer func() {
 			err := client.Close()
 			if err != nil {
@@ -269,7 +287,7 @@ func (s *Server) Start() {
 			return
 		}
 
-		err = client.SetNode(s.id, s.metadata)
+		err = client.SetNode(nodeId, s.nodeConfig.ToMap())
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return

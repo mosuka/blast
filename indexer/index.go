@@ -22,56 +22,40 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/document"
 	"github.com/golang/protobuf/ptypes/any"
+	"github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
 	"go.uber.org/zap"
 )
 
 type Index struct {
+	indexConfig config.IndexConfig
+	logger      *zap.Logger
+
 	index bleve.Index
-
-	indexConfig map[string]interface{}
-
-	logger *zap.Logger
 }
 
-func NewIndex(dir string, indexConfig map[string]interface{}, logger *zap.Logger) (*Index, error) {
+func NewIndex(dir string, indexConfig config.IndexConfig, logger *zap.Logger) (*Index, error) {
 	//bleve.SetLog(logger)
 
 	var index bleve.Index
 	_, err := os.Stat(dir)
 	if os.IsNotExist(err) {
-		// default index mapping
-		indexMapping := bleve.NewIndexMapping()
-
-		// index mapping from config
-		indexMappingIntr, ok := indexConfig["index_mapping"]
-		if ok {
-			if indexMappingIntr != nil {
-				indexMappingBytes, err := json.Marshal(indexMappingIntr)
-				if err != nil {
-					logger.Error(err.Error())
-					return nil, err
-				}
-				err = json.Unmarshal(indexMappingBytes, indexMapping)
-				if err != nil {
-					logger.Error(err.Error())
-					return nil, err
-				}
-			}
-		} else {
-			logger.Error("missing index mapping")
+		indexMapping, err := indexConfig.GetIndexMapping()
+		if err != nil {
+			logger.Error(err.Error())
+			return nil, err
 		}
 
-		indexType, ok := indexConfig["index_type"].(string)
-		if !ok {
-			logger.Error("missing index type")
+		indexType, err := indexConfig.GetIndexType()
+		if err != nil {
+			logger.Warn(err.Error())
 			indexType = bleve.Config.DefaultIndexType
 		}
 
-		indexStorageType, ok := indexConfig["index_storage_type"].(string)
-		if !ok {
-			logger.Error("missing index storage type")
+		indexStorageType, err := indexConfig.GetIndexStorageType()
+		if err != nil {
+			logger.Warn(err.Error())
 			indexStorageType = bleve.Config.DefaultKVStore
 		}
 
@@ -243,7 +227,7 @@ func (i *Index) BulkDelete(ids []string) (int, error) {
 }
 
 func (i *Index) Config() (map[string]interface{}, error) {
-	return i.indexConfig, nil
+	return i.indexConfig.ToMap(), nil
 }
 
 func (i *Index) Stats() (map[string]interface{}, error) {

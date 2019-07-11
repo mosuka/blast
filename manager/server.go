@@ -16,52 +16,55 @@ package manager
 
 import (
 	accesslog "github.com/mash/go-accesslog"
+	"github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/grpc"
 	"github.com/mosuka/blast/http"
+	"github.com/mosuka/blast/maputils"
 	"go.uber.org/zap"
 )
 
 type Server struct {
-	id              string
-	metadata        map[string]interface{}
-	raftStorageType string
-	peerAddr        string
+	clusterConfig config.ClusterConfig
+	nodeConfig    config.NodeConfig
+	indexConfig   config.IndexConfig
 
-	indexConfig map[string]interface{}
+	logger     *zap.Logger
+	grpcLogger *zap.Logger
+	httpLogger accesslog.Logger
 
 	raftServer  *RaftServer
 	grpcService *GRPCService
 	grpcServer  *grpc.Server
 	httpRouter  *http.Router
 	httpServer  *http.Server
-
-	logger     *zap.Logger
-	grpcLogger *zap.Logger
-	httpLogger accesslog.Logger
 }
 
-func NewServer(id string, metadata map[string]interface{}, raftStorageType string, peerAddr string, indexConfig map[string]interface{}, logger *zap.Logger, grpcLogger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
+func NewServer(clusterConfig config.ClusterConfig, nodeConfig config.NodeConfig, indexConfig config.IndexConfig, logger *zap.Logger, grpcLogger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
 	return &Server{
-		id:              id,
-		metadata:        metadata,
-		raftStorageType: raftStorageType,
-		peerAddr:        peerAddr,
-		indexConfig:     indexConfig,
-		logger:          logger,
-		grpcLogger:      grpcLogger,
-		httpLogger:      httpLogger,
+		clusterConfig: clusterConfig,
+		nodeConfig:    nodeConfig,
+		indexConfig:   indexConfig,
+		logger:        logger,
+		grpcLogger:    grpcLogger,
+		httpLogger:    httpLogger,
 	}, nil
 }
 
 func (s *Server) Start() {
 	var err error
 
+	peerAddr, err := s.clusterConfig.GetPeerAddr()
+	if err != nil && err != maputils.ErrNotFound {
+		s.logger.Fatal(err.Error())
+		return
+	}
+
 	// bootstrap node?
-	bootstrap := s.peerAddr == ""
+	bootstrap := peerAddr == ""
 	s.logger.Info("bootstrap", zap.Bool("bootstrap", bootstrap))
 
 	// create raft server
-	s.raftServer, err = NewRaftServer(s.id, s.metadata, s.raftStorageType, bootstrap, s.indexConfig, s.logger)
+	s.raftServer, err = NewRaftServer(s.nodeConfig, s.indexConfig, bootstrap, s.logger)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return
@@ -74,22 +77,34 @@ func (s *Server) Start() {
 		return
 	}
 
+	grpcAddr, err := s.nodeConfig.GetGrpcAddr()
+	if err != nil {
+		s.logger.Fatal(err.Error())
+		return
+	}
+
 	// create gRPC server
-	s.grpcServer, err = grpc.NewServer(s.metadata["grpc_addr"].(string), s.grpcService, s.grpcLogger)
+	s.grpcServer, err = grpc.NewServer(grpcAddr, s.grpcService, s.grpcLogger)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return
 	}
 
 	// create HTTP router
-	s.httpRouter, err = NewRouter(s.metadata["grpc_addr"].(string), s.logger)
+	s.httpRouter, err = NewRouter(grpcAddr, s.logger)
+	if err != nil {
+		s.logger.Fatal(err.Error())
+		return
+	}
+
+	httpAddr, err := s.nodeConfig.GetHttpAddr()
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return
 	}
 
 	// create HTTP server
-	s.httpServer, err = http.NewServer(s.metadata["http_addr"].(string), s.httpRouter, s.logger, s.httpLogger)
+	s.httpServer, err = http.NewServer(httpAddr, s.httpRouter, s.logger, s.httpLogger)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return
@@ -131,7 +146,7 @@ func (s *Server) Start() {
 
 	// join to the existing cluster
 	if !bootstrap {
-		client, err := grpc.NewClient(s.peerAddr)
+		client, err := grpc.NewClient(peerAddr)
 		defer func() {
 			err := client.Close()
 			if err != nil {
@@ -143,7 +158,13 @@ func (s *Server) Start() {
 			return
 		}
 
-		err = client.SetNode(s.id, s.metadata)
+		nodeId, err := s.nodeConfig.GetNodeId()
+		if err != nil {
+			s.logger.Fatal(err.Error())
+			return
+		}
+
+		err = client.SetNode(nodeId, s.nodeConfig.ToMap())
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return

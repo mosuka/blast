@@ -24,25 +24,23 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/proto"
 	"github.com/hashicorp/raft"
+	"github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/maputils"
 	"github.com/mosuka/blast/protobuf"
 	"go.uber.org/zap"
 )
 
 type RaftFSM struct {
+	path        string
+	indexConfig config.IndexConfig
+	logger      *zap.Logger
+
 	metadata      maputils.Map
 	metadataMutex sync.RWMutex
-
-	path string
-
-	index *Index
-
-	indexConfig map[string]interface{}
-
-	logger *zap.Logger
+	index         *Index
 }
 
-func NewRaftFSM(path string, indexConfig map[string]interface{}, logger *zap.Logger) (*RaftFSM, error) {
+func NewRaftFSM(path string, indexConfig config.IndexConfig, logger *zap.Logger) (*RaftFSM, error) {
 	return &RaftFSM{
 		path:        path,
 		indexConfig: indexConfig,
@@ -74,11 +72,11 @@ func (f *RaftFSM) Stop() error {
 	return nil
 }
 
-func (f *RaftFSM) GetMetadata(id string) (map[string]interface{}, error) {
+func (f *RaftFSM) GetNodeConfig(nodeId string) (map[string]interface{}, error) {
 	f.metadataMutex.RLock()
 	defer f.metadataMutex.RUnlock()
 
-	value, err := f.metadata.Get(id)
+	value, err := f.metadata.Get(nodeId)
 	if err != nil {
 		f.logger.Error(err.Error())
 		return nil, err
@@ -87,11 +85,11 @@ func (f *RaftFSM) GetMetadata(id string) (map[string]interface{}, error) {
 	return value.(maputils.Map).ToMap(), nil
 }
 
-func (f *RaftFSM) applySetMetadata(id string, value map[string]interface{}) error {
+func (f *RaftFSM) applySetNodeConfig(nodeId string, nodeConfig map[string]interface{}) error {
 	f.metadataMutex.RLock()
 	defer f.metadataMutex.RUnlock()
 
-	err := f.metadata.Merge(id, value)
+	err := f.metadata.Merge(nodeId, nodeConfig)
 	if err != nil {
 		f.logger.Error(err.Error())
 		return err
@@ -100,11 +98,11 @@ func (f *RaftFSM) applySetMetadata(id string, value map[string]interface{}) erro
 	return nil
 }
 
-func (f *RaftFSM) applyDeleteMetadata(id string) interface{} {
+func (f *RaftFSM) applyDeleteNodeConfig(nodeId string) error {
 	f.metadataMutex.RLock()
 	defer f.metadataMutex.RUnlock()
 
-	err := f.metadata.Delete(id)
+	err := f.metadata.Delete(nodeId)
 	if err != nil {
 		f.logger.Error(err.Error())
 		return err
@@ -202,16 +200,17 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
-		err = f.applySetMetadata(data["id"].(string), data["metadata"].(map[string]interface{}))
+		err = f.applySetNodeConfig(data["node_id"].(string), data["node_config"].(map[string]interface{}))
 		return &fsmResponse{error: err}
 	case deleteNode:
 		var data map[string]interface{}
 		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
 			f.logger.Error(err.Error())
-			return err
+			return &fsmResponse{error: err}
 		}
-		return f.applyDeleteMetadata(data["id"].(string))
+		err = f.applyDeleteNodeConfig(data["node_id"].(string))
+		return &fsmResponse{error: err}
 	case indexDocument:
 		var data []map[string]interface{}
 		err := json.Unmarshal(msg.Data, &data)

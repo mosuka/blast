@@ -140,7 +140,12 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 			// create peer node list with out self node
 			peers := make(map[string]interface{}, 0)
 			for id, metadata := range servers {
-				if id != s.raftServer.id {
+				nodeId, err := s.raftServer.nodeConfig.GetNodeId()
+				if err != nil {
+					s.logger.Error(err.Error())
+					continue
+				}
+				if id != nodeId {
 					peers[id] = metadata
 				}
 			}
@@ -190,12 +195,13 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 						s.logger.Debug("client does not exist in peer list", zap.String("id", id))
 
 						s.logger.Debug("create gRPC client", zap.String("id", id), zap.String("grpc_addr", grpcAddr))
-						newClient, err := grpc.NewClient(grpcAddr)
+						peerClient, err := grpc.NewClient(grpcAddr)
 						if err != nil {
 							s.logger.Error(err.Error(), zap.String("id", id), zap.String("grpc_addr", grpcAddr))
 						}
-						if newClient != nil {
-							s.peerClients[id] = newClient
+						if peerClient != nil {
+							s.logger.Debug("append peer client to peer client list", zap.String("grpc_addr", peerClient.GetAddress()))
+							s.peerClients[id] = peerClient
 						}
 					}
 				}
@@ -218,7 +224,6 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 
 				// keep current peer nodes
 				s.peers = peers
-				s.logger.Debug("peers", zap.Any("peers", s.peers))
 			}
 
 			// get cluster
@@ -275,82 +280,95 @@ func (s *GRPCService) stopUpdateCluster() {
 }
 
 func (s *GRPCService) getSelfNode() (map[string]interface{}, error) {
-	var node map[string]interface{}
+	var nodeInfo map[string]interface{}
 
-	metadata, err := s.raftServer.GetMetadata(s.raftServer.id)
+	nodeId, err := s.raftServer.nodeConfig.GetNodeId()
+	if err != nil {
+		s.logger.Error(err.Error())
+		return nil, err
+	}
+
+	nodeConfig, err := s.raftServer.GetNodeConfig(nodeId)
 	if err == nil {
-		node = map[string]interface{}{
-			"metadata": metadata,
-			"state":    s.raftServer.State(),
+		nodeInfo = map[string]interface{}{
+			"node_config": nodeConfig,
+			"state":       s.raftServer.State(),
 		}
 	} else {
 		s.logger.Error(err.Error())
-		node = map[string]interface{}{
-			"metadata": map[string]interface{}{},
-			"state":    raft.Shutdown.String(),
+		nodeInfo = map[string]interface{}{
+			"node_config": map[string]interface{}{},
+			"state":       raft.Shutdown.String(),
 		}
 	}
 
-	return node, nil
+	return nodeInfo, nil
 }
 
 func (s *GRPCService) getPeerNode(id string) (map[string]interface{}, error) {
-	var node map[string]interface{}
+	var nodeInfo map[string]interface{}
 	var err error
 
-	if client, exist := s.peerClients[id]; exist {
-		node, err = client.GetNode(id)
+	if peerClient, exist := s.peerClients[id]; exist {
+		nodeInfo, err = peerClient.GetNode(id)
 		if err != nil {
 			s.logger.Error(err.Error())
-			node = map[string]interface{}{
-				"metadata": map[string]interface{}{},
-				"state":    raft.Shutdown.String(),
+			nodeInfo = map[string]interface{}{
+				"node_config": map[string]interface{}{},
+				"state":       raft.Shutdown.String(),
 			}
 		}
 	} else {
 		s.logger.Error("node does not exist in peer list", zap.String("id", id))
-		node = map[string]interface{}{
-			"metadata": map[string]interface{}{},
-			"state":    raft.Shutdown.String(),
+		nodeInfo = map[string]interface{}{
+			"node_config": map[string]interface{}{},
+			"state":       raft.Shutdown.String(),
 		}
 	}
 
-	return node, nil
+	return nodeInfo, nil
 }
 
 func (s *GRPCService) GetNode(ctx context.Context, req *protobuf.GetNodeRequest) (*protobuf.GetNodeResponse, error) {
 	resp := &protobuf.GetNodeResponse{}
 
-	var node map[string]interface{}
+	var nodeInfo map[string]interface{}
 	var err error
-	if req.Id == "" || req.Id == s.raftServer.id {
-		node, err = s.getSelfNode()
+
+	nodeId, err := s.raftServer.nodeConfig.GetNodeId()
+	if err != nil {
+		s.logger.Error(err.Error())
+		return nil, err
+	}
+
+	if req.Id == "" || req.Id == nodeId {
+		nodeInfo, err = s.getSelfNode()
 	} else {
-		node, err = s.getPeerNode(req.Id)
+		nodeInfo, err = s.getPeerNode(req.Id)
 	}
 	if err != nil {
 		s.logger.Error(err.Error())
 		return resp, status.Error(codes.Internal, err.Error())
 	}
 
-	metadataAny := &any.Any{}
-	if metadata, exist := node["metadata"]; exist {
-		err = protobuf.UnmarshalAny(metadata.(map[string]interface{}), metadataAny)
+	nodeConfigAny := &any.Any{}
+	if nodeConfig, exist := nodeInfo["node_config"]; exist {
+		err = protobuf.UnmarshalAny(nodeConfig.(map[string]interface{}), nodeConfigAny)
 		if err != nil {
 			s.logger.Error(err.Error())
 			return resp, status.Error(codes.Internal, err.Error())
 		}
 	} else {
-		s.logger.Error("missing metadata", zap.Any("metadata", metadata))
+		s.logger.Error("missing node_config", zap.Any("node_config", nodeConfig))
 	}
 
-	state, exist := node["state"].(string)
+	state, exist := nodeInfo["state"].(string)
 	if !exist {
 		s.logger.Error("missing node state", zap.String("state", state))
 		state = raft.Shutdown.String()
 	}
 
-	resp.Metadata = metadataAny
+	resp.Metadata = nodeConfigAny
 	resp.State = state
 
 	return resp, nil
@@ -365,10 +383,10 @@ func (s *GRPCService) SetNode(ctx context.Context, req *protobuf.SetNodeRequest)
 		return resp, status.Error(codes.Internal, err.Error())
 	}
 
-	metadata := *ins.(*map[string]interface{})
+	nodeConfig := *ins.(*map[string]interface{})
 
 	if s.raftServer.IsLeader() {
-		err = s.raftServer.SetMetadata(req.Id, metadata)
+		err = s.raftServer.SetNodeConfig(req.Id, nodeConfig)
 		if err != nil {
 			s.logger.Error(err.Error())
 			return resp, status.Error(codes.Internal, err.Error())
@@ -380,7 +398,7 @@ func (s *GRPCService) SetNode(ctx context.Context, req *protobuf.SetNodeRequest)
 			s.logger.Error(err.Error())
 			return resp, status.Error(codes.Internal, err.Error())
 		}
-		err = client.SetNode(req.Id, metadata)
+		err = client.SetNode(req.Id, nodeConfig)
 		if err != nil {
 			s.logger.Error(err.Error())
 			return resp, status.Error(codes.Internal, err.Error())
@@ -394,7 +412,7 @@ func (s *GRPCService) DeleteNode(ctx context.Context, req *protobuf.DeleteNodeRe
 	resp := &empty.Empty{}
 
 	if s.raftServer.IsLeader() {
-		err := s.raftServer.DeleteMetadata(req.Id)
+		err := s.raftServer.DeleteNodeConfig(req.Id)
 		if err != nil {
 			s.logger.Error(err.Error())
 			return resp, status.Error(codes.Internal, err.Error())
@@ -433,16 +451,16 @@ func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*protob
 			return resp, status.Error(codes.Internal, err.Error())
 		}
 
-		metadataIntr, err := protobuf.MarshalAny(nodeResp.Metadata)
+		nodeConfigIntr, err := protobuf.MarshalAny(nodeResp.Metadata)
 		if err != nil {
 			s.logger.Error(err.Error())
 			return resp, status.Error(codes.Internal, err.Error())
 		}
-		metadata := *metadataIntr.(*map[string]interface{})
+		nodeConfig := *nodeConfigIntr.(*map[string]interface{})
 
 		node := map[string]interface{}{
-			"metadata": metadata,
-			"state":    nodeResp.State,
+			"node_config": nodeConfig,
+			"state":       nodeResp.State,
 		}
 
 		cluster[id] = node

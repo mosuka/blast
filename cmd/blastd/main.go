@@ -127,7 +127,7 @@ func main() {
 				cli.StringFlag{
 					Name:  "manager-addr",
 					Value: "",
-					Usage: "Manager address",
+					Usage: "The gRPC address of the manager node that exists in the federation to be joined",
 				},
 				cli.StringFlag{
 					Name:  "cluster-id",
@@ -167,7 +167,7 @@ func main() {
 				cli.StringFlag{
 					Name:  "peer-addr",
 					Value: "",
-					Usage: "Existing gRPC server listen address to join to the cluster",
+					Usage: "The gRPC address of the peer node that exists in the cluster to be joined",
 				},
 				cli.StringFlag{
 					Name:  "index-mapping-file",
@@ -199,17 +199,17 @@ func main() {
 				cli.StringFlag{
 					Name:  "bind-addr",
 					Value: ":15000",
-					Usage: "Raft bind address",
+					Usage: "The address that should be used to for internal cluster communications",
 				},
 				cli.StringFlag{
 					Name:  "grpc-addr",
 					Value: ":15001",
-					Usage: "gRPC Server listen address",
+					Usage: "The address that should be used to for client communications over gRPC",
 				},
 				cli.StringFlag{
 					Name:  "http-addr",
 					Value: ":15002",
-					Usage: "HTTP server listen address",
+					Usage: "The address that should be used to for client communications over HTTP",
 				},
 				cli.StringFlag{
 					Name:  "data-dir",
@@ -224,7 +224,7 @@ func main() {
 				cli.StringFlag{
 					Name:  "peer-addr",
 					Value: "",
-					Usage: "Existing gRPC server listen address to join to the cluster",
+					Usage: "The gRPC address of the peer node that exists in the cluster to be joined",
 				},
 				cli.StringFlag{
 					Name:  "index-mapping-file",
