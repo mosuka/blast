@@ -14,62 +14,12 @@
 
 package config
 
-import (
-	"github.com/mosuka/blast/maputils"
-)
-
 type ClusterConfig struct {
-	maputils.Map
+	ManagerAddr string `json:"manager_addr,omitempty"`
+	ClusterId   string `json:"cluster_id,omitempty"`
+	PeerAddr    string `json:"peer_addr,omitempty"`
 }
 
-func DefaultClusterConfig() ClusterConfig {
-	return ClusterConfig{Map: maputils.New()}
-}
-
-func (c ClusterConfig) SetManagerAddr(managerAddr string) error {
-	err := c.Set("/manager_addr", managerAddr)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c ClusterConfig) GetManagerAddr() (string, error) {
-	managerAddr, err := c.Get("/manager_addr")
-	if err != nil {
-		return "", err
-	}
-	return managerAddr.(string), nil
-}
-
-func (c ClusterConfig) SetClusterId(clusterId string) error {
-	err := c.Set("/cluster_id", clusterId)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c ClusterConfig) GetClusterId() (string, error) {
-	clusterId, err := c.Get("/cluster_id")
-	if err != nil {
-		return "", err
-	}
-	return clusterId.(string), nil
-}
-
-func (c ClusterConfig) SetPeerAddr(peerAddr string) error {
-	err := c.Set("/peer_addr", peerAddr)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c ClusterConfig) GetPeerAddr() (string, error) {
-	peerAddr, err := c.Get("/peer_addr")
-	if err != nil {
-		return "", err
-	}
-	return peerAddr.(string), nil
+func DefaultClusterConfig() *ClusterConfig {
+	return &ClusterConfig{}
 }

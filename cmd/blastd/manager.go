@@ -20,9 +20,8 @@ import (
 	"syscall"
 
 	"github.com/blevesearch/bleve/mapping"
-	"github.com/mosuka/blast/indexutils"
-
 	"github.com/mosuka/blast/config"
+	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/logutils"
 	"github.com/mosuka/blast/manager"
 	"github.com/urfave/cli"
@@ -93,23 +92,18 @@ func startManager(c *cli.Context) error {
 	// create cluster config
 	clusterConfig := config.DefaultClusterConfig()
 	if peerAddr != "" {
-		err := clusterConfig.SetPeerAddr(peerAddr)
-		if err != nil {
-			return err
-		}
+		clusterConfig.PeerAddr = peerAddr
 	}
 
 	// create node config
-	nodeConfig := config.NewNodeConfigFromMap(
-		map[string]interface{}{
-			"node_id":           nodeId,
-			"bind_addr":         bindAddr,
-			"grpc_addr":         grpcAddr,
-			"http_addr":         httpAddr,
-			"data_dir":          dataDir,
-			"raft_storage_type": raftStorageType,
-		},
-	)
+	nodeConfig := &config.NodeConfig{
+		NodeId:          nodeId,
+		BindAddr:        bindAddr,
+		GRPCAddr:        grpcAddr,
+		HTTPAddr:        httpAddr,
+		DataDir:         dataDir,
+		RaftStorageType: raftStorageType,
+	}
 
 	var err error
 
@@ -125,18 +119,10 @@ func startManager(c *cli.Context) error {
 	}
 
 	// create index config
-	indexConfig := config.DefaultIndexConfig()
-	err = indexConfig.SetIndexMapping(indexMapping)
-	if err != nil {
-		return err
-	}
-	err = indexConfig.SetIndexType(indexType)
-	if err != nil {
-		return err
-	}
-	err = indexConfig.SetIndexStorageType(indexStorageType)
-	if err != nil {
-		return err
+	indexConfig := &config.IndexConfig{
+		IndexMapping:     indexMapping,
+		IndexType:        indexType,
+		IndexStorageType: indexStorageType,
 	}
 
 	svr, err := manager.NewServer(clusterConfig, nodeConfig, indexConfig, logger.Named(nodeId), grpcLogger.Named(nodeId), httpAccessLogger)

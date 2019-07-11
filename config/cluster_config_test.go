@@ -14,112 +14,63 @@
 
 package config
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
-func TestClusterConfig_SetManagerAddr(t *testing.T) {
-	managerAddr := ":15000"
-	cfg := DefaultClusterConfig()
-	err := cfg.SetManagerAddr(managerAddr)
-	if err != nil {
-		t.Fatalf("%v", err)
+func TestDefaultClusterConfig(t *testing.T) {
+	exp := &ClusterConfig{}
+	act := DefaultClusterConfig()
+	if !reflect.DeepEqual(exp, act) {
+		t.Fatalf("expected content to see %v, saw %v", exp, act)
 	}
 
-	actManagerAddr, err := cfg.GetManagerAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
+	expManagerAddr := ""
+	actManagerAddr := act.ManagerAddr
+	if expManagerAddr != actManagerAddr {
+		t.Fatalf("expected content to see %v, saw %v", expManagerAddr, actManagerAddr)
 	}
 
-	if managerAddr != actManagerAddr {
-		t.Fatalf("expected content to see %v, saw %v", managerAddr, actManagerAddr)
-	}
-}
-
-func TestClusterConfig_GetManagerAddr(t *testing.T) {
-	managerAddr := ":15000"
-	cfg := DefaultClusterConfig()
-	err := cfg.SetManagerAddr(managerAddr)
-	if err != nil {
-		t.Fatalf("%v", err)
+	expClusterId := ""
+	actClusterId := act.ClusterId
+	if expClusterId != actClusterId {
+		t.Fatalf("expected content to see %v, saw %v", expClusterId, actClusterId)
 	}
 
-	actManagerAddr, err := cfg.GetManagerAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	if managerAddr != actManagerAddr {
-		t.Fatalf("expected content to see %v, saw %v", managerAddr, actManagerAddr)
+	expPeerAddr := ""
+	actPeerAddr := act.PeerAddr
+	if expPeerAddr != actPeerAddr {
+		t.Fatalf("expected content to see %v, saw %v", expPeerAddr, actPeerAddr)
 	}
 }
 
-func TestClusterConfig_SetClusterId(t *testing.T) {
-	clusterId := "cluster1"
-	cfg := DefaultClusterConfig()
-	err := cfg.SetClusterId(clusterId)
-	if err != nil {
-		t.Fatalf("%v", err)
+func TestClusterConfig_1(t *testing.T) {
+	expConfig := &ClusterConfig{
+		ManagerAddr: ":12000",
+		ClusterId:   "cluster1",
+		PeerAddr:    ":5000",
+	}
+	actConfig := DefaultClusterConfig()
+	actConfig.ManagerAddr = ":12000"
+	actConfig.ClusterId = "cluster1"
+	actConfig.PeerAddr = ":5000"
+
+	expManagerAddr := expConfig.ManagerAddr
+	actManagerAddr := actConfig.ManagerAddr
+	if expManagerAddr != actManagerAddr {
+		t.Fatalf("expected content to see %v, saw %v", expManagerAddr, actManagerAddr)
 	}
 
-	actClusterId, err := cfg.GetClusterId()
-	if err != nil {
-		t.Fatalf("%v", err)
+	expClusterId := expConfig.ClusterId
+	actClusterId := actConfig.ClusterId
+	if expClusterId != actClusterId {
+		t.Fatalf("expected content to see %v, saw %v", expClusterId, actClusterId)
 	}
 
-	if clusterId != actClusterId {
-		t.Fatalf("expected content to see %v, saw %v", clusterId, actClusterId)
-	}
-}
-
-func TestClusterConfig_GetClusterId(t *testing.T) {
-	clusterId := "cluster1"
-	cfg := DefaultClusterConfig()
-	err := cfg.SetClusterId(clusterId)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	actClusterId, err := cfg.GetClusterId()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	if clusterId != actClusterId {
-		t.Fatalf("expected content to see %v, saw %v", clusterId, actClusterId)
-	}
-}
-
-func TestClusterConfig_SetPeerAddr(t *testing.T) {
-	peerAddr := ":5000"
-	cfg := DefaultClusterConfig()
-	err := cfg.SetPeerAddr(peerAddr)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	actPeerAddr, err := cfg.GetPeerAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	if peerAddr != actPeerAddr {
-		t.Fatalf("expected content to see %v, saw %v", peerAddr, actPeerAddr)
-	}
-}
-
-func TestClusterConfig_GetPeerAddr(t *testing.T) {
-	peerAddr := ":5000"
-	cfg := DefaultClusterConfig()
-	err := cfg.SetPeerAddr(peerAddr)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	actPeerAddr, err := cfg.GetPeerAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	if peerAddr != actPeerAddr {
-		t.Fatalf("expected content to see %v, saw %v", peerAddr, actPeerAddr)
+	expPeerAddr := expConfig.PeerAddr
+	actPeerAddr := actConfig.PeerAddr
+	if expPeerAddr != actPeerAddr {
+		t.Fatalf("expected content to see %v, saw %v", expPeerAddr, actPeerAddr)
 	}
 }

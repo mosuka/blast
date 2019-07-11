@@ -23,8 +23,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mosuka/blast/maputils"
-
 	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -41,7 +39,7 @@ import (
 type GRPCService struct {
 	*grpc.Service
 
-	clusterConfig config.ClusterConfig
+	clusterConfig *config.ClusterConfig
 	raftServer    *RaftServer
 	logger        *zap.Logger
 
@@ -59,7 +57,7 @@ type GRPCService struct {
 	updateManagersDoneCh chan struct{}
 }
 
-func NewGRPCService(clusterConfig config.ClusterConfig, raftServer *RaftServer, logger *zap.Logger) (*GRPCService, error) {
+func NewGRPCService(clusterConfig *config.ClusterConfig, raftServer *RaftServer, logger *zap.Logger) (*GRPCService, error) {
 	return &GRPCService{
 		clusterConfig: clusterConfig,
 		raftServer:    raftServer,
@@ -79,11 +77,11 @@ func (s *GRPCService) Start() error {
 	s.logger.Info("start to update cluster info")
 	go s.startUpdateCluster(500 * time.Millisecond)
 
-	managerAddr, err := s.clusterConfig.GetManagerAddr()
-	if err != nil && err != maputils.ErrNotFound {
-		s.logger.Fatal(err.Error(), zap.String("manager_addr", managerAddr))
-	}
-	if managerAddr != "" {
+	//managerAddr, err := s.clusterConfig.ManagerAddr
+	//if err != nil && err != maputils.ErrNotFound {
+	//	s.logger.Fatal(err.Error(), zap.String("manager_addr", managerAddr))
+	//}
+	if s.clusterConfig.ManagerAddr != "" {
 		s.logger.Info("start to update manager cluster info")
 		go s.startUpdateManagers(500 * time.Millisecond)
 	}
@@ -95,11 +93,11 @@ func (s *GRPCService) Stop() error {
 	s.logger.Info("stop to update cluster info")
 	s.stopUpdateCluster()
 
-	managerAddr, err := s.clusterConfig.GetManagerAddr()
-	if err != nil && err != maputils.ErrNotFound {
-		s.logger.Fatal(err.Error(), zap.String("manager_addr", managerAddr))
-	}
-	if managerAddr != "" {
+	//managerAddr, err := s.clusterConfig.GetManagerAddr()
+	//if err != nil && err != maputils.ErrNotFound {
+	//	s.logger.Fatal(err.Error(), zap.String("manager_addr", managerAddr))
+	//}
+	if s.clusterConfig.ManagerAddr != "" {
 		s.logger.Info("stop to update manager cluster info")
 		s.stopUpdateManagers()
 	}
@@ -142,11 +140,6 @@ func (s *GRPCService) getManagerClient() (*grpc.Client, error) {
 }
 
 func (s *GRPCService) getInitialManagers(managerAddr string) (map[string]interface{}, error) {
-	managerAddr, err := s.clusterConfig.GetManagerAddr()
-	if err != nil {
-		s.logger.Fatal(err.Error(), zap.String("manager_addr", managerAddr))
-	}
-
 	client, err := grpc.NewClient(managerAddr)
 	defer func() {
 		err := client.Close()
@@ -177,13 +170,15 @@ func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 		close(s.updateManagersDoneCh)
 	}()
 
-	managerAddr, err := s.clusterConfig.GetManagerAddr()
-	if err != nil && err != maputils.ErrNotFound {
-		s.logger.Fatal(err.Error(), zap.String("manager_addr", managerAddr))
-	}
+	//managerAddr, err := s.clusterConfig.GetManagerAddr()
+	//if err != nil && err != maputils.ErrNotFound {
+	//	s.logger.Fatal(err.Error(), zap.String("manager_addr", managerAddr))
+	//}
+
+	var err error
 
 	// get initial managers
-	s.managers, err = s.getInitialManagers(managerAddr)
+	s.managers, err = s.getInitialManagers(s.clusterConfig.ManagerAddr)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return
@@ -420,86 +415,81 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 
 			// create peer node list with out self node
 			peers := make(map[string]interface{}, 0)
-			for id, metadata := range servers {
-				nodeId, err := s.raftServer.nodeConfig.GetNodeId()
-				if err != nil {
-					s.logger.Error(err.Error())
-					continue
-				}
-				if id != nodeId {
-					peers[id] = metadata
+			for nodeId, nodeConfig := range servers {
+				if nodeId != s.raftServer.nodeConfig.NodeId {
+					peers[nodeId] = nodeConfig
 				}
 			}
 
 			if !reflect.DeepEqual(s.peers, peers) {
 				// create clients
-				for id, metadata := range peers {
-					mm, ok := metadata.(map[string]interface{})
+				for nodeId, nodeConfig := range peers {
+					mm, ok := nodeConfig.(map[string]interface{})
 					if !ok {
-						s.logger.Warn("assertion failed", zap.String("id", id))
+						s.logger.Warn("assertion failed", zap.String("node_id", nodeId))
 						continue
 					}
 
 					grpcAddr, ok := mm["grpc_addr"].(string)
 					if !ok {
-						s.logger.Warn("missing metadata", zap.String("id", id), zap.String("grpc_addr", grpcAddr))
+						s.logger.Warn("missing metadata", zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
 						continue
 					}
 
-					client, exist := s.peerClients[id]
+					client, exist := s.peerClients[nodeId]
 					if exist {
-						s.logger.Debug("client has already exist in peer list", zap.String("id", id))
+						s.logger.Debug("client has already exist in peer list", zap.String("node_id", nodeId))
 
 						if client.GetAddress() != grpcAddr {
-							s.logger.Debug("gRPC address has been changed", zap.String("id", id), zap.String("client_grpc_addr", client.GetAddress()), zap.String("grpc_addr", grpcAddr))
-							s.logger.Debug("recreate gRPC client", zap.String("id", id), zap.String("grpc_addr", grpcAddr))
+							s.logger.Debug("gRPC address has been changed", zap.String("node_id", nodeId), zap.String("client_grpc_addr", client.GetAddress()), zap.String("grpc_addr", grpcAddr))
+							s.logger.Debug("recreate gRPC client", zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
 
-							delete(s.peerClients, id)
+							delete(s.peerClients, nodeId)
 
 							err = client.Close()
 							if err != nil {
-								s.logger.Error(err.Error(), zap.String("id", id))
+								s.logger.Error(err.Error(), zap.String("node_id", nodeId))
 							}
 
 							newClient, err := grpc.NewClient(grpcAddr)
 							if err != nil {
-								s.logger.Error(err.Error(), zap.String("id", id), zap.String("grpc_addr", grpcAddr))
+								s.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
 							}
 
 							if newClient != nil {
-								s.peerClients[id] = newClient
+								s.peerClients[nodeId] = newClient
 							}
 						} else {
-							s.logger.Debug("gRPC address has not changed", zap.String("id", id), zap.String("client_grpc_addr", client.GetAddress()), zap.String("grpc_addr", grpcAddr))
+							s.logger.Debug("gRPC address has not changed", zap.String("node_id", nodeId), zap.String("client_grpc_addr", client.GetAddress()), zap.String("grpc_addr", grpcAddr))
 						}
 					} else {
-						s.logger.Debug("client does not exist in peer list", zap.String("id", id))
+						s.logger.Debug("client does not exist in peer list", zap.String("node_id", nodeId))
 
-						s.logger.Debug("create gRPC client", zap.String("id", id), zap.String("grpc_addr", grpcAddr))
+						s.logger.Debug("create gRPC client", zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
 						peerClient, err := grpc.NewClient(grpcAddr)
 						if err != nil {
-							s.logger.Error(err.Error(), zap.String("id", id), zap.String("grpc_addr", grpcAddr))
+							s.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
 						}
 						if peerClient != nil {
 							s.logger.Debug("append peer client to peer client list", zap.String("grpc_addr", peerClient.GetAddress()))
-							s.peerClients[id] = peerClient
+							s.peerClients[nodeId] = peerClient
 						}
 					}
 				}
 
 				// close nonexistent clients
-				for id, client := range s.peerClients {
-					if metadata, exist := peers[id]; !exist {
-						s.logger.Info("this client is no longer in use", zap.String("id", id), zap.Any("metadata", metadata))
+				for nodeId, client := range s.peerClients {
+					if nodeConfig, exist := peers[nodeId]; !exist {
+						s.logger.Info("this client is no longer in use", zap.String("node_id", nodeId), zap.Any("node_config", nodeConfig))
 
-						s.logger.Debug("close client", zap.String("id", id), zap.String("address", client.GetAddress()))
+						s.logger.Debug("close client", zap.String("node_id", nodeId), zap.String("grpc_addr", client.GetAddress()))
 						err = client.Close()
 						if err != nil {
-							s.logger.Error(err.Error(), zap.String("id", id), zap.String("address", client.GetAddress()))
+							s.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", client.GetAddress()))
 						}
 
-						s.logger.Debug("delete client", zap.String("id", id))
-						delete(s.peerClients, id)
+						s.logger.Debug("delete client", zap.String("node_id", nodeId))
+						delete(s.peerClients, nodeId)
 					}
 				}
 
@@ -531,21 +521,12 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 					c <- *resp
 				}
 
-				// update the cluster config to manager if it is a leader
-				managerAddr, err := s.clusterConfig.GetManagerAddr()
-				if err != nil && err != maputils.ErrNotFound {
-					s.logger.Error(err.Error())
-				}
-				clusterId, err := s.clusterConfig.GetClusterId()
-				if err != nil && err != maputils.ErrNotFound {
-					s.logger.Error(err.Error())
-				}
-				if managerAddr != "" && s.raftServer.IsLeader() {
+				if s.clusterConfig.ManagerAddr != "" && s.raftServer.IsLeader() {
 					client, err := s.getManagerClient()
 					if err != nil {
 						s.logger.Error(err.Error())
 					}
-					err = client.SetState(fmt.Sprintf("cluster_config/clusters/%s/nodes", clusterId), cluster)
+					err = client.SetState(fmt.Sprintf("cluster_config/clusters/%s/nodes", s.clusterConfig.ClusterId), cluster)
 					if err != nil {
 						s.logger.Error(err.Error())
 					}
@@ -582,29 +563,10 @@ func (s *GRPCService) stopUpdateCluster() {
 }
 
 func (s *GRPCService) getSelfNode() (map[string]interface{}, error) {
-	var nodeInfo map[string]interface{}
-
-	nodeId, err := s.raftServer.nodeConfig.GetNodeId()
-	if err != nil {
-		s.logger.Error(err.Error())
-		return nil, err
-	}
-
-	nodeConfig, err := s.raftServer.GetNodeConfig(nodeId)
-	if err == nil {
-		nodeInfo = map[string]interface{}{
-			"node_config": nodeConfig,
-			"state":       s.raftServer.State(),
-		}
-	} else {
-		s.logger.Error(err.Error())
-		nodeInfo = map[string]interface{}{
-			"node_config": map[string]interface{}{},
-			"state":       raft.Shutdown.String(),
-		}
-	}
-
-	return nodeInfo, nil
+	return map[string]interface{}{
+		"node_config": s.raftServer.nodeConfig.ToMap(),
+		"state":       s.raftServer.State(),
+	}, nil
 }
 
 func (s *GRPCService) getPeerNode(id string) (map[string]interface{}, error) {
@@ -637,13 +599,7 @@ func (s *GRPCService) GetNode(ctx context.Context, req *protobuf.GetNodeRequest)
 	var nodeInfo map[string]interface{}
 	var err error
 
-	nodeId, err := s.raftServer.nodeConfig.GetNodeId()
-	if err != nil {
-		s.logger.Error(err.Error())
-		return nil, err
-	}
-
-	if req.Id == "" || req.Id == nodeId {
+	if req.Id == "" || req.Id == s.raftServer.nodeConfig.NodeId {
 		nodeInfo, err = s.getSelfNode()
 	} else {
 		nodeInfo, err = s.getPeerNode(req.Id)
