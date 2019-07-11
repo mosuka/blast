@@ -17,97 +17,50 @@ package config
 import (
 	"encoding/json"
 
+	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/mapping"
-	"github.com/mosuka/blast/indexutils"
-	"github.com/mosuka/blast/maputils"
 )
 
 type IndexConfig struct {
-	maputils.Map
+	IndexMapping     *mapping.IndexMappingImpl `json:"index_mapping,omitempty"`
+	IndexType        string                    `json:"index_type,omitempty"`
+	IndexStorageType string                    `json:"index_storage_type,omitempty"`
 }
 
-func DefaultIndexConfig() IndexConfig {
-	c := IndexConfig{Map: maputils.New()}
-
-	_ = c.SetIndexMapping(mapping.NewIndexMapping())
-	_ = c.SetIndexType("upside_down")
-	_ = c.SetIndexStorageType("boltdb")
-
-	return c
+func DefaultIndexConfig() *IndexConfig {
+	return &IndexConfig{
+		IndexMapping:     mapping.NewIndexMapping(),
+		IndexType:        bleve.Config.DefaultIndexType,
+		IndexStorageType: bleve.Config.DefaultKVStore,
+	}
 }
 
-func NewIndexConfigFromMap(src map[string]interface{}) IndexConfig {
-	return IndexConfig{Map: maputils.FromMap(src)}
+func NewIndexConfigFromMap(src map[string]interface{}) *IndexConfig {
+	b, err := json.Marshal(src)
+	if err != nil {
+		return &IndexConfig{}
+	}
+
+	var indexConfig *IndexConfig
+	err = json.Unmarshal(b, indexConfig)
+	if err != nil {
+		return &IndexConfig{}
+	}
+
+	return indexConfig
 }
 
-func (c IndexConfig) SetIndexMapping(indexMapping *mapping.IndexMappingImpl) error {
-	err := indexMapping.Validate()
+func (c *IndexConfig) ToMap() map[string]interface{} {
+	b, err := json.Marshal(c)
 	if err != nil {
-		return err
+		return map[string]interface{}{}
 	}
 
-	// IndexMappingImpl -> JSON
-	indexMappingJSON, err := json.Marshal(indexMapping)
+	var m map[string]interface{}
+	err = json.Unmarshal(b, &m)
 	if err != nil {
-		return err
+		return map[string]interface{}{}
 	}
 
-	// JSON -> map[string]interface{}
-	var indexMappingMap map[string]interface{}
-	err = json.Unmarshal(indexMappingJSON, &indexMappingMap)
-	if err != nil {
-		return err
-	}
-
-	err = c.Set("/index_mapping", indexMappingMap)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c IndexConfig) GetIndexMapping() (*mapping.IndexMappingImpl, error) {
-	indexMappingMap, err := c.Get("/index_mapping")
-	if err != nil {
-		return nil, err
-	}
-
-	indexMapping, err := indexutils.NewIndexMappingFromMap(indexMappingMap.(maputils.Map).ToMap())
-	if err != nil {
-		return nil, err
-	}
-
-	return indexMapping, nil
-}
-
-func (c IndexConfig) SetIndexType(indexType string) error {
-	err := c.Set("/index_type", indexType)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c IndexConfig) GetIndexType() (string, error) {
-	indexType, err := c.Get("/index_type")
-	if err != nil {
-		return "", err
-	}
-	return indexType.(string), nil
-}
-
-func (c IndexConfig) SetIndexStorageType(indexStorageType string) error {
-	err := c.Set("/index_storage_type", indexStorageType)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c IndexConfig) GetIndexStorageType() (string, error) {
-	indexStorageType, err := c.Get("/index_storage_type")
-	if err != nil {
-		return "", err
-	}
-	return indexStorageType.(string), nil
+	return m
 }

@@ -32,7 +32,7 @@ import (
 
 type RaftFSM struct {
 	path        string
-	indexConfig config.IndexConfig
+	indexConfig *config.IndexConfig
 	logger      *zap.Logger
 
 	metadata      maputils.Map
@@ -40,7 +40,7 @@ type RaftFSM struct {
 	index         *Index
 }
 
-func NewRaftFSM(path string, indexConfig config.IndexConfig, logger *zap.Logger) (*RaftFSM, error) {
+func NewRaftFSM(path string, indexConfig *config.IndexConfig, logger *zap.Logger) (*RaftFSM, error) {
 	return &RaftFSM{
 		path:        path,
 		indexConfig: indexConfig,

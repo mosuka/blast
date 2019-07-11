@@ -21,7 +21,6 @@ import (
 
 	"github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/indexutils"
-	"github.com/mosuka/blast/strutils"
 )
 
 func TmpDir() string {
@@ -47,29 +46,28 @@ func TmpPort() int {
 	return l.Addr().(*net.TCPAddr).Port
 }
 
-func TmpNodeConfig() config.NodeConfig {
+func TmpNodeConfig() *config.NodeConfig {
 	c := config.DefaultNodeConfig()
 
-	_ = c.SetNodeId(fmt.Sprintf("node-%s", strutils.RandStr(5)))
-	_ = c.SetBindAddr(fmt.Sprintf(":%d", TmpPort()))
-	_ = c.SetGrpcAddr(fmt.Sprintf(":%d", TmpPort()))
-	_ = c.SetHttpAddr(fmt.Sprintf(":%d", TmpPort()))
-	_ = c.SetDataDir(TmpDir())
-	_ = c.SetRaftStorageType("boltdb")
+	c.BindAddr = fmt.Sprintf(":%d", TmpPort())
+	c.GRPCAddr = fmt.Sprintf(":%d", TmpPort())
+	c.HTTPAddr = fmt.Sprintf(":%d", TmpPort())
+	c.DataDir = TmpDir()
 
 	return c
 }
 
-func TmpIndexConfig(indexMappingFile string, indexType string, indexStorageType string) (config.IndexConfig, error) {
+func TmpIndexConfig(indexMappingFile string, indexType string, indexStorageType string) (*config.IndexConfig, error) {
 	indexMapping, err := indexutils.NewIndexMappingFromFile(indexMappingFile)
 	if err != nil {
 		return config.DefaultIndexConfig(), err
 	}
 
-	indexConfig := config.DefaultIndexConfig()
-	_ = indexConfig.SetIndexMapping(indexMapping)
-	_ = indexConfig.SetIndexType(indexType)
-	_ = indexConfig.SetIndexStorageType(indexStorageType)
+	indexConfig := &config.IndexConfig{
+		IndexMapping:     indexMapping,
+		IndexType:        indexType,
+		IndexStorageType: indexStorageType,
+	}
 
 	return indexConfig, nil
 }
