@@ -49,9 +49,7 @@ func TestServer_Start(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -96,9 +94,7 @@ func TestServer_LivenessProbe(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -124,13 +120,8 @@ func TestServer_LivenessProbe(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	grpcAddr, err := server.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create gRPC client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -173,9 +164,7 @@ func TestServer_ReadinessProbe(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -201,13 +190,8 @@ func TestServer_ReadinessProbe(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	grpcAddr, err := server.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create gRPC client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -250,9 +234,7 @@ func TestServer_GetNode(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -278,33 +260,8 @@ func TestServer_GetNode(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	nodeId, err := server.nodeConfig.GetNodeId()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	bindAddr, err := server.nodeConfig.GetBindAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	grpcAddr, err := server.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	httpAddr, err := server.nodeConfig.GetHttpAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	dataDir, err := server.nodeConfig.GetDataDir()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	raftStorageType, err := server.nodeConfig.GetRaftStorageType()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create gRPC client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -318,24 +275,17 @@ func TestServer_GetNode(t *testing.T) {
 	}
 
 	// get node
-	node, err := client.GetNode(nodeId)
+	nodeInfo, err := client.GetNode(nodeConfig.NodeId)
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	expNode := map[string]interface{}{
-		"node_config": map[string]interface{}{
-			"node_id":           nodeId,
-			"bind_addr":         bindAddr,
-			"grpc_addr":         grpcAddr,
-			"http_addr":         httpAddr,
-			"data_dir":          dataDir,
-			"raft_storage_type": raftStorageType,
-		},
-		"state": "Leader",
+	expNodeInfo := map[string]interface{}{
+		"node_config": nodeConfig.ToMap(),
+		"state":       "Leader",
 	}
-	actNode := node
-	if !reflect.DeepEqual(expNode, actNode) {
-		t.Errorf("expected content to see %v, saw %v", expNode, actNode)
+	actNodeInfo := nodeInfo
+	if !reflect.DeepEqual(expNodeInfo, actNodeInfo) {
+		t.Errorf("expected content to see %v, saw %v", expNodeInfo, actNodeInfo)
 	}
 }
 
@@ -357,9 +307,7 @@ func TestServer_GetCluster(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -385,33 +333,33 @@ func TestServer_GetCluster(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	nodeId, err := server.nodeConfig.GetNodeId()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	bindAddr, err := server.nodeConfig.GetBindAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	grpcAddr, err := server.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	httpAddr, err := server.nodeConfig.GetHttpAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	dataDir, err := server.nodeConfig.GetDataDir()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	raftStorageType, err := server.nodeConfig.GetRaftStorageType()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	//nodeId, err := server.nodeConfig.GetNodeId()
+	//if err != nil {
+	//	t.Fatalf("%v", err)
+	//}
+	//bindAddr, err := server.nodeConfig.GetBindAddr()
+	//if err != nil {
+	//	t.Fatalf("%v", err)
+	//}
+	//grpcAddr, err := server.nodeConfig.GetGrpcAddr()
+	//if err != nil {
+	//	t.Fatalf("%v", err)
+	//}
+	//httpAddr, err := server.nodeConfig.GetHttpAddr()
+	//if err != nil {
+	//	t.Fatalf("%v", err)
+	//}
+	//dataDir, err := server.nodeConfig.GetDataDir()
+	//if err != nil {
+	//	t.Fatalf("%v", err)
+	//}
+	//raftStorageType, err := server.nodeConfig.GetRaftStorageType()
+	//if err != nil {
+	//	t.Fatalf("%v", err)
+	//}
 
 	// create gRPC client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -430,16 +378,9 @@ func TestServer_GetCluster(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 	expCluster := map[string]interface{}{
-		nodeId: map[string]interface{}{
-			"node_config": map[string]interface{}{
-				"node_id":           nodeId,
-				"bind_addr":         bindAddr,
-				"grpc_addr":         grpcAddr,
-				"http_addr":         httpAddr,
-				"data_dir":          dataDir,
-				"raft_storage_type": raftStorageType,
-			},
-			"state": "Leader",
+		nodeConfig.NodeId: map[string]interface{}{
+			"node_config": nodeConfig.ToMap(),
+			"state":       "Leader",
 		},
 	}
 	actCluster := cluster
@@ -466,9 +407,7 @@ func TestServer_GetIndexMapping(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -494,13 +433,8 @@ func TestServer_GetIndexMapping(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	grpcAddr, err := server.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create gRPC client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -513,7 +447,7 @@ func TestServer_GetIndexMapping(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	expIndexMapping, err := server.indexConfig.GetIndexMapping()
+	expIndexMapping := indexConfig.IndexMapping
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -551,9 +485,7 @@ func TestServer_GetIndexType(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -579,13 +511,8 @@ func TestServer_GetIndexType(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	grpcAddr, err := server.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create gRPC client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -598,7 +525,7 @@ func TestServer_GetIndexType(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	expIndexType, err := server.indexConfig.GetIndexType()
+	expIndexType := indexConfig.IndexType
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -631,9 +558,7 @@ func TestServer_GetIndexStorageType(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -659,13 +584,8 @@ func TestServer_GetIndexStorageType(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	grpcAddr, err := server.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create gRPC client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -678,7 +598,7 @@ func TestServer_GetIndexStorageType(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	expIndexStorageType, err := server.indexConfig.GetIndexStorageType()
+	expIndexStorageType := indexConfig.IndexStorageType
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -711,9 +631,7 @@ func TestServer_SetState(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -739,13 +657,8 @@ func TestServer_SetState(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	grpcAddr, err := server.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create gRPC client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -797,9 +710,7 @@ func TestServer_GetState(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -825,13 +736,8 @@ func TestServer_GetState(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	grpcAddr, err := server.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create gRPC client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -883,9 +789,7 @@ func TestServer_DeleteState(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -911,13 +815,8 @@ func TestServer_DeleteState(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	grpcAddr, err := server.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create gRPC client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -994,16 +893,10 @@ func TestCluster_Start(t *testing.T) {
 	clusterConfig1 := config.DefaultClusterConfig()
 	nodeConfig1 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig1.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig1.DataDir)
 	}()
-	nodeId1, err := nodeConfig1.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeId1), grpcLogger, httpAccessLogger)
+	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeConfig1.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -1015,30 +908,15 @@ func TestCluster_Start(t *testing.T) {
 	// start server1
 	server1.Start()
 
-	// set peer address
-	peerAddr, err := nodeConfig1.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create configs for server2
 	clusterConfig2 := config.DefaultClusterConfig()
-	err = clusterConfig2.SetPeerAddr(peerAddr)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	clusterConfig2.PeerAddr = nodeConfig1.GRPCAddr
 	nodeConfig2 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig2.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig2.DataDir)
 	}()
-	nodeId2, err := nodeConfig2.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeId2), grpcLogger, httpAccessLogger)
+	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeConfig2.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -1052,22 +930,13 @@ func TestCluster_Start(t *testing.T) {
 
 	// create configs for server3
 	clusterConfig3 := config.DefaultClusterConfig()
-	err = clusterConfig3.SetPeerAddr(peerAddr)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	clusterConfig3.PeerAddr = nodeConfig1.GRPCAddr
 	nodeConfig3 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig3.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig3.DataDir)
 	}()
-	nodeId3, err := nodeConfig3.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeId3), grpcLogger, httpAccessLogger)
+	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeConfig3.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -1105,16 +974,10 @@ func TestCluster_LivenessProbe(t *testing.T) {
 	clusterConfig1 := config.DefaultClusterConfig()
 	nodeConfig1 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig1.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig1.DataDir)
 	}()
-	nodeId1, err := nodeConfig1.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeId1), grpcLogger, httpAccessLogger)
+	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeConfig1.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -1126,30 +989,15 @@ func TestCluster_LivenessProbe(t *testing.T) {
 	// start server1
 	server1.Start()
 
-	// set peer address
-	peerAddr, err := nodeConfig1.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create configs for server2
 	clusterConfig2 := config.DefaultClusterConfig()
-	err = clusterConfig2.SetPeerAddr(peerAddr)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	clusterConfig2.PeerAddr = nodeConfig1.GRPCAddr
 	nodeConfig2 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig2.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig2.DataDir)
 	}()
-	nodeId2, err := nodeConfig2.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeId2), grpcLogger, httpAccessLogger)
+	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeConfig2.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -1163,22 +1011,13 @@ func TestCluster_LivenessProbe(t *testing.T) {
 
 	// create configs for server3
 	clusterConfig3 := config.DefaultClusterConfig()
-	err = clusterConfig3.SetPeerAddr(peerAddr)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	clusterConfig3.PeerAddr = nodeConfig1.GRPCAddr
 	nodeConfig3 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig3.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig3.DataDir)
 	}()
-	nodeId3, err := nodeConfig3.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeId3), grpcLogger, httpAccessLogger)
+	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeConfig3.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -1193,34 +1032,22 @@ func TestCluster_LivenessProbe(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	// gRPC client for manager1
-	grpcAddr1, err := server1.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	client1, err := grpc.NewClient(grpcAddr1)
+	// gRPC client for all servers
+	client1, err := grpc.NewClient(nodeConfig1.GRPCAddr)
 	defer func() {
 		_ = client1.Close()
 	}()
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	grpcAddr2, err := server2.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	client2, err := grpc.NewClient(grpcAddr2)
+	client2, err := grpc.NewClient(nodeConfig2.GRPCAddr)
 	defer func() {
 		_ = client2.Close()
 	}()
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	grpcAddr3, err := server3.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	client3, err := grpc.NewClient(grpcAddr3)
+	client3, err := grpc.NewClient(nodeConfig3.GRPCAddr)
 	defer func() {
 		_ = client3.Close()
 	}()
@@ -1284,16 +1111,10 @@ func TestCluster_ReadinessProbe(t *testing.T) {
 	clusterConfig1 := config.DefaultClusterConfig()
 	nodeConfig1 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig1.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig1.DataDir)
 	}()
-	nodeId1, err := nodeConfig1.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeId1), grpcLogger, httpAccessLogger)
+	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeConfig1.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -1305,30 +1126,15 @@ func TestCluster_ReadinessProbe(t *testing.T) {
 	// start server1
 	server1.Start()
 
-	// set peer address
-	peerAddr, err := nodeConfig1.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create configs for server2
 	clusterConfig2 := config.DefaultClusterConfig()
-	err = clusterConfig2.SetPeerAddr(peerAddr)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	clusterConfig2.PeerAddr = nodeConfig1.GRPCAddr
 	nodeConfig2 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig2.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig2.DataDir)
 	}()
-	nodeId2, err := nodeConfig2.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeId2), grpcLogger, httpAccessLogger)
+	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeConfig2.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -1342,22 +1148,13 @@ func TestCluster_ReadinessProbe(t *testing.T) {
 
 	// create configs for server3
 	clusterConfig3 := config.DefaultClusterConfig()
-	err = clusterConfig3.SetPeerAddr(peerAddr)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	clusterConfig3.PeerAddr = nodeConfig1.GRPCAddr
 	nodeConfig3 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig3.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig3.DataDir)
 	}()
-	nodeId3, err := nodeConfig3.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeId3), grpcLogger, httpAccessLogger)
+	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeConfig3.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -1372,34 +1169,22 @@ func TestCluster_ReadinessProbe(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	// gRPC client for manager1
-	grpcAddr1, err := server1.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	client1, err := grpc.NewClient(grpcAddr1)
+	// gRPC client for all servers
+	client1, err := grpc.NewClient(nodeConfig1.GRPCAddr)
 	defer func() {
 		_ = client1.Close()
 	}()
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	grpcAddr2, err := server2.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	client2, err := grpc.NewClient(grpcAddr2)
+	client2, err := grpc.NewClient(nodeConfig2.GRPCAddr)
 	defer func() {
 		_ = client2.Close()
 	}()
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	grpcAddr3, err := server3.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	client3, err := grpc.NewClient(grpcAddr3)
+	client3, err := grpc.NewClient(nodeConfig3.GRPCAddr)
 	defer func() {
 		_ = client3.Close()
 	}()
@@ -1463,16 +1248,10 @@ func TestCluster_GetNode(t *testing.T) {
 	clusterConfig1 := config.DefaultClusterConfig()
 	nodeConfig1 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig1.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig1.DataDir)
 	}()
-	nodeId1, err := nodeConfig1.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeId1), grpcLogger, httpAccessLogger)
+	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeConfig1.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -1484,30 +1263,15 @@ func TestCluster_GetNode(t *testing.T) {
 	// start server1
 	server1.Start()
 
-	// set peer address
-	peerAddr, err := nodeConfig1.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create configs for server2
 	clusterConfig2 := config.DefaultClusterConfig()
-	err = clusterConfig2.SetPeerAddr(peerAddr)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	clusterConfig2.PeerAddr = nodeConfig1.GRPCAddr
 	nodeConfig2 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig2.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig2.DataDir)
 	}()
-	nodeId2, err := nodeConfig2.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeId2), grpcLogger, httpAccessLogger)
+	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeConfig2.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -1521,22 +1285,13 @@ func TestCluster_GetNode(t *testing.T) {
 
 	// create configs for server3
 	clusterConfig3 := config.DefaultClusterConfig()
-	err = clusterConfig3.SetPeerAddr(peerAddr)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	clusterConfig3.PeerAddr = nodeConfig1.GRPCAddr
 	nodeConfig3 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig3.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig3.DataDir)
 	}()
-	nodeId3, err := nodeConfig3.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeId3), grpcLogger, httpAccessLogger)
+	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeConfig3.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -1551,34 +1306,22 @@ func TestCluster_GetNode(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	// gRPC client for manager1
-	grpcAddr1, err := server1.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	client1, err := grpc.NewClient(grpcAddr1)
+	// gRPC client for all servers
+	client1, err := grpc.NewClient(nodeConfig1.GRPCAddr)
 	defer func() {
 		_ = client1.Close()
 	}()
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	grpcAddr2, err := server2.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	client2, err := grpc.NewClient(grpcAddr2)
+	client2, err := grpc.NewClient(nodeConfig2.GRPCAddr)
 	defer func() {
 		_ = client2.Close()
 	}()
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	grpcAddr3, err := server3.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	client3, err := grpc.NewClient(grpcAddr3)
+	client3, err := grpc.NewClient(nodeConfig3.GRPCAddr)
 	defer func() {
 		_ = client3.Close()
 	}()
@@ -1587,7 +1330,7 @@ func TestCluster_GetNode(t *testing.T) {
 	}
 
 	// get all node info from all nodes
-	node11, err := client1.GetNode(nodeId1)
+	node11, err := client1.GetNode(nodeConfig1.NodeId)
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -1600,7 +1343,7 @@ func TestCluster_GetNode(t *testing.T) {
 		t.Errorf("expected content to see %v, saw %v", expNode11, actNode11)
 	}
 
-	node12, err := client1.GetNode(nodeId2)
+	node12, err := client1.GetNode(nodeConfig2.NodeId)
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -1613,7 +1356,7 @@ func TestCluster_GetNode(t *testing.T) {
 		t.Errorf("expected content to see %v, saw %v", expNode12, actNode12)
 	}
 
-	node13, err := client1.GetNode(nodeId3)
+	node13, err := client1.GetNode(nodeConfig3.NodeId)
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -1626,7 +1369,7 @@ func TestCluster_GetNode(t *testing.T) {
 		t.Errorf("expected content to see %v, saw %v", expNode13, actNode13)
 	}
 
-	node21, err := client2.GetNode(nodeId1)
+	node21, err := client2.GetNode(nodeConfig1.NodeId)
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -1639,7 +1382,7 @@ func TestCluster_GetNode(t *testing.T) {
 		t.Errorf("expected content to see %v, saw %v", expNode21, actNode21)
 	}
 
-	node22, err := client2.GetNode(nodeId2)
+	node22, err := client2.GetNode(nodeConfig2.NodeId)
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -1652,7 +1395,7 @@ func TestCluster_GetNode(t *testing.T) {
 		t.Errorf("expected content to see %v, saw %v", expNode22, actNode22)
 	}
 
-	node23, err := client2.GetNode(nodeId3)
+	node23, err := client2.GetNode(nodeConfig3.NodeId)
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -1665,7 +1408,7 @@ func TestCluster_GetNode(t *testing.T) {
 		t.Errorf("expected content to see %v, saw %v", expNode23, actNode23)
 	}
 
-	node31, err := client3.GetNode(nodeId1)
+	node31, err := client3.GetNode(nodeConfig1.NodeId)
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -1678,7 +1421,7 @@ func TestCluster_GetNode(t *testing.T) {
 		t.Errorf("expected content to see %v, saw %v", expNode31, actNode31)
 	}
 
-	node32, err := client3.GetNode(nodeId2)
+	node32, err := client3.GetNode(nodeConfig2.NodeId)
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -1691,7 +1434,7 @@ func TestCluster_GetNode(t *testing.T) {
 		t.Errorf("expected content to see %v, saw %v", expNode32, actNode32)
 	}
 
-	node33, err := client3.GetNode(nodeId3)
+	node33, err := client3.GetNode(nodeConfig3.NodeId)
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -1727,16 +1470,10 @@ func TestCluster_GetCluster(t *testing.T) {
 	clusterConfig1 := config.DefaultClusterConfig()
 	nodeConfig1 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig1.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig1.DataDir)
 	}()
-	nodeId1, err := nodeConfig1.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeId1), grpcLogger, httpAccessLogger)
+	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeConfig1.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -1748,30 +1485,15 @@ func TestCluster_GetCluster(t *testing.T) {
 	// start server1
 	server1.Start()
 
-	// set peer address
-	peerAddr, err := nodeConfig1.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create configs for server2
 	clusterConfig2 := config.DefaultClusterConfig()
-	err = clusterConfig2.SetPeerAddr(peerAddr)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	clusterConfig2.PeerAddr = nodeConfig1.GRPCAddr
 	nodeConfig2 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig2.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig2.DataDir)
 	}()
-	nodeId2, err := nodeConfig2.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeId2), grpcLogger, httpAccessLogger)
+	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeConfig2.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -1785,22 +1507,13 @@ func TestCluster_GetCluster(t *testing.T) {
 
 	// create configs for server3
 	clusterConfig3 := config.DefaultClusterConfig()
-	err = clusterConfig3.SetPeerAddr(peerAddr)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	clusterConfig3.PeerAddr = nodeConfig1.GRPCAddr
 	nodeConfig3 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig3.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig3.DataDir)
 	}()
-	nodeId3, err := nodeConfig3.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeId3), grpcLogger, httpAccessLogger)
+	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeConfig3.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -1816,33 +1529,21 @@ func TestCluster_GetCluster(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// gRPC client for manager1
-	grpcAddr1, err := server1.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	client1, err := grpc.NewClient(grpcAddr1)
+	client1, err := grpc.NewClient(nodeConfig1.GRPCAddr)
 	defer func() {
 		_ = client1.Close()
 	}()
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	grpcAddr2, err := server2.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	client2, err := grpc.NewClient(grpcAddr2)
+	client2, err := grpc.NewClient(nodeConfig2.GRPCAddr)
 	defer func() {
 		_ = client2.Close()
 	}()
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	grpcAddr3, err := server3.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	client3, err := grpc.NewClient(grpcAddr3)
+	client3, err := grpc.NewClient(nodeConfig3.GRPCAddr)
 	defer func() {
 		_ = client3.Close()
 	}()
@@ -1856,16 +1557,16 @@ func TestCluster_GetCluster(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 	expCluster1 := map[string]interface{}{
-		nodeId1: map[string]interface{}{
-			"node_config": server1.nodeConfig.ToMap(),
+		nodeConfig1.NodeId: map[string]interface{}{
+			"node_config": nodeConfig1.ToMap(),
 			"state":       raft.Leader.String(),
 		},
-		nodeId2: map[string]interface{}{
-			"node_config": server2.nodeConfig.ToMap(),
+		nodeConfig2.NodeId: map[string]interface{}{
+			"node_config": nodeConfig2.ToMap(),
 			"state":       raft.Follower.String(),
 		},
-		nodeId3: map[string]interface{}{
-			"node_config": server3.nodeConfig.ToMap(),
+		nodeConfig3.NodeId: map[string]interface{}{
+			"node_config": nodeConfig3.ToMap(),
 			"state":       raft.Follower.String(),
 		},
 	}
@@ -1879,16 +1580,16 @@ func TestCluster_GetCluster(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 	expCluster2 := map[string]interface{}{
-		nodeId1: map[string]interface{}{
-			"node_config": server1.nodeConfig.ToMap(),
+		nodeConfig1.NodeId: map[string]interface{}{
+			"node_config": nodeConfig1.ToMap(),
 			"state":       raft.Leader.String(),
 		},
-		nodeId2: map[string]interface{}{
-			"node_config": server2.nodeConfig.ToMap(),
+		nodeConfig2.NodeId: map[string]interface{}{
+			"node_config": nodeConfig2.ToMap(),
 			"state":       raft.Follower.String(),
 		},
-		nodeId3: map[string]interface{}{
-			"node_config": server3.nodeConfig.ToMap(),
+		nodeConfig3.NodeId: map[string]interface{}{
+			"node_config": nodeConfig3.ToMap(),
 			"state":       raft.Follower.String(),
 		},
 	}
@@ -1902,16 +1603,16 @@ func TestCluster_GetCluster(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 	expCluster3 := map[string]interface{}{
-		nodeId1: map[string]interface{}{
-			"node_config": server1.nodeConfig.ToMap(),
+		nodeConfig1.NodeId: map[string]interface{}{
+			"node_config": nodeConfig1.ToMap(),
 			"state":       raft.Leader.String(),
 		},
-		nodeId2: map[string]interface{}{
-			"node_config": server2.nodeConfig.ToMap(),
+		nodeConfig2.NodeId: map[string]interface{}{
+			"node_config": nodeConfig2.ToMap(),
 			"state":       raft.Follower.String(),
 		},
-		nodeId3: map[string]interface{}{
-			"node_config": server3.nodeConfig.ToMap(),
+		nodeConfig3.NodeId: map[string]interface{}{
+			"node_config": nodeConfig3.ToMap(),
 			"state":       raft.Follower.String(),
 		},
 	}
@@ -1943,16 +1644,10 @@ func TestCluster_GetState(t *testing.T) {
 	clusterConfig1 := config.DefaultClusterConfig()
 	nodeConfig1 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig1.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig1.DataDir)
 	}()
-	nodeId1, err := nodeConfig1.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeId1), grpcLogger, httpAccessLogger)
+	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeConfig1.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -1964,30 +1659,15 @@ func TestCluster_GetState(t *testing.T) {
 	// start server1
 	server1.Start()
 
-	// set peer address
-	peerAddr, err := nodeConfig1.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create configs for server2
 	clusterConfig2 := config.DefaultClusterConfig()
-	err = clusterConfig2.SetPeerAddr(peerAddr)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	clusterConfig2.PeerAddr = nodeConfig1.GRPCAddr
 	nodeConfig2 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig2.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig2.DataDir)
 	}()
-	nodeId2, err := nodeConfig2.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeId2), grpcLogger, httpAccessLogger)
+	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeConfig2.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -2001,22 +1681,13 @@ func TestCluster_GetState(t *testing.T) {
 
 	// create configs for server3
 	clusterConfig3 := config.DefaultClusterConfig()
-	err = clusterConfig3.SetPeerAddr(peerAddr)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	clusterConfig3.PeerAddr = nodeConfig1.GRPCAddr
 	nodeConfig3 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig3.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig3.DataDir)
 	}()
-	nodeId3, err := nodeConfig3.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeId3), grpcLogger, httpAccessLogger)
+	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeConfig3.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -2032,33 +1703,21 @@ func TestCluster_GetState(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// gRPC client for manager1
-	grpcAddr1, err := server1.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	client1, err := grpc.NewClient(grpcAddr1)
+	client1, err := grpc.NewClient(nodeConfig1.GRPCAddr)
 	defer func() {
 		_ = client1.Close()
 	}()
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	grpcAddr2, err := server2.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	client2, err := grpc.NewClient(grpcAddr2)
+	client2, err := grpc.NewClient(nodeConfig2.GRPCAddr)
 	defer func() {
 		_ = client2.Close()
 	}()
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	grpcAddr3, err := server3.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	client3, err := grpc.NewClient(grpcAddr3)
+	client3, err := grpc.NewClient(nodeConfig3.GRPCAddr)
 	defer func() {
 		_ = client3.Close()
 	}()
@@ -2120,16 +1779,10 @@ func TestCluster_SetState(t *testing.T) {
 	clusterConfig1 := config.DefaultClusterConfig()
 	nodeConfig1 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig1.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig1.DataDir)
 	}()
-	nodeId1, err := nodeConfig1.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeId1), grpcLogger, httpAccessLogger)
+	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeConfig1.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -2141,30 +1794,15 @@ func TestCluster_SetState(t *testing.T) {
 	// start server1
 	server1.Start()
 
-	// set peer address
-	peerAddr, err := nodeConfig1.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create configs for server2
 	clusterConfig2 := config.DefaultClusterConfig()
-	err = clusterConfig2.SetPeerAddr(peerAddr)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	clusterConfig2.PeerAddr = nodeConfig1.GRPCAddr
 	nodeConfig2 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig2.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig2.DataDir)
 	}()
-	nodeId2, err := nodeConfig2.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeId2), grpcLogger, httpAccessLogger)
+	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeConfig2.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -2178,22 +1816,13 @@ func TestCluster_SetState(t *testing.T) {
 
 	// create configs for server3
 	clusterConfig3 := config.DefaultClusterConfig()
-	err = clusterConfig3.SetPeerAddr(peerAddr)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	clusterConfig3.PeerAddr = nodeConfig1.GRPCAddr
 	nodeConfig3 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig3.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig3.DataDir)
 	}()
-	nodeId3, err := nodeConfig3.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeId3), grpcLogger, httpAccessLogger)
+	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeConfig3.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -2209,33 +1838,21 @@ func TestCluster_SetState(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// gRPC client for manager1
-	grpcAddr1, err := server1.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	client1, err := grpc.NewClient(grpcAddr1)
+	client1, err := grpc.NewClient(nodeConfig1.GRPCAddr)
 	defer func() {
 		_ = client1.Close()
 	}()
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	grpcAddr2, err := server2.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	client2, err := grpc.NewClient(grpcAddr2)
+	client2, err := grpc.NewClient(nodeConfig2.GRPCAddr)
 	defer func() {
 		_ = client2.Close()
 	}()
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	grpcAddr3, err := server3.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	client3, err := grpc.NewClient(grpcAddr3)
+	client3, err := grpc.NewClient(nodeConfig3.GRPCAddr)
 	defer func() {
 		_ = client3.Close()
 	}()
@@ -2371,16 +1988,10 @@ func TestCluster_DeleteState(t *testing.T) {
 	clusterConfig1 := config.DefaultClusterConfig()
 	nodeConfig1 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig1.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig1.DataDir)
 	}()
-	nodeId1, err := nodeConfig1.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeId1), grpcLogger, httpAccessLogger)
+	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeConfig1.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -2392,30 +2003,15 @@ func TestCluster_DeleteState(t *testing.T) {
 	// start server1
 	server1.Start()
 
-	// set peer address
-	peerAddr, err := nodeConfig1.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create configs for server2
 	clusterConfig2 := config.DefaultClusterConfig()
-	err = clusterConfig2.SetPeerAddr(peerAddr)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	clusterConfig2.PeerAddr = nodeConfig1.GRPCAddr
 	nodeConfig2 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig2.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig2.DataDir)
 	}()
-	nodeId2, err := nodeConfig2.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeId2), grpcLogger, httpAccessLogger)
+	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeConfig2.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -2429,22 +2025,13 @@ func TestCluster_DeleteState(t *testing.T) {
 
 	// create configs for server3
 	clusterConfig3 := config.DefaultClusterConfig()
-	err = clusterConfig3.SetPeerAddr(peerAddr)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	clusterConfig3.PeerAddr = nodeConfig1.GRPCAddr
 	nodeConfig3 := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig3.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig3.DataDir)
 	}()
-	nodeId3, err := nodeConfig3.GetNodeId()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
 	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeId3), grpcLogger, httpAccessLogger)
+	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeConfig3.NodeId), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -2460,33 +2047,21 @@ func TestCluster_DeleteState(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// gRPC client for manager1
-	grpcAddr1, err := server1.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	client1, err := grpc.NewClient(grpcAddr1)
+	client1, err := grpc.NewClient(nodeConfig1.GRPCAddr)
 	defer func() {
 		_ = client1.Close()
 	}()
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	grpcAddr2, err := server2.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	client2, err := grpc.NewClient(grpcAddr2)
+	client2, err := grpc.NewClient(nodeConfig2.GRPCAddr)
 	defer func() {
 		_ = client2.Close()
 	}()
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	grpcAddr3, err := server3.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	client3, err := grpc.NewClient(grpcAddr3)
+	client3, err := grpc.NewClient(nodeConfig3.GRPCAddr)
 	defer func() {
 		_ = client3.Close()
 	}()
@@ -2495,7 +2070,6 @@ func TestCluster_DeleteState(t *testing.T) {
 	}
 
 	// set test data before delete
-
 	err = client1.SetState("test/key1", "val1")
 	if err != nil {
 		t.Errorf("%v", err)
@@ -2602,7 +2176,6 @@ func TestCluster_DeleteState(t *testing.T) {
 	}
 
 	// delete
-
 	err = client1.DeleteState("test/key1")
 	if err != nil {
 		t.Errorf("%v", err)

@@ -24,16 +24,12 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
-
-	"github.com/mosuka/blast/errors"
-
-	"github.com/mosuka/blast/indexutils"
-
-	"github.com/mosuka/blast/grpc"
-	"github.com/mosuka/blast/protobuf"
-
 	"github.com/mosuka/blast/config"
+	"github.com/mosuka/blast/errors"
+	"github.com/mosuka/blast/grpc"
+	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/logutils"
+	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/testutils"
 )
 
@@ -55,9 +51,7 @@ func TestServer_Start(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -99,9 +93,7 @@ func TestServer_LivenessProbe(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -124,13 +116,8 @@ func TestServer_LivenessProbe(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	grpcAddr, err := server.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create gRPC client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -173,9 +160,7 @@ func TestServer_ReadinessProbe(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -198,13 +183,8 @@ func TestServer_ReadinessProbe(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	grpcAddr, err := server.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create gRPC client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -247,9 +227,7 @@ func TestServer_GetNode(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -272,33 +250,8 @@ func TestServer_GetNode(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	nodeId, err := server.nodeConfig.GetNodeId()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	bindAddr, err := server.nodeConfig.GetBindAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	grpcAddr, err := server.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	httpAddr, err := server.nodeConfig.GetHttpAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	dataDir, err := server.nodeConfig.GetDataDir()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	raftStorageType, err := server.nodeConfig.GetRaftStorageType()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create gRPC client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -312,20 +265,13 @@ func TestServer_GetNode(t *testing.T) {
 	}
 
 	// get node
-	node, err := client.GetNode(nodeId)
+	node, err := client.GetNode(nodeConfig.NodeId)
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 	expNode := map[string]interface{}{
-		"node_config": map[string]interface{}{
-			"node_id":           nodeId,
-			"bind_addr":         bindAddr,
-			"grpc_addr":         grpcAddr,
-			"http_addr":         httpAddr,
-			"data_dir":          dataDir,
-			"raft_storage_type": raftStorageType,
-		},
-		"state": "Leader",
+		"node_config": nodeConfig.ToMap(),
+		"state":       "Leader",
 	}
 	actNode := node
 	if !reflect.DeepEqual(expNode, actNode) {
@@ -351,9 +297,7 @@ func TestServer_GetCluster(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -376,33 +320,8 @@ func TestServer_GetCluster(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	nodeId, err := server.nodeConfig.GetNodeId()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	bindAddr, err := server.nodeConfig.GetBindAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	grpcAddr, err := server.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	httpAddr, err := server.nodeConfig.GetHttpAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	dataDir, err := server.nodeConfig.GetDataDir()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	raftStorageType, err := server.nodeConfig.GetRaftStorageType()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create gRPC client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -421,16 +340,9 @@ func TestServer_GetCluster(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 	expCluster := map[string]interface{}{
-		nodeId: map[string]interface{}{
-			"node_config": map[string]interface{}{
-				"node_id":           nodeId,
-				"bind_addr":         bindAddr,
-				"grpc_addr":         grpcAddr,
-				"http_addr":         httpAddr,
-				"data_dir":          dataDir,
-				"raft_storage_type": raftStorageType,
-			},
-			"state": "Leader",
+		nodeConfig.NodeId: map[string]interface{}{
+			"node_config": nodeConfig.ToMap(),
+			"state":       "Leader",
 		},
 	}
 	actCluster := cluster
@@ -457,9 +369,7 @@ func TestServer_GetIndexMapping(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -482,13 +392,8 @@ func TestServer_GetIndexMapping(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	grpcAddr, err := server.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create gRPC client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -501,7 +406,7 @@ func TestServer_GetIndexMapping(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	expIndexMapping, err := server.indexConfig.GetIndexMapping()
+	expIndexMapping := indexConfig.IndexMapping
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -539,9 +444,7 @@ func TestServer_GetIndexType(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -564,13 +467,8 @@ func TestServer_GetIndexType(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	grpcAddr, err := server.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create gRPC client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -583,7 +481,7 @@ func TestServer_GetIndexType(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	expIndexType, err := server.indexConfig.GetIndexType()
+	expIndexType := indexConfig.IndexType
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -618,9 +516,7 @@ func TestServer_GetIndexStorageType(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -643,13 +539,8 @@ func TestServer_GetIndexStorageType(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	grpcAddr, err := server.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create gRPC client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -662,7 +553,7 @@ func TestServer_GetIndexStorageType(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	expIndexStorageType, err := server.indexConfig.GetIndexStorageType()
+	expIndexStorageType := indexConfig.IndexStorageType
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -697,9 +588,7 @@ func TestServer_GetIndexStats(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -722,13 +611,8 @@ func TestServer_GetIndexStats(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	grpcAddr, err := server.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create gRPC client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -785,9 +669,7 @@ func TestServer_PutDocument(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -810,13 +692,8 @@ func TestServer_PutDocument(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	grpcAddr, err := server.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create gRPC client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -885,9 +762,7 @@ func TestServer_GetDocument(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -910,13 +785,8 @@ func TestServer_GetDocument(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	grpcAddr, err := server.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create gRPC client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -1005,9 +875,7 @@ func TestServer_DeleteDocument(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -1030,13 +898,8 @@ func TestServer_DeleteDocument(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	grpcAddr, err := server.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create gRPC client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -1154,9 +1017,7 @@ func TestServer_Search(t *testing.T) {
 	// create node config
 	nodeConfig := testutils.TmpNodeConfig()
 	defer func() {
-		if dataDir, err := nodeConfig.GetDataDir(); err != nil {
-			_ = os.RemoveAll(dataDir)
-		}
+		_ = os.RemoveAll(nodeConfig.DataDir)
 	}()
 
 	// create index config
@@ -1179,13 +1040,8 @@ func TestServer_Search(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	grpcAddr, err := server.nodeConfig.GetGrpcAddr()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
 	// create gRPC client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()

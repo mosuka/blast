@@ -29,38 +29,20 @@ import (
 )
 
 type Index struct {
-	indexConfig config.IndexConfig
+	indexConfig *config.IndexConfig
 	logger      *zap.Logger
 
 	index bleve.Index
 }
 
-func NewIndex(dir string, indexConfig config.IndexConfig, logger *zap.Logger) (*Index, error) {
+func NewIndex(dir string, indexConfig *config.IndexConfig, logger *zap.Logger) (*Index, error) {
 	//bleve.SetLog(logger)
 
 	var index bleve.Index
 	_, err := os.Stat(dir)
 	if os.IsNotExist(err) {
-		indexMapping, err := indexConfig.GetIndexMapping()
-		if err != nil {
-			logger.Error(err.Error())
-			return nil, err
-		}
-
-		indexType, err := indexConfig.GetIndexType()
-		if err != nil {
-			logger.Warn(err.Error())
-			indexType = bleve.Config.DefaultIndexType
-		}
-
-		indexStorageType, err := indexConfig.GetIndexStorageType()
-		if err != nil {
-			logger.Warn(err.Error())
-			indexStorageType = bleve.Config.DefaultKVStore
-		}
-
 		// create new index
-		index, err = bleve.NewUsing(dir, indexMapping, indexType, indexStorageType, nil)
+		index, err = bleve.NewUsing(dir, indexConfig.IndexMapping, indexConfig.IndexType, indexConfig.IndexStorageType, nil)
 		if err != nil {
 			logger.Error(err.Error())
 			return nil, err

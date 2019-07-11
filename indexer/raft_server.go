@@ -35,8 +35,8 @@ import (
 )
 
 type RaftServer struct {
-	nodeConfig  config.NodeConfig
-	indexConfig config.IndexConfig
+	nodeConfig  *config.NodeConfig
+	indexConfig *config.IndexConfig
 	bootstrap   bool
 	logger      *zap.Logger
 
@@ -44,7 +44,7 @@ type RaftServer struct {
 	fsm  *RaftFSM
 }
 
-func NewRaftServer(nodeConfig config.NodeConfig, indexConfig config.IndexConfig, bootstrap bool, logger *zap.Logger) (*RaftServer, error) {
+func NewRaftServer(nodeConfig *config.NodeConfig, indexConfig *config.IndexConfig, bootstrap bool, logger *zap.Logger) (*RaftServer, error) {
 	return &RaftServer{
 		nodeConfig:  nodeConfig,
 		indexConfig: indexConfig,
@@ -56,19 +56,7 @@ func NewRaftServer(nodeConfig config.NodeConfig, indexConfig config.IndexConfig,
 func (s *RaftServer) Start() error {
 	var err error
 
-	dataDir, err := s.nodeConfig.GetDataDir()
-	if err != nil {
-		s.logger.Fatal(err.Error(), zap.String("data_dir", dataDir))
-		return err
-	}
-
-	bindAddr, err := s.nodeConfig.GetBindAddr()
-	if err != nil {
-		s.logger.Fatal(err.Error(), zap.String("bind_addr", bindAddr))
-		return err
-	}
-
-	fsmPath := filepath.Join(dataDir, "index")
+	fsmPath := filepath.Join(s.nodeConfig.DataDir, "index")
 	s.logger.Info("create finite state machine", zap.String("path", fsmPath))
 	s.fsm, err = NewRaftFSM(fsmPath, s.indexConfig, s.logger)
 	if err != nil {
@@ -83,32 +71,26 @@ func (s *RaftServer) Start() error {
 		return err
 	}
 
-	nodeId, err := s.nodeConfig.GetNodeId()
-	if err != nil {
-		s.logger.Fatal(err.Error())
-		return err
-	}
-
 	raftConfig := raft.DefaultConfig()
-	raftConfig.LocalID = raft.ServerID(nodeId)
+	raftConfig.LocalID = raft.ServerID(s.nodeConfig.NodeId)
 	raftConfig.SnapshotThreshold = 1024
 	raftConfig.LogOutput = ioutil.Discard
 
-	s.logger.Info("resolve TCP address", zap.String("address", bindAddr))
-	addr, err := net.ResolveTCPAddr("tcp", bindAddr)
+	s.logger.Info("resolve TCP address", zap.String("bind_addr", s.nodeConfig.BindAddr))
+	addr, err := net.ResolveTCPAddr("tcp", s.nodeConfig.BindAddr)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return err
 	}
 
-	s.logger.Info("create TCP transport", zap.String("bind_addr", bindAddr))
-	transport, err := raft.NewTCPTransport(bindAddr, addr, 3, 10*time.Second, ioutil.Discard)
+	s.logger.Info("create TCP transport", zap.String("bind_addr", s.nodeConfig.BindAddr))
+	transport, err := raft.NewTCPTransport(s.nodeConfig.BindAddr, addr, 3, 10*time.Second, ioutil.Discard)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return err
 	}
 
-	snapshotPath := dataDir
+	snapshotPath := s.nodeConfig.DataDir
 	s.logger.Info("create snapshot store", zap.String("path", snapshotPath))
 	snapshotStore, err := raft.NewFileSnapshotStore(snapshotPath, 2, ioutil.Discard)
 	if err != nil {
@@ -116,17 +98,11 @@ func (s *RaftServer) Start() error {
 		return err
 	}
 
-	raftStorageType, err := s.nodeConfig.GetRaftStorageType()
-	if err != nil {
-		s.logger.Fatal(err.Error())
-		return err
-	}
-
 	s.logger.Info("create Raft machine")
-	switch raftStorageType {
+	switch s.nodeConfig.RaftStorageType {
 	case "boltdb":
-		logStorePath := filepath.Join(dataDir, "raft", "boltdb.db")
-		err = os.MkdirAll(filepath.Join(dataDir, "raft"), 0755)
+		logStorePath := filepath.Join(s.nodeConfig.DataDir, "raft", "boltdb.db")
+		err = os.MkdirAll(filepath.Join(s.nodeConfig.DataDir, "raft"), 0755)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return err
@@ -142,7 +118,7 @@ func (s *RaftServer) Start() error {
 			return err
 		}
 	case "badger":
-		logStorePath := filepath.Join(dataDir, "raft")
+		logStorePath := filepath.Join(s.nodeConfig.DataDir, "raft")
 		err = os.MkdirAll(filepath.Join(logStorePath, "badger"), 0755)
 		if err != nil {
 			s.logger.Fatal(err.Error())
@@ -159,8 +135,8 @@ func (s *RaftServer) Start() error {
 			return err
 		}
 	default:
-		logStorePath := filepath.Join(dataDir, "raft", "boltdb.db")
-		err = os.MkdirAll(filepath.Join(dataDir, "raft"), 0755)
+		logStorePath := filepath.Join(s.nodeConfig.DataDir, "raft", "boltdb.db")
+		err = os.MkdirAll(filepath.Join(s.nodeConfig.DataDir, "raft"), 0755)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return err
@@ -197,8 +173,8 @@ func (s *RaftServer) Start() error {
 		}
 
 		// set metadata
-		s.logger.Info("register its own information", zap.String("node_id", nodeId), zap.Any("node_config", s.nodeConfig))
-		err = s.setNodeConfig(nodeId, s.nodeConfig.ToMap())
+		s.logger.Info("register its own information", zap.String("node_id", s.nodeConfig.NodeId), zap.Any("node_config", s.nodeConfig))
+		err = s.setNodeConfig(s.nodeConfig.NodeId, s.nodeConfig.ToMap())
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return nil

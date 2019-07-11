@@ -140,12 +140,7 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 			// create peer node list with out self node
 			peers := make(map[string]interface{}, 0)
 			for id, metadata := range servers {
-				nodeId, err := s.raftServer.nodeConfig.GetNodeId()
-				if err != nil {
-					s.logger.Error(err.Error())
-					continue
-				}
-				if id != nodeId {
+				if id != s.raftServer.nodeConfig.NodeId {
 					peers[id] = metadata
 				}
 			}
@@ -280,29 +275,10 @@ func (s *GRPCService) stopUpdateCluster() {
 }
 
 func (s *GRPCService) getSelfNode() (map[string]interface{}, error) {
-	var nodeInfo map[string]interface{}
-
-	nodeId, err := s.raftServer.nodeConfig.GetNodeId()
-	if err != nil {
-		s.logger.Error(err.Error())
-		return nil, err
-	}
-
-	nodeConfig, err := s.raftServer.GetNodeConfig(nodeId)
-	if err == nil {
-		nodeInfo = map[string]interface{}{
-			"node_config": nodeConfig,
-			"state":       s.raftServer.State(),
-		}
-	} else {
-		s.logger.Error(err.Error())
-		nodeInfo = map[string]interface{}{
-			"node_config": map[string]interface{}{},
-			"state":       raft.Shutdown.String(),
-		}
-	}
-
-	return nodeInfo, nil
+	return map[string]interface{}{
+		"node_config": s.raftServer.nodeConfig.ToMap(),
+		"state":       s.raftServer.State(),
+	}, nil
 }
 
 func (s *GRPCService) getPeerNode(id string) (map[string]interface{}, error) {
@@ -335,13 +311,7 @@ func (s *GRPCService) GetNode(ctx context.Context, req *protobuf.GetNodeRequest)
 	var nodeInfo map[string]interface{}
 	var err error
 
-	nodeId, err := s.raftServer.nodeConfig.GetNodeId()
-	if err != nil {
-		s.logger.Error(err.Error())
-		return nil, err
-	}
-
-	if req.Id == "" || req.Id == nodeId {
+	if req.Id == "" || req.Id == s.raftServer.nodeConfig.NodeId {
 		nodeInfo, err = s.getSelfNode()
 	} else {
 		nodeInfo, err = s.getPeerNode(req.Id)
