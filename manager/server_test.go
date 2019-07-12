@@ -333,31 +333,6 @@ func TestServer_GetCluster(t *testing.T) {
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	//nodeId, err := server.nodeConfig.GetNodeId()
-	//if err != nil {
-	//	t.Fatalf("%v", err)
-	//}
-	//bindAddr, err := server.nodeConfig.GetBindAddr()
-	//if err != nil {
-	//	t.Fatalf("%v", err)
-	//}
-	//grpcAddr, err := server.nodeConfig.GetGrpcAddr()
-	//if err != nil {
-	//	t.Fatalf("%v", err)
-	//}
-	//httpAddr, err := server.nodeConfig.GetHttpAddr()
-	//if err != nil {
-	//	t.Fatalf("%v", err)
-	//}
-	//dataDir, err := server.nodeConfig.GetDataDir()
-	//if err != nil {
-	//	t.Fatalf("%v", err)
-	//}
-	//raftStorageType, err := server.nodeConfig.GetRaftStorageType()
-	//if err != nil {
-	//	t.Fatalf("%v", err)
-	//}
-
 	// create gRPC client
 	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
 	defer func() {
@@ -896,7 +871,7 @@ func TestCluster_Start(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig1.DataDir)
 	}()
 	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeConfig1.NodeId), grpcLogger, httpAccessLogger)
+	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named("manager1"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -916,7 +891,7 @@ func TestCluster_Start(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig2.DataDir)
 	}()
 	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeConfig2.NodeId), grpcLogger, httpAccessLogger)
+	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named("manager2"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -936,7 +911,7 @@ func TestCluster_Start(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig3.DataDir)
 	}()
 	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeConfig3.NodeId), grpcLogger, httpAccessLogger)
+	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named("manager3"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -977,7 +952,7 @@ func TestCluster_LivenessProbe(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig1.DataDir)
 	}()
 	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeConfig1.NodeId), grpcLogger, httpAccessLogger)
+	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named("manager1"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -997,7 +972,7 @@ func TestCluster_LivenessProbe(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig2.DataDir)
 	}()
 	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeConfig2.NodeId), grpcLogger, httpAccessLogger)
+	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named("manager2"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -1017,7 +992,7 @@ func TestCluster_LivenessProbe(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig3.DataDir)
 	}()
 	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeConfig3.NodeId), grpcLogger, httpAccessLogger)
+	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named("manager3"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -1114,7 +1089,7 @@ func TestCluster_ReadinessProbe(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig1.DataDir)
 	}()
 	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeConfig1.NodeId), grpcLogger, httpAccessLogger)
+	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named("manager1"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -1134,7 +1109,7 @@ func TestCluster_ReadinessProbe(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig2.DataDir)
 	}()
 	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeConfig2.NodeId), grpcLogger, httpAccessLogger)
+	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named("manager2"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -1154,7 +1129,7 @@ func TestCluster_ReadinessProbe(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig3.DataDir)
 	}()
 	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeConfig3.NodeId), grpcLogger, httpAccessLogger)
+	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named("manager3"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -1214,7 +1189,7 @@ func TestCluster_ReadinessProbe(t *testing.T) {
 		t.Errorf("expected content to see %v, saw %v", expReadiness2, actReadiness2)
 	}
 
-	// readiness check for manager2
+	// readiness check for manager3
 	readiness3, err := client3.ReadinessProbe()
 	if err != nil {
 		t.Errorf("%v", err)
@@ -1251,7 +1226,7 @@ func TestCluster_GetNode(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig1.DataDir)
 	}()
 	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeConfig1.NodeId), grpcLogger, httpAccessLogger)
+	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named("manager1"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -1271,7 +1246,7 @@ func TestCluster_GetNode(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig2.DataDir)
 	}()
 	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeConfig2.NodeId), grpcLogger, httpAccessLogger)
+	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named("manager2"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -1291,7 +1266,7 @@ func TestCluster_GetNode(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig3.DataDir)
 	}()
 	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeConfig3.NodeId), grpcLogger, httpAccessLogger)
+	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named("manager3"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -1473,7 +1448,7 @@ func TestCluster_GetCluster(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig1.DataDir)
 	}()
 	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeConfig1.NodeId), grpcLogger, httpAccessLogger)
+	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named("manager1"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -1493,7 +1468,7 @@ func TestCluster_GetCluster(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig2.DataDir)
 	}()
 	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeConfig2.NodeId), grpcLogger, httpAccessLogger)
+	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named("manager2"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -1513,7 +1488,7 @@ func TestCluster_GetCluster(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig3.DataDir)
 	}()
 	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeConfig3.NodeId), grpcLogger, httpAccessLogger)
+	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named("manager3"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -1647,7 +1622,7 @@ func TestCluster_GetState(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig1.DataDir)
 	}()
 	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeConfig1.NodeId), grpcLogger, httpAccessLogger)
+	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named("manager1"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -1667,7 +1642,7 @@ func TestCluster_GetState(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig2.DataDir)
 	}()
 	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeConfig2.NodeId), grpcLogger, httpAccessLogger)
+	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named("manager2"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -1687,7 +1662,7 @@ func TestCluster_GetState(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig3.DataDir)
 	}()
 	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeConfig3.NodeId), grpcLogger, httpAccessLogger)
+	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named("manager3"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -1782,7 +1757,7 @@ func TestCluster_SetState(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig1.DataDir)
 	}()
 	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeConfig1.NodeId), grpcLogger, httpAccessLogger)
+	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named("manager1"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -1802,7 +1777,7 @@ func TestCluster_SetState(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig2.DataDir)
 	}()
 	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeConfig2.NodeId), grpcLogger, httpAccessLogger)
+	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named("manager2"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -1822,7 +1797,7 @@ func TestCluster_SetState(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig3.DataDir)
 	}()
 	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeConfig3.NodeId), grpcLogger, httpAccessLogger)
+	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named("manager3"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -1991,7 +1966,7 @@ func TestCluster_DeleteState(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig1.DataDir)
 	}()
 	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named(nodeConfig1.NodeId), grpcLogger, httpAccessLogger)
+	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named("manager1"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -2011,7 +1986,7 @@ func TestCluster_DeleteState(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig2.DataDir)
 	}()
 	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named(nodeConfig2.NodeId), grpcLogger, httpAccessLogger)
+	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named("manager2"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -2031,7 +2006,7 @@ func TestCluster_DeleteState(t *testing.T) {
 		_ = os.RemoveAll(nodeConfig3.DataDir)
 	}()
 	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named(nodeConfig3.NodeId), grpcLogger, httpAccessLogger)
+	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named("manager3"), grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()

@@ -42,7 +42,7 @@ func NewIndexConfigFromMap(src map[string]interface{}) *IndexConfig {
 	}
 
 	var indexConfig *IndexConfig
-	err = json.Unmarshal(b, indexConfig)
+	err = json.Unmarshal(b, &indexConfig)
 	if err != nil {
 		return &IndexConfig{}
 	}

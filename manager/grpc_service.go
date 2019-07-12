@@ -147,73 +147,73 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 
 			if !reflect.DeepEqual(s.peers, peers) {
 				// open clients
-				for id, metadata := range peers {
+				for nodeId, metadata := range peers {
 					mm, ok := metadata.(map[string]interface{})
 					if !ok {
-						s.logger.Warn("assertion failed", zap.String("id", id))
+						s.logger.Warn("assertion failed", zap.String("node_id", nodeId))
 						continue
 					}
 
 					grpcAddr, ok := mm["grpc_addr"].(string)
 					if !ok {
-						s.logger.Warn("missing metadata", zap.String("id", id), zap.String("grpc_addr", grpcAddr))
+						s.logger.Warn("missing metadata", zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
 						continue
 					}
 
-					client, exist := s.peerClients[id]
+					client, exist := s.peerClients[nodeId]
 					if exist {
-						s.logger.Debug("client has already exist in peer list", zap.String("id", id))
+						s.logger.Debug("client has already exist in peer list", zap.String("node_id", nodeId))
 
 						if client.GetAddress() != grpcAddr {
-							s.logger.Debug("gRPC address has been changed", zap.String("id", id), zap.String("client_grpc_addr", client.GetAddress()), zap.String("grpc_addr", grpcAddr))
-							s.logger.Debug("recreate gRPC client", zap.String("id", id), zap.String("grpc_addr", grpcAddr))
+							s.logger.Debug("gRPC address has been changed", zap.String("node_id", nodeId), zap.String("client_grpc_addr", client.GetAddress()), zap.String("grpc_addr", grpcAddr))
+							s.logger.Debug("recreate gRPC client", zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
 
-							delete(s.peerClients, id)
+							delete(s.peerClients, nodeId)
 
 							err = client.Close()
 							if err != nil {
-								s.logger.Error(err.Error(), zap.String("id", id))
+								s.logger.Error(err.Error(), zap.String("node_id", nodeId))
 							}
 
 							newClient, err := grpc.NewClient(grpcAddr)
 							if err != nil {
-								s.logger.Error(err.Error(), zap.String("id", id), zap.String("grpc_addr", grpcAddr))
+								s.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
 							}
 
 							if newClient != nil {
-								s.peerClients[id] = newClient
+								s.peerClients[nodeId] = newClient
 							}
 						} else {
-							s.logger.Debug("gRPC address has not changed", zap.String("id", id), zap.String("client_grpc_addr", client.GetAddress()), zap.String("grpc_addr", grpcAddr))
+							s.logger.Debug("gRPC address has not changed", zap.String("node_id", nodeId), zap.String("client_grpc_addr", client.GetAddress()), zap.String("grpc_addr", grpcAddr))
 						}
 					} else {
-						s.logger.Debug("client does not exist in peer list", zap.String("id", id))
+						s.logger.Debug("client does not exist in peer list", zap.String("node_id", nodeId))
 
-						s.logger.Debug("create gRPC client", zap.String("id", id), zap.String("grpc_addr", grpcAddr))
+						s.logger.Debug("create gRPC client", zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
 						peerClient, err := grpc.NewClient(grpcAddr)
 						if err != nil {
-							s.logger.Error(err.Error(), zap.String("id", id), zap.String("grpc_addr", grpcAddr))
+							s.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
 						}
 						if peerClient != nil {
 							s.logger.Debug("append peer client to peer client list", zap.String("grpc_addr", peerClient.GetAddress()))
-							s.peerClients[id] = peerClient
+							s.peerClients[nodeId] = peerClient
 						}
 					}
 				}
 
 				// close nonexistent clients
-				for id, client := range s.peerClients {
-					if metadata, exist := peers[id]; !exist {
-						s.logger.Info("this client is no longer in use", zap.String("id", id), zap.Any("metadata", metadata))
+				for nodeId, client := range s.peerClients {
+					if nodeConfig, exist := peers[nodeId]; !exist {
+						s.logger.Info("this client is no longer in use", zap.String("node_id", nodeId), zap.Any("node_config", nodeConfig))
 
-						s.logger.Debug("close client", zap.String("id", id), zap.String("address", client.GetAddress()))
+						s.logger.Debug("close client", zap.String("node_id", nodeId), zap.String("grpc_addr", client.GetAddress()))
 						err = client.Close()
 						if err != nil {
-							s.logger.Error(err.Error(), zap.String("id", id), zap.String("address", client.GetAddress()))
+							s.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", client.GetAddress()))
 						}
 
-						s.logger.Debug("delete client", zap.String("id", id))
-						delete(s.peerClients, id)
+						s.logger.Debug("delete client", zap.String("node_id", nodeId))
+						delete(s.peerClients, nodeId)
 					}
 				}
 
