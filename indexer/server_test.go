@@ -23,6 +23,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hashicorp/raft"
+
 	"github.com/blevesearch/bleve"
 	"github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/errors"
@@ -1121,5 +1123,756 @@ func TestServer_Search(t *testing.T) {
 	actTotal := searchResult1.Total
 	if expTotal != actTotal {
 		t.Errorf("expected content to see %v, saw %v", expTotal, actTotal)
+	}
+}
+
+func TestCluster_Start(t *testing.T) {
+	curDir, _ := os.Getwd()
+
+	// create logger
+	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+
+	// create gRPC logger
+	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
+
+	// create HTTP access logger
+	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
+
+	// create index config
+	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// create configs for server1
+	clusterConfig1 := config.DefaultClusterConfig()
+	nodeConfig1 := testutils.TmpNodeConfig()
+	defer func() {
+		_ = os.RemoveAll(nodeConfig1.DataDir)
+	}()
+	// create server1
+	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named("server1"), grpcLogger, httpAccessLogger)
+	defer func() {
+		if server1 != nil {
+			server1.Stop()
+		}
+	}()
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	// start server1
+	server1.Start()
+
+	// create configs for server2
+	clusterConfig2 := config.DefaultClusterConfig()
+	clusterConfig2.PeerAddr = nodeConfig1.GRPCAddr
+	nodeConfig2 := testutils.TmpNodeConfig()
+	defer func() {
+		_ = os.RemoveAll(nodeConfig2.DataDir)
+	}()
+	// create server2
+	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named("server2"), grpcLogger, httpAccessLogger)
+	defer func() {
+		if server2 != nil {
+			server2.Stop()
+		}
+	}()
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	// start server2
+	server2.Start()
+
+	// create configs for server3
+	clusterConfig3 := config.DefaultClusterConfig()
+	clusterConfig3.PeerAddr = nodeConfig1.GRPCAddr
+	nodeConfig3 := testutils.TmpNodeConfig()
+	defer func() {
+		_ = os.RemoveAll(nodeConfig3.DataDir)
+	}()
+	// create server3
+	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named("server3"), grpcLogger, httpAccessLogger)
+	defer func() {
+		if server3 != nil {
+			server3.Stop()
+		}
+	}()
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	// start server3
+	server3.Start()
+
+	// sleep
+	time.Sleep(5 * time.Second)
+}
+
+func TestCluster_LivenessProbe(t *testing.T) {
+	curDir, _ := os.Getwd()
+
+	// create logger
+	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+
+	// create gRPC logger
+	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
+
+	// create HTTP access logger
+	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
+
+	// create index config
+	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// create configs for server1
+	clusterConfig1 := config.DefaultClusterConfig()
+	nodeConfig1 := testutils.TmpNodeConfig()
+	defer func() {
+		_ = os.RemoveAll(nodeConfig1.DataDir)
+	}()
+	// create server1
+	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named("server1"), grpcLogger, httpAccessLogger)
+	defer func() {
+		if server1 != nil {
+			server1.Stop()
+		}
+	}()
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	// start server1
+	server1.Start()
+
+	// create configs for server2
+	clusterConfig2 := config.DefaultClusterConfig()
+	clusterConfig2.PeerAddr = nodeConfig1.GRPCAddr
+	nodeConfig2 := testutils.TmpNodeConfig()
+	defer func() {
+		_ = os.RemoveAll(nodeConfig2.DataDir)
+	}()
+	// create server2
+	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named("server2"), grpcLogger, httpAccessLogger)
+	defer func() {
+		if server2 != nil {
+			server2.Stop()
+		}
+	}()
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	// start server2
+	server2.Start()
+
+	// create configs for server3
+	clusterConfig3 := config.DefaultClusterConfig()
+	clusterConfig3.PeerAddr = nodeConfig1.GRPCAddr
+	nodeConfig3 := testutils.TmpNodeConfig()
+	defer func() {
+		_ = os.RemoveAll(nodeConfig3.DataDir)
+	}()
+	// create server3
+	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named("server3"), grpcLogger, httpAccessLogger)
+	defer func() {
+		if server3 != nil {
+			server3.Stop()
+		}
+	}()
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	// start server3
+	server3.Start()
+
+	// sleep
+	time.Sleep(5 * time.Second)
+
+	// gRPC client for all servers
+	client1, err := grpc.NewClient(nodeConfig1.GRPCAddr)
+	defer func() {
+		_ = client1.Close()
+	}()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	client2, err := grpc.NewClient(nodeConfig2.GRPCAddr)
+	defer func() {
+		_ = client2.Close()
+	}()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	client3, err := grpc.NewClient(nodeConfig3.GRPCAddr)
+	defer func() {
+		_ = client3.Close()
+	}()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+
+	// liveness check for server1
+	liveness1, err := client1.LivenessProbe()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	expLiveness1 := protobuf.LivenessProbeResponse_ALIVE.String()
+	actLiveness1 := liveness1
+	if expLiveness1 != actLiveness1 {
+		t.Errorf("expected content to see %v, saw %v", expLiveness1, actLiveness1)
+	}
+
+	// liveness check for server2
+	liveness2, err := client2.LivenessProbe()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	expLiveness2 := protobuf.LivenessProbeResponse_ALIVE.String()
+	actLiveness2 := liveness2
+	if expLiveness2 != actLiveness2 {
+		t.Errorf("expected content to see %v, saw %v", expLiveness2, actLiveness2)
+	}
+
+	// liveness check for server3
+	liveness3, err := client3.LivenessProbe()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	expLiveness3 := protobuf.LivenessProbeResponse_ALIVE.String()
+	actLiveness3 := liveness3
+	if expLiveness3 != actLiveness3 {
+		t.Errorf("expected content to see %v, saw %v", expLiveness3, actLiveness3)
+	}
+}
+
+func TestCluster_ReadinessProbe(t *testing.T) {
+	curDir, _ := os.Getwd()
+
+	// create logger
+	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+
+	// create gRPC logger
+	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
+
+	// create HTTP access logger
+	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
+
+	// create index config
+	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// create configs for server1
+	clusterConfig1 := config.DefaultClusterConfig()
+	nodeConfig1 := testutils.TmpNodeConfig()
+	defer func() {
+		_ = os.RemoveAll(nodeConfig1.DataDir)
+	}()
+	// create server1
+	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named("server1"), grpcLogger, httpAccessLogger)
+	defer func() {
+		if server1 != nil {
+			server1.Stop()
+		}
+	}()
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	// start server1
+	server1.Start()
+
+	// create configs for server2
+	clusterConfig2 := config.DefaultClusterConfig()
+	clusterConfig2.PeerAddr = nodeConfig1.GRPCAddr
+	nodeConfig2 := testutils.TmpNodeConfig()
+	defer func() {
+		_ = os.RemoveAll(nodeConfig2.DataDir)
+	}()
+	// create server2
+	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named("server2"), grpcLogger, httpAccessLogger)
+	defer func() {
+		if server2 != nil {
+			server2.Stop()
+		}
+	}()
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	// start server2
+	server2.Start()
+
+	// create configs for server3
+	clusterConfig3 := config.DefaultClusterConfig()
+	clusterConfig3.PeerAddr = nodeConfig1.GRPCAddr
+	nodeConfig3 := testutils.TmpNodeConfig()
+	defer func() {
+		_ = os.RemoveAll(nodeConfig3.DataDir)
+	}()
+	// create server3
+	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named("server3"), grpcLogger, httpAccessLogger)
+	defer func() {
+		if server3 != nil {
+			server3.Stop()
+		}
+	}()
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	// start server3
+	server3.Start()
+
+	// sleep
+	time.Sleep(5 * time.Second)
+
+	// gRPC client for all servers
+	client1, err := grpc.NewClient(nodeConfig1.GRPCAddr)
+	defer func() {
+		_ = client1.Close()
+	}()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	client2, err := grpc.NewClient(nodeConfig2.GRPCAddr)
+	defer func() {
+		_ = client2.Close()
+	}()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	client3, err := grpc.NewClient(nodeConfig3.GRPCAddr)
+	defer func() {
+		_ = client3.Close()
+	}()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+
+	// readiness check for server1
+	readiness1, err := client1.ReadinessProbe()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	expReadiness1 := protobuf.ReadinessProbeResponse_READY.String()
+	actReadiness1 := readiness1
+	if expReadiness1 != actReadiness1 {
+		t.Errorf("expected content to see %v, saw %v", expReadiness1, actReadiness1)
+	}
+
+	// readiness check for server2
+	readiness2, err := client2.ReadinessProbe()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	expReadiness2 := protobuf.ReadinessProbeResponse_READY.String()
+	actReadiness2 := readiness2
+	if expReadiness2 != actReadiness2 {
+		t.Errorf("expected content to see %v, saw %v", expReadiness2, actReadiness2)
+	}
+
+	// readiness check for server3
+	readiness3, err := client3.ReadinessProbe()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	expReadiness3 := protobuf.ReadinessProbeResponse_READY.String()
+	actReadiness3 := readiness3
+	if expReadiness3 != actReadiness3 {
+		t.Errorf("expected content to see %v, saw %v", expReadiness3, actReadiness3)
+	}
+}
+
+func TestCluster_GetNode(t *testing.T) {
+	curDir, _ := os.Getwd()
+
+	// create logger
+	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+
+	// create gRPC logger
+	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
+
+	// create HTTP access logger
+	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
+
+	// create index config
+	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// create configs for server1
+	clusterConfig1 := config.DefaultClusterConfig()
+	nodeConfig1 := testutils.TmpNodeConfig()
+	defer func() {
+		_ = os.RemoveAll(nodeConfig1.DataDir)
+	}()
+	// create server1
+	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named("server1"), grpcLogger, httpAccessLogger)
+	defer func() {
+		if server1 != nil {
+			server1.Stop()
+		}
+	}()
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	// start server1
+	server1.Start()
+
+	// create configs for server2
+	clusterConfig2 := config.DefaultClusterConfig()
+	clusterConfig2.PeerAddr = nodeConfig1.GRPCAddr
+	nodeConfig2 := testutils.TmpNodeConfig()
+	defer func() {
+		_ = os.RemoveAll(nodeConfig2.DataDir)
+	}()
+	// create server2
+	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named("server2"), grpcLogger, httpAccessLogger)
+	defer func() {
+		if server2 != nil {
+			server2.Stop()
+		}
+	}()
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	// start server2
+	server2.Start()
+
+	// create configs for server3
+	clusterConfig3 := config.DefaultClusterConfig()
+	clusterConfig3.PeerAddr = nodeConfig1.GRPCAddr
+	nodeConfig3 := testutils.TmpNodeConfig()
+	defer func() {
+		_ = os.RemoveAll(nodeConfig3.DataDir)
+	}()
+	// create server3
+	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named("server3"), grpcLogger, httpAccessLogger)
+	defer func() {
+		if server3 != nil {
+			server3.Stop()
+		}
+	}()
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	// start server3
+	server3.Start()
+
+	// sleep
+	time.Sleep(5 * time.Second)
+
+	// gRPC client for all servers
+	client1, err := grpc.NewClient(nodeConfig1.GRPCAddr)
+	defer func() {
+		_ = client1.Close()
+	}()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	client2, err := grpc.NewClient(nodeConfig2.GRPCAddr)
+	defer func() {
+		_ = client2.Close()
+	}()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	client3, err := grpc.NewClient(nodeConfig3.GRPCAddr)
+	defer func() {
+		_ = client3.Close()
+	}()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+
+	// get all node info from all nodes
+	node11, err := client1.GetNode(nodeConfig1.NodeId)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	expNode11 := map[string]interface{}{
+		"node_config": server1.nodeConfig.ToMap(),
+		"state":       raft.Leader.String(),
+	}
+	actNode11 := node11
+	if !reflect.DeepEqual(expNode11, actNode11) {
+		t.Errorf("expected content to see %v, saw %v", expNode11, actNode11)
+	}
+
+	node12, err := client1.GetNode(nodeConfig2.NodeId)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	expNode12 := map[string]interface{}{
+		"node_config": server2.nodeConfig.ToMap(),
+		"state":       raft.Follower.String(),
+	}
+	actNode12 := node12
+	if !reflect.DeepEqual(expNode12, actNode12) {
+		t.Errorf("expected content to see %v, saw %v", expNode12, actNode12)
+	}
+
+	node13, err := client1.GetNode(nodeConfig3.NodeId)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	expNode13 := map[string]interface{}{
+		"node_config": server3.nodeConfig.ToMap(),
+		"state":       raft.Follower.String(),
+	}
+	actNode13 := node13
+	if !reflect.DeepEqual(expNode13, actNode13) {
+		t.Errorf("expected content to see %v, saw %v", expNode13, actNode13)
+	}
+
+	node21, err := client2.GetNode(nodeConfig1.NodeId)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	expNode21 := map[string]interface{}{
+		"node_config": server1.nodeConfig.ToMap(),
+		"state":       raft.Leader.String(),
+	}
+	actNode21 := node21
+	if !reflect.DeepEqual(expNode21, actNode21) {
+		t.Errorf("expected content to see %v, saw %v", expNode21, actNode21)
+	}
+
+	node22, err := client2.GetNode(nodeConfig2.NodeId)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	expNode22 := map[string]interface{}{
+		"node_config": server2.nodeConfig.ToMap(),
+		"state":       raft.Follower.String(),
+	}
+	actNode22 := node22
+	if !reflect.DeepEqual(expNode22, actNode22) {
+		t.Errorf("expected content to see %v, saw %v", expNode22, actNode22)
+	}
+
+	node23, err := client2.GetNode(nodeConfig3.NodeId)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	expNode23 := map[string]interface{}{
+		"node_config": server3.nodeConfig.ToMap(),
+		"state":       raft.Follower.String(),
+	}
+	actNode23 := node23
+	if !reflect.DeepEqual(expNode23, actNode23) {
+		t.Errorf("expected content to see %v, saw %v", expNode23, actNode23)
+	}
+
+	node31, err := client3.GetNode(nodeConfig1.NodeId)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	expNode31 := map[string]interface{}{
+		"node_config": server1.nodeConfig.ToMap(),
+		"state":       raft.Leader.String(),
+	}
+	actNode31 := node31
+	if !reflect.DeepEqual(expNode31, actNode31) {
+		t.Errorf("expected content to see %v, saw %v", expNode31, actNode31)
+	}
+
+	node32, err := client3.GetNode(nodeConfig2.NodeId)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	expNode32 := map[string]interface{}{
+		"node_config": server2.nodeConfig.ToMap(),
+		"state":       raft.Follower.String(),
+	}
+	actNode32 := node32
+	if !reflect.DeepEqual(expNode32, actNode32) {
+		t.Errorf("expected content to see %v, saw %v", expNode32, actNode32)
+	}
+
+	node33, err := client3.GetNode(nodeConfig3.NodeId)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	expNode33 := map[string]interface{}{
+		"node_config": server3.nodeConfig.ToMap(),
+		"state":       raft.Follower.String(),
+	}
+	actNode33 := node33
+	if !reflect.DeepEqual(expNode33, actNode33) {
+		t.Errorf("expected content to see %v, saw %v", expNode33, actNode33)
+	}
+}
+
+func TestCluster_GetCluster(t *testing.T) {
+	curDir, _ := os.Getwd()
+
+	// create logger
+	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+
+	// create gRPC logger
+	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
+
+	// create HTTP access logger
+	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
+
+	// create index config
+	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// create configs for server1
+	clusterConfig1 := config.DefaultClusterConfig()
+	nodeConfig1 := testutils.TmpNodeConfig()
+	defer func() {
+		_ = os.RemoveAll(nodeConfig1.DataDir)
+	}()
+	// create server1
+	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named("server1"), grpcLogger, httpAccessLogger)
+	defer func() {
+		if server1 != nil {
+			server1.Stop()
+		}
+	}()
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	// start server1
+	server1.Start()
+
+	// create configs for server2
+	clusterConfig2 := config.DefaultClusterConfig()
+	clusterConfig2.PeerAddr = nodeConfig1.GRPCAddr
+	nodeConfig2 := testutils.TmpNodeConfig()
+	defer func() {
+		_ = os.RemoveAll(nodeConfig2.DataDir)
+	}()
+	// create server2
+	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named("server2"), grpcLogger, httpAccessLogger)
+	defer func() {
+		if server2 != nil {
+			server2.Stop()
+		}
+	}()
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	// start server2
+	server2.Start()
+
+	// create configs for server3
+	clusterConfig3 := config.DefaultClusterConfig()
+	clusterConfig3.PeerAddr = nodeConfig1.GRPCAddr
+	nodeConfig3 := testutils.TmpNodeConfig()
+	defer func() {
+		_ = os.RemoveAll(nodeConfig3.DataDir)
+	}()
+	// create server3
+	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named("server3"), grpcLogger, httpAccessLogger)
+	defer func() {
+		if server3 != nil {
+			server3.Stop()
+		}
+	}()
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	// start server3
+	server3.Start()
+
+	// sleep
+	time.Sleep(5 * time.Second)
+
+	// gRPC client for manager1
+	client1, err := grpc.NewClient(nodeConfig1.GRPCAddr)
+	defer func() {
+		_ = client1.Close()
+	}()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	client2, err := grpc.NewClient(nodeConfig2.GRPCAddr)
+	defer func() {
+		_ = client2.Close()
+	}()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	client3, err := grpc.NewClient(nodeConfig3.GRPCAddr)
+	defer func() {
+		_ = client3.Close()
+	}()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+
+	// get cluster info from all servers
+	cluster1, err := client1.GetCluster()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	expCluster1 := map[string]interface{}{
+		nodeConfig1.NodeId: map[string]interface{}{
+			"node_config": nodeConfig1.ToMap(),
+			"state":       raft.Leader.String(),
+		},
+		nodeConfig2.NodeId: map[string]interface{}{
+			"node_config": nodeConfig2.ToMap(),
+			"state":       raft.Follower.String(),
+		},
+		nodeConfig3.NodeId: map[string]interface{}{
+			"node_config": nodeConfig3.ToMap(),
+			"state":       raft.Follower.String(),
+		},
+	}
+	actCluster1 := cluster1
+	if !reflect.DeepEqual(expCluster1, actCluster1) {
+		t.Errorf("expected content to see %v, saw %v", expCluster1, actCluster1)
+	}
+
+	cluster2, err := client2.GetCluster()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	expCluster2 := map[string]interface{}{
+		nodeConfig1.NodeId: map[string]interface{}{
+			"node_config": nodeConfig1.ToMap(),
+			"state":       raft.Leader.String(),
+		},
+		nodeConfig2.NodeId: map[string]interface{}{
+			"node_config": nodeConfig2.ToMap(),
+			"state":       raft.Follower.String(),
+		},
+		nodeConfig3.NodeId: map[string]interface{}{
+			"node_config": nodeConfig3.ToMap(),
+			"state":       raft.Follower.String(),
+		},
+	}
+	actCluster2 := cluster2
+	if !reflect.DeepEqual(expCluster2, actCluster2) {
+		t.Errorf("expected content to see %v, saw %v", expCluster2, actCluster2)
+	}
+
+	cluster3, err := client3.GetCluster()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	expCluster3 := map[string]interface{}{
+		nodeConfig1.NodeId: map[string]interface{}{
+			"node_config": nodeConfig1.ToMap(),
+			"state":       raft.Leader.String(),
+		},
+		nodeConfig2.NodeId: map[string]interface{}{
+			"node_config": nodeConfig2.ToMap(),
+			"state":       raft.Follower.String(),
+		},
+		nodeConfig3.NodeId: map[string]interface{}{
+			"node_config": nodeConfig3.ToMap(),
+			"state":       raft.Follower.String(),
+		},
+	}
+	actCluster3 := cluster3
+	if !reflect.DeepEqual(expCluster3, actCluster3) {
+		t.Errorf("expected content to see %v, saw %v", expCluster3, actCluster3)
 	}
 }

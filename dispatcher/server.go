@@ -16,38 +16,32 @@ package dispatcher
 
 import (
 	accesslog "github.com/mash/go-accesslog"
+	"github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/grpc"
 	"github.com/mosuka/blast/http"
 	"go.uber.org/zap"
 )
 
 type Server struct {
-	managerAddr string
-	clusterId   string
-
-	grpcAddr string
-	httpAddr string
+	clusterConfig *config.ClusterConfig
+	nodeConfig    *config.NodeConfig
+	logger        *zap.Logger
+	grpcLogger    *zap.Logger
+	httpLogger    accesslog.Logger
 
 	grpcService *GRPCService
 	grpcServer  *grpc.Server
 	httpRouter  *http.Router
 	httpServer  *http.Server
-
-	logger     *zap.Logger
-	grpcLogger *zap.Logger
-	httpLogger accesslog.Logger
 }
 
-func NewServer(managerAddr string, grpcAddr string, httpAddr string, logger *zap.Logger, grpcLogger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
+func NewServer(clusterConfig *config.ClusterConfig, nodeConfig *config.NodeConfig, logger *zap.Logger, grpcLogger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
 	return &Server{
-		managerAddr: managerAddr,
-
-		grpcAddr: grpcAddr,
-		httpAddr: httpAddr,
-
-		logger:     logger,
-		grpcLogger: grpcLogger,
-		httpLogger: httpLogger,
+		clusterConfig: clusterConfig,
+		nodeConfig:    nodeConfig,
+		logger:        logger,
+		grpcLogger:    grpcLogger,
+		httpLogger:    httpLogger,
 	}, nil
 }
 
@@ -55,28 +49,28 @@ func (s *Server) Start() {
 	var err error
 
 	// create gRPC service
-	s.grpcService, err = NewGRPCService(s.managerAddr, s.logger)
+	s.grpcService, err = NewGRPCService(s.clusterConfig.ManagerAddr, s.logger)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return
 	}
 
 	// create gRPC server
-	s.grpcServer, err = grpc.NewServer(s.grpcAddr, s.grpcService, s.grpcLogger)
+	s.grpcServer, err = grpc.NewServer(s.nodeConfig.GRPCAddr, s.grpcService, s.grpcLogger)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return
 	}
 
 	// create HTTP router
-	s.httpRouter, err = NewRouter(s.grpcAddr, s.logger)
+	s.httpRouter, err = NewRouter(s.nodeConfig.GRPCAddr, s.logger)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return
 	}
 
 	// create HTTP server
-	s.httpServer, err = http.NewServer(s.httpAddr, s.httpRouter, s.logger, s.httpLogger)
+	s.httpServer, err = http.NewServer(s.nodeConfig.HTTPAddr, s.httpRouter, s.logger, s.httpLogger)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return
