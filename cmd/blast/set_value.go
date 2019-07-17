@@ -15,6 +15,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -23,13 +24,30 @@ import (
 	"github.com/urfave/cli"
 )
 
-func execDeleteState(c *cli.Context) error {
+func execSetValue(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 
 	key := c.Args().Get(0)
 	if key == "" {
 		err := errors.New("key argument must be set")
 		return err
+	}
+
+	valueStr := c.Args().Get(1)
+	if valueStr == "" {
+		err := errors.New("value argument must be set")
+		return err
+	}
+
+	var value interface{}
+	err := json.Unmarshal([]byte(valueStr), &value)
+	if err != nil {
+		switch err.(type) {
+		case *json.SyntaxError:
+			value = valueStr
+		default:
+			return err
+		}
 	}
 
 	client, err := grpc.NewClient(grpcAddr)
@@ -43,7 +61,7 @@ func execDeleteState(c *cli.Context) error {
 		}
 	}()
 
-	err = client.DeleteState(key)
+	err = client.SetValue(key, value)
 	if err != nil {
 		return err
 	}

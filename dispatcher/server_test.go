@@ -1,3 +1,17 @@
+// Copyright (c) 2019 Minoru Osuka
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 		http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package dispatcher
 
 import (
@@ -8,15 +22,11 @@ import (
 	"time"
 
 	"github.com/hashicorp/raft"
-
-	"github.com/mosuka/blast/grpc"
-
-	"github.com/mosuka/blast/indexer"
-
-	"github.com/mosuka/blast/manager"
-
 	"github.com/mosuka/blast/config"
+	"github.com/mosuka/blast/grpc"
+	"github.com/mosuka/blast/indexer"
 	"github.com/mosuka/blast/logutils"
+	"github.com/mosuka/blast/manager"
 	"github.com/mosuka/blast/testutils"
 )
 
@@ -137,8 +147,32 @@ func TestServer_Start(t *testing.T) {
 		},
 	}
 	actManagerCluster1 := managerCluster1
-	if !reflect.DeepEqual(expManagerCluster1, actManagerCluster1) {
-		t.Fatalf("expected content to see %v, saw %v", expManagerCluster1, actManagerCluster1)
+	expManagerNodeConfig1 := expManagerCluster1[managerNodeConfig1.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
+	actManagerNodeConfig1 := actManagerCluster1[managerNodeConfig1.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
+	if !reflect.DeepEqual(expManagerNodeConfig1, actManagerNodeConfig1) {
+		t.Fatalf("expected content to see %v, saw %v", expManagerNodeConfig1, actManagerNodeConfig1)
+	}
+	actManagerState1 := actManagerCluster1[managerNodeConfig1.NodeId].(map[string]interface{})["state"].(string)
+	if raft.Leader.String() != actManagerState1 && raft.Follower.String() != actManagerState1 {
+		t.Fatalf("expected content to see %v or %v, saw %v", raft.Leader.String(), raft.Follower.String(), actManagerState1)
+	}
+	expManagerNodeConfig2 := expManagerCluster1[managerNodeConfig2.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
+	actManagerNodeConfig2 := actManagerCluster1[managerNodeConfig2.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
+	if !reflect.DeepEqual(expManagerNodeConfig2, actManagerNodeConfig2) {
+		t.Fatalf("expected content to see %v, saw %v", expManagerNodeConfig2, actManagerNodeConfig2)
+	}
+	actManagerState2 := actManagerCluster1[managerNodeConfig2.NodeId].(map[string]interface{})["state"].(string)
+	if raft.Leader.String() != actManagerState2 && raft.Follower.String() != actManagerState2 {
+		t.Fatalf("expected content to see %v or %v, saw %v", raft.Leader.String(), raft.Follower.String(), actManagerState2)
+	}
+	expManagerNodeConfig3 := expManagerCluster1[managerNodeConfig3.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
+	actManagerNodeConfig3 := actManagerCluster1[managerNodeConfig3.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
+	if !reflect.DeepEqual(expManagerNodeConfig3, actManagerNodeConfig3) {
+		t.Fatalf("expected content to see %v, saw %v", expManagerNodeConfig3, actManagerNodeConfig3)
+	}
+	actManagerState3 := actManagerCluster1[managerNodeConfig3.NodeId].(map[string]interface{})["state"].(string)
+	if raft.Leader.String() != actManagerState3 && raft.Follower.String() != actManagerState3 {
+		t.Fatalf("expected content to see %v or %v, saw %v", raft.Leader.String(), raft.Follower.String(), actManagerState3)
 	}
 
 	//
@@ -233,8 +267,32 @@ func TestServer_Start(t *testing.T) {
 		},
 	}
 	actIndexerCluster1 := indexerCluster1
-	if !reflect.DeepEqual(expIndexerCluster1, actIndexerCluster1) {
-		t.Fatalf("expected content to see %v, saw %v", expIndexerCluster1, actIndexerCluster1)
+	expIndexerNodeConfig1 := expIndexerCluster1[indexerNodeConfig1.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
+	actIndexerNodeConfig1 := actIndexerCluster1[indexerNodeConfig1.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
+	if !reflect.DeepEqual(expIndexerNodeConfig1, actIndexerNodeConfig1) {
+		t.Fatalf("expected content to see %v, saw %v", expIndexerNodeConfig1, actIndexerNodeConfig1)
+	}
+	actIndexerState1 := actIndexerCluster1[indexerNodeConfig1.NodeId].(map[string]interface{})["state"].(string)
+	if raft.Leader.String() != actIndexerState1 && raft.Follower.String() != actIndexerState1 {
+		t.Fatalf("expected content to see %v or %v, saw %v", raft.Leader.String(), raft.Follower.String(), actIndexerState1)
+	}
+	expIndexerNodeConfig2 := expIndexerCluster1[indexerNodeConfig2.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
+	actIndexerNodeConfig2 := actIndexerCluster1[indexerNodeConfig2.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
+	if !reflect.DeepEqual(expIndexerNodeConfig2, actIndexerNodeConfig2) {
+		t.Fatalf("expected content to see %v, saw %v", expIndexerNodeConfig2, actIndexerNodeConfig2)
+	}
+	actIndexerState2 := actIndexerCluster1[indexerNodeConfig2.NodeId].(map[string]interface{})["state"].(string)
+	if raft.Leader.String() != actIndexerState2 && raft.Follower.String() != actIndexerState2 {
+		t.Fatalf("expected content to see %v or %v, saw %v", raft.Leader.String(), raft.Follower.String(), actIndexerState2)
+	}
+	expIndexerNodeConfig3 := expIndexerCluster1[indexerNodeConfig3.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
+	actIndexerNodeConfig3 := actIndexerCluster1[indexerNodeConfig3.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
+	if !reflect.DeepEqual(expIndexerNodeConfig3, actIndexerNodeConfig3) {
+		t.Fatalf("expected content to see %v, saw %v", expIndexerNodeConfig3, actIndexerNodeConfig3)
+	}
+	actIndexerState3 := actIndexerCluster1[indexerNodeConfig3.NodeId].(map[string]interface{})["state"].(string)
+	if raft.Leader.String() != actIndexerState3 && raft.Follower.String() != actIndexerState3 {
+		t.Fatalf("expected content to see %v or %v, saw %v", raft.Leader.String(), raft.Follower.String(), actIndexerState3)
 	}
 
 	//
@@ -300,6 +358,62 @@ func TestServer_Start(t *testing.T) {
 	indexer6.Start()
 	// sleep
 	time.Sleep(5 * time.Second)
+
+	// gRPC client for manager1
+	indexerClient2, err := grpc.NewClient(indexerNodeConfig4.GRPCAddr)
+	defer func() {
+		_ = indexerClient1.Close()
+	}()
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	// get cluster info from manager1
+	indexerCluster2, err := indexerClient2.GetCluster()
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	expIndexerCluster2 := map[string]interface{}{
+		indexerNodeConfig4.NodeId: map[string]interface{}{
+			"node_config": indexerNodeConfig4.ToMap(),
+			"state":       raft.Leader.String(),
+		},
+		indexerNodeConfig5.NodeId: map[string]interface{}{
+			"node_config": indexerNodeConfig5.ToMap(),
+			"state":       raft.Follower.String(),
+		},
+		indexerNodeConfig6.NodeId: map[string]interface{}{
+			"node_config": indexerNodeConfig6.ToMap(),
+			"state":       raft.Follower.String(),
+		},
+	}
+	actIndexerCluster2 := indexerCluster2
+	expIndexerNodeConfig4 := expIndexerCluster2[indexerNodeConfig4.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
+	actIndexerNodeConfig4 := actIndexerCluster2[indexerNodeConfig4.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
+	if !reflect.DeepEqual(expIndexerNodeConfig4, actIndexerNodeConfig4) {
+		t.Fatalf("expected content to see %v, saw %v", expIndexerNodeConfig4, actIndexerNodeConfig4)
+	}
+	actIndexerState4 := actIndexerCluster2[indexerNodeConfig4.NodeId].(map[string]interface{})["state"].(string)
+	if raft.Leader.String() != actIndexerState4 && raft.Follower.String() != actIndexerState4 {
+		t.Fatalf("expected content to see %v or %v, saw %v", raft.Leader.String(), raft.Follower.String(), actIndexerState4)
+	}
+	expIndexerNodeConfig5 := expIndexerCluster2[indexerNodeConfig5.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
+	actIndexerNodeConfig5 := actIndexerCluster2[indexerNodeConfig5.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
+	if !reflect.DeepEqual(expIndexerNodeConfig5, actIndexerNodeConfig5) {
+		t.Fatalf("expected content to see %v, saw %v", expIndexerNodeConfig5, actIndexerNodeConfig5)
+	}
+	actIndexerState5 := actIndexerCluster2[indexerNodeConfig5.NodeId].(map[string]interface{})["state"].(string)
+	if raft.Leader.String() != actIndexerState5 && raft.Follower.String() != actIndexerState5 {
+		t.Fatalf("expected content to see %v or %v, saw %v", raft.Leader.String(), raft.Follower.String(), actIndexerState5)
+	}
+	expIndexerNodeConfig6 := expIndexerCluster2[indexerNodeConfig6.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
+	actIndexerNodeConfig6 := actIndexerCluster2[indexerNodeConfig6.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
+	if !reflect.DeepEqual(expIndexerNodeConfig6, actIndexerNodeConfig6) {
+		t.Fatalf("expected content to see %v, saw %v", expIndexerNodeConfig6, actIndexerNodeConfig6)
+	}
+	actIndexerState6 := actIndexerCluster2[indexerNodeConfig6.NodeId].(map[string]interface{})["state"].(string)
+	if raft.Leader.String() != actIndexerState6 && raft.Follower.String() != actIndexerState6 {
+		t.Fatalf("expected content to see %v or %v, saw %v", raft.Leader.String(), raft.Follower.String(), actIndexerState6)
+	}
 
 	//
 	// dispatcher

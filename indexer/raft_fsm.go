@@ -25,6 +25,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/hashicorp/raft"
 	"github.com/mosuka/blast/config"
+	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/maputils"
 	"github.com/mosuka/blast/protobuf"
 	"go.uber.org/zap"
@@ -37,7 +38,8 @@ type RaftFSM struct {
 
 	metadata      maputils.Map
 	metadataMutex sync.RWMutex
-	index         *Index
+
+	index *Index
 }
 
 func NewRaftFSM(path string, indexConfig *config.IndexConfig, logger *zap.Logger) (*RaftFSM, error) {
@@ -76,35 +78,38 @@ func (f *RaftFSM) GetNodeConfig(nodeId string) (map[string]interface{}, error) {
 	f.metadataMutex.RLock()
 	defer f.metadataMutex.RUnlock()
 
-	value, err := f.metadata.Get(nodeId)
+	nodeConfig, err := f.metadata.Get(nodeId)
 	if err != nil {
-		f.logger.Error(err.Error())
+		f.logger.Error(err.Error(), zap.String("node_id", nodeId))
+		if err == maputils.ErrNotFound {
+			return nil, blasterrors.ErrNotFound
+		}
 		return nil, err
 	}
 
-	return value.(maputils.Map).ToMap(), nil
+	return nodeConfig.(maputils.Map).ToMap(), nil
 }
 
-func (f *RaftFSM) applySetNodeConfig(nodeId string, nodeConfig map[string]interface{}) error {
+func (f *RaftFSM) SetNodeConfig(nodeId string, nodeConfig map[string]interface{}) error {
 	f.metadataMutex.RLock()
 	defer f.metadataMutex.RUnlock()
 
 	err := f.metadata.Merge(nodeId, nodeConfig)
 	if err != nil {
-		f.logger.Error(err.Error())
+		f.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.Any("node_config", nodeConfig))
 		return err
 	}
 
 	return nil
 }
 
-func (f *RaftFSM) applyDeleteNodeConfig(nodeId string) error {
+func (f *RaftFSM) DeleteNodeConfig(nodeId string) error {
 	f.metadataMutex.RLock()
 	defer f.metadataMutex.RUnlock()
 
 	err := f.metadata.Delete(nodeId)
 	if err != nil {
-		f.logger.Error(err.Error())
+		f.logger.Error(err.Error(), zap.String("node_id", nodeId))
 		return err
 	}
 
@@ -121,7 +126,7 @@ func (f *RaftFSM) GetDocument(id string) (map[string]interface{}, error) {
 	return fields, nil
 }
 
-func (f *RaftFSM) applyIndexDocument(id string, fields map[string]interface{}) error {
+func (f *RaftFSM) IndexDocument(id string, fields map[string]interface{}) error {
 	err := f.index.Index(id, fields)
 	if err != nil {
 		f.logger.Error(err.Error())
@@ -131,7 +136,7 @@ func (f *RaftFSM) applyIndexDocument(id string, fields map[string]interface{}) e
 	return nil
 }
 
-func (f *RaftFSM) applyIndexDocuments(docs []map[string]interface{}) (int, error) {
+func (f *RaftFSM) IndexDocuments(docs []map[string]interface{}) (int, error) {
 	count, err := f.index.BulkIndex(docs)
 	if err != nil {
 		f.logger.Error(err.Error())
@@ -141,7 +146,7 @@ func (f *RaftFSM) applyIndexDocuments(docs []map[string]interface{}) (int, error
 	return count, nil
 }
 
-func (f *RaftFSM) applyDeleteDocument(id string) error {
+func (f *RaftFSM) DeleteDocument(id string) error {
 	err := f.index.Delete(id)
 	if err != nil {
 		f.logger.Error(err.Error())
@@ -151,7 +156,7 @@ func (f *RaftFSM) applyDeleteDocument(id string) error {
 	return nil
 }
 
-func (f *RaftFSM) applyDeleteDocuments(ids []string) (int, error) {
+func (f *RaftFSM) DeleteDocuments(ids []string) (int, error) {
 	count, err := f.index.BulkDelete(ids)
 	if err != nil {
 		f.logger.Error(err.Error())
@@ -169,6 +174,14 @@ func (f *RaftFSM) Search(request *bleve.SearchRequest) (*bleve.SearchResult, err
 	}
 
 	return result, nil
+}
+
+func (f *RaftFSM) GetIndexConfig() (map[string]interface{}, error) {
+	return f.index.Config()
+}
+
+func (f *RaftFSM) GetIndexStats() (map[string]interface{}, error) {
+	return f.index.Stats()
 }
 
 type fsmResponse struct {
@@ -200,7 +213,7 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
-		err = f.applySetNodeConfig(data["node_id"].(string), data["node_config"].(map[string]interface{}))
+		err = f.SetNodeConfig(data["node_id"].(string), data["node_config"].(map[string]interface{}))
 		return &fsmResponse{error: err}
 	case deleteNode:
 		var data map[string]interface{}
@@ -209,7 +222,7 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
-		err = f.applyDeleteNodeConfig(data["node_id"].(string))
+		err = f.DeleteNodeConfig(data["node_id"].(string))
 		return &fsmResponse{error: err}
 	case indexDocument:
 		var data []map[string]interface{}
@@ -218,7 +231,7 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 			f.logger.Error(err.Error())
 			return &fsmIndexDocumentResponse{count: -1, error: err}
 		}
-		count, err := f.applyIndexDocuments(data)
+		count, err := f.IndexDocuments(data)
 		return &fsmIndexDocumentResponse{count: count, error: err}
 	case deleteDocument:
 		var data []string
@@ -227,7 +240,7 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 			f.logger.Error(err.Error())
 			return &fsmDeleteDocumentResponse{count: -1, error: err}
 		}
-		count, err := f.applyDeleteDocuments(data)
+		count, err := f.DeleteDocuments(data)
 		return &fsmDeleteDocumentResponse{count: count, error: err}
 	default:
 		err = errors.New("unsupported command")
@@ -236,22 +249,18 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 	}
 }
 
-func (f *RaftFSM) GetIndexConfig() (map[string]interface{}, error) {
-	return f.index.Config()
-}
-
-func (f *RaftFSM) GetIndexStats() (map[string]interface{}, error) {
-	return f.index.Stats()
-}
-
 func (f *RaftFSM) Snapshot() (raft.FSMSnapshot, error) {
-	return &IndexFSMSnapshot{
+	f.logger.Info("snapshot")
+
+	return &RaftFSMSnapshot{
 		index:  f.index,
 		logger: f.logger,
 	}, nil
 }
 
 func (f *RaftFSM) Restore(rc io.ReadCloser) error {
+	f.logger.Info("restore")
+
 	defer func() {
 		err := rc.Close()
 		if err != nil {
@@ -306,12 +315,14 @@ func (f *RaftFSM) Restore(rc io.ReadCloser) error {
 
 // ---------------------
 
-type IndexFSMSnapshot struct {
+type RaftFSMSnapshot struct {
 	index  *Index
 	logger *zap.Logger
 }
 
-func (f *IndexFSMSnapshot) Persist(sink raft.SnapshotSink) error {
+func (f *RaftFSMSnapshot) Persist(sink raft.SnapshotSink) error {
+	f.logger.Info("persist")
+
 	defer func() {
 		err := sink.Close()
 		if err != nil {
@@ -349,6 +360,6 @@ func (f *IndexFSMSnapshot) Persist(sink raft.SnapshotSink) error {
 	return nil
 }
 
-func (f *IndexFSMSnapshot) Release() {
+func (f *RaftFSMSnapshot) Release() {
 	f.logger.Info("release")
 }

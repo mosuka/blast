@@ -27,7 +27,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func execWatchState(c *cli.Context) error {
+func execWatchStore(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 
 	key := c.Args().Get(0)
@@ -43,7 +43,7 @@ func execWatchState(c *cli.Context) error {
 		}
 	}()
 
-	watchClient, err := client.WatchState(key)
+	watchClient, err := client.WatchStore(key)
 	if err != nil {
 		return err
 	}

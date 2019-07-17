@@ -23,7 +23,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func execGetState(c *cli.Context) error {
+func execGetValue(c *cli.Context) error {
 	grpcAddr := c.String("grpc-addr")
 
 	key := c.Args().Get(0)
@@ -39,7 +39,7 @@ func execGetState(c *cli.Context) error {
 		}
 	}()
 
-	value, err := client.GetState(key)
+	value, err := client.GetValue(key)
 	if err != nil {
 		return err
 	}

@@ -18,15 +18,15 @@ import (
 	"net"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	//grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
-	//grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
-	//grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	//grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/mosuka/blast/protobuf"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	//grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	//grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
+	//grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	//grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 )
 
 type Server struct {
@@ -87,7 +87,8 @@ func (s *Server) Start() error {
 
 func (s *Server) Stop() error {
 	s.logger.Info("stop server")
-	s.server.Stop() // TODO: graceful stop
+	s.server.Stop()
+	//s.server.GracefulStop()
 
 	return nil
 }

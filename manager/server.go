@@ -26,10 +26,9 @@ type Server struct {
 	clusterConfig *config.ClusterConfig
 	nodeConfig    *config.NodeConfig
 	indexConfig   *config.IndexConfig
-
-	logger     *zap.Logger
-	grpcLogger *zap.Logger
-	httpLogger accesslog.Logger
+	logger        *zap.Logger
+	grpcLogger    *zap.Logger
+	httpLogger    accesslog.Logger
 
 	raftServer  *RaftServer
 	grpcService *GRPCService

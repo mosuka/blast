@@ -427,7 +427,7 @@ func TestServer_GetIndexMapping(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	actIntr, err := client.GetState("index_config/index_mapping")
+	actIntr, err := client.GetValue("index_config/index_mapping")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -505,7 +505,7 @@ func TestServer_GetIndexType(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	actIndexType, err := client.GetState("index_config/index_type")
+	actIndexType, err := client.GetValue("index_config/index_type")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -578,7 +578,7 @@ func TestServer_GetIndexStorageType(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	actIndexStorageType, err := client.GetState("index_config/index_storage_type")
+	actIndexStorageType, err := client.GetValue("index_config/index_storage_type")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -647,13 +647,13 @@ func TestServer_SetState(t *testing.T) {
 	}
 
 	// set value
-	err = client.SetState("test/key1", "val1")
+	err = client.SetValue("test/key1", "val1")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 
 	// get value
-	val1, err := client.GetState("test/key1")
+	val1, err := client.GetValue("test/key1")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -726,13 +726,13 @@ func TestServer_GetState(t *testing.T) {
 	}
 
 	// set value
-	err = client.SetState("test/key1", "val1")
+	err = client.SetValue("test/key1", "val1")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 
 	// get value
-	val1, err := client.GetState("test/key1")
+	val1, err := client.GetValue("test/key1")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -805,13 +805,13 @@ func TestServer_DeleteState(t *testing.T) {
 	}
 
 	// set value
-	err = client.SetState("test/key1", "val1")
+	err = client.SetValue("test/key1", "val1")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 
 	// get value
-	val1, err := client.GetState("test/key1")
+	val1, err := client.GetValue("test/key1")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -825,12 +825,12 @@ func TestServer_DeleteState(t *testing.T) {
 	}
 
 	// delete value
-	err = client.DeleteState("test/key1")
+	err = client.DeleteValue("test/key1")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 
-	val1, err = client.GetState("test/key1")
+	val1, err = client.GetValue("test/key1")
 	if err != blasterrors.ErrNotFound {
 		t.Errorf("%v", err)
 	}
@@ -840,7 +840,7 @@ func TestServer_DeleteState(t *testing.T) {
 	}
 
 	// delete non-existing data
-	err = client.DeleteState("test/non-existing")
+	err = client.DeleteValue("test/non-existing")
 	if err != blasterrors.ErrNotFound {
 		t.Errorf("%v", err)
 	}
@@ -1701,7 +1701,7 @@ func TestCluster_GetState(t *testing.T) {
 	}
 
 	// get index mapping from all nodes
-	indexConfig1, err := client1.GetState("index_config")
+	indexConfig1, err := client1.GetValue("index_config")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -1711,7 +1711,7 @@ func TestCluster_GetState(t *testing.T) {
 		t.Errorf("expected content to see %v, saw %v", expIndexConfig1, actIndexConfig1)
 	}
 
-	indexConfig2, err := client2.GetState("index_config")
+	indexConfig2, err := client2.GetValue("index_config")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -1721,7 +1721,7 @@ func TestCluster_GetState(t *testing.T) {
 		t.Errorf("expected content to see %v, saw %v", expIndexConfig2, actIndexConfig2)
 	}
 
-	indexConfig3, err := client3.GetState("index_config")
+	indexConfig3, err := client3.GetValue("index_config")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -1835,14 +1835,14 @@ func TestCluster_SetState(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	err = client1.SetState("test/key1", "val1")
+	err = client1.SetValue("test/key1", "val1")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 	time.Sleep(2 * time.Second) // wait for data to propagate
 
 	// get value from all nodes
-	val11, err := client1.GetState("test/key1")
+	val11, err := client1.GetValue("test/key1")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -1851,7 +1851,7 @@ func TestCluster_SetState(t *testing.T) {
 	if expVal11 != actVal11 {
 		t.Errorf("expected content to see %v, saw %v", expVal11, actVal11)
 	}
-	val21, err := client2.GetState("test/key1")
+	val21, err := client2.GetValue("test/key1")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -1860,7 +1860,7 @@ func TestCluster_SetState(t *testing.T) {
 	if expVal21 != actVal21 {
 		t.Errorf("expected content to see %v, saw %v", expVal21, actVal21)
 	}
-	val31, err := client3.GetState("test/key1")
+	val31, err := client3.GetValue("test/key1")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -1870,14 +1870,14 @@ func TestCluster_SetState(t *testing.T) {
 		t.Errorf("expected content to see %v, saw %v", expVal31, actVal31)
 	}
 
-	err = client2.SetState("test/key2", "val2")
+	err = client2.SetValue("test/key2", "val2")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 	time.Sleep(2 * time.Second) // wait for data to propagate
 
 	// get value from all nodes
-	val12, err := client1.GetState("test/key2")
+	val12, err := client1.GetValue("test/key2")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -1886,7 +1886,7 @@ func TestCluster_SetState(t *testing.T) {
 	if expVal12 != actVal12 {
 		t.Errorf("expected content to see %v, saw %v", expVal12, actVal12)
 	}
-	val22, err := client2.GetState("test/key2")
+	val22, err := client2.GetValue("test/key2")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -1895,7 +1895,7 @@ func TestCluster_SetState(t *testing.T) {
 	if expVal22 != actVal22 {
 		t.Errorf("expected content to see %v, saw %v", expVal22, actVal22)
 	}
-	val32, err := client3.GetState("test/key2")
+	val32, err := client3.GetValue("test/key2")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -1905,14 +1905,14 @@ func TestCluster_SetState(t *testing.T) {
 		t.Errorf("expected content to see %v, saw %v", expVal32, actVal32)
 	}
 
-	err = client3.SetState("test/key3", "val3")
+	err = client3.SetValue("test/key3", "val3")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 	time.Sleep(2 * time.Second) // wait for data to propagate
 
 	// get value from all nodes
-	val13, err := client1.GetState("test/key3")
+	val13, err := client1.GetValue("test/key3")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -1921,7 +1921,7 @@ func TestCluster_SetState(t *testing.T) {
 	if expVal13 != actVal13 {
 		t.Errorf("expected content to see %v, saw %v", expVal13, actVal13)
 	}
-	val23, err := client2.GetState("test/key3")
+	val23, err := client2.GetValue("test/key3")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -1930,7 +1930,7 @@ func TestCluster_SetState(t *testing.T) {
 	if expVal23 != actVal23 {
 		t.Errorf("expected content to see %v, saw %v", expVal23, actVal23)
 	}
-	val33, err := client3.GetState("test/key3")
+	val33, err := client3.GetValue("test/key3")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -2045,14 +2045,14 @@ func TestCluster_DeleteState(t *testing.T) {
 	}
 
 	// set test data before delete
-	err = client1.SetState("test/key1", "val1")
+	err = client1.SetValue("test/key1", "val1")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 	time.Sleep(2 * time.Second) // wait for data to propagate
 
 	// get value from all nodes
-	val11, err := client1.GetState("test/key1")
+	val11, err := client1.GetValue("test/key1")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -2061,7 +2061,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	if expVal11 != actVal11 {
 		t.Errorf("expected content to see %v, saw %v", expVal11, actVal11)
 	}
-	val21, err := client2.GetState("test/key1")
+	val21, err := client2.GetValue("test/key1")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -2070,7 +2070,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	if expVal21 != actVal21 {
 		t.Errorf("expected content to see %v, saw %v", expVal21, actVal21)
 	}
-	val31, err := client3.GetState("test/key1")
+	val31, err := client3.GetValue("test/key1")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -2080,14 +2080,14 @@ func TestCluster_DeleteState(t *testing.T) {
 		t.Errorf("expected content to see %v, saw %v", expVal31, actVal31)
 	}
 
-	err = client2.SetState("test/key2", "val2")
+	err = client2.SetValue("test/key2", "val2")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 	time.Sleep(2 * time.Second) // wait for data to propagate
 
 	// get value from all nodes
-	val12, err := client1.GetState("test/key2")
+	val12, err := client1.GetValue("test/key2")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -2096,7 +2096,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	if expVal12 != actVal12 {
 		t.Errorf("expected content to see %v, saw %v", expVal12, actVal12)
 	}
-	val22, err := client2.GetState("test/key2")
+	val22, err := client2.GetValue("test/key2")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -2105,7 +2105,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	if expVal22 != actVal22 {
 		t.Errorf("expected content to see %v, saw %v", expVal22, actVal22)
 	}
-	val32, err := client3.GetState("test/key2")
+	val32, err := client3.GetValue("test/key2")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -2115,14 +2115,14 @@ func TestCluster_DeleteState(t *testing.T) {
 		t.Errorf("expected content to see %v, saw %v", expVal32, actVal32)
 	}
 
-	err = client3.SetState("test/key3", "val3")
+	err = client3.SetValue("test/key3", "val3")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 	time.Sleep(2 * time.Second) // wait for data to propagate
 
 	// get value from all nodes
-	val13, err := client1.GetState("test/key3")
+	val13, err := client1.GetValue("test/key3")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -2131,7 +2131,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	if expVal13 != actVal13 {
 		t.Errorf("expected content to see %v, saw %v", expVal13, actVal13)
 	}
-	val23, err := client2.GetState("test/key3")
+	val23, err := client2.GetValue("test/key3")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -2140,7 +2140,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	if expVal23 != actVal23 {
 		t.Errorf("expected content to see %v, saw %v", expVal23, actVal23)
 	}
-	val33, err := client3.GetState("test/key3")
+	val33, err := client3.GetValue("test/key3")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -2151,28 +2151,28 @@ func TestCluster_DeleteState(t *testing.T) {
 	}
 
 	// delete
-	err = client1.DeleteState("test/key1")
+	err = client1.DeleteValue("test/key1")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 	time.Sleep(2 * time.Second) // wait for data to propagate
 
 	// get value from all nodes
-	val11, err = client1.GetState("test/key1")
+	val11, err = client1.GetValue("test/key1")
 	if err != blasterrors.ErrNotFound {
 		t.Errorf("%v", err)
 	}
 	if val11 != nil {
 		t.Errorf("%v", err)
 	}
-	val21, err = client2.GetState("test/key1")
+	val21, err = client2.GetValue("test/key1")
 	if err != blasterrors.ErrNotFound {
 		t.Errorf("%v", err)
 	}
 	if val21 != nil {
 		t.Errorf("%v", err)
 	}
-	val31, err = client3.GetState("test/key1")
+	val31, err = client3.GetValue("test/key1")
 	if err != blasterrors.ErrNotFound {
 		t.Errorf("%v", err)
 	}
@@ -2180,28 +2180,28 @@ func TestCluster_DeleteState(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	err = client2.DeleteState("test/key2")
+	err = client2.DeleteValue("test/key2")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 	time.Sleep(2 * time.Second) // wait for data to propagate
 
 	// get value from all nodes
-	val12, err = client1.GetState("test/key2")
+	val12, err = client1.GetValue("test/key2")
 	if err != blasterrors.ErrNotFound {
 		t.Errorf("%v", err)
 	}
 	if val12 != nil {
 		t.Errorf("%v", err)
 	}
-	val22, err = client2.GetState("test/key2")
+	val22, err = client2.GetValue("test/key2")
 	if err != blasterrors.ErrNotFound {
 		t.Errorf("%v", err)
 	}
 	if val22 != nil {
 		t.Errorf("%v", err)
 	}
-	val32, err = client3.GetState("test/key2")
+	val32, err = client3.GetValue("test/key2")
 	if err != blasterrors.ErrNotFound {
 		t.Errorf("%v", err)
 	}
@@ -2209,28 +2209,28 @@ func TestCluster_DeleteState(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	err = client3.DeleteState("test/key3")
+	err = client3.DeleteValue("test/key3")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 	time.Sleep(2 * time.Second) // wait for data to propagate
 
 	// get value from all nodes
-	val13, err = client1.GetState("test/key3")
+	val13, err = client1.GetValue("test/key3")
 	if err != blasterrors.ErrNotFound {
 		t.Errorf("%v", err)
 	}
 	if val13 != nil {
 		t.Errorf("%v", err)
 	}
-	val23, err = client2.GetState("test/key3")
+	val23, err = client2.GetValue("test/key3")
 	if err != blasterrors.ErrNotFound {
 		t.Errorf("%v", err)
 	}
 	if val23 != nil {
 		t.Errorf("%v", err)
 	}
-	val33, err = client3.GetState("test/key3")
+	val33, err = client3.GetValue("test/key3")
 	if err != blasterrors.ErrNotFound {
 		t.Errorf("%v", err)
 	}
@@ -2239,19 +2239,19 @@ func TestCluster_DeleteState(t *testing.T) {
 	}
 
 	// delete non-existing data from manager1
-	err = client1.DeleteState("test/non-existing")
+	err = client1.DeleteValue("test/non-existing")
 	if err == nil {
 		t.Errorf("%v", err)
 	}
 
 	// delete non-existing data from manager2
-	err = client2.DeleteState("test/non-existing")
+	err = client2.DeleteValue("test/non-existing")
 	if err == nil {
 		t.Errorf("%v", err)
 	}
 
 	// delete non-existing data from manager3
-	err = client3.DeleteState("test/non-existing")
+	err = client3.DeleteValue("test/non-existing")
 	if err == nil {
 		t.Errorf("%v", err)
 	}
