@@ -52,17 +52,17 @@ func TestRaftFSM_GetNode(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	_ = fsm.applySetNodeConfig("node1", map[string]interface{}{
+	_ = fsm.SetNodeConfig("node1", map[string]interface{}{
 		"bind_addr": ":16060",
 		"grpc_addr": ":17070",
 		"http_addr": ":18080",
 	})
-	_ = fsm.applySetNodeConfig("node2", map[string]interface{}{
+	_ = fsm.SetNodeConfig("node2", map[string]interface{}{
 		"bind_addr": ":16061",
 		"grpc_addr": ":17071",
 		"http_addr": ":18081",
 	})
-	_ = fsm.applySetNodeConfig("node3", map[string]interface{}{
+	_ = fsm.SetNodeConfig("node3", map[string]interface{}{
 		"bind_addr": ":16062",
 		"grpc_addr": ":17072",
 		"http_addr": ":18082",
@@ -114,17 +114,17 @@ func TestRaftFSM_SetNode(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	_ = fsm.applySetNodeConfig("node1", map[string]interface{}{
+	_ = fsm.SetNodeConfig("node1", map[string]interface{}{
 		"bind_addr": ":16060",
 		"grpc_addr": ":17070",
 		"http_addr": ":18080",
 	})
-	_ = fsm.applySetNodeConfig("node2", map[string]interface{}{
+	_ = fsm.SetNodeConfig("node2", map[string]interface{}{
 		"bind_addr": ":16061",
 		"grpc_addr": ":17071",
 		"http_addr": ":18081",
 	})
-	_ = fsm.applySetNodeConfig("node3", map[string]interface{}{
+	_ = fsm.SetNodeConfig("node3", map[string]interface{}{
 		"bind_addr": ":16062",
 		"grpc_addr": ":17072",
 		"http_addr": ":18082",
@@ -144,7 +144,7 @@ func TestRaftFSM_SetNode(t *testing.T) {
 		t.Errorf("expected content to see %v, saw %v", exp1, act1)
 	}
 
-	_ = fsm.applySetNodeConfig("node2", map[string]interface{}{
+	_ = fsm.SetNodeConfig("node2", map[string]interface{}{
 		"bind_addr": ":16061",
 		"grpc_addr": ":17071",
 		"http_addr": ":18081",
@@ -196,17 +196,17 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	_ = fsm.applySetNodeConfig("node1", map[string]interface{}{
+	_ = fsm.SetNodeConfig("node1", map[string]interface{}{
 		"bind_addr": ":16060",
 		"grpc_addr": ":17070",
 		"http_addr": ":18080",
 	})
-	_ = fsm.applySetNodeConfig("node2", map[string]interface{}{
+	_ = fsm.SetNodeConfig("node2", map[string]interface{}{
 		"bind_addr": ":16061",
 		"grpc_addr": ":17071",
 		"http_addr": ":18081",
 	})
-	_ = fsm.applySetNodeConfig("node3", map[string]interface{}{
+	_ = fsm.SetNodeConfig("node3", map[string]interface{}{
 		"bind_addr": ":16062",
 		"grpc_addr": ":17072",
 		"http_addr": ":18082",
@@ -226,7 +226,7 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 		t.Errorf("expected content to see %v, saw %v", exp1, act1)
 	}
 
-	err = fsm.applyDeleteNodeConfig("node2")
+	err = fsm.DeleteNodeConfig("node2")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -271,12 +271,12 @@ func TestRaftFSM_Get(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	err = fsm.applySet("/", map[string]interface{}{"a": 1}, false)
+	err = fsm.SetValue("/", map[string]interface{}{"a": 1}, false)
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 
-	value, err := fsm.Get("/a")
+	value, err := fsm.GetValue("/a")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -318,13 +318,13 @@ func TestRaftFSM_Set(t *testing.T) {
 	}
 
 	// set {"a": 1}
-	err = fsm.applySet("/", map[string]interface{}{
+	err = fsm.SetValue("/", map[string]interface{}{
 		"a": 1,
 	}, false)
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	val1, err := fsm.Get("/")
+	val1, err := fsm.GetValue("/")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -337,13 +337,13 @@ func TestRaftFSM_Set(t *testing.T) {
 	}
 
 	// merge {"a": "A"}
-	_ = fsm.applySet("/", map[string]interface{}{
+	_ = fsm.SetValue("/", map[string]interface{}{
 		"a": "A",
 	}, true)
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	val2, err := fsm.Get("/")
+	val2, err := fsm.GetValue("/")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -356,7 +356,7 @@ func TestRaftFSM_Set(t *testing.T) {
 	}
 
 	// set {"a": {"b": "AB"}}
-	err = fsm.applySet("/", map[string]interface{}{
+	err = fsm.SetValue("/", map[string]interface{}{
 		"a": map[string]interface{}{
 			"b": "AB",
 		},
@@ -365,7 +365,7 @@ func TestRaftFSM_Set(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	val3, err := fsm.Get("/")
+	val3, err := fsm.GetValue("/")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -380,7 +380,7 @@ func TestRaftFSM_Set(t *testing.T) {
 	}
 
 	// merge {"a": {"c": "AC"}}
-	err = fsm.applySet("/", map[string]interface{}{
+	err = fsm.SetValue("/", map[string]interface{}{
 		"a": map[string]interface{}{
 			"c": "AC",
 		},
@@ -388,7 +388,7 @@ func TestRaftFSM_Set(t *testing.T) {
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	val4, err := fsm.Get("/")
+	val4, err := fsm.GetValue("/")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -404,13 +404,13 @@ func TestRaftFSM_Set(t *testing.T) {
 	}
 
 	// set {"a": 1}
-	err = fsm.applySet("/", map[string]interface{}{
+	err = fsm.SetValue("/", map[string]interface{}{
 		"a": 1,
 	}, false)
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	val5, err := fsm.Get("/")
+	val5, err := fsm.GetValue("/")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -472,12 +472,12 @@ func TestRaftFSM_Delete(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	err = fsm.applySet("/", map[string]interface{}{"a": 1}, false)
+	err = fsm.SetValue("/", map[string]interface{}{"a": 1}, false)
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 
-	value, err := fsm.Get("/a")
+	value, err := fsm.GetValue("/a")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -488,12 +488,12 @@ func TestRaftFSM_Delete(t *testing.T) {
 		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
 	}
 
-	err = fsm.applyDelete("/a")
+	err = fsm.DeleteValue("/a")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
 
-	value, err = fsm.Get("/a")
+	value, err = fsm.GetValue("/a")
 	if err == nil {
 		t.Errorf("expected nil: %v", err)
 	}

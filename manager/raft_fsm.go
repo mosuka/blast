@@ -19,6 +19,7 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"sync"
 
 	"github.com/hashicorp/raft"
 	blasterrors "github.com/mosuka/blast/errors"
@@ -30,8 +31,10 @@ type RaftFSM struct {
 	path   string
 	logger *zap.Logger
 
-	metadata maputils.Map
-	data     maputils.Map
+	metadata      maputils.Map
+	metadataMutex sync.RWMutex
+
+	data maputils.Map
 }
 
 func NewRaftFSM(path string, logger *zap.Logger) (*RaftFSM, error) {
@@ -56,6 +59,9 @@ func (f *RaftFSM) Stop() error {
 }
 
 func (f *RaftFSM) GetNodeConfig(nodeId string) (map[string]interface{}, error) {
+	f.metadataMutex.RLock()
+	defer f.metadataMutex.RUnlock()
+
 	nodeConfig, err := f.metadata.Get(nodeId)
 	if err != nil {
 		f.logger.Error(err.Error(), zap.String("node_id", nodeId))
@@ -68,7 +74,10 @@ func (f *RaftFSM) GetNodeConfig(nodeId string) (map[string]interface{}, error) {
 	return nodeConfig.(maputils.Map).ToMap(), nil
 }
 
-func (f *RaftFSM) applySetNodeConfig(nodeId string, nodeConfig map[string]interface{}) error {
+func (f *RaftFSM) SetNodeConfig(nodeId string, nodeConfig map[string]interface{}) error {
+	f.metadataMutex.RLock()
+	defer f.metadataMutex.RUnlock()
+
 	err := f.metadata.Merge(nodeId, nodeConfig)
 	if err != nil {
 		f.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.Any("node_config", nodeConfig))
@@ -78,7 +87,10 @@ func (f *RaftFSM) applySetNodeConfig(nodeId string, nodeConfig map[string]interf
 	return nil
 }
 
-func (f *RaftFSM) applyDeleteNodeConfig(nodeId string) error {
+func (f *RaftFSM) DeleteNodeConfig(nodeId string) error {
+	f.metadataMutex.RLock()
+	defer f.metadataMutex.RUnlock()
+
 	err := f.metadata.Delete(nodeId)
 	if err != nil {
 		f.logger.Error(err.Error(), zap.String("node_id", nodeId))
@@ -88,7 +100,7 @@ func (f *RaftFSM) applyDeleteNodeConfig(nodeId string) error {
 	return nil
 }
 
-func (f *RaftFSM) Get(key string) (interface{}, error) {
+func (f *RaftFSM) GetValue(key string) (interface{}, error) {
 	value, err := f.data.Get(key)
 	if err != nil {
 		switch err {
@@ -112,7 +124,7 @@ func (f *RaftFSM) Get(key string) (interface{}, error) {
 	return ret, nil
 }
 
-func (f *RaftFSM) applySet(key string, value interface{}, merge bool) error {
+func (f *RaftFSM) SetValue(key string, value interface{}, merge bool) error {
 	if merge {
 		err := f.data.Merge(key, value)
 		if err != nil {
@@ -130,36 +142,7 @@ func (f *RaftFSM) applySet(key string, value interface{}, merge bool) error {
 	return nil
 }
 
-func (f *RaftFSM) delete(keys []string, data interface{}) (interface{}, error) {
-	var err error
-
-	if len(keys) >= 1 {
-		key := keys[0]
-
-		switch data.(type) {
-		case map[string]interface{}:
-			if _, exist := data.(map[string]interface{})[key]; exist {
-				if len(keys) > 1 {
-					data.(map[string]interface{})[key], err = f.delete(keys[1:], data.(map[string]interface{})[key])
-					if err != nil {
-						return nil, err
-					}
-				} else {
-					mm := data.(map[string]interface{})
-					delete(mm, key)
-					data = mm
-				}
-			} else {
-				return nil, blasterrors.ErrNotFound
-			}
-		}
-	}
-
-	return data, nil
-}
-
-//func (f *RaftFSM) applyDelete(key string) interface{} {
-func (f *RaftFSM) applyDelete(key string) error {
+func (f *RaftFSM) DeleteValue(key string) error {
 	err := f.data.Delete(key)
 	if err != nil {
 		switch err {
@@ -195,7 +178,7 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
-		err = f.applySetNodeConfig(data["node_id"].(string), data["node_config"].(map[string]interface{}))
+		err = f.SetNodeConfig(data["node_id"].(string), data["node_config"].(map[string]interface{}))
 		return &fsmResponse{error: err}
 	case deleteNode:
 		var data map[string]interface{}
@@ -204,7 +187,7 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
-		err = f.applyDeleteNodeConfig(data["node_id"].(string))
+		err = f.DeleteNodeConfig(data["node_id"].(string))
 		return &fsmResponse{error: err}
 	case setKeyValue:
 		var data map[string]interface{}
@@ -213,7 +196,7 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
-		err = f.applySet(data["key"].(string), data["value"], true)
+		err = f.SetValue(data["key"].(string), data["value"], true)
 		return &fsmResponse{error: err}
 	case deleteKeyValue:
 		var data map[string]interface{}
@@ -222,7 +205,7 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
-		err = f.applyDelete(data["key"].(string))
+		err = f.DeleteValue(data["key"].(string))
 		return &fsmResponse{error: err}
 	default:
 		err = errors.New("unsupported command")

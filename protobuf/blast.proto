@@ -32,10 +32,10 @@ service Blast {
     rpc WatchCluster (google.protobuf.Empty) returns (stream GetClusterResponse) {}
     rpc Snapshot (google.protobuf.Empty) returns (google.protobuf.Empty) {}
 
-    rpc GetState (GetStateRequest) returns (GetStateResponse) {}
-    rpc SetState (SetStateRequest) returns (google.protobuf.Empty) {}
-    rpc DeleteState (DeleteStateRequest) returns (google.protobuf.Empty) {}
-    rpc WatchState (WatchStateRequest) returns (stream WatchStateResponse) {}
+    rpc GetValue (GetValueRequest) returns (GetValueResponse) {}
+    rpc SetValue (SetValueRequest) returns (google.protobuf.Empty) {}
+    rpc DeleteValue (DeleteValueRequest) returns (google.protobuf.Empty) {}
+    rpc WatchStore (WatchStoreRequest) returns (stream WatchStoreResponse) {}
 
     rpc GetDocument (GetDocumentRequest) returns (GetDocumentResponse) {}
     rpc IndexDocument (stream IndexDocumentRequest) returns (IndexDocumentResponse) {}
@@ -72,14 +72,14 @@ message GetNodeRequest {
 
 // use for raft cluster status
 message GetNodeResponse {
-    google.protobuf.Any metadata = 1;
+    google.protobuf.Any nodeConfig = 1;
     string state = 2;
 }
 
 // use for raft cluster status
 message SetNodeRequest {
     string id = 1;
-    google.protobuf.Any metadata = 2;
+    google.protobuf.Any nodeConfig = 2;
 }
 
 // use for raft cluster status
@@ -92,28 +92,28 @@ message GetClusterResponse {
     google.protobuf.Any cluster = 1;
 }
 
-message GetStateRequest {
+message GetValueRequest {
     string key = 1;
 }
 
-message GetStateResponse {
+message GetValueResponse {
     google.protobuf.Any value = 1;
 }
 
-message SetStateRequest {
+message SetValueRequest {
     string key = 1;
     google.protobuf.Any value = 2;
 }
 
-message DeleteStateRequest {
+message DeleteValueRequest {
     string key = 1;
 }
 
-message WatchStateRequest {
+message WatchStoreRequest {
     string key = 1;
 }
 
-message WatchStateResponse {
+message WatchStoreResponse {
     enum Command {
         UNKNOWN = 0;
         SET = 1;

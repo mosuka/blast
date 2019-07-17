@@ -73,19 +73,19 @@ func (s *Service) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Empty,
 	return &empty.Empty{}, status.Error(codes.Unavailable, "not implement")
 }
 
-func (s *Service) GetState(ctx context.Context, req *protobuf.GetStateRequest) (*protobuf.GetStateResponse, error) {
-	return &protobuf.GetStateResponse{}, status.Error(codes.Unavailable, "not implement")
+func (s *Service) GetValue(ctx context.Context, req *protobuf.GetValueRequest) (*protobuf.GetValueResponse, error) {
+	return &protobuf.GetValueResponse{}, status.Error(codes.Unavailable, "not implement")
 }
 
-func (s *Service) SetState(ctx context.Context, req *protobuf.SetStateRequest) (*empty.Empty, error) {
+func (s *Service) SetValue(ctx context.Context, req *protobuf.SetValueRequest) (*empty.Empty, error) {
 	return &empty.Empty{}, status.Error(codes.Unavailable, "not implement")
 }
 
-func (s *Service) DeleteState(ctx context.Context, req *protobuf.DeleteStateRequest) (*empty.Empty, error) {
+func (s *Service) DeleteValue(ctx context.Context, req *protobuf.DeleteValueRequest) (*empty.Empty, error) {
 	return &empty.Empty{}, status.Error(codes.Unavailable, "not implement")
 }
 
-func (s *Service) WatchState(req *protobuf.WatchStateRequest, server protobuf.Blast_WatchStateServer) error {
+func (s *Service) WatchStore(req *protobuf.WatchStoreRequest, server protobuf.Blast_WatchStoreServer) error {
 	return status.Error(codes.Unavailable, "not implement")
 }
 

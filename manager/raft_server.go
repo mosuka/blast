@@ -101,58 +101,83 @@ func (s *RaftServer) Start() error {
 	}
 
 	s.logger.Info("create Raft machine")
+	var logStore raft.LogStore
+	var stableStore raft.StableStore
 	switch s.nodeConfig.RaftStorageType {
 	case "boltdb":
-		logStorePath := filepath.Join(s.nodeConfig.DataDir, "raft", "boltdb.db")
-		err = os.MkdirAll(filepath.Join(s.nodeConfig.DataDir, "raft"), 0755)
+		logStorePath := filepath.Join(s.nodeConfig.DataDir, "raft", "log", "boltdb.db")
+		s.logger.Info("create raft log store", zap.String("path", logStorePath), zap.String("raft_storage_type", s.nodeConfig.RaftStorageType))
+		err = os.MkdirAll(filepath.Dir(logStorePath), 0755)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return err
 		}
-		logStore, err := raftboltdb.NewBoltStore(logStorePath)
+		logStore, err = raftboltdb.NewBoltStore(logStorePath)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return err
 		}
-		s.raft, err = raft.NewRaft(raftConfig, s.fsm, logStore, logStore, snapshotStore, transport)
+		stableStorePath := filepath.Join(s.nodeConfig.DataDir, "raft", "stable", "boltdb.db")
+		s.logger.Info("create raft stable store", zap.String("path", stableStorePath), zap.String("raft_storage_type", s.nodeConfig.RaftStorageType))
+		err = os.MkdirAll(filepath.Dir(stableStorePath), 0755)
+		stableStore, err = raftboltdb.NewBoltStore(stableStorePath)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return err
 		}
 	case "badger":
-		logStorePath := filepath.Join(s.nodeConfig.DataDir, "raft")
+		logStorePath := filepath.Join(s.nodeConfig.DataDir, "raft", "log")
+		s.logger.Info("create raft log store", zap.String("path", logStorePath), zap.String("raft_storage_type", s.nodeConfig.RaftStorageType))
 		err = os.MkdirAll(filepath.Join(logStorePath, "badger"), 0755)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return err
 		}
-		logStore, err := raftbadgerdb.NewBadgerStore(logStorePath)
+		logStore, err = raftbadgerdb.NewBadgerStore(logStorePath)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return err
 		}
-		s.raft, err = raft.NewRaft(raftConfig, s.fsm, logStore, logStore, snapshotStore, transport)
+		stableStorePath := filepath.Join(s.nodeConfig.DataDir, "raft", "stable")
+		s.logger.Info("create raft stable store", zap.String("path", stableStorePath), zap.String("raft_storage_type", s.nodeConfig.RaftStorageType))
+		err = os.MkdirAll(filepath.Join(stableStorePath, "badger"), 0755)
+		if err != nil {
+			s.logger.Fatal(err.Error())
+			return err
+		}
+		stableStore, err = raftbadgerdb.NewBadgerStore(stableStorePath)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return err
 		}
 	default:
-		logStorePath := filepath.Join(s.nodeConfig.DataDir, "raft", "boltdb.db")
-		err = os.MkdirAll(filepath.Join(s.nodeConfig.DataDir, "raft"), 0755)
+		logStorePath := filepath.Join(s.nodeConfig.DataDir, "raft", "log", "boltdb.db")
+		s.logger.Info("create raft log store", zap.String("path", logStorePath), zap.String("raft_storage_type", s.nodeConfig.RaftStorageType))
+		err = os.MkdirAll(filepath.Dir(logStorePath), 0755)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return err
 		}
-		logStore, err := raftboltdb.NewBoltStore(logStorePath)
+		logStore, err = raftboltdb.NewBoltStore(logStorePath)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return err
 		}
-		s.raft, err = raft.NewRaft(raftConfig, s.fsm, logStore, logStore, snapshotStore, transport)
+		stableStorePath := filepath.Join(s.nodeConfig.DataDir, "raft", "stable", "boltdb.db")
+		s.logger.Info("create raft stable store", zap.String("path", stableStorePath), zap.String("raft_storage_type", s.nodeConfig.RaftStorageType))
+		err = os.MkdirAll(filepath.Dir(stableStorePath), 0755)
+		stableStore, err = raftboltdb.NewBoltStore(stableStorePath)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return err
 		}
+	}
+
+	s.logger.Info("create Raft machine")
+	s.raft, err = raft.NewRaft(raftConfig, s.fsm, logStore, stableStore, snapshotStore, transport)
+	if err != nil {
+		s.logger.Fatal(err.Error())
+		return err
 	}
 
 	if s.bootstrap {
@@ -174,8 +199,8 @@ func (s *RaftServer) Start() error {
 			return err
 		}
 
-		// set metadata
-		s.logger.Info("register its own information", zap.String("node_id", s.nodeConfig.NodeId), zap.Any("node_config", s.nodeConfig))
+		// set node config
+		s.logger.Info("register its own node config", zap.String("node_id", s.nodeConfig.NodeId), zap.Any("node_config", s.nodeConfig))
 		err = s.setNodeConfig(s.nodeConfig.NodeId, s.nodeConfig.ToMap())
 		if err != nil {
 			s.logger.Fatal(err.Error())
@@ -184,9 +209,9 @@ func (s *RaftServer) Start() error {
 
 		// set index config
 		s.logger.Info("register index config")
-		err = s.setIndexConfig(s.indexConfig.ToMap())
+		err := s.SetValue("index_config", s.indexConfig.ToMap())
 		if err != nil {
-			s.logger.Fatal(err.Error())
+			s.logger.Error(err.Error())
 			return err
 		}
 	}
@@ -259,16 +284,20 @@ func (s *RaftServer) LeaderID(timeout time.Duration) (raft.ServerID, error) {
 	return "", blasterrors.ErrNotFoundLeader
 }
 
+func (s *RaftServer) NodeID() string {
+	return s.nodeConfig.NodeId
+}
+
 func (s *RaftServer) Stats() map[string]string {
 	return s.raft.Stats()
 }
 
-func (s *RaftServer) State() string {
-	return s.raft.State().String()
+func (s *RaftServer) State() raft.RaftState {
+	return s.raft.State()
 }
 
 func (s *RaftServer) IsLeader() bool {
-	return s.raft.State() == raft.Leader
+	return s.State() == raft.Leader
 }
 
 func (s *RaftServer) WaitForDetectLeader(timeout time.Duration) error {
@@ -358,17 +387,7 @@ func (s *RaftServer) deleteNodeConfig(nodeId string) error {
 	return nil
 }
 
-func (s *RaftServer) setIndexConfig(indexConfig map[string]interface{}) error {
-	err := s.SetState("index_config", indexConfig)
-	if err != nil {
-		s.logger.Error(err.Error())
-		return err
-	}
-
-	return nil
-}
-
-func (s *RaftServer) GetNodeConfig(id string) (map[string]interface{}, error) {
+func (s *RaftServer) GetNode(id string) (map[string]interface{}, error) {
 	cf := s.raft.GetConfiguration()
 	err := cf.Error()
 	if err != nil {
@@ -376,22 +395,23 @@ func (s *RaftServer) GetNodeConfig(id string) (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	var nodeConfig map[string]interface{}
+	node := make(map[string]interface{}, 0)
 	for _, server := range cf.Configuration().Servers {
 		if server.ID == raft.ServerID(id) {
-			nodeConfig, err = s.getNodeConfig(id)
+			nodeConfig, err := s.getNodeConfig(id)
 			if err != nil {
 				s.logger.Error(err.Error())
 				return nil, err
 			}
+			node["node_config"] = nodeConfig
 			break
 		}
 	}
 
-	return nodeConfig, nil
+	return node, nil
 }
 
-func (s *RaftServer) SetNodeConfig(nodeId string, nodeConfig map[string]interface{}) error {
+func (s *RaftServer) SetNode(nodeId string, nodeConfig map[string]interface{}) error {
 	if !s.IsLeader() {
 		s.logger.Warn(raft.ErrNotLeader.Error(), zap.String("state", s.raft.State().String()))
 		return raft.ErrNotLeader
@@ -417,6 +437,7 @@ func (s *RaftServer) SetNodeConfig(nodeId string, nodeConfig map[string]interfac
 		return errors.New("missing metadata")
 	}
 
+	// add node to Raft cluster
 	s.logger.Info("add voter", zap.String("nodeId", nodeId), zap.String("address", bindAddr))
 	f := s.raft.AddVoter(raft.ServerID(nodeId), raft.ServerAddress(bindAddr), 0, 0)
 	err = f.Error()
@@ -435,7 +456,7 @@ func (s *RaftServer) SetNodeConfig(nodeId string, nodeConfig map[string]interfac
 	return nil
 }
 
-func (s *RaftServer) DeleteNodeConfig(nodeId string) error {
+func (s *RaftServer) DeleteNode(nodeId string) error {
 	if !s.IsLeader() {
 		s.logger.Warn(raft.ErrNotLeader.Error(), zap.String("state", s.raft.State().String()))
 		return raft.ErrNotLeader
@@ -448,6 +469,7 @@ func (s *RaftServer) DeleteNodeConfig(nodeId string) error {
 		return err
 	}
 
+	// delete node from Raft cluster
 	for _, server := range cf.Configuration().Servers {
 		if server.ID == raft.ServerID(nodeId) {
 			s.logger.Debug("remove server", zap.String("node_id", nodeId))
@@ -460,7 +482,7 @@ func (s *RaftServer) DeleteNodeConfig(nodeId string) error {
 		}
 	}
 
-	// delete metadata
+	// delete node config
 	err = s.deleteNodeConfig(nodeId)
 	if err != nil {
 		s.logger.Error(err.Error())
@@ -470,7 +492,7 @@ func (s *RaftServer) DeleteNodeConfig(nodeId string) error {
 	return nil
 }
 
-func (s *RaftServer) GetServers() (map[string]interface{}, error) {
+func (s *RaftServer) GetCluster() (map[string]interface{}, error) {
 	cf := s.raft.GetConfiguration()
 	err := cf.Error()
 	if err != nil {
@@ -478,16 +500,17 @@ func (s *RaftServer) GetServers() (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	servers := map[string]interface{}{}
+	cluster := map[string]interface{}{}
 	for _, server := range cf.Configuration().Servers {
-		metadata, err := s.GetNodeConfig(string(server.ID))
+		node, err := s.GetNode(string(server.ID))
 		if err != nil {
 			s.logger.Warn(err.Error())
+			node = map[string]interface{}{}
 		}
-		servers[string(server.ID)] = metadata
+		cluster[string(server.ID)] = node
 	}
 
-	return servers, nil
+	return cluster, nil
 }
 
 func (s *RaftServer) Snapshot() error {
@@ -501,8 +524,8 @@ func (s *RaftServer) Snapshot() error {
 	return nil
 }
 
-func (s *RaftServer) GetState(key string) (interface{}, error) {
-	value, err := s.fsm.Get(key)
+func (s *RaftServer) GetValue(key string) (interface{}, error) {
+	value, err := s.fsm.GetValue(key)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return nil, err
@@ -511,7 +534,7 @@ func (s *RaftServer) GetState(key string) (interface{}, error) {
 	return value, nil
 }
 
-func (s *RaftServer) SetState(key string, value interface{}) error {
+func (s *RaftServer) SetValue(key string, value interface{}) error {
 	if !s.IsLeader() {
 		s.logger.Error(raft.ErrNotLeader.Error(), zap.String("state", s.raft.State().String()))
 		return raft.ErrNotLeader
@@ -550,7 +573,7 @@ func (s *RaftServer) SetState(key string, value interface{}) error {
 	return nil
 }
 
-func (s *RaftServer) DeleteState(key string) error {
+func (s *RaftServer) DeleteValue(key string) error {
 	if !s.IsLeader() {
 		s.logger.Error(raft.ErrNotLeader.Error(), zap.String("state", s.raft.State().String()))
 		return raft.ErrNotLeader

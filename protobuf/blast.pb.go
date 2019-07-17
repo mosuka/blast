@@ -80,31 +80,31 @@ func (ReadinessProbeResponse_State) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_406ca165ef12c7d5, []int{1, 0}
 }
 
-type WatchStateResponse_Command int32
+type WatchStoreResponse_Command int32
 
 const (
-	WatchStateResponse_UNKNOWN WatchStateResponse_Command = 0
-	WatchStateResponse_SET     WatchStateResponse_Command = 1
-	WatchStateResponse_DELETE  WatchStateResponse_Command = 2
+	WatchStoreResponse_UNKNOWN WatchStoreResponse_Command = 0
+	WatchStoreResponse_SET     WatchStoreResponse_Command = 1
+	WatchStoreResponse_DELETE  WatchStoreResponse_Command = 2
 )
 
-var WatchStateResponse_Command_name = map[int32]string{
+var WatchStoreResponse_Command_name = map[int32]string{
 	0: "UNKNOWN",
 	1: "SET",
 	2: "DELETE",
 }
 
-var WatchStateResponse_Command_value = map[string]int32{
+var WatchStoreResponse_Command_value = map[string]int32{
 	"UNKNOWN": 0,
 	"SET":     1,
 	"DELETE":  2,
 }
 
-func (x WatchStateResponse_Command) String() string {
-	return proto.EnumName(WatchStateResponse_Command_name, int32(x))
+func (x WatchStoreResponse_Command) String() string {
+	return proto.EnumName(WatchStoreResponse_Command_name, int32(x))
 }
 
-func (WatchStateResponse_Command) EnumDescriptor() ([]byte, []int) {
+func (WatchStoreResponse_Command) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_406ca165ef12c7d5, []int{12, 0}
 }
 
@@ -230,7 +230,7 @@ func (m *GetNodeRequest) GetId() string {
 
 // use for raft cluster status
 type GetNodeResponse struct {
-	Metadata             *any.Any `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	NodeConfig           *any.Any `protobuf:"bytes,1,opt,name=nodeConfig,proto3" json:"nodeConfig,omitempty"`
 	State                string   `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -262,9 +262,9 @@ func (m *GetNodeResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetNodeResponse proto.InternalMessageInfo
 
-func (m *GetNodeResponse) GetMetadata() *any.Any {
+func (m *GetNodeResponse) GetNodeConfig() *any.Any {
 	if m != nil {
-		return m.Metadata
+		return m.NodeConfig
 	}
 	return nil
 }
@@ -279,7 +279,7 @@ func (m *GetNodeResponse) GetState() string {
 // use for raft cluster status
 type SetNodeRequest struct {
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Metadata             *any.Any `protobuf:"bytes,2,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	NodeConfig           *any.Any `protobuf:"bytes,2,opt,name=nodeConfig,proto3" json:"nodeConfig,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -317,9 +317,9 @@ func (m *SetNodeRequest) GetId() string {
 	return ""
 }
 
-func (m *SetNodeRequest) GetMetadata() *any.Any {
+func (m *SetNodeRequest) GetNodeConfig() *any.Any {
 	if m != nil {
-		return m.Metadata
+		return m.NodeConfig
 	}
 	return nil
 }
@@ -404,85 +404,85 @@ func (m *GetClusterResponse) GetCluster() *any.Any {
 	return nil
 }
 
-type GetStateRequest struct {
+type GetValueRequest struct {
 	Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetStateRequest) Reset()         { *m = GetStateRequest{} }
-func (m *GetStateRequest) String() string { return proto.CompactTextString(m) }
-func (*GetStateRequest) ProtoMessage()    {}
-func (*GetStateRequest) Descriptor() ([]byte, []int) {
+func (m *GetValueRequest) Reset()         { *m = GetValueRequest{} }
+func (m *GetValueRequest) String() string { return proto.CompactTextString(m) }
+func (*GetValueRequest) ProtoMessage()    {}
+func (*GetValueRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_406ca165ef12c7d5, []int{7}
 }
 
-func (m *GetStateRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetStateRequest.Unmarshal(m, b)
+func (m *GetValueRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetValueRequest.Unmarshal(m, b)
 }
-func (m *GetStateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetStateRequest.Marshal(b, m, deterministic)
+func (m *GetValueRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetValueRequest.Marshal(b, m, deterministic)
 }
-func (m *GetStateRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetStateRequest.Merge(m, src)
+func (m *GetValueRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetValueRequest.Merge(m, src)
 }
-func (m *GetStateRequest) XXX_Size() int {
-	return xxx_messageInfo_GetStateRequest.Size(m)
+func (m *GetValueRequest) XXX_Size() int {
+	return xxx_messageInfo_GetValueRequest.Size(m)
 }
-func (m *GetStateRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetStateRequest.DiscardUnknown(m)
+func (m *GetValueRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetValueRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetStateRequest proto.InternalMessageInfo
+var xxx_messageInfo_GetValueRequest proto.InternalMessageInfo
 
-func (m *GetStateRequest) GetKey() string {
+func (m *GetValueRequest) GetKey() string {
 	if m != nil {
 		return m.Key
 	}
 	return ""
 }
 
-type GetStateResponse struct {
+type GetValueResponse struct {
 	Value                *any.Any `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetStateResponse) Reset()         { *m = GetStateResponse{} }
-func (m *GetStateResponse) String() string { return proto.CompactTextString(m) }
-func (*GetStateResponse) ProtoMessage()    {}
-func (*GetStateResponse) Descriptor() ([]byte, []int) {
+func (m *GetValueResponse) Reset()         { *m = GetValueResponse{} }
+func (m *GetValueResponse) String() string { return proto.CompactTextString(m) }
+func (*GetValueResponse) ProtoMessage()    {}
+func (*GetValueResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_406ca165ef12c7d5, []int{8}
 }
 
-func (m *GetStateResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetStateResponse.Unmarshal(m, b)
+func (m *GetValueResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetValueResponse.Unmarshal(m, b)
 }
-func (m *GetStateResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetStateResponse.Marshal(b, m, deterministic)
+func (m *GetValueResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetValueResponse.Marshal(b, m, deterministic)
 }
-func (m *GetStateResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetStateResponse.Merge(m, src)
+func (m *GetValueResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetValueResponse.Merge(m, src)
 }
-func (m *GetStateResponse) XXX_Size() int {
-	return xxx_messageInfo_GetStateResponse.Size(m)
+func (m *GetValueResponse) XXX_Size() int {
+	return xxx_messageInfo_GetValueResponse.Size(m)
 }
-func (m *GetStateResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetStateResponse.DiscardUnknown(m)
+func (m *GetValueResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetValueResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetStateResponse proto.InternalMessageInfo
+var xxx_messageInfo_GetValueResponse proto.InternalMessageInfo
 
-func (m *GetStateResponse) GetValue() *any.Any {
+func (m *GetValueResponse) GetValue() *any.Any {
 	if m != nil {
 		return m.Value
 	}
 	return nil
 }
 
-type SetStateRequest struct {
+type SetValueRequest struct {
 	Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	Value                *any.Any `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -490,125 +490,125 @@ type SetStateRequest struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *SetStateRequest) Reset()         { *m = SetStateRequest{} }
-func (m *SetStateRequest) String() string { return proto.CompactTextString(m) }
-func (*SetStateRequest) ProtoMessage()    {}
-func (*SetStateRequest) Descriptor() ([]byte, []int) {
+func (m *SetValueRequest) Reset()         { *m = SetValueRequest{} }
+func (m *SetValueRequest) String() string { return proto.CompactTextString(m) }
+func (*SetValueRequest) ProtoMessage()    {}
+func (*SetValueRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_406ca165ef12c7d5, []int{9}
 }
 
-func (m *SetStateRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_SetStateRequest.Unmarshal(m, b)
+func (m *SetValueRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SetValueRequest.Unmarshal(m, b)
 }
-func (m *SetStateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_SetStateRequest.Marshal(b, m, deterministic)
+func (m *SetValueRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SetValueRequest.Marshal(b, m, deterministic)
 }
-func (m *SetStateRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SetStateRequest.Merge(m, src)
+func (m *SetValueRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SetValueRequest.Merge(m, src)
 }
-func (m *SetStateRequest) XXX_Size() int {
-	return xxx_messageInfo_SetStateRequest.Size(m)
+func (m *SetValueRequest) XXX_Size() int {
+	return xxx_messageInfo_SetValueRequest.Size(m)
 }
-func (m *SetStateRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_SetStateRequest.DiscardUnknown(m)
+func (m *SetValueRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SetValueRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_SetStateRequest proto.InternalMessageInfo
+var xxx_messageInfo_SetValueRequest proto.InternalMessageInfo
 
-func (m *SetStateRequest) GetKey() string {
+func (m *SetValueRequest) GetKey() string {
 	if m != nil {
 		return m.Key
 	}
 	return ""
 }
 
-func (m *SetStateRequest) GetValue() *any.Any {
+func (m *SetValueRequest) GetValue() *any.Any {
 	if m != nil {
 		return m.Value
 	}
 	return nil
 }
 
-type DeleteStateRequest struct {
+type DeleteValueRequest struct {
 	Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteStateRequest) Reset()         { *m = DeleteStateRequest{} }
-func (m *DeleteStateRequest) String() string { return proto.CompactTextString(m) }
-func (*DeleteStateRequest) ProtoMessage()    {}
-func (*DeleteStateRequest) Descriptor() ([]byte, []int) {
+func (m *DeleteValueRequest) Reset()         { *m = DeleteValueRequest{} }
+func (m *DeleteValueRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteValueRequest) ProtoMessage()    {}
+func (*DeleteValueRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_406ca165ef12c7d5, []int{10}
 }
 
-func (m *DeleteStateRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DeleteStateRequest.Unmarshal(m, b)
+func (m *DeleteValueRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteValueRequest.Unmarshal(m, b)
 }
-func (m *DeleteStateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DeleteStateRequest.Marshal(b, m, deterministic)
+func (m *DeleteValueRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteValueRequest.Marshal(b, m, deterministic)
 }
-func (m *DeleteStateRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeleteStateRequest.Merge(m, src)
+func (m *DeleteValueRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteValueRequest.Merge(m, src)
 }
-func (m *DeleteStateRequest) XXX_Size() int {
-	return xxx_messageInfo_DeleteStateRequest.Size(m)
+func (m *DeleteValueRequest) XXX_Size() int {
+	return xxx_messageInfo_DeleteValueRequest.Size(m)
 }
-func (m *DeleteStateRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeleteStateRequest.DiscardUnknown(m)
+func (m *DeleteValueRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteValueRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_DeleteStateRequest proto.InternalMessageInfo
+var xxx_messageInfo_DeleteValueRequest proto.InternalMessageInfo
 
-func (m *DeleteStateRequest) GetKey() string {
+func (m *DeleteValueRequest) GetKey() string {
 	if m != nil {
 		return m.Key
 	}
 	return ""
 }
 
-type WatchStateRequest struct {
+type WatchStoreRequest struct {
 	Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *WatchStateRequest) Reset()         { *m = WatchStateRequest{} }
-func (m *WatchStateRequest) String() string { return proto.CompactTextString(m) }
-func (*WatchStateRequest) ProtoMessage()    {}
-func (*WatchStateRequest) Descriptor() ([]byte, []int) {
+func (m *WatchStoreRequest) Reset()         { *m = WatchStoreRequest{} }
+func (m *WatchStoreRequest) String() string { return proto.CompactTextString(m) }
+func (*WatchStoreRequest) ProtoMessage()    {}
+func (*WatchStoreRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_406ca165ef12c7d5, []int{11}
 }
 
-func (m *WatchStateRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_WatchStateRequest.Unmarshal(m, b)
+func (m *WatchStoreRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_WatchStoreRequest.Unmarshal(m, b)
 }
-func (m *WatchStateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_WatchStateRequest.Marshal(b, m, deterministic)
+func (m *WatchStoreRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_WatchStoreRequest.Marshal(b, m, deterministic)
 }
-func (m *WatchStateRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_WatchStateRequest.Merge(m, src)
+func (m *WatchStoreRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WatchStoreRequest.Merge(m, src)
 }
-func (m *WatchStateRequest) XXX_Size() int {
-	return xxx_messageInfo_WatchStateRequest.Size(m)
+func (m *WatchStoreRequest) XXX_Size() int {
+	return xxx_messageInfo_WatchStoreRequest.Size(m)
 }
-func (m *WatchStateRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_WatchStateRequest.DiscardUnknown(m)
+func (m *WatchStoreRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_WatchStoreRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_WatchStateRequest proto.InternalMessageInfo
+var xxx_messageInfo_WatchStoreRequest proto.InternalMessageInfo
 
-func (m *WatchStateRequest) GetKey() string {
+func (m *WatchStoreRequest) GetKey() string {
 	if m != nil {
 		return m.Key
 	}
 	return ""
 }
 
-type WatchStateResponse struct {
-	Command              WatchStateResponse_Command `protobuf:"varint,1,opt,name=command,proto3,enum=protobuf.WatchStateResponse_Command" json:"command,omitempty"`
+type WatchStoreResponse struct {
+	Command              WatchStoreResponse_Command `protobuf:"varint,1,opt,name=command,proto3,enum=protobuf.WatchStoreResponse_Command" json:"command,omitempty"`
 	Key                  string                     `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
 	Value                *any.Any                   `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
@@ -616,46 +616,46 @@ type WatchStateResponse struct {
 	XXX_sizecache        int32                      `json:"-"`
 }
 
-func (m *WatchStateResponse) Reset()         { *m = WatchStateResponse{} }
-func (m *WatchStateResponse) String() string { return proto.CompactTextString(m) }
-func (*WatchStateResponse) ProtoMessage()    {}
-func (*WatchStateResponse) Descriptor() ([]byte, []int) {
+func (m *WatchStoreResponse) Reset()         { *m = WatchStoreResponse{} }
+func (m *WatchStoreResponse) String() string { return proto.CompactTextString(m) }
+func (*WatchStoreResponse) ProtoMessage()    {}
+func (*WatchStoreResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_406ca165ef12c7d5, []int{12}
 }
 
-func (m *WatchStateResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_WatchStateResponse.Unmarshal(m, b)
+func (m *WatchStoreResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_WatchStoreResponse.Unmarshal(m, b)
 }
-func (m *WatchStateResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_WatchStateResponse.Marshal(b, m, deterministic)
+func (m *WatchStoreResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_WatchStoreResponse.Marshal(b, m, deterministic)
 }
-func (m *WatchStateResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_WatchStateResponse.Merge(m, src)
+func (m *WatchStoreResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WatchStoreResponse.Merge(m, src)
 }
-func (m *WatchStateResponse) XXX_Size() int {
-	return xxx_messageInfo_WatchStateResponse.Size(m)
+func (m *WatchStoreResponse) XXX_Size() int {
+	return xxx_messageInfo_WatchStoreResponse.Size(m)
 }
-func (m *WatchStateResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_WatchStateResponse.DiscardUnknown(m)
+func (m *WatchStoreResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_WatchStoreResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_WatchStateResponse proto.InternalMessageInfo
+var xxx_messageInfo_WatchStoreResponse proto.InternalMessageInfo
 
-func (m *WatchStateResponse) GetCommand() WatchStateResponse_Command {
+func (m *WatchStoreResponse) GetCommand() WatchStoreResponse_Command {
 	if m != nil {
 		return m.Command
 	}
-	return WatchStateResponse_UNKNOWN
+	return WatchStoreResponse_UNKNOWN
 }
 
-func (m *WatchStateResponse) GetKey() string {
+func (m *WatchStoreResponse) GetKey() string {
 	if m != nil {
 		return m.Key
 	}
 	return ""
 }
 
-func (m *WatchStateResponse) GetValue() *any.Any {
+func (m *WatchStoreResponse) GetValue() *any.Any {
 	if m != nil {
 		return m.Value
 	}
@@ -1111,7 +1111,7 @@ func (m *Document) GetFields() *any.Any {
 func init() {
 	proto.RegisterEnum("protobuf.LivenessProbeResponse_State", LivenessProbeResponse_State_name, LivenessProbeResponse_State_value)
 	proto.RegisterEnum("protobuf.ReadinessProbeResponse_State", ReadinessProbeResponse_State_name, ReadinessProbeResponse_State_value)
-	proto.RegisterEnum("protobuf.WatchStateResponse_Command", WatchStateResponse_Command_name, WatchStateResponse_Command_value)
+	proto.RegisterEnum("protobuf.WatchStoreResponse_Command", WatchStoreResponse_Command_name, WatchStoreResponse_Command_value)
 	proto.RegisterType((*LivenessProbeResponse)(nil), "protobuf.LivenessProbeResponse")
 	proto.RegisterType((*ReadinessProbeResponse)(nil), "protobuf.ReadinessProbeResponse")
 	proto.RegisterType((*GetNodeRequest)(nil), "protobuf.GetNodeRequest")
@@ -1119,12 +1119,12 @@ func init() {
 	proto.RegisterType((*SetNodeRequest)(nil), "protobuf.SetNodeRequest")
 	proto.RegisterType((*DeleteNodeRequest)(nil), "protobuf.DeleteNodeRequest")
 	proto.RegisterType((*GetClusterResponse)(nil), "protobuf.GetClusterResponse")
-	proto.RegisterType((*GetStateRequest)(nil), "protobuf.GetStateRequest")
-	proto.RegisterType((*GetStateResponse)(nil), "protobuf.GetStateResponse")
-	proto.RegisterType((*SetStateRequest)(nil), "protobuf.SetStateRequest")
-	proto.RegisterType((*DeleteStateRequest)(nil), "protobuf.DeleteStateRequest")
-	proto.RegisterType((*WatchStateRequest)(nil), "protobuf.WatchStateRequest")
-	proto.RegisterType((*WatchStateResponse)(nil), "protobuf.WatchStateResponse")
+	proto.RegisterType((*GetValueRequest)(nil), "protobuf.GetValueRequest")
+	proto.RegisterType((*GetValueResponse)(nil), "protobuf.GetValueResponse")
+	proto.RegisterType((*SetValueRequest)(nil), "protobuf.SetValueRequest")
+	proto.RegisterType((*DeleteValueRequest)(nil), "protobuf.DeleteValueRequest")
+	proto.RegisterType((*WatchStoreRequest)(nil), "protobuf.WatchStoreRequest")
+	proto.RegisterType((*WatchStoreResponse)(nil), "protobuf.WatchStoreResponse")
 	proto.RegisterType((*GetDocumentRequest)(nil), "protobuf.GetDocumentRequest")
 	proto.RegisterType((*GetDocumentResponse)(nil), "protobuf.GetDocumentResponse")
 	proto.RegisterType((*IndexDocumentRequest)(nil), "protobuf.IndexDocumentRequest")
@@ -1141,66 +1141,66 @@ func init() {
 func init() { proto.RegisterFile("protobuf/blast.proto", fileDescriptor_406ca165ef12c7d5) }
 
 var fileDescriptor_406ca165ef12c7d5 = []byte{
-	// 937 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x57, 0x5b, 0x6f, 0x1a, 0x47,
-	0x18, 0x65, 0xd7, 0xc5, 0xe0, 0x83, 0x21, 0x64, 0x8a, 0x5d, 0x67, 0x93, 0x36, 0x68, 0x72, 0x69,
-	0x7a, 0x5b, 0x47, 0xae, 0xaa, 0xaa, 0xca, 0xa5, 0x75, 0x60, 0xe5, 0xa4, 0x46, 0xb8, 0x5d, 0x68,
-	0xad, 0xf4, 0xc5, 0x5a, 0x60, 0x6c, 0xaf, 0x02, 0xbb, 0x94, 0x9d, 0x8d, 0xea, 0xa7, 0xbe, 0xf5,
-	0x9f, 0xf4, 0x77, 0xf4, 0xaf, 0x55, 0x7b, 0xbf, 0xb0, 0x17, 0xa4, 0xbc, 0x31, 0x33, 0xe7, 0x3b,
-	0xdf, 0x65, 0x86, 0x73, 0xb4, 0xe8, 0x2c, 0x57, 0x26, 0x37, 0x27, 0xf6, 0xe5, 0xe1, 0x64, 0xae,
-	0x59, 0x5c, 0x76, 0x97, 0xa4, 0x1e, 0xec, 0x4a, 0x77, 0xae, 0x4c, 0xf3, 0x6a, 0xce, 0x0e, 0x43,
-	0x98, 0x66, 0xdc, 0x78, 0x20, 0xe9, 0x6e, 0xfa, 0x88, 0x2d, 0x96, 0xdc, 0x3f, 0xa4, 0x7f, 0x63,
-	0x6f, 0xa0, 0xbf, 0x67, 0x06, 0xb3, 0xac, 0x5f, 0x56, 0xe6, 0x84, 0xa9, 0xcc, 0x5a, 0x9a, 0x86,
-	0xc5, 0xc8, 0x33, 0x54, 0x2d, 0xae, 0x71, 0x76, 0x20, 0x74, 0x85, 0x27, 0xad, 0xa3, 0x47, 0x72,
-	0x10, 0x2e, 0x67, 0xe2, 0xe5, 0x91, 0x03, 0x56, 0xbd, 0x18, 0xfa, 0x05, 0xaa, 0xee, 0x9a, 0x34,
-	0x50, 0xfb, 0x6d, 0x78, 0x3a, 0x3c, 0x3b, 0x1f, 0xb6, 0x2b, 0x64, 0x07, 0xd5, 0xe3, 0xc1, 0x9b,
-	0xdf, 0x95, 0xb6, 0x40, 0xea, 0xf8, 0xa8, 0xaf, 0x1c, 0xf7, 0xdb, 0x22, 0xfd, 0x47, 0xc0, 0xbe,
-	0xca, 0xb4, 0x99, 0xbe, 0x5e, 0xc2, 0xf3, 0x64, 0x09, 0x8f, 0xa3, 0x12, 0xb2, 0x03, 0x92, 0x35,
-	0xc8, 0x79, 0x35, 0xa8, 0xca, 0x71, 0xff, 0x6d, 0x5b, 0x20, 0x4d, 0xec, 0x0c, 0xcf, 0xc6, 0x17,
-	0xde, 0x52, 0xa4, 0x5d, 0xb4, 0x4e, 0x18, 0x1f, 0x9a, 0x33, 0xa6, 0xb2, 0x3f, 0x6d, 0x66, 0x71,
-	0xd2, 0x82, 0xa8, 0xcf, 0xdc, 0xe4, 0x3b, 0xaa, 0xa8, 0xcf, 0xe8, 0x5b, 0xdc, 0x0a, 0x11, 0x7e,
-	0x89, 0x4f, 0x51, 0x5f, 0x30, 0xae, 0xcd, 0x34, 0xae, 0xb9, 0xc0, 0xc6, 0x51, 0x47, 0xf6, 0xc6,
-	0x1d, 0x15, 0x7b, 0x6c, 0xdc, 0xa8, 0x21, 0x8a, 0x74, 0x82, 0xa6, 0x44, 0x97, 0xd7, 0x2f, 0x56,
-	0x45, 0x6b, 0x54, 0x98, 0x3c, 0x91, 0x49, 0xdc, 0x24, 0x13, 0x7d, 0x80, 0xdb, 0x7d, 0x36, 0x67,
-	0x9c, 0x15, 0xf5, 0xd4, 0x07, 0x39, 0x61, 0xbc, 0x37, 0xb7, 0x2d, 0xce, 0x56, 0x61, 0x5b, 0x32,
-	0x6a, 0x53, 0x6f, 0xab, 0xb0, 0xab, 0x00, 0x44, 0x1f, 0xb8, 0x93, 0xf1, 0xc6, 0xef, 0x27, 0x6a,
-	0x63, 0xeb, 0x1d, 0xbb, 0xf1, 0x33, 0x39, 0x3f, 0xe9, 0x4b, 0xb4, 0x23, 0x90, 0x9f, 0xe8, 0x4b,
-	0x54, 0xdf, 0x6b, 0x73, 0x9b, 0x15, 0xa6, 0xf1, 0x20, 0xf4, 0x0c, 0xb7, 0x46, 0x65, 0x49, 0x22,
-	0x42, 0xb1, 0x9c, 0xf0, 0x31, 0x88, 0x37, 0xa0, 0x92, 0xc2, 0x1f, 0xe1, 0xf6, 0xb9, 0xc6, 0xa7,
-	0xd7, 0x25, 0xb0, 0xff, 0x04, 0x90, 0x38, 0xce, 0x6f, 0xf1, 0x25, 0x6a, 0x53, 0x73, 0xb1, 0xd0,
-	0x8c, 0x99, 0xff, 0x8e, 0x1f, 0x46, 0xc5, 0xac, 0xc3, 0xe5, 0x9e, 0x87, 0x55, 0x83, 0xa0, 0x20,
-	0x91, 0x98, 0xd1, 0xe3, 0x56, 0x79, 0x8f, 0x5f, 0xa1, 0xe6, 0x33, 0x26, 0xff, 0x07, 0x35, 0x6c,
-	0x8d, 0x94, 0x71, 0x5b, 0x20, 0xc0, 0x76, 0x5f, 0x19, 0x28, 0x63, 0xa5, 0x2d, 0xd2, 0x87, 0xee,
-	0x63, 0xe8, 0x9b, 0x53, 0x7b, 0xc1, 0x0c, 0x9e, 0xf7, 0x64, 0x7a, 0xf8, 0x38, 0x81, 0xf2, 0xfb,
-	0xfc, 0x1a, 0xdb, 0x97, 0x3a, 0x9b, 0xcf, 0xac, 0xc2, 0xbb, 0xf4, 0x31, 0x74, 0x8c, 0xce, 0x1b,
-	0x63, 0xc6, 0xfe, 0x2a, 0x49, 0x16, 0x63, 0x15, 0x37, 0x60, 0xfd, 0x06, 0x7b, 0x29, 0x56, 0xbf,
-	0xb8, 0x0e, 0xaa, 0x53, 0xd3, 0x36, 0xb8, 0xcb, 0x5c, 0x55, 0xbd, 0x05, 0xfd, 0x1c, 0x7b, 0xde,
-	0x03, 0x28, 0x6b, 0x59, 0xc6, 0x7e, 0x1a, 0x58, 0x48, 0x3c, 0x40, 0x73, 0xc4, 0xb4, 0xd5, 0xf4,
-	0x3a, 0x20, 0x7c, 0x86, 0x96, 0xe5, 0x6e, 0x5c, 0xac, 0xbc, 0x9d, 0xc2, 0x21, 0x35, 0xad, 0x78,
-	0x30, 0x3d, 0x75, 0xc4, 0xc1, 0xdb, 0xf0, 0xb3, 0xfe, 0x80, 0x66, 0x48, 0x67, 0xd9, 0xf3, 0x62,
-	0xb6, 0xdd, 0x80, 0xcd, 0x41, 0xd2, 0x5f, 0xb1, 0x7f, 0xc2, 0xb8, 0x3b, 0xa5, 0x9e, 0x69, 0x5c,
-	0xea, 0x57, 0x21, 0xe9, 0xf7, 0xd8, 0xd5, 0x9d, 0xed, 0x8b, 0xa9, 0xbb, 0x5f, 0xc8, 0xd9, 0xd0,
-	0x23, 0x02, 0x3a, 0xc4, 0x5e, 0x40, 0xe9, 0xbc, 0x65, 0x2b, 0x64, 0xfc, 0x0e, 0x1e, 0xee, 0xc2,
-	0x11, 0xb9, 0xe2, 0x77, 0x01, 0x3d, 0x0c, 0xa7, 0xaf, 0x51, 0x0f, 0xe6, 0xfc, 0x61, 0xef, 0xe1,
-	0xe8, 0x5f, 0xa0, 0xfa, 0xca, 0xf1, 0x4b, 0xf2, 0x33, 0x9a, 0x09, 0xdf, 0x22, 0xfb, 0x6b, 0x81,
-	0x8a, 0x63, 0x8b, 0xd2, 0xfd, 0x12, 0xa3, 0xa3, 0x15, 0x32, 0x40, 0x2b, 0x69, 0x40, 0xb9, 0x64,
-	0xdd, 0x32, 0xcb, 0xa2, 0x15, 0xf2, 0x13, 0x6a, 0xbe, 0xab, 0x90, 0x83, 0x08, 0x9e, 0xb4, 0x22,
-	0xe9, 0x4e, 0xc6, 0x49, 0xc8, 0xf0, 0x02, 0xb5, 0xd1, 0x3a, 0x43, 0xd2, 0x4f, 0xa4, 0x9c, 0x12,
-	0x69, 0x85, 0xf4, 0x80, 0xc8, 0x27, 0xc8, 0xdd, 0x08, 0xb0, 0xe6, 0x1e, 0x05, 0x24, 0x7d, 0x20,
-	0xf2, 0x91, 0xdc, 0x79, 0xdc, 0x4b, 0xb4, 0x91, 0x72, 0x1d, 0x5a, 0x21, 0xaf, 0xb1, 0xeb, 0x4a,
-	0xe2, 0x07, 0xf2, 0x3c, 0x15, 0xc8, 0x73, 0xd4, 0x47, 0x86, 0xb6, 0xb4, 0xae, 0x4d, 0x9e, 0xcb,
-	0x52, 0x34, 0x92, 0x7a, 0x60, 0x55, 0x24, 0x39, 0xfa, 0xb8, 0x07, 0x48, 0x52, 0xd6, 0x51, 0xd8,
-	0xcc, 0x8f, 0xa8, 0x8f, 0x32, 0x48, 0x52, 0x1e, 0x56, 0x50, 0x85, 0x82, 0x46, 0xcc, 0x9f, 0xc8,
-	0xbd, 0xf4, 0xcd, 0x6c, 0x48, 0x73, 0x0a, 0x44, 0x3e, 0x13, 0xbf, 0xdf, 0x35, 0x53, 0x8b, 0xcf,
-	0x75, 0xdd, 0x9a, 0xdc, 0xb9, 0x0e, 0xd0, 0x88, 0x89, 0x3f, 0x49, 0x5e, 0x44, 0x4a, 0x46, 0xa5,
-	0x4f, 0x73, 0x4e, 0xc3, 0x11, 0x8d, 0xd1, 0x4c, 0xe8, 0x35, 0xf9, 0x2c, 0x8a, 0xc8, 0xb2, 0x87,
-	0xf8, 0xbf, 0x33, 0x53, 0xe8, 0x69, 0xe5, 0x89, 0x40, 0xce, 0xd1, 0x4a, 0xaa, 0x35, 0xb9, 0x9f,
-	0x1e, 0x5d, 0x9a, 0xb7, 0x9b, 0x0f, 0x88, 0x11, 0xbf, 0xc0, 0xb6, 0x27, 0xc4, 0xe4, 0x93, 0xf8,
-	0x7d, 0xc6, 0xb4, 0x5a, 0x3a, 0x58, 0x3f, 0x88, 0xeb, 0x46, 0x52, 0x7a, 0x37, 0xd1, 0x8d, 0x6c,
-	0xb1, 0xa6, 0x15, 0x47, 0xd1, 0x12, 0xaa, 0xbb, 0x89, 0xa2, 0x65, 0xca, 0x34, 0xad, 0xbc, 0xa2,
-	0x7f, 0x74, 0xaf, 0x74, 0x7e, 0x6d, 0x4f, 0xe4, 0xa9, 0xb9, 0x38, 0x5c, 0x98, 0x96, 0xfd, 0x4e,
-	0xf3, 0x3e, 0x34, 0xc2, 0xaf, 0x86, 0xc9, 0xb6, 0xfb, 0xeb, 0xdb, 0xff, 0x03, 0x00, 0x00, 0xff,
-	0xff, 0x9c, 0x35, 0x0c, 0xa9, 0x8a, 0x0c, 0x00, 0x00,
+	// 939 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x57, 0xeb, 0x6e, 0xe3, 0x44,
+	0x18, 0x8d, 0x5d, 0xd2, 0xa4, 0x27, 0x4d, 0x36, 0x3b, 0xa4, 0xa5, 0xeb, 0x5d, 0xd8, 0x68, 0xf6,
+	0xc2, 0x72, 0x73, 0x51, 0x01, 0x21, 0xb4, 0x17, 0xe8, 0x26, 0x56, 0x77, 0x69, 0x94, 0x82, 0x1d,
+	0x5a, 0x81, 0x84, 0x2a, 0x27, 0x99, 0xb6, 0xd6, 0x26, 0x76, 0x89, 0xc7, 0x2b, 0xfa, 0x8b, 0x7f,
+	0xbc, 0x09, 0xcf, 0xc1, 0xab, 0xad, 0x7c, 0xbf, 0xc4, 0xb1, 0x23, 0xed, 0xbf, 0xcc, 0xcc, 0xf9,
+	0xce, 0x77, 0x99, 0xc9, 0x39, 0x32, 0x3a, 0xd7, 0x0b, 0x8b, 0x5b, 0x63, 0xe7, 0x62, 0x7f, 0x3c,
+	0xd3, 0x6d, 0x2e, 0x7b, 0x4b, 0x52, 0x0f, 0x77, 0xa5, 0x3b, 0x97, 0x96, 0x75, 0x39, 0x63, 0xfb,
+	0x11, 0x4c, 0x37, 0x6f, 0x7c, 0x90, 0x74, 0x37, 0x7b, 0xc4, 0xe6, 0xd7, 0x3c, 0x38, 0xa4, 0xff,
+	0x60, 0x67, 0x60, 0xbc, 0x65, 0x26, 0xb3, 0xed, 0x5f, 0x16, 0xd6, 0x98, 0xa9, 0xcc, 0xbe, 0xb6,
+	0x4c, 0x9b, 0x91, 0xa7, 0xa8, 0xda, 0x5c, 0xe7, 0x6c, 0x4f, 0xe8, 0x0a, 0x4f, 0x5a, 0x07, 0x8f,
+	0xe4, 0x30, 0x5c, 0xce, 0xc5, 0xcb, 0x9a, 0x0b, 0x56, 0xfd, 0x18, 0xfa, 0x19, 0xaa, 0xde, 0x9a,
+	0x34, 0x50, 0xfb, 0x6d, 0x78, 0x3c, 0x3c, 0x39, 0x1b, 0xb6, 0x2b, 0x64, 0x0b, 0xd5, 0xc3, 0xc1,
+	0xeb, 0x53, 0xa5, 0x2d, 0x90, 0x3a, 0x3e, 0xe8, 0x2b, 0x87, 0xfd, 0xb6, 0x48, 0xff, 0x15, 0xb0,
+	0xab, 0x32, 0x7d, 0x6a, 0x2c, 0x97, 0xf0, 0x2c, 0x5d, 0xc2, 0xe3, 0xb8, 0x84, 0xfc, 0x80, 0x74,
+	0x0d, 0xf2, 0xaa, 0x1a, 0x54, 0xe5, 0xb0, 0xff, 0x7b, 0x5b, 0x20, 0x4d, 0x6c, 0x0d, 0x4f, 0x46,
+	0xe7, 0xfe, 0x52, 0xa4, 0x5d, 0xb4, 0x8e, 0x18, 0x1f, 0x5a, 0x53, 0xa6, 0xb2, 0xbf, 0x1c, 0x66,
+	0x73, 0xd2, 0x82, 0x68, 0x4c, 0xbd, 0xe4, 0x5b, 0xaa, 0x68, 0x4c, 0xe9, 0x9f, 0xb8, 0x15, 0x21,
+	0x82, 0x12, 0xbf, 0x05, 0x4c, 0x6b, 0xca, 0x7a, 0x96, 0x79, 0x61, 0x5c, 0x7a, 0xd0, 0xc6, 0x41,
+	0x47, 0xf6, 0x07, 0x1e, 0x97, 0x7b, 0x68, 0xde, 0xa8, 0x09, 0x1c, 0xe9, 0x84, 0x8d, 0x89, 0x1e,
+	0x77, 0x50, 0xf0, 0x29, 0x5a, 0x5a, 0x61, 0x01, 0x99, 0x6c, 0xe2, 0x7a, 0xd9, 0xe8, 0x03, 0xdc,
+	0xee, 0xb3, 0x19, 0xe3, 0xac, 0xa8, 0xb7, 0x3e, 0xc8, 0x11, 0xe3, 0xbd, 0x99, 0x63, 0x73, 0xb6,
+	0x88, 0xda, 0x93, 0x51, 0x9b, 0xf8, 0x5b, 0x85, 0xbd, 0x85, 0x20, 0xfa, 0xc0, 0x9b, 0xd0, 0xa9,
+	0x3e, 0x73, 0xa2, 0x44, 0x6d, 0x6c, 0xbc, 0x61, 0x37, 0x41, 0x26, 0xf7, 0x27, 0x7d, 0x81, 0x76,
+	0x0c, 0x0a, 0x12, 0x7d, 0x8e, 0xea, 0x5b, 0x77, 0xa3, 0x30, 0x8d, 0x0f, 0xa1, 0x27, 0xb8, 0xa5,
+	0x95, 0x25, 0x89, 0x09, 0xc5, 0x72, 0xc2, 0xc7, 0x20, 0xfe, 0x80, 0x4a, 0x0a, 0x7f, 0x84, 0xdb,
+	0x67, 0x3a, 0x9f, 0x5c, 0x69, 0xdc, 0x5a, 0x14, 0xc0, 0xfe, 0x17, 0x40, 0x92, 0xb8, 0xa0, 0xc5,
+	0x17, 0xa8, 0x4d, 0xac, 0xf9, 0x5c, 0x37, 0xa7, 0xc1, 0x7b, 0x7e, 0x18, 0x17, 0xb3, 0x0c, 0x97,
+	0x7b, 0x3e, 0x56, 0x0d, 0x83, 0xc2, 0x44, 0x62, 0x4e, 0x8f, 0x1b, 0xe5, 0x3d, 0x7e, 0x81, 0x5a,
+	0xc0, 0x98, 0xfe, 0x3f, 0xd4, 0xb0, 0xa1, 0x29, 0xa3, 0xb6, 0x40, 0x80, 0xcd, 0xbe, 0x32, 0x50,
+	0x46, 0x4a, 0x5b, 0xa4, 0x0f, 0xbd, 0xc7, 0xd0, 0xb7, 0x26, 0xce, 0x9c, 0x99, 0x7c, 0xd5, 0x93,
+	0xe9, 0xe1, 0xc3, 0x14, 0x2a, 0xe8, 0xf3, 0x4b, 0x6c, 0x5e, 0x18, 0x6c, 0x36, 0xb5, 0x0b, 0xef,
+	0x32, 0xc0, 0xd0, 0x11, 0x3a, 0xaf, 0xcd, 0x29, 0xfb, 0xbb, 0x24, 0x59, 0x82, 0x55, 0x5c, 0x83,
+	0xf5, 0x2b, 0xec, 0x64, 0x58, 0x83, 0xe2, 0x3a, 0xa8, 0x4e, 0x2c, 0xc7, 0xe4, 0x1e, 0x73, 0x55,
+	0xf5, 0x17, 0xf4, 0x53, 0xec, 0xf8, 0x0f, 0xa0, 0xac, 0x65, 0x19, 0xbb, 0x59, 0x60, 0x21, 0xf1,
+	0x00, 0x4d, 0x8d, 0xe9, 0x8b, 0xc9, 0x55, 0x48, 0xf8, 0x14, 0x2d, 0xdb, 0xdb, 0x38, 0x5f, 0xf8,
+	0x3b, 0x85, 0x43, 0x6a, 0xda, 0xc9, 0x60, 0x7a, 0xec, 0x0a, 0x84, 0xbf, 0x11, 0x64, 0xfd, 0x01,
+	0xcd, 0x88, 0xce, 0x76, 0x66, 0xc5, 0x6c, 0xdb, 0x21, 0x9b, 0x8b, 0xa4, 0xbf, 0x62, 0xf7, 0x88,
+	0x71, 0x6f, 0x4a, 0xbe, 0x4e, 0x44, 0xa4, 0xdf, 0x63, 0xdb, 0x70, 0xb7, 0xcf, 0x27, 0xe5, 0xaa,
+	0xd6, 0x30, 0x62, 0x02, 0x3a, 0xc4, 0x4e, 0x48, 0xe9, 0x2a, 0xaf, 0x1d, 0x31, 0x7e, 0x07, 0x1f,
+	0x77, 0xee, 0x0a, 0x5d, 0xf1, 0xbb, 0x80, 0x11, 0x85, 0xd3, 0x57, 0xa8, 0x87, 0x73, 0x7e, 0xbf,
+	0xf7, 0x70, 0xf0, 0x1f, 0x50, 0x7d, 0xe9, 0xfa, 0x26, 0xf9, 0x19, 0xcd, 0x94, 0x7f, 0x91, 0xdd,
+	0xa5, 0x40, 0xc5, 0xb5, 0x47, 0xe9, 0x7e, 0x89, 0xe1, 0xd1, 0x0a, 0x19, 0xa0, 0x95, 0x36, 0xa2,
+	0x95, 0x64, 0xdd, 0x32, 0xeb, 0xa2, 0x15, 0xf2, 0x13, 0x6a, 0x81, 0xbb, 0x90, 0xbd, 0x18, 0x9e,
+	0xb6, 0x24, 0xe9, 0x4e, 0xce, 0x49, 0xc4, 0xf0, 0x1c, 0x35, 0x6d, 0x99, 0x21, 0xed, 0x29, 0xd2,
+	0x8a, 0x12, 0x69, 0x85, 0xf4, 0x80, 0xd8, 0x27, 0xc8, 0xdd, 0x18, 0xb0, 0xe4, 0x1e, 0x05, 0x24,
+	0x7d, 0x20, 0xf6, 0x91, 0x95, 0xf3, 0xb8, 0x97, 0x6a, 0x23, 0xe3, 0x3a, 0xb4, 0x42, 0x5e, 0x61,
+	0xdb, 0x93, 0xc4, 0xf7, 0xe4, 0xf9, 0x5a, 0x20, 0xcf, 0x50, 0xd7, 0x4c, 0xfd, 0xda, 0xbe, 0xb2,
+	0xf8, 0x4a, 0x96, 0xa2, 0x91, 0xd4, 0x43, 0xab, 0x22, 0xe9, 0xd1, 0x27, 0xad, 0x42, 0x92, 0xf2,
+	0x8e, 0xa2, 0x66, 0x7e, 0x44, 0x5d, 0xcb, 0x21, 0xc9, 0x78, 0x58, 0x41, 0x15, 0x0a, 0x1a, 0x09,
+	0x7f, 0x22, 0xf7, 0xb2, 0x37, 0xb3, 0x26, 0xcd, 0x31, 0x10, 0xfb, 0x4c, 0xf2, 0x7e, 0x97, 0x4c,
+	0x2d, 0x39, 0xd7, 0x65, 0x6b, 0xf2, 0xe6, 0x3a, 0x40, 0x23, 0x21, 0xfe, 0x24, 0x7d, 0x11, 0x19,
+	0x19, 0x95, 0x3e, 0x5e, 0x71, 0x1a, 0x8d, 0x68, 0x84, 0x66, 0x4a, 0xaf, 0xc9, 0x27, 0x71, 0x44,
+	0x9e, 0x3d, 0x24, 0xff, 0x9d, 0xb9, 0x42, 0x4f, 0x2b, 0x4f, 0x04, 0x72, 0x86, 0x56, 0x5a, 0xad,
+	0xc9, 0xfd, 0xec, 0xe8, 0xb2, 0xbc, 0xdd, 0xd5, 0x80, 0x04, 0xf1, 0x73, 0x6c, 0xfa, 0x42, 0x4c,
+	0x3e, 0x4a, 0xde, 0x67, 0x42, 0xab, 0xa5, 0xbd, 0xe5, 0x83, 0xa4, 0x6e, 0xa4, 0xa5, 0x77, 0x1d,
+	0xdd, 0xc8, 0x17, 0x6b, 0x5a, 0x71, 0x15, 0x2d, 0xa5, 0xba, 0xeb, 0x28, 0x5a, 0xae, 0x4c, 0xd3,
+	0xca, 0x4b, 0xfa, 0x47, 0xf7, 0xd2, 0xe0, 0x57, 0xce, 0x58, 0x9e, 0x58, 0xf3, 0xfd, 0xb9, 0x65,
+	0x3b, 0x6f, 0x74, 0xff, 0x83, 0x23, 0xfa, 0x7a, 0x18, 0x6f, 0x7a, 0xbf, 0xbe, 0x79, 0x17, 0x00,
+	0x00, 0xff, 0xff, 0xd0, 0x9c, 0x8b, 0x11, 0x92, 0x0c, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1223,10 +1223,10 @@ type BlastClient interface {
 	GetCluster(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetClusterResponse, error)
 	WatchCluster(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (Blast_WatchClusterClient, error)
 	Snapshot(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error)
-	GetState(ctx context.Context, in *GetStateRequest, opts ...grpc.CallOption) (*GetStateResponse, error)
-	SetState(ctx context.Context, in *SetStateRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-	DeleteState(ctx context.Context, in *DeleteStateRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-	WatchState(ctx context.Context, in *WatchStateRequest, opts ...grpc.CallOption) (Blast_WatchStateClient, error)
+	GetValue(ctx context.Context, in *GetValueRequest, opts ...grpc.CallOption) (*GetValueResponse, error)
+	SetValue(ctx context.Context, in *SetValueRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	DeleteValue(ctx context.Context, in *DeleteValueRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	WatchStore(ctx context.Context, in *WatchStoreRequest, opts ...grpc.CallOption) (Blast_WatchStoreClient, error)
 	GetDocument(ctx context.Context, in *GetDocumentRequest, opts ...grpc.CallOption) (*GetDocumentResponse, error)
 	IndexDocument(ctx context.Context, opts ...grpc.CallOption) (Blast_IndexDocumentClient, error)
 	DeleteDocument(ctx context.Context, opts ...grpc.CallOption) (Blast_DeleteDocumentClient, error)
@@ -1338,39 +1338,39 @@ func (c *blastClient) Snapshot(ctx context.Context, in *empty.Empty, opts ...grp
 	return out, nil
 }
 
-func (c *blastClient) GetState(ctx context.Context, in *GetStateRequest, opts ...grpc.CallOption) (*GetStateResponse, error) {
-	out := new(GetStateResponse)
-	err := c.cc.Invoke(ctx, "/protobuf.Blast/GetState", in, out, opts...)
+func (c *blastClient) GetValue(ctx context.Context, in *GetValueRequest, opts ...grpc.CallOption) (*GetValueResponse, error) {
+	out := new(GetValueResponse)
+	err := c.cc.Invoke(ctx, "/protobuf.Blast/GetValue", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *blastClient) SetState(ctx context.Context, in *SetStateRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *blastClient) SetValue(ctx context.Context, in *SetValueRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, "/protobuf.Blast/SetState", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/protobuf.Blast/SetValue", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *blastClient) DeleteState(ctx context.Context, in *DeleteStateRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *blastClient) DeleteValue(ctx context.Context, in *DeleteValueRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, "/protobuf.Blast/DeleteState", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/protobuf.Blast/DeleteValue", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *blastClient) WatchState(ctx context.Context, in *WatchStateRequest, opts ...grpc.CallOption) (Blast_WatchStateClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Blast_serviceDesc.Streams[1], "/protobuf.Blast/WatchState", opts...)
+func (c *blastClient) WatchStore(ctx context.Context, in *WatchStoreRequest, opts ...grpc.CallOption) (Blast_WatchStoreClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_Blast_serviceDesc.Streams[1], "/protobuf.Blast/WatchStore", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &blastWatchStateClient{stream}
+	x := &blastWatchStoreClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -1380,17 +1380,17 @@ func (c *blastClient) WatchState(ctx context.Context, in *WatchStateRequest, opt
 	return x, nil
 }
 
-type Blast_WatchStateClient interface {
-	Recv() (*WatchStateResponse, error)
+type Blast_WatchStoreClient interface {
+	Recv() (*WatchStoreResponse, error)
 	grpc.ClientStream
 }
 
-type blastWatchStateClient struct {
+type blastWatchStoreClient struct {
 	grpc.ClientStream
 }
 
-func (x *blastWatchStateClient) Recv() (*WatchStateResponse, error) {
-	m := new(WatchStateResponse)
+func (x *blastWatchStoreClient) Recv() (*WatchStoreResponse, error) {
+	m := new(WatchStoreResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -1511,10 +1511,10 @@ type BlastServer interface {
 	GetCluster(context.Context, *empty.Empty) (*GetClusterResponse, error)
 	WatchCluster(*empty.Empty, Blast_WatchClusterServer) error
 	Snapshot(context.Context, *empty.Empty) (*empty.Empty, error)
-	GetState(context.Context, *GetStateRequest) (*GetStateResponse, error)
-	SetState(context.Context, *SetStateRequest) (*empty.Empty, error)
-	DeleteState(context.Context, *DeleteStateRequest) (*empty.Empty, error)
-	WatchState(*WatchStateRequest, Blast_WatchStateServer) error
+	GetValue(context.Context, *GetValueRequest) (*GetValueResponse, error)
+	SetValue(context.Context, *SetValueRequest) (*empty.Empty, error)
+	DeleteValue(context.Context, *DeleteValueRequest) (*empty.Empty, error)
+	WatchStore(*WatchStoreRequest, Blast_WatchStoreServer) error
 	GetDocument(context.Context, *GetDocumentRequest) (*GetDocumentResponse, error)
 	IndexDocument(Blast_IndexDocumentServer) error
 	DeleteDocument(Blast_DeleteDocumentServer) error
@@ -1674,78 +1674,78 @@ func _Blast_Snapshot_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Blast_GetState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetStateRequest)
+func _Blast_GetValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetValueRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(BlastServer).GetState(ctx, in)
+		return srv.(BlastServer).GetValue(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/protobuf.Blast/GetState",
+		FullMethod: "/protobuf.Blast/GetValue",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BlastServer).GetState(ctx, req.(*GetStateRequest))
+		return srv.(BlastServer).GetValue(ctx, req.(*GetValueRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Blast_SetState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetStateRequest)
+func _Blast_SetValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetValueRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(BlastServer).SetState(ctx, in)
+		return srv.(BlastServer).SetValue(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/protobuf.Blast/SetState",
+		FullMethod: "/protobuf.Blast/SetValue",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BlastServer).SetState(ctx, req.(*SetStateRequest))
+		return srv.(BlastServer).SetValue(ctx, req.(*SetValueRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Blast_DeleteState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteStateRequest)
+func _Blast_DeleteValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteValueRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(BlastServer).DeleteState(ctx, in)
+		return srv.(BlastServer).DeleteValue(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/protobuf.Blast/DeleteState",
+		FullMethod: "/protobuf.Blast/DeleteValue",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BlastServer).DeleteState(ctx, req.(*DeleteStateRequest))
+		return srv.(BlastServer).DeleteValue(ctx, req.(*DeleteValueRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Blast_WatchState_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(WatchStateRequest)
+func _Blast_WatchStore_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(WatchStoreRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(BlastServer).WatchState(m, &blastWatchStateServer{stream})
+	return srv.(BlastServer).WatchStore(m, &blastWatchStoreServer{stream})
 }
 
-type Blast_WatchStateServer interface {
-	Send(*WatchStateResponse) error
+type Blast_WatchStoreServer interface {
+	Send(*WatchStoreResponse) error
 	grpc.ServerStream
 }
 
-type blastWatchStateServer struct {
+type blastWatchStoreServer struct {
 	grpc.ServerStream
 }
 
-func (x *blastWatchStateServer) Send(m *WatchStateResponse) error {
+func (x *blastWatchStoreServer) Send(m *WatchStoreResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -1906,16 +1906,16 @@ var _Blast_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Blast_Snapshot_Handler,
 		},
 		{
-			MethodName: "GetState",
-			Handler:    _Blast_GetState_Handler,
+			MethodName: "GetValue",
+			Handler:    _Blast_GetValue_Handler,
 		},
 		{
-			MethodName: "SetState",
-			Handler:    _Blast_SetState_Handler,
+			MethodName: "SetValue",
+			Handler:    _Blast_SetValue_Handler,
 		},
 		{
-			MethodName: "DeleteState",
-			Handler:    _Blast_DeleteState_Handler,
+			MethodName: "DeleteValue",
+			Handler:    _Blast_DeleteValue_Handler,
 		},
 		{
 			MethodName: "GetDocument",
@@ -1941,8 +1941,8 @@ var _Blast_serviceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "WatchState",
-			Handler:       _Blast_WatchState_Handler,
+			StreamName:    "WatchStore",
+			Handler:       _Blast_WatchStore_Handler,
 			ServerStreams: true,
 		},
 		{

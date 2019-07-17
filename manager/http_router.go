@@ -102,7 +102,7 @@ func (h *GetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	key := vars["path"]
 
-	value, err := h.client.GetState(key)
+	value, err := h.client.GetValue(key)
 	if err != nil {
 		switch err {
 		case blasterrors.ErrNotFound:
@@ -208,7 +208,7 @@ func (h *PutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.client.SetState(key, value)
+	err = h.client.SetValue(key, value)
 	if err != nil {
 		status = http.StatusInternalServerError
 
@@ -252,7 +252,7 @@ func (h *DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	key := vars["path"]
 
-	err := h.client.DeleteState(key)
+	err := h.client.DeleteValue(key)
 	if err != nil {
 		status = http.StatusInternalServerError
 

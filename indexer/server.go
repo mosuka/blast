@@ -29,10 +29,9 @@ type Server struct {
 	clusterConfig *config.ClusterConfig
 	nodeConfig    *config.NodeConfig
 	indexConfig   *config.IndexConfig
-
-	logger     *zap.Logger
-	grpcLogger *zap.Logger
-	httpLogger accesslog.Logger
+	logger        *zap.Logger
+	grpcLogger    *zap.Logger
+	httpLogger    accesslog.Logger
 
 	raftServer  *RaftServer
 	grpcService *GRPCService
@@ -71,7 +70,7 @@ func (s *Server) Start() {
 			return
 		}
 
-		clusterIntr, err := mc.GetState(fmt.Sprintf("cluster_config/clusters/%s/nodes", s.clusterConfig.ClusterId))
+		clusterIntr, err := mc.GetValue(fmt.Sprintf("cluster_config/clusters/%s/nodes", s.clusterConfig.ClusterId))
 		if err != nil && err != errors.ErrNotFound {
 			s.logger.Fatal(err.Error())
 			return
@@ -124,7 +123,7 @@ func (s *Server) Start() {
 		}
 
 		s.logger.Debug("pull index config from manager", zap.String("address", mc.GetAddress()))
-		value, err := mc.GetState("/index_config")
+		value, err := mc.GetValue("/index_config")
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return

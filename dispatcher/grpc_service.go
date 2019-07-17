@@ -41,8 +41,7 @@ type GRPCService struct {
 	*grpc.Service
 
 	managerAddr string
-
-	logger *zap.Logger
+	logger      *zap.Logger
 
 	managers             map[string]interface{}
 	managerClients       map[string]*grpc.Client
@@ -359,7 +358,7 @@ func (s *GRPCService) startUpdateIndexers(checkInterval time.Duration) {
 	}
 
 	// get initial indexers
-	clusters, err := client.GetState("/cluster_config/clusters/")
+	clusters, err := client.GetValue("/cluster_config/clusters/")
 	if err != nil {
 		s.logger.Error(err.Error())
 	}
@@ -425,7 +424,7 @@ func (s *GRPCService) startUpdateIndexers(checkInterval time.Duration) {
 				continue
 			}
 
-			stream, err := client.WatchState("/cluster_config/clusters/")
+			stream, err := client.WatchStore("/cluster_config/clusters/")
 			if err != nil {
 				s.logger.Error(err.Error())
 				continue
@@ -442,7 +441,7 @@ func (s *GRPCService) startUpdateIndexers(checkInterval time.Duration) {
 			}
 			s.logger.Debug("data has changed", zap.String("key", resp.Key))
 
-			cluster, err := client.GetState("/cluster_config/clusters/")
+			cluster, err := client.GetValue("/cluster_config/clusters/")
 			if err != nil {
 				s.logger.Error(err.Error())
 				continue

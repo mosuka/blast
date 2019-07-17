@@ -89,8 +89,8 @@ func main() {
 					Action: execGetCluster,
 				},
 				{
-					Name:  "state",
-					Usage: "get state",
+					Name:  "value",
+					Usage: "get value",
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-addr",
@@ -99,7 +99,7 @@ func main() {
 						},
 					},
 					ArgsUsage: "[key]",
-					Action:    execGetState,
+					Action:    execGetValue,
 				},
 				{
 					Name:  "document",
@@ -134,8 +134,8 @@ func main() {
 					Action:    execSetNode,
 				},
 				{
-					Name:  "state",
-					Usage: "set state",
+					Name:  "value",
+					Usage: "set value",
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-addr",
@@ -144,7 +144,7 @@ func main() {
 						},
 					},
 					ArgsUsage: "[key] [value]",
-					Action:    execSetState,
+					Action:    execSetValue,
 				},
 				{
 					Name:  "document",
@@ -179,8 +179,8 @@ func main() {
 					Action:    execDeleteNode,
 				},
 				{
-					Name:  "state",
-					Usage: "delete state",
+					Name:  "value",
+					Usage: "delete value",
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-addr",
@@ -189,7 +189,7 @@ func main() {
 						},
 					},
 					ArgsUsage: "[key] [value]",
-					Action:    execDeleteState,
+					Action:    execDeleteValue,
 				},
 				{
 					Name:  "document",
@@ -223,8 +223,8 @@ func main() {
 					Action: execWatchCluster,
 				},
 				{
-					Name:  "state",
-					Usage: "watch state",
+					Name:  "store",
+					Usage: "watch store",
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-addr",
@@ -233,7 +233,7 @@ func main() {
 						},
 					},
 					ArgsUsage: "[key]",
-					Action:    execWatchState,
+					Action:    execWatchStore,
 				},
 			},
 		},
