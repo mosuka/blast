@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+### Changed
+
+## [v0.7.1] - 2019-07-18
+
+### Added
+
 - Add raft-badger #69
 - Add raft-storage-type flag #73
 - Add gRPC access logger #74
