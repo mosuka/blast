@@ -47,6 +47,7 @@ Blast requires some C/C++ libraries if you need to enable cld2, icu, libstemmer 
 ### Ubuntu 18.10
 
 ```bash
+$ sudo apt-get update
 $ sudo apt-get install -y \
     libicu-dev \
     libstemmer-dev \

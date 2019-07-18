@@ -1,0 +1,103 @@
+{
+  "types": {
+    "enwiki": {
+      "enabled": true,
+      "dynamic": true,
+      "properties": {
+        "title_en": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "en",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "en"
+        },
+        "text_en": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "en",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "en"
+        },
+        "url": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        },
+        "timestamp": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "datetime",
+              "store": true,
+              "index": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": ""
+        },
+        "_type": {
+          "enabled": true,
+          "dynamic": true,
+          "fields": [
+            {
+              "type": "text",
+              "analyzer": "keyword",
+              "store": true,
+              "index": true,
+              "include_term_vectors": true,
+              "include_in_all": true
+            }
+          ],
+          "default_analyzer": "keyword"
+        }
+      },
+      "default_analyzer": "en"
+    }
+  },
+  "default_mapping": {
+    "enabled": true,
+    "dynamic": true,
+    "default_analyzer": "standard"
+  },
+  "type_field": "_type",
+  "default_type": "_default",
+  "default_analyzer": "standard",
+  "default_datetime_parser": "dateTimeOptional",
+  "default_field": "_all",
+  "store_dynamic": true,
+  "index_dynamic": true,
+  "analysis": {
+    "analyzers": {},
+    "char_filters": {},
+    "tokenizers": {},
+    "token_filters": {},
+    "token_maps": {}
+  }
+}

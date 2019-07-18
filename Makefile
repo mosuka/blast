@@ -33,7 +33,7 @@ TARGET_PACKAGES = $(shell find . -name 'main.go' -print0 | xargs -0 -n1 dirname 
 ifeq ($(VERSION),)
   VERSION = latest
 endif
-LDFLAGS = -ldflags "-X \"github.com/mosuka/blast/version.Version=$(VERSION)\""
+LDFLAGS = -ldflags "-s -w -X \"github.com/mosuka/blast/version.Version=$(VERSION)\""
 
 ifeq ($(GOOS),windows)
   BIN_EXT = .exe
