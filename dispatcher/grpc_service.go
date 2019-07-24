@@ -25,6 +25,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/mosuka/blast/indexutils"
+
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search"
 	"github.com/golang/protobuf/ptypes/any"
@@ -782,9 +784,9 @@ func (s *GRPCService) IndexDocument(stream protobuf.Blast_IndexDocumentServer) e
 	}
 
 	// initialize document list for each cluster
-	docSet := make(map[string][]map[string]interface{}, 0)
+	docSet := make(map[string][]*indexutils.Document, 0)
 	for _, clusterId := range clusterIds {
-		docSet[clusterId] = make([]map[string]interface{}, 0)
+		docSet[clusterId] = make([]*indexutils.Document, 0)
 	}
 
 	for {
@@ -807,9 +809,10 @@ func (s *GRPCService) IndexDocument(stream protobuf.Blast_IndexDocumentServer) e
 		fields := *ins.(*map[string]interface{})
 
 		// document
-		doc := map[string]interface{}{
-			"id":     req.Id,
-			"fields": fields,
+		doc, err := indexutils.NewDocument(req.Id, fields)
+		if err != nil {
+			s.logger.Error(err.Error())
+			return status.Error(codes.Internal, err.Error())
 		}
 
 		// distribute documents to each cluster based on document id
@@ -831,7 +834,7 @@ func (s *GRPCService) IndexDocument(stream protobuf.Blast_IndexDocumentServer) e
 	wg := &sync.WaitGroup{}
 	for clusterId, docs := range docSet {
 		wg.Add(1)
-		go func(clusterId string, docs []map[string]interface{}, respChan chan respVal) {
+		go func(clusterId string, docs []*indexutils.Document, respChan chan respVal) {
 			count, err := indexerClients[clusterId].IndexDocument(docs)
 			wg.Done()
 			respChan <- respVal{

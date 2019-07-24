@@ -34,7 +34,7 @@ func TestServer_Start(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)

@@ -1,6 +1,6 @@
 {
   "query": {
-    "query": "+text_en:search"
+    "query": "+_all:search"
   },
   "size": 10,
   "from": 0,

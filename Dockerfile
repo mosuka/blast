@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.12.1-stretch
+FROM golang:1.12.7-stretch
 
 ARG VERSION
 
@@ -67,7 +67,7 @@ COPY --from=0 /go/src/github.com/blevesearch/cld2/cld2/internal/*.so /usr/local/
 COPY --from=0 /go/src/github.com/mosuka/blast/bin/* /usr/bin/
 COPY --from=0 /go/src/github.com/mosuka/blast/docker-entrypoint.sh /usr/bin/
 
-EXPOSE 5000 5001 5002
+EXPOSE 2000 5000 8000
 
 ENTRYPOINT [ "/usr/bin/docker-entrypoint.sh" ]
-CMD        [ "blastd", "--help" ]
+CMD        [ "blast", "--help" ]

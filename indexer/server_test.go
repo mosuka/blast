@@ -39,7 +39,7 @@ func TestServer_Start(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -67,7 +67,7 @@ func TestServer_Start(t *testing.T) {
 		server.Stop()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	// start server
@@ -81,7 +81,7 @@ func TestServer_LivenessProbe(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -109,7 +109,7 @@ func TestServer_LivenessProbe(t *testing.T) {
 		server.Stop()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	// start server
@@ -148,7 +148,7 @@ func TestServer_ReadinessProbe(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -176,7 +176,7 @@ func TestServer_ReadinessProbe(t *testing.T) {
 		server.Stop()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	// start server
@@ -215,7 +215,7 @@ func TestServer_GetNode(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -243,7 +243,7 @@ func TestServer_GetNode(t *testing.T) {
 		server.Stop()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	// start server
@@ -269,7 +269,7 @@ func TestServer_GetNode(t *testing.T) {
 	// get node
 	node, err := client.GetNode(nodeConfig.NodeId)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	expNode := map[string]interface{}{
 		"node_config": nodeConfig.ToMap(),
@@ -277,7 +277,7 @@ func TestServer_GetNode(t *testing.T) {
 	}
 	actNode := node
 	if !reflect.DeepEqual(expNode, actNode) {
-		t.Errorf("expected content to see %v, saw %v", expNode, actNode)
+		t.Fatalf("expected content to see %v, saw %v", expNode, actNode)
 	}
 }
 
@@ -285,7 +285,7 @@ func TestServer_GetCluster(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -313,7 +313,7 @@ func TestServer_GetCluster(t *testing.T) {
 		server.Stop()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	// start server
@@ -339,7 +339,7 @@ func TestServer_GetCluster(t *testing.T) {
 	// get cluster
 	cluster, err := client.GetCluster()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	expCluster := map[string]interface{}{
 		nodeConfig.NodeId: map[string]interface{}{
@@ -349,7 +349,7 @@ func TestServer_GetCluster(t *testing.T) {
 	}
 	actCluster := cluster
 	if !reflect.DeepEqual(expCluster, actCluster) {
-		t.Errorf("expected content to see %v, saw %v", expCluster, actCluster)
+		t.Fatalf("expected content to see %v, saw %v", expCluster, actCluster)
 	}
 }
 
@@ -357,7 +357,7 @@ func TestServer_GetIndexMapping(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -385,7 +385,7 @@ func TestServer_GetIndexMapping(t *testing.T) {
 		server.Stop()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	// start server
@@ -424,7 +424,7 @@ func TestServer_GetIndexMapping(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(expIndexMapping, actIndexMapping) {
-		t.Errorf("expected content to see %v, saw %v", expIndexMapping, actIndexMapping)
+		t.Fatalf("expected content to see %v, saw %v", expIndexMapping, actIndexMapping)
 	}
 }
 
@@ -432,7 +432,7 @@ func TestServer_GetIndexType(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -460,7 +460,7 @@ func TestServer_GetIndexType(t *testing.T) {
 		server.Stop()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	// start server
@@ -485,7 +485,7 @@ func TestServer_GetIndexType(t *testing.T) {
 
 	expIndexType := indexConfig.IndexType
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	actIndexConfigMap, err := client.GetIndexConfig()
@@ -496,7 +496,7 @@ func TestServer_GetIndexType(t *testing.T) {
 	actIndexType := actIndexConfigMap["index_type"].(string)
 
 	if !reflect.DeepEqual(expIndexType, actIndexType) {
-		t.Errorf("expected content to see %v, saw %v", expIndexType, actIndexType)
+		t.Fatalf("expected content to see %v, saw %v", expIndexType, actIndexType)
 	}
 }
 
@@ -504,7 +504,7 @@ func TestServer_GetIndexStorageType(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -532,7 +532,7 @@ func TestServer_GetIndexStorageType(t *testing.T) {
 		server.Stop()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	// start server
@@ -557,7 +557,7 @@ func TestServer_GetIndexStorageType(t *testing.T) {
 
 	expIndexStorageType := indexConfig.IndexStorageType
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	actIndexConfigMap, err := client.GetIndexConfig()
@@ -568,7 +568,7 @@ func TestServer_GetIndexStorageType(t *testing.T) {
 	actIndexStorageType := actIndexConfigMap["index_storage_type"].(string)
 
 	if !reflect.DeepEqual(expIndexStorageType, actIndexStorageType) {
-		t.Errorf("expected content to see %v, saw %v", expIndexStorageType, actIndexStorageType)
+		t.Fatalf("expected content to see %v, saw %v", expIndexStorageType, actIndexStorageType)
 	}
 }
 
@@ -576,7 +576,7 @@ func TestServer_GetIndexStats(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -604,7 +604,7 @@ func TestServer_GetIndexStats(t *testing.T) {
 		server.Stop()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	// start server
@@ -649,7 +649,7 @@ func TestServer_GetIndexStats(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(expIndexStats, actIndexStats) {
-		t.Errorf("expected content to see %v, saw %v", expIndexStats, actIndexStats)
+		t.Fatalf("expected content to see %v, saw %v", expIndexStats, actIndexStats)
 	}
 }
 
@@ -657,7 +657,7 @@ func TestServer_PutDocument(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -685,7 +685,7 @@ func TestServer_PutDocument(t *testing.T) {
 		server.Stop()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	// start server
@@ -709,40 +709,40 @@ func TestServer_PutDocument(t *testing.T) {
 	}
 
 	// put document
-	docs := make([]map[string]interface{}, 0)
+	docs := make([]*indexutils.Document, 0)
 	docPath1 := filepath.Join(curDir, "../example/wiki_doc_enwiki_1.json")
 	// read index mapping file
 	docFile1, err := os.Open(docPath1)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	defer func() {
 		_ = docFile1.Close()
 	}()
 	docBytes1, err := ioutil.ReadAll(docFile1)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	var docFields1 map[string]interface{}
 	err = json.Unmarshal(docBytes1, &docFields1)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
-	doc1 := map[string]interface{}{
-		"id":     "doc1",
-		"fields": docFields1,
+	doc1, err := indexutils.NewDocument("doc1", docFields1)
+	if err != nil {
+		t.Fatalf("%v", err)
 	}
 	docs = append(docs, doc1)
 	count, err := client.IndexDocument(docs)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	expCount := 1
 	actCount := count
 
 	if expCount != actCount {
-		t.Errorf("expected content to see %v, saw %v", expCount, actCount)
+		t.Fatalf("expected content to see %v, saw %v", expCount, actCount)
 	}
 }
 
@@ -750,7 +750,7 @@ func TestServer_GetDocument(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -778,7 +778,7 @@ func TestServer_GetDocument(t *testing.T) {
 		server.Stop()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	// start server
@@ -802,60 +802,55 @@ func TestServer_GetDocument(t *testing.T) {
 	}
 
 	// put document
-	putDocs := make([]map[string]interface{}, 0)
+	putDocs := make([]*indexutils.Document, 0)
 	putDocPath1 := filepath.Join(curDir, "../example/wiki_doc_enwiki_1.json")
 	// read index mapping file
 	putDocFile1, err := os.Open(putDocPath1)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	defer func() {
 		_ = putDocFile1.Close()
 	}()
 	putDocBytes1, err := ioutil.ReadAll(putDocFile1)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
-	var putDocFields1 map[string]interface{}
-	err = json.Unmarshal(putDocBytes1, &putDocFields1)
+	putDoc1, err := indexutils.NewDocumentFromBytes(putDocBytes1)
 	if err != nil {
-		t.Errorf("%v", err)
-	}
-	putDoc1 := map[string]interface{}{
-		"id":     "doc1",
-		"fields": putDocFields1,
+		t.Fatalf("%v", err)
 	}
 	putDocs = append(putDocs, putDoc1)
 	putCount, err := client.IndexDocument(putDocs)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	expPutCount := 1
 	actPutCount := putCount
 
 	if expPutCount != actPutCount {
-		t.Errorf("expected content to see %v, saw %v", expPutCount, actPutCount)
+		t.Fatalf("expected content to see %v, saw %v", expPutCount, actPutCount)
 	}
 
 	// get document
-	getDocFields1, err := client.GetDocument("doc1")
+	getDocFields1, err := client.GetDocument("enwiki_1")
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
-	expGetDocFields1 := putDocFields1
+	expGetDocFields1 := putDoc1.Fields
 	actGetDocFields1 := getDocFields1
 	if !reflect.DeepEqual(expGetDocFields1, actGetDocFields1) {
-		t.Errorf("expected content to see %v, saw %v", expGetDocFields1, actGetDocFields1)
+		t.Fatalf("expected content to see %v, saw %v", expGetDocFields1, actGetDocFields1)
 	}
 
 	// get non-existing document
 	getDocFields2, err := client.GetDocument("doc2")
 	if err != errors.ErrNotFound {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	if getDocFields2 != nil {
-		t.Errorf("expected content to see nil, saw %v", getDocFields2)
+		t.Fatalf("expected content to see nil, saw %v", getDocFields2)
 	}
 }
 
@@ -863,7 +858,7 @@ func TestServer_DeleteDocument(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -891,7 +886,7 @@ func TestServer_DeleteDocument(t *testing.T) {
 		server.Stop()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	// start server
@@ -915,89 +910,84 @@ func TestServer_DeleteDocument(t *testing.T) {
 	}
 
 	// put document
-	putDocs := make([]map[string]interface{}, 0)
+	putDocs := make([]*indexutils.Document, 0)
 	putDocPath1 := filepath.Join(curDir, "../example/wiki_doc_enwiki_1.json")
 	// read index mapping file
 	putDocFile1, err := os.Open(putDocPath1)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	defer func() {
 		_ = putDocFile1.Close()
 	}()
 	putDocBytes1, err := ioutil.ReadAll(putDocFile1)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
-	var putDocFields1 map[string]interface{}
-	err = json.Unmarshal(putDocBytes1, &putDocFields1)
+	putDoc1, err := indexutils.NewDocumentFromBytes(putDocBytes1)
 	if err != nil {
-		t.Errorf("%v", err)
-	}
-	putDoc1 := map[string]interface{}{
-		"id":     "doc1",
-		"fields": putDocFields1,
+		t.Fatalf("%v", err)
 	}
 	putDocs = append(putDocs, putDoc1)
 	putCount, err := client.IndexDocument(putDocs)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	expPutCount := 1
 	actPutCount := putCount
 
 	if expPutCount != actPutCount {
-		t.Errorf("expected content to see %v, saw %v", expPutCount, actPutCount)
+		t.Fatalf("expected content to see %v, saw %v", expPutCount, actPutCount)
 	}
 
 	// get document
-	getDocFields1, err := client.GetDocument("doc1")
+	getDocFields1, err := client.GetDocument("enwiki_1")
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
-	expGetDocFields1 := putDocFields1
+	expGetDocFields1 := putDoc1.Fields
 	actGetDocFields1 := getDocFields1
 	if !reflect.DeepEqual(expGetDocFields1, actGetDocFields1) {
-		t.Errorf("expected content to see %v, saw %v", expGetDocFields1, actGetDocFields1)
+		t.Fatalf("expected content to see %v, saw %v", expGetDocFields1, actGetDocFields1)
 	}
 
 	// get non-existing document
 	getDocFields2, err := client.GetDocument("non-existing")
 	if err != errors.ErrNotFound {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	if getDocFields2 != nil {
-		t.Errorf("expected content to see nil, saw %v", getDocFields2)
+		t.Fatalf("expected content to see nil, saw %v", getDocFields2)
 	}
 
 	// delete document
-	delCount, err := client.DeleteDocument([]string{"doc1"})
+	delCount, err := client.DeleteDocument([]string{"enwiki_1"})
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	expDelCount := 1
 	actDelCount := delCount
 	if expDelCount != actDelCount {
-		t.Errorf("expected content to see %v, saw %v", expDelCount, actDelCount)
+		t.Fatalf("expected content to see %v, saw %v", expDelCount, actDelCount)
 	}
 
 	// get document
-	getDocFields1, err = client.GetDocument("doc1")
+	getDocFields1, err = client.GetDocument("enwiki_1")
 	if err != errors.ErrNotFound {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	if getDocFields1 != nil {
-		t.Errorf("expected content to see nil, saw %v", getDocFields1)
+		t.Fatalf("expected content to see nil, saw %v", getDocFields1)
 	}
 
 	// delete non-existing document
 	getDocFields1, err = client.GetDocument("non-existing")
 	if err != errors.ErrNotFound {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	if getDocFields1 != nil {
-		t.Errorf("expected content to see nil, saw %v", getDocFields1)
+		t.Fatalf("expected content to see nil, saw %v", getDocFields1)
 	}
 }
 
@@ -1005,7 +995,7 @@ func TestServer_Search(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -1033,7 +1023,7 @@ func TestServer_Search(t *testing.T) {
 		server.Stop()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	// start server
@@ -1057,40 +1047,40 @@ func TestServer_Search(t *testing.T) {
 	}
 
 	// put document
-	putDocs := make([]map[string]interface{}, 0)
+	putDocs := make([]*indexutils.Document, 0)
 	putDocPath1 := filepath.Join(curDir, "../example/wiki_doc_enwiki_1.json")
 	// read index mapping file
 	putDocFile1, err := os.Open(putDocPath1)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	defer func() {
 		_ = putDocFile1.Close()
 	}()
 	putDocBytes1, err := ioutil.ReadAll(putDocFile1)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	var putDocFields1 map[string]interface{}
 	err = json.Unmarshal(putDocBytes1, &putDocFields1)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
-	putDoc1 := map[string]interface{}{
-		"id":     "doc1",
-		"fields": putDocFields1,
+	putDoc1, err := indexutils.NewDocument("doc1", putDocFields1)
+	if err != nil {
+		t.Fatalf("%v", err)
 	}
 	putDocs = append(putDocs, putDoc1)
 	putCount, err := client.IndexDocument(putDocs)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	expPutCount := 1
 	actPutCount := putCount
 
 	if expPutCount != actPutCount {
-		t.Errorf("expected content to see %v, saw %v", expPutCount, actPutCount)
+		t.Fatalf("expected content to see %v, saw %v", expPutCount, actPutCount)
 	}
 
 	// search
@@ -1098,7 +1088,7 @@ func TestServer_Search(t *testing.T) {
 
 	searchRequestFile, err := os.Open(searchRequestPath)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	defer func() {
 		_ = searchRequestFile.Close()
@@ -1106,23 +1096,23 @@ func TestServer_Search(t *testing.T) {
 
 	searchRequestByte, err := ioutil.ReadAll(searchRequestFile)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	searchRequest := bleve.NewSearchRequest(nil)
 	err = json.Unmarshal(searchRequestByte, searchRequest)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	searchResult1, err := client.Search(searchRequest)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	expTotal := uint64(1)
 	actTotal := searchResult1.Total
 	if expTotal != actTotal {
-		t.Errorf("expected content to see %v, saw %v", expTotal, actTotal)
+		t.Fatalf("expected content to see %v, saw %v", expTotal, actTotal)
 	}
 }
 
@@ -1130,7 +1120,7 @@ func TestCluster_Start(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -1211,7 +1201,7 @@ func TestCluster_LivenessProbe(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -1293,54 +1283,54 @@ func TestCluster_LivenessProbe(t *testing.T) {
 		_ = client1.Close()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	client2, err := grpc.NewClient(nodeConfig2.GRPCAddr)
 	defer func() {
 		_ = client2.Close()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	client3, err := grpc.NewClient(nodeConfig3.GRPCAddr)
 	defer func() {
 		_ = client3.Close()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	// liveness check for server1
 	liveness1, err := client1.LivenessProbe()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	expLiveness1 := protobuf.LivenessProbeResponse_ALIVE.String()
 	actLiveness1 := liveness1
 	if expLiveness1 != actLiveness1 {
-		t.Errorf("expected content to see %v, saw %v", expLiveness1, actLiveness1)
+		t.Fatalf("expected content to see %v, saw %v", expLiveness1, actLiveness1)
 	}
 
 	// liveness check for server2
 	liveness2, err := client2.LivenessProbe()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	expLiveness2 := protobuf.LivenessProbeResponse_ALIVE.String()
 	actLiveness2 := liveness2
 	if expLiveness2 != actLiveness2 {
-		t.Errorf("expected content to see %v, saw %v", expLiveness2, actLiveness2)
+		t.Fatalf("expected content to see %v, saw %v", expLiveness2, actLiveness2)
 	}
 
 	// liveness check for server3
 	liveness3, err := client3.LivenessProbe()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	expLiveness3 := protobuf.LivenessProbeResponse_ALIVE.String()
 	actLiveness3 := liveness3
 	if expLiveness3 != actLiveness3 {
-		t.Errorf("expected content to see %v, saw %v", expLiveness3, actLiveness3)
+		t.Fatalf("expected content to see %v, saw %v", expLiveness3, actLiveness3)
 	}
 }
 
@@ -1348,7 +1338,7 @@ func TestCluster_ReadinessProbe(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -1430,54 +1420,54 @@ func TestCluster_ReadinessProbe(t *testing.T) {
 		_ = client1.Close()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	client2, err := grpc.NewClient(nodeConfig2.GRPCAddr)
 	defer func() {
 		_ = client2.Close()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	client3, err := grpc.NewClient(nodeConfig3.GRPCAddr)
 	defer func() {
 		_ = client3.Close()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	// readiness check for server1
 	readiness1, err := client1.ReadinessProbe()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	expReadiness1 := protobuf.ReadinessProbeResponse_READY.String()
 	actReadiness1 := readiness1
 	if expReadiness1 != actReadiness1 {
-		t.Errorf("expected content to see %v, saw %v", expReadiness1, actReadiness1)
+		t.Fatalf("expected content to see %v, saw %v", expReadiness1, actReadiness1)
 	}
 
 	// readiness check for server2
 	readiness2, err := client2.ReadinessProbe()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	expReadiness2 := protobuf.ReadinessProbeResponse_READY.String()
 	actReadiness2 := readiness2
 	if expReadiness2 != actReadiness2 {
-		t.Errorf("expected content to see %v, saw %v", expReadiness2, actReadiness2)
+		t.Fatalf("expected content to see %v, saw %v", expReadiness2, actReadiness2)
 	}
 
 	// readiness check for server3
 	readiness3, err := client3.ReadinessProbe()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	expReadiness3 := protobuf.ReadinessProbeResponse_READY.String()
 	actReadiness3 := readiness3
 	if expReadiness3 != actReadiness3 {
-		t.Errorf("expected content to see %v, saw %v", expReadiness3, actReadiness3)
+		t.Fatalf("expected content to see %v, saw %v", expReadiness3, actReadiness3)
 	}
 }
 
@@ -1485,7 +1475,7 @@ func TestCluster_GetNode(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -1567,27 +1557,27 @@ func TestCluster_GetNode(t *testing.T) {
 		_ = client1.Close()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	client2, err := grpc.NewClient(nodeConfig2.GRPCAddr)
 	defer func() {
 		_ = client2.Close()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	client3, err := grpc.NewClient(nodeConfig3.GRPCAddr)
 	defer func() {
 		_ = client3.Close()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	// get all node info from all nodes
 	node11, err := client1.GetNode(nodeConfig1.NodeId)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	expNode11 := map[string]interface{}{
 		"node_config": server1.nodeConfig.ToMap(),
@@ -1595,12 +1585,12 @@ func TestCluster_GetNode(t *testing.T) {
 	}
 	actNode11 := node11
 	if !reflect.DeepEqual(expNode11, actNode11) {
-		t.Errorf("expected content to see %v, saw %v", expNode11, actNode11)
+		t.Fatalf("expected content to see %v, saw %v", expNode11, actNode11)
 	}
 
 	node12, err := client1.GetNode(nodeConfig2.NodeId)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	expNode12 := map[string]interface{}{
 		"node_config": server2.nodeConfig.ToMap(),
@@ -1608,12 +1598,12 @@ func TestCluster_GetNode(t *testing.T) {
 	}
 	actNode12 := node12
 	if !reflect.DeepEqual(expNode12, actNode12) {
-		t.Errorf("expected content to see %v, saw %v", expNode12, actNode12)
+		t.Fatalf("expected content to see %v, saw %v", expNode12, actNode12)
 	}
 
 	node13, err := client1.GetNode(nodeConfig3.NodeId)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	expNode13 := map[string]interface{}{
 		"node_config": server3.nodeConfig.ToMap(),
@@ -1621,12 +1611,12 @@ func TestCluster_GetNode(t *testing.T) {
 	}
 	actNode13 := node13
 	if !reflect.DeepEqual(expNode13, actNode13) {
-		t.Errorf("expected content to see %v, saw %v", expNode13, actNode13)
+		t.Fatalf("expected content to see %v, saw %v", expNode13, actNode13)
 	}
 
 	node21, err := client2.GetNode(nodeConfig1.NodeId)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	expNode21 := map[string]interface{}{
 		"node_config": server1.nodeConfig.ToMap(),
@@ -1634,12 +1624,12 @@ func TestCluster_GetNode(t *testing.T) {
 	}
 	actNode21 := node21
 	if !reflect.DeepEqual(expNode21, actNode21) {
-		t.Errorf("expected content to see %v, saw %v", expNode21, actNode21)
+		t.Fatalf("expected content to see %v, saw %v", expNode21, actNode21)
 	}
 
 	node22, err := client2.GetNode(nodeConfig2.NodeId)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	expNode22 := map[string]interface{}{
 		"node_config": server2.nodeConfig.ToMap(),
@@ -1647,12 +1637,12 @@ func TestCluster_GetNode(t *testing.T) {
 	}
 	actNode22 := node22
 	if !reflect.DeepEqual(expNode22, actNode22) {
-		t.Errorf("expected content to see %v, saw %v", expNode22, actNode22)
+		t.Fatalf("expected content to see %v, saw %v", expNode22, actNode22)
 	}
 
 	node23, err := client2.GetNode(nodeConfig3.NodeId)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	expNode23 := map[string]interface{}{
 		"node_config": server3.nodeConfig.ToMap(),
@@ -1660,12 +1650,12 @@ func TestCluster_GetNode(t *testing.T) {
 	}
 	actNode23 := node23
 	if !reflect.DeepEqual(expNode23, actNode23) {
-		t.Errorf("expected content to see %v, saw %v", expNode23, actNode23)
+		t.Fatalf("expected content to see %v, saw %v", expNode23, actNode23)
 	}
 
 	node31, err := client3.GetNode(nodeConfig1.NodeId)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	expNode31 := map[string]interface{}{
 		"node_config": server1.nodeConfig.ToMap(),
@@ -1673,12 +1663,12 @@ func TestCluster_GetNode(t *testing.T) {
 	}
 	actNode31 := node31
 	if !reflect.DeepEqual(expNode31, actNode31) {
-		t.Errorf("expected content to see %v, saw %v", expNode31, actNode31)
+		t.Fatalf("expected content to see %v, saw %v", expNode31, actNode31)
 	}
 
 	node32, err := client3.GetNode(nodeConfig2.NodeId)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	expNode32 := map[string]interface{}{
 		"node_config": server2.nodeConfig.ToMap(),
@@ -1686,12 +1676,12 @@ func TestCluster_GetNode(t *testing.T) {
 	}
 	actNode32 := node32
 	if !reflect.DeepEqual(expNode32, actNode32) {
-		t.Errorf("expected content to see %v, saw %v", expNode32, actNode32)
+		t.Fatalf("expected content to see %v, saw %v", expNode32, actNode32)
 	}
 
 	node33, err := client3.GetNode(nodeConfig3.NodeId)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	expNode33 := map[string]interface{}{
 		"node_config": server3.nodeConfig.ToMap(),
@@ -1699,7 +1689,7 @@ func TestCluster_GetNode(t *testing.T) {
 	}
 	actNode33 := node33
 	if !reflect.DeepEqual(expNode33, actNode33) {
-		t.Errorf("expected content to see %v, saw %v", expNode33, actNode33)
+		t.Fatalf("expected content to see %v, saw %v", expNode33, actNode33)
 	}
 }
 
@@ -1707,7 +1697,7 @@ func TestCluster_GetCluster(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -1789,27 +1779,27 @@ func TestCluster_GetCluster(t *testing.T) {
 		_ = client1.Close()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	client2, err := grpc.NewClient(nodeConfig2.GRPCAddr)
 	defer func() {
 		_ = client2.Close()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	client3, err := grpc.NewClient(nodeConfig3.GRPCAddr)
 	defer func() {
 		_ = client3.Close()
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	// get cluster info from all servers
 	cluster1, err := client1.GetCluster()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	expCluster1 := map[string]interface{}{
 		nodeConfig1.NodeId: map[string]interface{}{
@@ -1827,12 +1817,12 @@ func TestCluster_GetCluster(t *testing.T) {
 	}
 	actCluster1 := cluster1
 	if !reflect.DeepEqual(expCluster1, actCluster1) {
-		t.Errorf("expected content to see %v, saw %v", expCluster1, actCluster1)
+		t.Fatalf("expected content to see %v, saw %v", expCluster1, actCluster1)
 	}
 
 	cluster2, err := client2.GetCluster()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	expCluster2 := map[string]interface{}{
 		nodeConfig1.NodeId: map[string]interface{}{
@@ -1850,12 +1840,12 @@ func TestCluster_GetCluster(t *testing.T) {
 	}
 	actCluster2 := cluster2
 	if !reflect.DeepEqual(expCluster2, actCluster2) {
-		t.Errorf("expected content to see %v, saw %v", expCluster2, actCluster2)
+		t.Fatalf("expected content to see %v, saw %v", expCluster2, actCluster2)
 	}
 
 	cluster3, err := client3.GetCluster()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	expCluster3 := map[string]interface{}{
 		nodeConfig1.NodeId: map[string]interface{}{
@@ -1873,6 +1863,6 @@ func TestCluster_GetCluster(t *testing.T) {
 	}
 	actCluster3 := cluster3
 	if !reflect.DeepEqual(expCluster3, actCluster3) {
-		t.Errorf("expected content to see %v, saw %v", expCluster3, actCluster3)
+		t.Fatalf("expected content to see %v, saw %v", expCluster3, actCluster3)
 	}
 }

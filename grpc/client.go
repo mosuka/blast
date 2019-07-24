@@ -19,6 +19,8 @@ import (
 	"errors"
 	"math"
 
+	"github.com/mosuka/blast/indexutils"
+
 	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -350,7 +352,7 @@ func (c *Client) Search(searchRequest *bleve.SearchRequest, opts ...grpc.CallOpt
 	return searchResult, nil
 }
 
-func (c *Client) IndexDocument(docs []map[string]interface{}, opts ...grpc.CallOption) (int, error) {
+func (c *Client) IndexDocument(docs []*indexutils.Document, opts ...grpc.CallOption) (int, error) {
 	stream, err := c.client.IndexDocument(c.ctx, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
@@ -359,8 +361,8 @@ func (c *Client) IndexDocument(docs []map[string]interface{}, opts ...grpc.CallO
 	}
 
 	for _, doc := range docs {
-		id := doc["id"].(string)
-		fields := doc["fields"].(map[string]interface{})
+		id := doc.Id
+		fields := doc.Fields
 
 		fieldsAny := &any.Any{}
 		err := protobuf.UnmarshalAny(&fields, fieldsAny)

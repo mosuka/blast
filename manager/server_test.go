@@ -35,7 +35,7 @@ func TestServer_Start(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -80,7 +80,7 @@ func TestServer_LivenessProbe(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -150,7 +150,7 @@ func TestServer_ReadinessProbe(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -220,7 +220,7 @@ func TestServer_GetNode(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -293,7 +293,7 @@ func TestServer_GetCluster(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -368,7 +368,7 @@ func TestServer_GetIndexMapping(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -446,7 +446,7 @@ func TestServer_GetIndexType(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -519,7 +519,7 @@ func TestServer_GetIndexStorageType(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -592,7 +592,7 @@ func TestServer_SetState(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -671,7 +671,7 @@ func TestServer_GetState(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -750,7 +750,7 @@ func TestServer_DeleteState(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -850,7 +850,7 @@ func TestCluster_Start(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -931,7 +931,7 @@ func TestCluster_LivenessProbe(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -1068,7 +1068,7 @@ func TestCluster_ReadinessProbe(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -1205,7 +1205,7 @@ func TestCluster_GetNode(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -1427,7 +1427,7 @@ func TestCluster_GetCluster(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -1601,7 +1601,7 @@ func TestCluster_GetState(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -1736,7 +1736,7 @@ func TestCluster_SetState(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -1945,7 +1945,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
-	logger := logutils.NewLogger("DEBUG", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 
 	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)

@@ -19,6 +19,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/blevesearch/bleve"
 	"github.com/mosuka/blast/version"
 	"github.com/urfave/cli"
 )
@@ -26,7 +27,7 @@ import (
 func main() {
 	app := cli.NewApp()
 	app.Name = path.Base(os.Args[0])
-	app.Usage = "blast"
+	app.Usage = "Command for blast"
 	app.Version = version.Version
 	app.Authors = []cli.Author{
 		{
@@ -34,233 +35,1047 @@ func main() {
 			Email: "minoru.osuka@gmail.com",
 		},
 	}
+
 	app.Commands = []cli.Command{
 		{
-			Name:  "livenessprobe",
-			Usage: "liveness probe",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "grpc-addr",
-					Value: ":5001",
-					Usage: "address to connect to",
-				},
-			},
-			Action: execLivenessProbe,
-		},
-		{
-			Name:  "readinessprobe",
-			Usage: "readiness probe",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "grpc-addr",
-					Value: ":5001",
-					Usage: "address to connect to",
-				},
-			},
-			Action: execReadinessProbe,
-		},
-		{
-			Name:  "get",
-			Usage: "get",
+			Name:  "cluster",
+			Usage: "Command for blast cluster",
 			Subcommands: []cli.Command{
 				{
 					Name:  "node",
-					Usage: "get node",
-					Flags: []cli.Flag{
-						cli.StringFlag{
-							Name:  "grpc-addr",
-							Value: ":5001",
-							Usage: "address to connect to",
+					Usage: "Command for blast cluster node",
+					Subcommands: []cli.Command{
+						{
+							Name:  "start",
+							Usage: "Start blast cluster node",
+							Flags: []cli.Flag{
+								cli.StringFlag{
+									Name:   "peer-grpc-address",
+									Value:  "",
+									EnvVar: "BLAST_CLUSTER_PEER_GRPC_ADDRESS",
+									Usage:  "The gRPC address of the peer node that exists in the cluster to be joined",
+								},
+								cli.StringFlag{
+									Name:   "grpc-address",
+									Value:  ":5100",
+									EnvVar: "BLAST_CLUSTER_GRPC_ADDRESS",
+									Usage:  "The gRPC listen address",
+								},
+								cli.StringFlag{
+									Name:   "http-address",
+									Value:  ":8100",
+									EnvVar: "BLAST_CLUSTER_HTTP_ADDRESS",
+									Usage:  "HTTP listen address",
+								},
+								cli.StringFlag{
+									Name:   "node-id",
+									Value:  "",
+									EnvVar: "BLAST_CLUSTER_NODE_ID",
+									Usage:  "Unique ID to identify the node",
+								},
+								cli.StringFlag{
+									Name:   "node-address",
+									Value:  ":2100",
+									EnvVar: "BLAST_CLUSTER_NODE_ADDRESS",
+									Usage:  "The address that should be bound to for internal cluster communications",
+								},
+								cli.StringFlag{
+									Name:   "data-dir",
+									Value:  "/tmp/blast/indexer",
+									EnvVar: "BLAST_CLUSTER_DATA_DIR",
+									Usage:  "A data directory for the node to store state",
+								},
+								cli.StringFlag{
+									Name:   "raft-storage-type",
+									Value:  "boltdb",
+									EnvVar: "BLAST_CLUSTER_RAFT_STORAGE_TYPE",
+									Usage:  "Storage type of the database that stores the state",
+								},
+								cli.StringFlag{
+									Name:   "index-mapping-file",
+									Value:  "",
+									EnvVar: "BLAST_CLUSTER_INDEX_MAPPING_FILE",
+									Usage:  "An index mapping file to use",
+								},
+								cli.StringFlag{
+									Name:   "index-type",
+									Value:  bleve.Config.DefaultIndexType,
+									EnvVar: "BLAST_CLUSTER_INDEX_TYPE",
+									Usage:  "An index type to use",
+								},
+								cli.StringFlag{
+									Name:   "index-storage-type",
+									Value:  bleve.Config.DefaultKVStore,
+									EnvVar: "BLAST_CLUSTER_INDEX_STORAGE_TYPE",
+									Usage:  "An index storage type to use",
+								},
+								cli.StringFlag{
+									Name:   "log-level",
+									Value:  "INFO",
+									EnvVar: "BLAST_CLUSTER_LOG_LEVEL",
+									Usage:  "Log level",
+								},
+								cli.StringFlag{
+									Name:   "log-file",
+									Value:  os.Stderr.Name(),
+									EnvVar: "BLAST_CLUSTER_LOG_FILE",
+									Usage:  "Log file",
+								},
+								cli.IntFlag{
+									Name:   "log-max-size",
+									Value:  500,
+									EnvVar: "BLAST_CLUSTER_LOG_MAX_SIZE",
+									Usage:  "Max size of a log file (megabytes)",
+								},
+								cli.IntFlag{
+									Name:   "log-max-backups",
+									Value:  3,
+									EnvVar: "BLAST_CLUSTER_LOG_MAX_BACKUPS",
+									Usage:  "Max backup count of log files",
+								},
+								cli.IntFlag{
+									Name:   "log-max-age",
+									Value:  30,
+									EnvVar: "BLAST_CLUSTER_LOG_MAX_AGE",
+									Usage:  "Max age of a log file (days)",
+								},
+								cli.BoolFlag{
+									Name:   "log-compress",
+									EnvVar: "BLAST_CLUSTER_LOG_COMPRESS",
+									Usage:  "Compress a log file",
+								},
+								cli.StringFlag{
+									Name:   "grpc-log-level",
+									Value:  "WARN",
+									EnvVar: "BLAST_CLUSTER_GRPC_LOG_LEVEL",
+									Usage:  "gRPC log level",
+								},
+								cli.StringFlag{
+									Name:   "grpc-log-file",
+									Value:  os.Stderr.Name(),
+									EnvVar: "BLAST_CLUSTER_GRPC_LOG_FILE",
+									Usage:  "gRPC log file",
+								},
+								cli.IntFlag{
+									Name:   "grpc-log-max-size",
+									Value:  500,
+									EnvVar: "BLAST_CLUSTER_GRPC_LOG_MAX_SIZE",
+									Usage:  "Max size of a log file (megabytes)",
+								},
+								cli.IntFlag{
+									Name:   "grpc-log-max-backups",
+									Value:  3,
+									EnvVar: "BLAST_CLUSTER_GRPC_LOG_MAX_BACKUPS",
+									Usage:  "Max backup count of log files",
+								},
+								cli.IntFlag{
+									Name:   "grpc-log-max-age",
+									Value:  30,
+									EnvVar: "BLAST_CLUSTER_GRPC_LOG_MAX_AGE",
+									Usage:  "Max age of a log file (days)",
+								},
+								cli.BoolFlag{
+									Name:   "grpc-log-compress",
+									EnvVar: "BLAST_CLUSTER_GRPC_LOG_COMPRESS",
+									Usage:  "Compress a log file",
+								},
+								cli.StringFlag{
+									Name:   "http-log-file",
+									Value:  os.Stderr.Name(),
+									EnvVar: "BLAST_CLUSTER_HTTP_LOG_FILE",
+									Usage:  "HTTP access log file",
+								},
+								cli.IntFlag{
+									Name:   "http-log-max-size",
+									Value:  500,
+									EnvVar: "BLAST_CLUSTER_HTTP_LOG_MAX_SIZE",
+									Usage:  "Max size of a HTTP access log file (megabytes)",
+								},
+								cli.IntFlag{
+									Name:   "http-log-max-backups",
+									Value:  3,
+									EnvVar: "BLAST_CLUSTER_HTTP_LOG_MAX_BACKUPS",
+									Usage:  "Max backup count of HTTP access log files",
+								},
+								cli.IntFlag{
+									Name:   "http-log-max-age",
+									Value:  30,
+									EnvVar: "BLAST_CLUSTER_HTTP_LOG_MAX_AGE",
+									Usage:  "Max age of a HTTP access log file (days)",
+								},
+								cli.BoolFlag{
+									Name:   "http-log-compress",
+									EnvVar: "BLAST_CLUSTER_HTTP_LOG_COMPRESS",
+									Usage:  "Compress a HTTP access log",
+								},
+							},
+							Action: clusterNodeStart,
+						},
+						{
+							Name:  "info",
+							Usage: "Get node information",
+							Flags: []cli.Flag{
+								cli.StringFlag{
+									Name:  "peer-grpc-address",
+									Value: "",
+									Usage: "The gRPC address of the peer node in which the target node for retrieving the information is joining",
+								},
+								cli.StringFlag{
+									Name:  "node-id",
+									Value: "",
+									Usage: "The node ID for which to retrieve the node information",
+								},
+								cli.StringFlag{
+									Name:  "grpc-address",
+									Value: "",
+									Usage: "The gRPC address of the node for which to retrieve the node information",
+								},
+							},
+							Action: clusterNodeInfo,
+						},
+						{
+							Name:  "leave",
+							Usage: "Leave the node from the cluster",
+							Flags: []cli.Flag{
+								cli.StringFlag{
+									Name:  "peer-grpc-address",
+									Value: "",
+									Usage: "The gRPC address of the peer node that exists in the cluster to be joined",
+								},
+								cli.StringFlag{
+									Name:  "node-id",
+									Value: "",
+									Usage: "The gRPC listen address",
+								},
+							},
+							Action: clusterNodeLeave,
+						},
+						{
+							Name:  "health",
+							Usage: "Health check",
+							Flags: []cli.Flag{
+								cli.StringFlag{
+									Name:  "grpc-address",
+									Value: "",
+									Usage: "The gRPC listen address",
+								},
+								cli.BoolFlag{
+									Name:  "liveness",
+									Usage: "Liveness probe",
+								},
+								cli.BoolFlag{
+									Name:  "readiness",
+									Usage: "Readiness probe",
+								},
+							},
+							Action: clusterNodeHealth,
+						},
+						{
+							Name:  "snapshot",
+							Usage: "Snapshot",
+							Flags: []cli.Flag{
+								cli.StringFlag{
+									Name:  "grpc-address",
+									Value: "",
+									Usage: "The gRPC listen address",
+								},
+							},
+							Action: clusterNodeSnapshot,
 						},
 					},
-					ArgsUsage: "[id]",
-					Action:    execGetNode,
 				},
 				{
-					Name:  "cluster",
-					Usage: "get cluster",
-					Flags: []cli.Flag{
-						cli.StringFlag{
-							Name:  "grpc-addr",
-							Value: ":5001",
-							Usage: "address to connect to",
+					Name:  "peers",
+					Usage: "Command for blast cluster peers",
+					Subcommands: []cli.Command{
+						{
+							Name:  "info",
+							Usage: "Get peers",
+							Flags: []cli.Flag{
+								//cli.StringFlag{
+								//	Name:  "cluster-grpc-address",
+								//	Value: "",
+								//	Usage: "The gRPC address of the cluster in which the target node for retrieving the information is joining",
+								//},
+								//cli.StringFlag{
+								//	Name:  "shard-id",
+								//	Value: "",
+								//	Usage: "Shard ID registered in which the target node for retrieving the information is joining",
+								//},
+								//cli.StringFlag{
+								//	Name:  "peer-grpc-address",
+								//	Value: "",
+								//	Usage: "The gRPC address of the peer node in which the target node for retrieving the information is joining",
+								//},
+								//cli.StringFlag{
+								//	Name:  "node-id",
+								//	Value: "",
+								//	Usage: "The node ID for which to retrieve the node information",
+								//},
+								cli.StringFlag{
+									Name:  "grpc-address",
+									Value: "",
+									Usage: "The gRPC address of the node for which to retrieve the node information",
+								},
+							},
+							Action: clusterPeersInfo,
+						},
+						{
+							Name:  "watch",
+							Usage: "Watch peers",
+							Flags: []cli.Flag{
+								//cli.StringFlag{
+								//	Name:  "cluster-grpc-address",
+								//	Value: "",
+								//	Usage: "The gRPC address of the cluster in which the target node for retrieving the information is joining",
+								//},
+								//cli.StringFlag{
+								//	Name:  "shard-id",
+								//	Value: "",
+								//	Usage: "Shard ID registered in which the target node for retrieving the information is joining",
+								//},
+								//cli.StringFlag{
+								//	Name:  "peer-grpc-address",
+								//	Value: "",
+								//	Usage: "The gRPC address of the peer node in which the target node for retrieving the information is joining",
+								//},
+								//cli.StringFlag{
+								//	Name:  "node-id",
+								//	Value: "",
+								//	Usage: "The node ID for which to retrieve the node information",
+								//},
+								cli.StringFlag{
+									Name:  "grpc-address",
+									Value: "",
+									Usage: "The gRPC address of the node for which to retrieve the node information",
+								},
+							},
+							Action: clusterPeersWatch,
 						},
 					},
-					Action: execGetCluster,
 				},
 				{
-					Name:  "value",
-					Usage: "get value",
+					Name:  "get",
+					Usage: "Get data",
 					Flags: []cli.Flag{
 						cli.StringFlag{
-							Name:  "grpc-addr",
-							Value: ":5001",
-							Usage: "address to connect to",
+							Name:  "grpc-address",
+							Value: "",
+							Usage: "The gRPC listen address",
 						},
 					},
 					ArgsUsage: "[key]",
-					Action:    execGetValue,
+					Action:    clusterGet,
 				},
 				{
-					Name:  "document",
-					Usage: "get document",
+					Name:  "set",
+					Usage: "Set data",
 					Flags: []cli.Flag{
 						cli.StringFlag{
-							Name:  "grpc-addr",
-							Value: ":5001",
-							Usage: "address to connect to",
+							Name:  "grpc-address",
+							Value: "",
+							Usage: "The gRPC listen address",
 						},
-					},
-					ArgsUsage: "[id]",
-					Action:    execGetDocument,
-				},
-			},
-		},
-		{
-			Name:  "set",
-			Usage: "set",
-			Subcommands: []cli.Command{
-				{
-					Name:  "node",
-					Usage: "set node",
-					Flags: []cli.Flag{
 						cli.StringFlag{
-							Name:  "grpc-addr",
-							Value: ":5001",
-							Usage: "address to connect to",
-						},
-					},
-					ArgsUsage: "[id] [metadata]",
-					Action:    execSetNode,
-				},
-				{
-					Name:  "value",
-					Usage: "set value",
-					Flags: []cli.Flag{
-						cli.StringFlag{
-							Name:  "grpc-addr",
-							Value: ":5001",
-							Usage: "address to connect to",
+							Name:  "file",
+							Value: "",
+							Usage: "Value file",
 						},
 					},
 					ArgsUsage: "[key] [value]",
-					Action:    execSetValue,
+					Action:    clusterSet,
 				},
 				{
-					Name:  "document",
-					Usage: "set document",
+					Name:  "delete",
+					Usage: "Delete data",
 					Flags: []cli.Flag{
 						cli.StringFlag{
-							Name:  "grpc-addr",
-							Value: ":5001",
-							Usage: "address to connect to",
-						},
-					},
-					ArgsUsage: "[documents | [id] [fields]]",
-					Action:    execSetDocument,
-				},
-			},
-		},
-		{
-			Name:  "delete",
-			Usage: "delete",
-			Subcommands: []cli.Command{
-				{
-					Name:  "node",
-					Usage: "delete node",
-					Flags: []cli.Flag{
-						cli.StringFlag{
-							Name:  "grpc-addr",
-							Value: ":5001",
-							Usage: "address to connect to",
-						},
-					},
-					ArgsUsage: "[id]",
-					Action:    execDeleteNode,
-				},
-				{
-					Name:  "value",
-					Usage: "delete value",
-					Flags: []cli.Flag{
-						cli.StringFlag{
-							Name:  "grpc-addr",
-							Value: ":5001",
-							Usage: "address to connect to",
-						},
-					},
-					ArgsUsage: "[key] [value]",
-					Action:    execDeleteValue,
-				},
-				{
-					Name:  "document",
-					Usage: "delete document",
-					Flags: []cli.Flag{
-						cli.StringFlag{
-							Name:  "grpc-addr",
-							Value: ":5001",
-							Usage: "address to connect to",
-						},
-					},
-					ArgsUsage: "[id] ...",
-					Action:    execDeleteDocument,
-				},
-			},
-		},
-		{
-			Name:  "watch",
-			Usage: "watch",
-			Subcommands: []cli.Command{
-				{
-					Name:  "cluster",
-					Usage: "watch cluster",
-					Flags: []cli.Flag{
-						cli.StringFlag{
-							Name:  "grpc-addr",
-							Value: ":5001",
-							Usage: "address to connect to",
-						},
-					},
-					Action: execWatchCluster,
-				},
-				{
-					Name:  "store",
-					Usage: "watch store",
-					Flags: []cli.Flag{
-						cli.StringFlag{
-							Name:  "grpc-addr",
-							Value: ":5001",
-							Usage: "address to connect to",
+							Name:  "grpc-address",
+							Value: "",
+							Usage: "The gRPC listen address",
 						},
 					},
 					ArgsUsage: "[key]",
-					Action:    execWatchStore,
+					Action:    clusterDelete,
+				},
+				{
+					Name:  "watch",
+					Usage: "Watch data",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "grpc-address",
+							Value: "",
+							Usage: "The gRPC listen address",
+						},
+					},
+					ArgsUsage: "[key]",
+					Action:    clusterWatch,
 				},
 			},
 		},
 		{
-			Name:  "snapshot",
-			Usage: "snapshot data",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "grpc-addr",
-					Value: ":5001",
-					Usage: "address to connect to",
+			Name:  "indexer",
+			Usage: "Command for blast indexer",
+			Subcommands: []cli.Command{
+				{
+					Name:  "node",
+					Usage: "Command for blast indexer node",
+					Subcommands: []cli.Command{
+						{
+							Name:  "start",
+							Usage: "Start blast indexer node",
+							Flags: []cli.Flag{
+								cli.StringFlag{
+									Name:   "cluster-grpc-address",
+									Value:  "",
+									EnvVar: "BLAST_INDEXER_CLUSTER_GRPC_ADDRESS",
+									Usage:  "The gRPC address of the existing cluster node to be joined",
+								},
+								cli.StringFlag{
+									Name:   "shard-id",
+									Value:  "",
+									EnvVar: "BLAST_INDEXER_SHARD_ID",
+									Usage:  "Shard ID registered in the existing cluster to be joined",
+								},
+								cli.StringFlag{
+									Name:   "peer-grpc-address",
+									Value:  "",
+									EnvVar: "BLAST_INDEXER_PEER_GRPC_ADDRESS",
+									Usage:  "The gRPC address of the peer node that exists in the cluster to be joined",
+								},
+								cli.StringFlag{
+									Name:   "grpc-address",
+									Value:  ":5000",
+									EnvVar: "BLAST_INDEXER_GRPC_ADDRESS",
+									Usage:  "The gRPC listen address",
+								},
+								cli.StringFlag{
+									Name:   "http-address",
+									Value:  ":8000",
+									EnvVar: "BLAST_INDEXER_HTTP_ADDRESS",
+									Usage:  "HTTP listen address",
+								},
+								cli.StringFlag{
+									Name:   "node-id",
+									Value:  "",
+									EnvVar: "BLAST_INDEXER_NODE_ID",
+									Usage:  "Unique ID to identify the node",
+								},
+								cli.StringFlag{
+									Name:   "node-address",
+									Value:  ":2000",
+									EnvVar: "BLAST_INDEXER_NODE_ADDRESS",
+									Usage:  "The address that should be bound to for internal cluster communications",
+								},
+								cli.StringFlag{
+									Name:   "data-dir",
+									Value:  "/tmp/blast/indexer",
+									EnvVar: "BLAST_INDEXER_DATA_DIR",
+									Usage:  "A data directory for the node to store state",
+								},
+								cli.StringFlag{
+									Name:   "raft-storage-type",
+									Value:  "boltdb",
+									EnvVar: "BLAST_INDEXER_RAFT_STORAGE_TYPE",
+									Usage:  "Storage type of the database that stores the state",
+								},
+								cli.StringFlag{
+									Name:   "index-mapping-file",
+									Value:  "",
+									EnvVar: "BLAST_INDEXER_INDEX_MAPPING_FILE",
+									Usage:  "An index mapping file to use",
+								},
+								cli.StringFlag{
+									Name:   "index-type",
+									Value:  bleve.Config.DefaultIndexType,
+									EnvVar: "BLAST_INDEXER_INDEX_TYPE",
+									Usage:  "An index type to use",
+								},
+								cli.StringFlag{
+									Name:   "index-storage-type",
+									Value:  bleve.Config.DefaultKVStore,
+									EnvVar: "BLAST_INDEXER_INDEX_STORAGE_TYPE",
+									Usage:  "An index storage type to use",
+								},
+								cli.StringFlag{
+									Name:   "log-level",
+									Value:  "INFO",
+									EnvVar: "BLAST_INDEXER_LOG_LEVEL",
+									Usage:  "Log level",
+								},
+								cli.StringFlag{
+									Name:   "log-file",
+									Value:  os.Stderr.Name(),
+									EnvVar: "BLAST_INDEXER_LOG_FILE",
+									Usage:  "Log file",
+								},
+								cli.IntFlag{
+									Name:   "log-max-size",
+									Value:  500,
+									EnvVar: "BLAST_INDEXER_LOG_MAX_SIZE",
+									Usage:  "Max size of a log file (megabytes)",
+								},
+								cli.IntFlag{
+									Name:   "log-max-backups",
+									Value:  3,
+									EnvVar: "BLAST_INDEXER_LOG_MAX_BACKUPS",
+									Usage:  "Max backup count of log files",
+								},
+								cli.IntFlag{
+									Name:   "log-max-age",
+									Value:  30,
+									EnvVar: "BLAST_INDEXER_LOG_MAX_AGE",
+									Usage:  "Max age of a log file (days)",
+								},
+								cli.BoolFlag{
+									Name:   "log-compress",
+									EnvVar: "BLAST_INDEXER_LOG_COMPRESS",
+									Usage:  "Compress a log file",
+								},
+								cli.StringFlag{
+									Name:   "grpc-log-level",
+									Value:  "WARN",
+									EnvVar: "BLAST_INDEXER_GRPC_LOG_LEVEL",
+									Usage:  "gRPC log level",
+								},
+								cli.StringFlag{
+									Name:   "grpc-log-file",
+									Value:  os.Stderr.Name(),
+									EnvVar: "BLAST_INDEXER_GRPC_LOG_FILE",
+									Usage:  "gRPC log file",
+								},
+								cli.IntFlag{
+									Name:   "grpc-log-max-size",
+									Value:  500,
+									EnvVar: "BLAST_INDEXER_GRPC_LOG_MAX_SIZE",
+									Usage:  "Max size of a log file (megabytes)",
+								},
+								cli.IntFlag{
+									Name:   "grpc-log-max-backups",
+									Value:  3,
+									EnvVar: "BLAST_INDEXER_GRPC_LOG_MAX_BACKUPS",
+									Usage:  "Max backup count of log files",
+								},
+								cli.IntFlag{
+									Name:   "grpc-log-max-age",
+									Value:  30,
+									EnvVar: "BLAST_INDEXER_GRPC_LOG_MAX_AGE",
+									Usage:  "Max age of a log file (days)",
+								},
+								cli.BoolFlag{
+									Name:   "grpc-log-compress",
+									EnvVar: "BLAST_INDEXER_GRPC_LOG_COMPRESS",
+									Usage:  "Compress a log file",
+								},
+								cli.StringFlag{
+									Name:   "http-log-file",
+									Value:  os.Stderr.Name(),
+									EnvVar: "BLAST_INDEXER_HTTP_LOG_FILE",
+									Usage:  "HTTP access log file",
+								},
+								cli.IntFlag{
+									Name:   "http-log-max-size",
+									Value:  500,
+									EnvVar: "BLAST_INDEXER_HTTP_LOG_MAX_SIZE",
+									Usage:  "Max size of a HTTP access log file (megabytes)",
+								},
+								cli.IntFlag{
+									Name:   "http-log-max-backups",
+									Value:  3,
+									EnvVar: "BLAST_INDEXER_HTTP_LOG_MAX_BACKUPS",
+									Usage:  "Max backup count of HTTP access log files",
+								},
+								cli.IntFlag{
+									Name:   "http-log-max-age",
+									Value:  30,
+									EnvVar: "BLAST_INDEXER_HTTP_LOG_MAX_AGE",
+									Usage:  "Max age of a HTTP access log file (days)",
+								},
+								cli.BoolFlag{
+									Name:   "http-log-compress",
+									EnvVar: "BLAST_INDEXER_HTTP_LOG_COMPRESS",
+									Usage:  "Compress a HTTP access log",
+								},
+							},
+							Action: indexerNodeStart,
+						},
+						{
+							Name:  "info",
+							Usage: "Get node information",
+							Flags: []cli.Flag{
+								//cli.StringFlag{
+								//	Name:  "cluster-grpc-address",
+								//	Value: "",
+								//	Usage: "The gRPC address of the cluster in which the target node for retrieving the information is joining",
+								//},
+								//cli.StringFlag{
+								//	Name:  "shard-id",
+								//	Value: "",
+								//	Usage: "Shard ID registered in which the target node for retrieving the information is joining",
+								//},
+								//cli.StringFlag{
+								//	Name:  "peer-grpc-address",
+								//	Value: "",
+								//	Usage: "The gRPC address of the peer node in which the target node for retrieving the information is joining",
+								//},
+								//cli.StringFlag{
+								//	Name:  "node-id",
+								//	Value: "",
+								//	Usage: "The node ID for which to retrieve the node information",
+								//},
+								cli.StringFlag{
+									Name:  "grpc-address",
+									Value: "",
+									Usage: "The gRPC address of the node for which to retrieve the node information",
+								},
+							},
+							Action: indexerNodeInfo,
+						},
+						{
+							Name:  "leave",
+							Usage: "Leave the node from the cluster",
+							Flags: []cli.Flag{
+								cli.StringFlag{
+									Name:  "cluster-grpc-address",
+									Value: "",
+									Usage: "The gRPC address of the existing cluster node to be joined",
+								},
+								cli.StringFlag{
+									Name:  "shard-id",
+									Value: "",
+									Usage: "Shard ID registered in the existing cluster to be joined",
+								},
+								cli.StringFlag{
+									Name:  "peer-grpc-address",
+									Value: "",
+									Usage: "The gRPC address of the peer node that exists in the cluster to be joined",
+								},
+								cli.StringFlag{
+									Name:  "grpc-address",
+									Value: "",
+									Usage: "The gRPC listen address",
+								},
+								cli.StringFlag{
+									Name:  "node-id",
+									Value: "",
+									Usage: "Node ID to delete",
+								},
+							},
+							Action: indexerNodeLeave,
+						},
+						{
+							Name:  "health",
+							Usage: "Health check",
+							Flags: []cli.Flag{
+								cli.StringFlag{
+									Name:  "grpc-address",
+									Value: "",
+									Usage: "The gRPC listen address",
+								},
+								cli.BoolFlag{
+									Name:  "liveness",
+									Usage: "Liveness probe",
+								},
+								cli.BoolFlag{
+									Name:  "readiness",
+									Usage: "Readiness probe",
+								},
+							},
+							Action: indexerNodeHealth,
+						},
+						{
+							Name:  "snapshot",
+							Usage: "Snapshot",
+							Flags: []cli.Flag{
+								cli.StringFlag{
+									Name:  "grpc-address",
+									Value: "",
+									Usage: "The gRPC listen address",
+								},
+							},
+							Action: indexerNodeSnapshot,
+						},
+					},
+				},
+				{
+					Name:  "peers",
+					Usage: "Command for blast indexer peers",
+					Subcommands: []cli.Command{
+						{
+							Name:  "info",
+							Usage: "Get peers",
+							Flags: []cli.Flag{
+								//cli.StringFlag{
+								//	Name:  "cluster-grpc-address",
+								//	Value: "",
+								//	Usage: "The gRPC address of the cluster in which the target node for retrieving the information is joining",
+								//},
+								//cli.StringFlag{
+								//	Name:  "shard-id",
+								//	Value: "",
+								//	Usage: "Shard ID registered in which the target node for retrieving the information is joining",
+								//},
+								//cli.StringFlag{
+								//	Name:  "peer-grpc-address",
+								//	Value: "",
+								//	Usage: "The gRPC address of the peer node in which the target node for retrieving the information is joining",
+								//},
+								//cli.StringFlag{
+								//	Name:  "node-id",
+								//	Value: "",
+								//	Usage: "The node ID for which to retrieve the node information",
+								//},
+								cli.StringFlag{
+									Name:  "grpc-address",
+									Value: "",
+									Usage: "The gRPC address of the node for which to retrieve the node information",
+								},
+							},
+							Action: indexerPeersInfo,
+						},
+						{
+							Name:  "watch",
+							Usage: "Watch peers",
+							Flags: []cli.Flag{
+								//cli.StringFlag{
+								//	Name:  "cluster-grpc-address",
+								//	Value: "",
+								//	Usage: "The gRPC address of the cluster in which the target node for retrieving the information is joining",
+								//},
+								//cli.StringFlag{
+								//	Name:  "shard-id",
+								//	Value: "",
+								//	Usage: "Shard ID registered in which the target node for retrieving the information is joining",
+								//},
+								//cli.StringFlag{
+								//	Name:  "peer-grpc-address",
+								//	Value: "",
+								//	Usage: "The gRPC address of the peer node in which the target node for retrieving the information is joining",
+								//},
+								//cli.StringFlag{
+								//	Name:  "node-id",
+								//	Value: "",
+								//	Usage: "The node ID for which to retrieve the node information",
+								//},
+								cli.StringFlag{
+									Name:  "grpc-address",
+									Value: "",
+									Usage: "The gRPC address of the node for which to retrieve the node information",
+								},
+							},
+							Action: indexerPeersWatch,
+						},
+					},
+				},
+				{
+					Name:  "get",
+					Usage: "Get document(s)",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "grpc-address",
+							Value: "",
+							Usage: "The gRPC listen address",
+						},
+						cli.StringFlag{
+							Name:  "file",
+							Value: "",
+							Usage: "Document ID list",
+						},
+					},
+					ArgsUsage: "[document IDs]",
+					Action:    indexerGet,
+				},
+				{
+					Name:  "index",
+					Usage: "Index document(s)",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "grpc-address",
+							Value: "",
+							Usage: "The gRPC listen address",
+						},
+						cli.StringFlag{
+							Name:  "file",
+							Value: "",
+							Usage: "Document list",
+						},
+						cli.BoolFlag{
+							Name:  "bulk",
+							Usage: "Bulk indexing",
+						},
+					},
+					ArgsUsage: "[document ID] [document fields]",
+					Action:    indexerIndex,
+				},
+				{
+					Name:  "delete",
+					Usage: "Delete document(s)",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "grpc-address",
+							Value: "",
+							Usage: "The gRPC listen address",
+						},
+						cli.StringFlag{
+							Name:  "file",
+							Value: "",
+							Usage: "Document ID list",
+						},
+					},
+					ArgsUsage: "[document IDs]",
+					Action:    indexerDelete,
+				},
+				{
+					Name:  "search",
+					Usage: "Search document(s)",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "grpc-address",
+							Value: "",
+							Usage: "The gRPC listen address",
+						},
+						cli.StringFlag{
+							Name:  "file",
+							Value: "",
+							Usage: "Search request",
+						},
+					},
+					ArgsUsage: "[search request]",
+					Action:    indexerSearch,
 				},
 			},
-			Action: execSnapshot,
 		},
 		{
-			Name:  "search",
-			Usage: "search documents",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "grpc-addr",
-					Value: ":5001",
-					Usage: "address to connect to",
+			Name:  "distributor",
+			Usage: "Command for blast distributor",
+			Subcommands: []cli.Command{
+				{
+					Name:  "node",
+					Usage: "Command for blast distributor node",
+					Subcommands: []cli.Command{
+						{
+							Name:  "start",
+							Usage: "Start blast distributor node",
+							Flags: []cli.Flag{
+								cli.StringFlag{
+									Name:   "cluster-grpc-address",
+									Value:  ":5100",
+									EnvVar: "BLAST_DISTRIBUTOR_CLUSTER_GRPC_ADDRESS",
+									Usage:  "The gRPC address of the existing cluster node to be joined",
+								},
+								cli.StringFlag{
+									Name:   "grpc-address",
+									Value:  ":5200",
+									EnvVar: "BLAST_DISTRIBUTOR_GRPC_ADDRESS",
+									Usage:  "The gRPC listen address",
+								},
+								cli.StringFlag{
+									Name:   "http-address",
+									Value:  ":8200",
+									EnvVar: "BLAST_DISTRIBUTOR_HTTP_ADDRESS",
+									Usage:  "HTTP listen address",
+								},
+								cli.StringFlag{
+									Name:   "log-level",
+									Value:  "INFO",
+									EnvVar: "BLAST_DISTRIBUTOR_LOG_LEVEL",
+									Usage:  "Log level",
+								},
+								cli.StringFlag{
+									Name:   "log-file",
+									Value:  os.Stderr.Name(),
+									EnvVar: "BLAST_DISTRIBUTOR_LOG_FILE",
+									Usage:  "Log file",
+								},
+								cli.IntFlag{
+									Name:   "log-max-size",
+									Value:  500,
+									EnvVar: "BLAST_DISTRIBUTOR_LOG_MAX_SIZE",
+									Usage:  "Max size of a log file (megabytes)",
+								},
+								cli.IntFlag{
+									Name:   "log-max-backups",
+									Value:  3,
+									EnvVar: "BLAST_DISTRIBUTOR_LOG_MAX_BACKUPS",
+									Usage:  "Max backup count of log files",
+								},
+								cli.IntFlag{
+									Name:   "log-max-age",
+									Value:  30,
+									EnvVar: "BLAST_DISTRIBUTOR_LOG_MAX_AGE",
+									Usage:  "Max age of a log file (days)",
+								},
+								cli.BoolFlag{
+									Name:   "log-compress",
+									EnvVar: "BLAST_DISTRIBUTOR_LOG_COMPRESS",
+									Usage:  "Compress a log file",
+								},
+								cli.StringFlag{
+									Name:   "grpc-log-level",
+									Value:  "WARN",
+									EnvVar: "BLAST_DISTRIBUTOR_GRPC_LOG_LEVEL",
+									Usage:  "gRPC log level",
+								},
+								cli.StringFlag{
+									Name:   "grpc-log-file",
+									Value:  os.Stderr.Name(),
+									EnvVar: "BLAST_DISTRIBUTOR_GRPC_LOG_FILE",
+									Usage:  "gRPC log file",
+								},
+								cli.IntFlag{
+									Name:   "grpc-log-max-size",
+									Value:  500,
+									EnvVar: "BLAST_DISTRIBUTOR_GRPC_LOG_MAX_SIZE",
+									Usage:  "Max size of a log file (megabytes)",
+								},
+								cli.IntFlag{
+									Name:   "grpc-log-max-backups",
+									Value:  3,
+									EnvVar: "BLAST_DISTRIBUTOR_GRPC_LOG_MAX_BACKUPS",
+									Usage:  "Max backup count of log files",
+								},
+								cli.IntFlag{
+									Name:   "grpc-log-max-age",
+									Value:  30,
+									EnvVar: "BLAST_DISTRIBUTOR_GRPC_LOG_MAX_AGE",
+									Usage:  "Max age of a log file (days)",
+								},
+								cli.BoolFlag{
+									Name:   "grpc-log-compress",
+									EnvVar: "BLAST_DISTRIBUTOR_GRPC_LOG_COMPRESS",
+									Usage:  "Compress a log file",
+								},
+								cli.StringFlag{
+									Name:   "http-log-file",
+									Value:  os.Stderr.Name(),
+									EnvVar: "BLAST_DISTRIBUTOR_HTTP_LOG_FILE",
+									Usage:  "HTTP access log file",
+								},
+								cli.IntFlag{
+									Name:   "http-log-max-size",
+									Value:  500,
+									EnvVar: "BLAST_DISTRIBUTOR_HTTP_LOG_MAX_SIZE",
+									Usage:  "Max size of a HTTP access log file (megabytes)",
+								},
+								cli.IntFlag{
+									Name:   "http-log-max-backups",
+									Value:  3,
+									EnvVar: "BLAST_DISTRIBUTOR_HTTP_LOG_MAX_BACKUPS",
+									Usage:  "Max backup count of HTTP access log files",
+								},
+								cli.IntFlag{
+									Name:   "http-log-max-age",
+									Value:  30,
+									EnvVar: "BLAST_DISTRIBUTOR_HTTP_LOG_MAX_AGE",
+									Usage:  "Max age of a HTTP access log file (days)",
+								},
+								cli.BoolFlag{
+									Name:   "http-log-compress",
+									EnvVar: "BLAST_DISTRIBUTOR_HTTP_LOG_COMPRESS",
+									Usage:  "Compress a HTTP access log",
+								},
+							},
+							Action: distributorNodeStart,
+						},
+						{
+							Name:  "health",
+							Usage: "Health check",
+							Flags: []cli.Flag{
+								cli.StringFlag{
+									Name:  "grpc-address",
+									Value: "",
+									Usage: "The gRPC listen address",
+								},
+								cli.BoolFlag{
+									Name:  "liveness",
+									Usage: "Liveness probe",
+								},
+								cli.BoolFlag{
+									Name:  "readiness",
+									Usage: "Readiness probe",
+								},
+							},
+							Action: distributorNodeHealth,
+						},
+					},
+				},
+				{
+					Name:  "get",
+					Usage: "Get document(s)",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "grpc-address",
+							Value: "",
+							Usage: "The gRPC listen address",
+						},
+						cli.StringFlag{
+							Name:  "file",
+							Value: "",
+							Usage: "Document ID list",
+						},
+					},
+					ArgsUsage: "[document IDs]",
+					Action:    distributorGet,
+				},
+				{
+					Name:  "index",
+					Usage: "Index document(s)",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "grpc-address",
+							Value: "",
+							Usage: "The gRPC listen address",
+						},
+						cli.StringFlag{
+							Name:  "file",
+							Value: "",
+							Usage: "Document list",
+						},
+						cli.BoolFlag{
+							Name:  "bulk",
+							Usage: "Bulk indexing",
+						},
+					},
+					ArgsUsage: "[document ID] [document fields]",
+					Action:    distributorIndex,
+				},
+				{
+					Name:  "delete",
+					Usage: "Delete document(s)",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "grpc-address",
+							Value: "",
+							Usage: "The gRPC listen address",
+						},
+						cli.StringFlag{
+							Name:  "file",
+							Value: "",
+							Usage: "Document ID list",
+						},
+					},
+					ArgsUsage: "[document IDs]",
+					Action:    distributorDelete,
+				},
+				{
+					Name:  "search",
+					Usage: "Search document(s)",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "grpc-address",
+							Value: "",
+							Usage: "The gRPC listen address",
+						},
+						cli.StringFlag{
+							Name:  "file",
+							Value: "",
+							Usage: "Search request",
+						},
+					},
+					ArgsUsage: "[search request]",
+					Action:    distributorSearch,
 				},
 			},
-			ArgsUsage: "[search request]",
-			Action:    execSearch,
 		},
 	}
 
