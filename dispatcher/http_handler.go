@@ -15,10 +15,15 @@
 package dispatcher
 
 import (
+	"bufio"
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
+
+	"github.com/mosuka/blast/indexutils"
 
 	"github.com/blevesearch/bleve"
 	"github.com/gorilla/mux"
@@ -166,10 +171,19 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer blasthttp.RecordMetrics(start, status, w, r)
 
 	// create documents
-	docs := make([]map[string]interface{}, 0)
+	docs := make([]*indexutils.Document, 0)
 
 	vars := mux.Vars(r)
 	id := vars["id"]
+
+	bulk := func(values []string) bool {
+		for _, value := range values {
+			if strings.ToLower(value) == "true" {
+				return true
+			}
+		}
+		return false
+	}(r.URL.Query()["bulk"])
 
 	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -190,28 +204,95 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if id == "" {
-		// Indexing documents in bulk
-		err := json.Unmarshal(bodyBytes, &docs)
-		if err != nil {
-			status = http.StatusBadRequest
+		if bulk {
+			s := strings.NewReader(string(bodyBytes))
+			reader := bufio.NewReader(s)
+			for {
+				docBytes, err := reader.ReadBytes('\n')
+				if err != nil {
+					if err == io.EOF || err == io.ErrClosedPipe {
+						if len(docBytes) > 0 {
+							doc, err := indexutils.NewDocumentFromBytes(docBytes)
+							if err != nil {
+								status = http.StatusBadRequest
 
-			msgMap := map[string]interface{}{
-				"message": err.Error(),
-				"status":  status,
+								msgMap := map[string]interface{}{
+									"message": err.Error(),
+									"status":  status,
+								}
+
+								content, err = blasthttp.NewJSONMessage(msgMap)
+								if err != nil {
+									h.logger.Error(err.Error())
+								}
+
+								blasthttp.WriteResponse(w, content, status, h.logger)
+								return
+							}
+							docs = append(docs, doc)
+						}
+						break
+					}
+					status = http.StatusBadRequest
+
+					msgMap := map[string]interface{}{
+						"message": err.Error(),
+						"status":  status,
+					}
+
+					content, err = blasthttp.NewJSONMessage(msgMap)
+					if err != nil {
+						h.logger.Error(err.Error())
+					}
+
+					blasthttp.WriteResponse(w, content, status, h.logger)
+					return
+				}
+
+				if len(docBytes) > 0 {
+					doc, err := indexutils.NewDocumentFromBytes(docBytes)
+					if err != nil {
+						status = http.StatusBadRequest
+
+						msgMap := map[string]interface{}{
+							"message": err.Error(),
+							"status":  status,
+						}
+
+						content, err = blasthttp.NewJSONMessage(msgMap)
+						if err != nil {
+							h.logger.Error(err.Error())
+						}
+
+						blasthttp.WriteResponse(w, content, status, h.logger)
+						return
+					}
+					docs = append(docs, doc)
+				}
 			}
-
-			content, err = blasthttp.NewJSONMessage(msgMap)
+		} else {
+			doc, err := indexutils.NewDocumentFromBytes(bodyBytes)
 			if err != nil {
-				h.logger.Error(err.Error())
-			}
+				status = http.StatusBadRequest
 
-			blasthttp.WriteResponse(w, content, status, h.logger)
-			return
+				msgMap := map[string]interface{}{
+					"message": err.Error(),
+					"status":  status,
+				}
+
+				content, err = blasthttp.NewJSONMessage(msgMap)
+				if err != nil {
+					h.logger.Error(err.Error())
+				}
+
+				blasthttp.WriteResponse(w, content, status, h.logger)
+				return
+			}
+			docs = append(docs, doc)
 		}
 	} else {
-		// Indexing a document
 		var fields map[string]interface{}
-		err := json.Unmarshal(bodyBytes, &fields)
+		err = json.Unmarshal(bodyBytes, &fields)
 		if err != nil {
 			status = http.StatusBadRequest
 
@@ -229,9 +310,22 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		doc := map[string]interface{}{
-			"id":     id,
-			"fields": fields,
+		doc, err := indexutils.NewDocument(id, fields)
+		if err != nil {
+			status = http.StatusBadRequest
+
+			msgMap := map[string]interface{}{
+				"message": err.Error(),
+				"status":  status,
+			}
+
+			content, err = blasthttp.NewJSONMessage(msgMap)
+			if err != nil {
+				h.logger.Error(err.Error())
+			}
+
+			blasthttp.WriteResponse(w, content, status, h.logger)
+			return
 		}
 
 		docs = append(docs, doc)
@@ -325,23 +419,36 @@ func (h *DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if id == "" {
-		// Deleting documents in bulk
-		err := json.Unmarshal(bodyBytes, &ids)
-		if err != nil {
-			status = http.StatusBadRequest
-
-			msgMap := map[string]interface{}{
-				"message": err.Error(),
-				"status":  status,
-			}
-
-			content, err = blasthttp.NewJSONMessage(msgMap)
+		s := strings.NewReader(string(bodyBytes))
+		reader := bufio.NewReader(s)
+		for {
+			docId, err := reader.ReadString('\n')
 			if err != nil {
-				h.logger.Error(err.Error())
+				if err == io.EOF || err == io.ErrClosedPipe {
+					if docId == "" {
+						ids = append(ids, docId)
+					}
+					break
+				}
+				status = http.StatusBadRequest
+
+				msgMap := map[string]interface{}{
+					"message": err.Error(),
+					"status":  status,
+				}
+
+				content, err = blasthttp.NewJSONMessage(msgMap)
+				if err != nil {
+					h.logger.Error(err.Error())
+				}
+
+				blasthttp.WriteResponse(w, content, status, h.logger)
+				return
 			}
 
-			blasthttp.WriteResponse(w, content, status, h.logger)
-			return
+			if docId == "" {
+				ids = append(ids, docId)
+			}
 		}
 	} else {
 		// Deleting a document

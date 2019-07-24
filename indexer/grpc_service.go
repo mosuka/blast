@@ -23,6 +23,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/mosuka/blast/indexutils"
+
 	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -840,7 +842,7 @@ func (s *GRPCService) Search(ctx context.Context, req *protobuf.SearchRequest) (
 }
 
 func (s *GRPCService) IndexDocument(stream protobuf.Blast_IndexDocumentServer) error {
-	docs := make([]map[string]interface{}, 0)
+	docs := make([]*indexutils.Document, 0)
 
 	for {
 		req, err := stream.Recv()
@@ -862,9 +864,10 @@ func (s *GRPCService) IndexDocument(stream protobuf.Blast_IndexDocumentServer) e
 		fields := *ins.(*map[string]interface{})
 
 		// document
-		doc := map[string]interface{}{
-			"id":     req.Id,
-			"fields": fields,
+		doc, err := indexutils.NewDocument(req.Id, fields)
+		if err != nil {
+			s.logger.Error(err.Error())
+			return status.Error(codes.Internal, err.Error())
 		}
 
 		docs = append(docs, doc)

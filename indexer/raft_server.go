@@ -23,6 +23,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/mosuka/blast/indexutils"
+
 	"github.com/blevesearch/bleve"
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
@@ -229,6 +231,17 @@ func (s *RaftServer) Stop() error {
 	return nil
 }
 
+func (s *RaftServer) raftServers() ([]raft.Server, error) {
+	cf := s.raft.GetConfiguration()
+	err := cf.Error()
+	if err != nil {
+		s.logger.Error(err.Error())
+		return nil, err
+	}
+
+	return cf.Configuration().Servers, nil
+}
+
 func (s *RaftServer) LeaderAddress(timeout time.Duration) (raft.ServerAddress, error) {
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
@@ -258,14 +271,13 @@ func (s *RaftServer) LeaderID(timeout time.Duration) (raft.ServerID, error) {
 		return "", err
 	}
 
-	cf := s.raft.GetConfiguration()
-	err = cf.Error()
+	servers, err := s.raftServers()
 	if err != nil {
 		s.logger.Error(err.Error())
 		return "", err
 	}
 
-	for _, server := range cf.Configuration().Servers {
+	for _, server := range servers {
 		if server.Address == leaderAddr {
 			return server.ID, nil
 		}
@@ -379,15 +391,14 @@ func (s *RaftServer) deleteNodeConfig(nodeId string) error {
 }
 
 func (s *RaftServer) GetNode(id string) (map[string]interface{}, error) {
-	cf := s.raft.GetConfiguration()
-	err := cf.Error()
+	servers, err := s.raftServers()
 	if err != nil {
 		s.logger.Error(err.Error())
 		return nil, err
 	}
 
 	node := make(map[string]interface{}, 0)
-	for _, server := range cf.Configuration().Servers {
+	for _, server := range servers {
 		if server.ID == raft.ServerID(id) {
 			nodeConfig, err := s.getNodeConfig(id)
 			if err != nil {
@@ -408,14 +419,13 @@ func (s *RaftServer) SetNode(nodeId string, nodeConfig map[string]interface{}) e
 		return raft.ErrNotLeader
 	}
 
-	cf := s.raft.GetConfiguration()
-	err := cf.Error()
+	servers, err := s.raftServers()
 	if err != nil {
 		s.logger.Error(err.Error())
 		return err
 	}
 
-	for _, server := range cf.Configuration().Servers {
+	for _, server := range servers {
 		if server.ID == raft.ServerID(nodeId) {
 			s.logger.Info("node already joined the cluster", zap.String("id", nodeId))
 			return nil
@@ -453,15 +463,14 @@ func (s *RaftServer) DeleteNode(nodeId string) error {
 		return raft.ErrNotLeader
 	}
 
-	cf := s.raft.GetConfiguration()
-	err := cf.Error()
+	servers, err := s.raftServers()
 	if err != nil {
 		s.logger.Error(err.Error())
 		return err
 	}
 
 	// delete node from Raft cluster
-	for _, server := range cf.Configuration().Servers {
+	for _, server := range servers {
 		if server.ID == raft.ServerID(nodeId) {
 			s.logger.Debug("remove server", zap.String("node_id", nodeId))
 			f := s.raft.RemoveServer(server.ID, 0, 0)
@@ -484,15 +493,14 @@ func (s *RaftServer) DeleteNode(nodeId string) error {
 }
 
 func (s *RaftServer) GetCluster() (map[string]interface{}, error) {
-	cf := s.raft.GetConfiguration()
-	err := cf.Error()
+	servers, err := s.raftServers()
 	if err != nil {
 		s.logger.Error(err.Error())
 		return nil, err
 	}
 
 	cluster := map[string]interface{}{}
-	for _, server := range cf.Configuration().Servers {
+	for _, server := range servers {
 		node, err := s.GetNode(string(server.ID))
 		if err != nil {
 			s.logger.Warn(err.Error())
@@ -535,7 +543,7 @@ func (s *RaftServer) Search(request *bleve.SearchRequest) (*bleve.SearchResult, 
 	return result, nil
 }
 
-func (s *RaftServer) IndexDocument(docs []map[string]interface{}) (int, error) {
+func (s *RaftServer) IndexDocument(docs []*indexutils.Document) (int, error) {
 	if !s.IsLeader() {
 		s.logger.Error(raft.ErrNotLeader.Error(), zap.String("state", s.raft.State().String()))
 		return -1, raft.ErrNotLeader
