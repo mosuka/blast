@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - New CLI #82
 - Split protobuf into components #84
+- Change subcommands #85
 
 ## [v0.7.1] - 2019-07-18
 
