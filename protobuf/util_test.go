@@ -29,19 +29,19 @@ func TestMarshalAny_Slice(t *testing.T) {
 	dataAny := &any.Any{}
 	err := UnmarshalAny(data, dataAny)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	expectedType := "[]interface {}"
 	actualType := dataAny.TypeUrl
 	if expectedType != actualType {
-		t.Errorf("expected content to see %s, saw %s", expectedType, actualType)
+		t.Fatalf("expected content to see %s, saw %s", expectedType, actualType)
 	}
 
 	expectedValue := []byte(`["a",1]`)
 	actualValue := dataAny.Value
 	if !bytes.Equal(expectedValue, actualValue) {
-		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
+		t.Fatalf("expected content to see %v, saw %v", expectedValue, actualValue)
 	}
 }
 
@@ -51,19 +51,19 @@ func TestMarshalAny_Map(t *testing.T) {
 	dataAny := &any.Any{}
 	err := UnmarshalAny(data, dataAny)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	expectedMapType := "map[string]interface {}"
 	actualMapType := dataAny.TypeUrl
 	if expectedMapType != actualMapType {
-		t.Errorf("expected content to see %s, saw %s", expectedMapType, actualMapType)
+		t.Fatalf("expected content to see %s, saw %s", expectedMapType, actualMapType)
 	}
 
 	expectedValue := []byte(`{"a":1,"b":2,"c":3}`)
 	actualValue := dataAny.Value
 	if !bytes.Equal(expectedValue, actualValue) {
-		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
+		t.Fatalf("expected content to see %v, saw %v", expectedValue, actualValue)
 	}
 }
 
@@ -72,7 +72,7 @@ func TestMarshalAny_Map(t *testing.T) {
 //	fieldsAny := &any.Any{}
 //	err := UnmarshalAny(fieldsMap, fieldsAny)
 //	if err != nil {
-//		t.Errorf("%v", err)
+//		t.Fatalf("%v", err)
 //	}
 //
 //	data := &index.Document{
@@ -83,19 +83,19 @@ func TestMarshalAny_Map(t *testing.T) {
 //	dataAny := &any.Any{}
 //	err = UnmarshalAny(data, dataAny)
 //	if err != nil {
-//		t.Errorf("%v", err)
+//		t.Fatalf("%v", err)
 //	}
 //
 //	expectedType := "index.Document"
 //	actualType := dataAny.TypeUrl
 //	if expectedType != actualType {
-//		t.Errorf("expected content to see %s, saw %s", expectedType, actualType)
+//		t.Fatalf("expected content to see %s, saw %s", expectedType, actualType)
 //	}
 //
 //	expectedValue := []byte(`{"id":"1","fields":{"type_url":"map[string]interface {}","value":"eyJmMSI6ImFhYSIsImYyIjoyMjIsImYzIjoiY2NjIn0="}}`)
 //	actualValue := dataAny.Value
 //	if !bytes.Equal(expectedValue, actualValue) {
-//		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
+//		t.Fatalf("expected content to see %v, saw %v", expectedValue, actualValue)
 //	}
 //}
 
@@ -114,19 +114,19 @@ func TestMarshalAny_Map(t *testing.T) {
 //	dataAny := &any.Any{}
 //	err := UnmarshalAny(data, dataAny)
 //	if err != nil {
-//		t.Errorf("%v", err)
+//		t.Fatalf("%v", err)
 //	}
 //
 //	expectedType := "raft.Node"
 //	actualType := dataAny.TypeUrl
 //	if expectedType != actualType {
-//		t.Errorf("expected content to see %s, saw %s", expectedType, actualType)
+//		t.Fatalf("expected content to see %s, saw %s", expectedType, actualType)
 //	}
 //
 //	expectedValue := []byte(`{"id":"node1","metadata":{"bind_addr":":6060","grpc_addr":":5050","http_addr":":8080","data_dir":"/tmp/blast/index1","leader":true}}`)
 //	actualValue := dataAny.Value
 //	if !bytes.Equal(expectedValue, actualValue) {
-//		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
+//		t.Fatalf("expected content to see %v, saw %v", expectedValue, actualValue)
 //	}
 //}
 
@@ -136,19 +136,19 @@ func TestMarshalAny_SearchRequest(t *testing.T) {
 	dataAny := &any.Any{}
 	err := UnmarshalAny(data, dataAny)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	expectedType := "bleve.SearchRequest"
 	actualType := dataAny.TypeUrl
 	if expectedType != actualType {
-		t.Errorf("expected content to see %s, saw %s", expectedType, actualType)
+		t.Fatalf("expected content to see %s, saw %s", expectedType, actualType)
 	}
 
 	expectedValue := []byte(`{"query":{"query":"blast"},"size":10,"from":0,"highlight":null,"fields":null,"facets":null,"explain":false,"sort":["-_score"],"includeLocations":false}`)
 	actualValue := dataAny.Value
 	if !bytes.Equal(expectedValue, actualValue) {
-		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
+		t.Fatalf("expected content to see %v, saw %v", expectedValue, actualValue)
 	}
 }
 
@@ -160,19 +160,19 @@ func TestMarshalAny_SearchResult(t *testing.T) {
 	dataAny := &any.Any{}
 	err := UnmarshalAny(data, dataAny)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	expectedType := "bleve.SearchResult"
 	actualType := dataAny.TypeUrl
 	if expectedType != actualType {
-		t.Errorf("expected content to see %s, saw %s", expectedType, actualType)
+		t.Fatalf("expected content to see %s, saw %s", expectedType, actualType)
 	}
 
 	expectedValue := []byte(`{"status":null,"request":null,"hits":null,"total_hits":10,"max_score":0,"took":0,"facets":null}`)
 	actualValue := dataAny.Value
 	if !bytes.Equal(expectedValue, actualValue) {
-		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
+		t.Fatalf("expected content to see %v, saw %v", expectedValue, actualValue)
 	}
 }
 
@@ -184,7 +184,7 @@ func TestUnmarshalAny_Slice(t *testing.T) {
 
 	ins, err := MarshalAny(dataAny)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	data := *ins.(*[]interface{})
@@ -192,13 +192,13 @@ func TestUnmarshalAny_Slice(t *testing.T) {
 	expected1 := "a"
 	actual1 := data[0]
 	if expected1 != actual1 {
-		t.Errorf("expected content to see %v, saw %v", expected1, actual1)
+		t.Fatalf("expected content to see %v, saw %v", expected1, actual1)
 	}
 
 	expected2 := float64(1)
 	actual2 := data[1]
 	if expected2 != actual2 {
-		t.Errorf("expected content to see %v, saw %v", expected2, actual2)
+		t.Fatalf("expected content to see %v, saw %v", expected2, actual2)
 	}
 }
 
@@ -210,7 +210,7 @@ func TestUnmarshalAny_Map(t *testing.T) {
 
 	ins, err := MarshalAny(dataAny)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	data := *ins.(*map[string]interface{})
@@ -218,19 +218,19 @@ func TestUnmarshalAny_Map(t *testing.T) {
 	expected1 := float64(1)
 	actual1 := data["a"]
 	if expected1 != actual1 {
-		t.Errorf("expected content to see %v, saw %v", expected1, actual1)
+		t.Fatalf("expected content to see %v, saw %v", expected1, actual1)
 	}
 
 	expected2 := float64(2)
 	actual2 := data["b"]
 	if expected2 != actual2 {
-		t.Errorf("expected content to see %v, saw %v", expected2, actual2)
+		t.Fatalf("expected content to see %v, saw %v", expected2, actual2)
 	}
 
 	expected3 := float64(3)
 	actual3 := data["c"]
 	if expected3 != actual3 {
-		t.Errorf("expected content to see %v, saw %v", expected3, actual3)
+		t.Fatalf("expected content to see %v, saw %v", expected3, actual3)
 	}
 }
 
@@ -242,7 +242,7 @@ func TestUnmarshalAny_Map(t *testing.T) {
 //
 //	ins, err := MarshalAny(dataAny)
 //	if err != nil {
-//		t.Errorf("%v", err)
+//		t.Fatalf("%v", err)
 //	}
 //
 //	data := *ins.(*index.Document)
@@ -250,19 +250,19 @@ func TestUnmarshalAny_Map(t *testing.T) {
 //	expected1 := "1"
 //	actual1 := data.Id
 //	if expected1 != actual1 {
-//		t.Errorf("expected content to see %v, saw %v", expected1, actual1)
+//		t.Fatalf("expected content to see %v, saw %v", expected1, actual1)
 //	}
 //
 //	expected2 := "map[string]interface {}"
 //	actual2 := data.Fields.TypeUrl
 //	if expected2 != actual2 {
-//		t.Errorf("expected content to see %v, saw %v", expected2, actual2)
+//		t.Fatalf("expected content to see %v, saw %v", expected2, actual2)
 //	}
 //
 //	expected3 := []byte(`{"f1":"aaa","f2":222,"f3":"ccc"}`)
 //	actual3 := data.Fields.Value
 //	if !bytes.Equal(expected3, actual3) {
-//		t.Errorf("expected content to see %v, saw %v", expected3, actual3)
+//		t.Fatalf("expected content to see %v, saw %v", expected3, actual3)
 //	}
 //}
 
@@ -274,7 +274,7 @@ func TestUnmarshalAny_SearchRequest(t *testing.T) {
 
 	ins, err := MarshalAny(dataAny)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	data := *ins.(*bleve.SearchRequest)
@@ -282,7 +282,7 @@ func TestUnmarshalAny_SearchRequest(t *testing.T) {
 	expected1 := bleve.NewQueryStringQuery("blast").Query
 	actual1 := data.Query.(*query.QueryStringQuery).Query
 	if expected1 != actual1 {
-		t.Errorf("expected content to see %v, saw %v", expected1, actual1)
+		t.Fatalf("expected content to see %v, saw %v", expected1, actual1)
 	}
 }
 
@@ -294,7 +294,7 @@ func TestUnmarshalAny_SearchResult(t *testing.T) {
 
 	ins, err := MarshalAny(dataAny)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	data := *ins.(*bleve.SearchResult)
@@ -302,6 +302,6 @@ func TestUnmarshalAny_SearchResult(t *testing.T) {
 	expected1 := uint64(10)
 	actual1 := data.Total
 	if expected1 != actual1 {
-		t.Errorf("expected content to see %v, saw %v", expected1, actual1)
+		t.Fatalf("expected content to see %v, saw %v", expected1, actual1)
 	}
 }

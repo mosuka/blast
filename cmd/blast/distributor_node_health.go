@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mosuka/blast/grpc"
+	"github.com/mosuka/blast/dispatcher"
 	"github.com/urfave/cli"
 )
 
@@ -27,7 +27,7 @@ func distributorNodeHealth(c *cli.Context) error {
 	liveness := c.Bool("liveness")
 	readiness := c.Bool("readiness")
 
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := dispatcher.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
 	}

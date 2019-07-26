@@ -26,7 +26,6 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/gorilla/mux"
 	blasterrors "github.com/mosuka/blast/errors"
-	"github.com/mosuka/blast/grpc"
 	blasthttp "github.com/mosuka/blast/http"
 	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/version"
@@ -34,10 +33,22 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewRouter(grpcAddr string, logger *zap.Logger) (*blasthttp.Router, error) {
-	router, err := blasthttp.NewRouter(grpcAddr, logger)
+type Router struct {
+	mux.Router
+
+	GRPCClient *GRPCClient
+	logger     *zap.Logger
+}
+
+func NewRouter(grpcAddr string, logger *zap.Logger) (*Router, error) {
+	grpcClient, err := NewGRPCClient(grpcAddr)
 	if err != nil {
 		return nil, err
+	}
+
+	router := &Router{
+		GRPCClient: grpcClient,
+		logger:     logger,
 	}
 
 	router.StrictSlash(true)
@@ -52,6 +63,17 @@ func NewRouter(grpcAddr string, logger *zap.Logger) (*blasthttp.Router, error) {
 	router.Handle("/metrics", promhttp.Handler()).Methods("GET")
 
 	return router, nil
+}
+
+func (r *Router) Close() error {
+	r.GRPCClient.Cancel()
+
+	err := r.GRPCClient.Close()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type RootHandler struct {
@@ -85,11 +107,11 @@ func (h *RootHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type GetHandler struct {
-	client *grpc.Client
+	client *GRPCClient
 	logger *zap.Logger
 }
 
-func NewGetDocumentHandler(client *grpc.Client, logger *zap.Logger) *GetHandler {
+func NewGetDocumentHandler(client *GRPCClient, logger *zap.Logger) *GetHandler {
 	return &GetHandler{
 		client: client,
 		logger: logger,
@@ -153,11 +175,11 @@ func (h *GetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type IndexHandler struct {
-	client *grpc.Client
+	client *GRPCClient
 	logger *zap.Logger
 }
 
-func NewSetDocumentHandler(client *grpc.Client, logger *zap.Logger) *IndexHandler {
+func NewSetDocumentHandler(client *GRPCClient, logger *zap.Logger) *IndexHandler {
 	return &IndexHandler{
 		client: client,
 		logger: logger,
@@ -377,11 +399,11 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type DeleteHandler struct {
-	client *grpc.Client
+	client *GRPCClient
 	logger *zap.Logger
 }
 
-func NewDeleteDocumentHandler(client *grpc.Client, logger *zap.Logger) *DeleteHandler {
+func NewDeleteDocumentHandler(client *GRPCClient, logger *zap.Logger) *DeleteHandler {
 	return &DeleteHandler{
 		client: client,
 		logger: logger,
@@ -501,11 +523,11 @@ func (h *DeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type SearchHandler struct {
-	client *grpc.Client
+	client *GRPCClient
 	logger *zap.Logger
 }
 
-func NewSearchHandler(client *grpc.Client, logger *zap.Logger) *SearchHandler {
+func NewSearchHandler(client *GRPCClient, logger *zap.Logger) *SearchHandler {
 	return &SearchHandler{
 		client: client,
 		logger: logger,

@@ -17,8 +17,6 @@ package manager
 import (
 	accesslog "github.com/mash/go-accesslog"
 	"github.com/mosuka/blast/config"
-	"github.com/mosuka/blast/grpc"
-	"github.com/mosuka/blast/http"
 	"go.uber.org/zap"
 )
 
@@ -32,9 +30,9 @@ type Server struct {
 
 	raftServer  *RaftServer
 	grpcService *GRPCService
-	grpcServer  *grpc.Server
-	httpRouter  *http.Router
-	httpServer  *http.Server
+	grpcServer  *GRPCServer
+	httpRouter  *Router
+	httpServer  *HTTPServer
 }
 
 func NewServer(clusterConfig *config.ClusterConfig, nodeConfig *config.NodeConfig, indexConfig *config.IndexConfig, logger *zap.Logger, grpcLogger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
@@ -70,7 +68,7 @@ func (s *Server) Start() {
 	}
 
 	// create gRPC server
-	s.grpcServer, err = grpc.NewServer(s.nodeConfig.GRPCAddr, s.grpcService, s.grpcLogger)
+	s.grpcServer, err = NewGRPCServer(s.nodeConfig.GRPCAddr, s.grpcService, s.grpcLogger)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return
@@ -84,7 +82,7 @@ func (s *Server) Start() {
 	}
 
 	// create HTTP server
-	s.httpServer, err = http.NewServer(s.nodeConfig.HTTPAddr, s.httpRouter, s.logger, s.httpLogger)
+	s.httpServer, err = NewHTTPServer(s.nodeConfig.HTTPAddr, s.httpRouter, s.logger, s.httpLogger)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return
@@ -126,7 +124,7 @@ func (s *Server) Start() {
 
 	// join to the existing cluster
 	if !bootstrap {
-		client, err := grpc.NewClient(s.clusterConfig.PeerAddr)
+		client, err := NewGRPCClient(s.clusterConfig.PeerAddr)
 		defer func() {
 			err := client.Close()
 			if err != nil {

@@ -23,23 +23,23 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mosuka/blast/indexutils"
-
 	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/hashicorp/raft"
 	"github.com/mosuka/blast/config"
 	blasterrors "github.com/mosuka/blast/errors"
-	"github.com/mosuka/blast/grpc"
+	"github.com/mosuka/blast/indexutils"
+	"github.com/mosuka/blast/manager"
 	"github.com/mosuka/blast/protobuf"
+	"github.com/mosuka/blast/protobuf/index"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type GRPCService struct {
-	*grpc.Service
+	//*grpc.Service
 
 	clusterConfig *config.ClusterConfig
 	raftServer    *RaftServer
@@ -48,13 +48,13 @@ type GRPCService struct {
 	updateClusterStopCh chan struct{}
 	updateClusterDoneCh chan struct{}
 	peers               map[string]interface{}
-	peerClients         map[string]*grpc.Client
+	peerClients         map[string]*GRPCClient
 	cluster             map[string]interface{}
-	clusterChans        map[chan protobuf.GetClusterResponse]struct{}
+	clusterChans        map[chan index.GetClusterResponse]struct{}
 	clusterMutex        sync.RWMutex
 
 	managers             map[string]interface{}
-	managerClients       map[string]*grpc.Client
+	managerClients       map[string]*manager.GRPCClient
 	updateManagersStopCh chan struct{}
 	updateManagersDoneCh chan struct{}
 }
@@ -66,12 +66,12 @@ func NewGRPCService(clusterConfig *config.ClusterConfig, raftServer *RaftServer,
 		logger:        logger,
 
 		peers:        make(map[string]interface{}, 0),
-		peerClients:  make(map[string]*grpc.Client, 0),
+		peerClients:  make(map[string]*GRPCClient, 0),
 		cluster:      make(map[string]interface{}, 0),
-		clusterChans: make(map[chan protobuf.GetClusterResponse]struct{}),
+		clusterChans: make(map[chan index.GetClusterResponse]struct{}),
 
 		managers:       make(map[string]interface{}, 0),
-		managerClients: make(map[string]*grpc.Client, 0),
+		managerClients: make(map[string]*manager.GRPCClient, 0),
 	}, nil
 }
 
@@ -99,8 +99,8 @@ func (s *GRPCService) Stop() error {
 	return nil
 }
 
-func (s *GRPCService) getManagerClient() (*grpc.Client, error) {
-	var client *grpc.Client
+func (s *GRPCService) getManagerClient() (*manager.GRPCClient, error) {
+	var client *manager.GRPCClient
 
 	for id, node := range s.managers {
 		nm, ok := node.(map[string]interface{})
@@ -134,7 +134,7 @@ func (s *GRPCService) getManagerClient() (*grpc.Client, error) {
 }
 
 func (s *GRPCService) getInitialManagers(managerAddr string) (map[string]interface{}, error) {
-	client, err := grpc.NewClient(managerAddr)
+	client, err := manager.NewGRPCClient(managerAddr)
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -195,7 +195,7 @@ func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 		}
 
 		s.logger.Debug("create gRPC client", zap.String("id", nodeId), zap.String("grpc_addr", grpcAddr))
-		client, err := grpc.NewClient(grpcAddr)
+		client, err := manager.NewGRPCClient(grpcAddr)
 		if err != nil {
 			s.logger.Error(err.Error(), zap.String("id", nodeId), zap.String("grpc_addr", grpcAddr))
 		}
@@ -275,7 +275,7 @@ func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 								s.logger.Error(err.Error(), zap.String("node_id", nodeId))
 							}
 
-							newClient, err := grpc.NewClient(grpcAddr)
+							newClient, err := manager.NewGRPCClient(grpcAddr)
 							if err != nil {
 								s.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
 							}
@@ -290,7 +290,7 @@ func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 						s.logger.Debug("client does not exist in peer list", zap.String("node_id", nodeId))
 
 						s.logger.Debug("create gRPC client", zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
-						newClient, err := grpc.NewClient(grpcAddr)
+						newClient, err := manager.NewGRPCClient(grpcAddr)
 						if err != nil {
 							s.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
 						}
@@ -344,8 +344,8 @@ func (s *GRPCService) stopUpdateManagers() {
 	s.logger.Info("the manager cluster update has been stopped")
 }
 
-func (s *GRPCService) getLeaderClient() (*grpc.Client, error) {
-	var client *grpc.Client
+func (s *GRPCService) getLeaderClient() (*GRPCClient, error) {
+	var client *GRPCClient
 
 	for id, node := range s.cluster {
 		state, ok := node.(map[string]interface{})["state"].(string)
@@ -435,7 +435,7 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 								s.logger.Warn(err.Error(), zap.String("node_id", nodeId))
 							}
 
-							newClient, err := grpc.NewClient(grpcAddr)
+							newClient, err := NewGRPCClient(grpcAddr)
 							if err != nil {
 								s.logger.Warn(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
 							}
@@ -450,7 +450,7 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 						s.logger.Debug("client does not exist in peer list", zap.String("node_id", nodeId))
 
 						s.logger.Debug("create gRPC client", zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
-						peerClient, err := grpc.NewClient(grpcAddr)
+						peerClient, err := NewGRPCClient(grpcAddr)
 						if err != nil {
 							s.logger.Warn(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
 						}
@@ -485,7 +485,7 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 			// notify current cluster
 			if !reflect.DeepEqual(s.cluster, cluster) {
 				// convert to GetClusterResponse for channel output
-				clusterResp := &protobuf.GetClusterResponse{}
+				clusterResp := &index.GetClusterResponse{}
 				clusterAny := &any.Any{}
 				err = protobuf.UnmarshalAny(cluster, clusterAny)
 				if err != nil {
@@ -538,6 +538,22 @@ func (s *GRPCService) stopUpdateCluster() {
 	s.logger.Info("wait for the cluster update to stop")
 	<-s.updateClusterDoneCh
 	s.logger.Info("the cluster update has been stopped")
+}
+
+func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*index.LivenessProbeResponse, error) {
+	resp := &index.LivenessProbeResponse{
+		State: index.LivenessProbeResponse_ALIVE,
+	}
+
+	return resp, nil
+}
+
+func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*index.ReadinessProbeResponse, error) {
+	resp := &index.ReadinessProbeResponse{
+		State: index.ReadinessProbeResponse_READY,
+	}
+
+	return resp, nil
 }
 
 func (s *GRPCService) NodeID() string {
@@ -593,8 +609,8 @@ func (s *GRPCService) getNode(id string) (map[string]interface{}, error) {
 	return nodeInfo, nil
 }
 
-func (s *GRPCService) GetNode(ctx context.Context, req *protobuf.GetNodeRequest) (*protobuf.GetNodeResponse, error) {
-	resp := &protobuf.GetNodeResponse{}
+func (s *GRPCService) GetNode(ctx context.Context, req *index.GetNodeRequest) (*index.GetNodeResponse, error) {
+	resp := &index.GetNodeResponse{}
 
 	nodeInfo, err := s.getNode(req.Id)
 	if err != nil {
@@ -649,7 +665,7 @@ func (s *GRPCService) setNode(id string, nodeConfig map[string]interface{}) erro
 	return nil
 }
 
-func (s *GRPCService) SetNode(ctx context.Context, req *protobuf.SetNodeRequest) (*empty.Empty, error) {
+func (s *GRPCService) SetNode(ctx context.Context, req *index.SetNodeRequest) (*empty.Empty, error) {
 	resp := &empty.Empty{}
 
 	ins, err := protobuf.MarshalAny(req.NodeConfig)
@@ -693,7 +709,7 @@ func (s *GRPCService) deleteNode(id string) error {
 	return nil
 }
 
-func (s *GRPCService) DeleteNode(ctx context.Context, req *protobuf.DeleteNodeRequest) (*empty.Empty, error) {
+func (s *GRPCService) DeleteNode(ctx context.Context, req *index.DeleteNodeRequest) (*empty.Empty, error) {
 	resp := &empty.Empty{}
 
 	err := s.deleteNode(req.Id)
@@ -730,8 +746,8 @@ func (s *GRPCService) getCluster() (map[string]interface{}, error) {
 	return cluster, nil
 }
 
-func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*protobuf.GetClusterResponse, error) {
-	resp := &protobuf.GetClusterResponse{}
+func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*index.GetClusterResponse, error) {
+	resp := &index.GetClusterResponse{}
 
 	cluster, err := s.getCluster()
 	if err != nil {
@@ -751,8 +767,8 @@ func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*protob
 	return resp, nil
 }
 
-func (s *GRPCService) WatchCluster(req *empty.Empty, server protobuf.Blast_WatchClusterServer) error {
-	chans := make(chan protobuf.GetClusterResponse)
+func (s *GRPCService) WatchCluster(req *empty.Empty, server index.Index_WatchClusterServer) error {
+	chans := make(chan index.GetClusterResponse)
 
 	s.clusterMutex.Lock()
 	s.clusterChans[chans] = struct{}{}
@@ -776,20 +792,8 @@ func (s *GRPCService) WatchCluster(req *empty.Empty, server protobuf.Blast_Watch
 	return nil
 }
 
-func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
-	resp := &empty.Empty{}
-
-	err := s.raftServer.Snapshot()
-	if err != nil {
-		s.logger.Error(err.Error())
-		return resp, status.Error(codes.Internal, err.Error())
-	}
-
-	return resp, nil
-}
-
-func (s *GRPCService) GetDocument(ctx context.Context, req *protobuf.GetDocumentRequest) (*protobuf.GetDocumentResponse, error) {
-	resp := &protobuf.GetDocumentResponse{}
+func (s *GRPCService) GetDocument(ctx context.Context, req *index.GetDocumentRequest) (*index.GetDocumentResponse, error) {
+	resp := &index.GetDocumentResponse{}
 
 	fields, err := s.raftServer.GetDocument(req.Id)
 	if err != nil {
@@ -814,8 +818,8 @@ func (s *GRPCService) GetDocument(ctx context.Context, req *protobuf.GetDocument
 	return resp, nil
 }
 
-func (s *GRPCService) Search(ctx context.Context, req *protobuf.SearchRequest) (*protobuf.SearchResponse, error) {
-	resp := &protobuf.SearchResponse{}
+func (s *GRPCService) Search(ctx context.Context, req *index.SearchRequest) (*index.SearchResponse, error) {
+	resp := &index.SearchResponse{}
 
 	searchRequest, err := protobuf.MarshalAny(req.SearchRequest)
 	if err != nil {
@@ -841,7 +845,7 @@ func (s *GRPCService) Search(ctx context.Context, req *protobuf.SearchRequest) (
 	return resp, nil
 }
 
-func (s *GRPCService) IndexDocument(stream protobuf.Blast_IndexDocumentServer) error {
+func (s *GRPCService) IndexDocument(stream index.Index_IndexDocumentServer) error {
 	docs := make([]*indexutils.Document, 0)
 
 	for {
@@ -897,13 +901,13 @@ func (s *GRPCService) IndexDocument(stream protobuf.Blast_IndexDocumentServer) e
 	}
 
 	return stream.SendAndClose(
-		&protobuf.IndexDocumentResponse{
+		&index.IndexDocumentResponse{
 			Count: int32(count),
 		},
 	)
 }
 
-func (s *GRPCService) DeleteDocument(stream protobuf.Blast_DeleteDocumentServer) error {
+func (s *GRPCService) DeleteDocument(stream index.Index_DeleteDocumentServer) error {
 	ids := make([]string, 0)
 
 	for {
@@ -944,14 +948,14 @@ func (s *GRPCService) DeleteDocument(stream protobuf.Blast_DeleteDocumentServer)
 	}
 
 	return stream.SendAndClose(
-		&protobuf.DeleteDocumentResponse{
+		&index.DeleteDocumentResponse{
 			Count: int32(count),
 		},
 	)
 }
 
-func (s *GRPCService) GetIndexConfig(ctx context.Context, req *empty.Empty) (*protobuf.GetIndexConfigResponse, error) {
-	resp := &protobuf.GetIndexConfigResponse{}
+func (s *GRPCService) GetIndexConfig(ctx context.Context, req *empty.Empty) (*index.GetIndexConfigResponse, error) {
+	resp := &index.GetIndexConfigResponse{}
 
 	indexConfig, err := s.raftServer.GetIndexConfig()
 	if err != nil {
@@ -971,8 +975,8 @@ func (s *GRPCService) GetIndexConfig(ctx context.Context, req *empty.Empty) (*pr
 	return resp, nil
 }
 
-func (s *GRPCService) GetIndexStats(ctx context.Context, req *empty.Empty) (*protobuf.GetIndexStatsResponse, error) {
-	resp := &protobuf.GetIndexStatsResponse{}
+func (s *GRPCService) GetIndexStats(ctx context.Context, req *empty.Empty) (*index.GetIndexStatsResponse, error) {
+	resp := &index.GetIndexStatsResponse{}
 
 	indexStats, err := s.raftServer.GetIndexStats()
 	if err != nil {
@@ -988,6 +992,18 @@ func (s *GRPCService) GetIndexStats(ctx context.Context, req *empty.Empty) (*pro
 	}
 
 	resp.IndexStats = indexStatsAny
+
+	return resp, nil
+}
+
+func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
+	resp := &empty.Empty{}
+
+	err := s.raftServer.Snapshot()
+	if err != nil {
+		s.logger.Error(err.Error())
+		return resp, status.Error(codes.Internal, err.Error())
+	}
 
 	return resp, nil
 }

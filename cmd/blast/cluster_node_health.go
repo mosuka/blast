@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mosuka/blast/grpc"
+	"github.com/mosuka/blast/manager"
 	"github.com/urfave/cli"
 )
 
@@ -27,7 +27,7 @@ func clusterNodeHealth(c *cli.Context) error {
 	liveness := c.Bool("liveness")
 	readiness := c.Bool("readiness")
 
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := manager.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
 	}

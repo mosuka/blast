@@ -21,7 +21,7 @@ import (
 	"os"
 
 	"github.com/blevesearch/bleve"
-	"github.com/mosuka/blast/grpc"
+	"github.com/mosuka/blast/indexer"
 	"github.com/urfave/cli"
 )
 
@@ -66,7 +66,7 @@ func indexerSearch(c *cli.Context) error {
 		}
 	}
 
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := indexer.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
 	}

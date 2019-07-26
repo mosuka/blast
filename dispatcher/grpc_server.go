@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package grpc
+package dispatcher
 
 import (
 	"net"
@@ -20,7 +20,7 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	"github.com/mosuka/blast/protobuf"
+	"github.com/mosuka/blast/protobuf/distribute"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	//grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
@@ -29,15 +29,15 @@ import (
 	//grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 )
 
-type Server struct {
-	service  protobuf.BlastServer
+type GRPCServer struct {
+	service  distribute.DistributeServer
 	server   *grpc.Server
 	listener net.Listener
 
 	logger *zap.Logger
 }
 
-func NewServer(grpcAddr string, service protobuf.BlastServer, logger *zap.Logger) (*Server, error) {
+func NewGRPCServer(grpcAddr string, service distribute.DistributeServer, logger *zap.Logger) (*GRPCServer, error) {
 	server := grpc.NewServer(
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
 			//grpc_ctxtags.StreamServerInterceptor(),
@@ -57,7 +57,7 @@ func NewServer(grpcAddr string, service protobuf.BlastServer, logger *zap.Logger
 		)),
 	)
 
-	protobuf.RegisterBlastServer(server, service)
+	distribute.RegisterDistributeServer(server, service)
 
 	grpc_prometheus.EnableHandlingTimeHistogram()
 	grpc_prometheus.Register(server)
@@ -67,7 +67,7 @@ func NewServer(grpcAddr string, service protobuf.BlastServer, logger *zap.Logger
 		return nil, err
 	}
 
-	return &Server{
+	return &GRPCServer{
 		service:  service,
 		server:   server,
 		listener: listener,
@@ -75,7 +75,7 @@ func NewServer(grpcAddr string, service protobuf.BlastServer, logger *zap.Logger
 	}, nil
 }
 
-func (s *Server) Start() error {
+func (s *GRPCServer) Start() error {
 	s.logger.Info("start server")
 	err := s.server.Serve(s.listener)
 	if err != nil {
@@ -85,7 +85,7 @@ func (s *Server) Start() error {
 	return nil
 }
 
-func (s *Server) Stop() error {
+func (s *GRPCServer) Stop() error {
 	s.logger.Info("stop server")
 	s.server.Stop()
 	//s.server.GracefulStop()
