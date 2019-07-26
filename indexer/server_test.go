@@ -23,15 +23,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/raft"
-
 	"github.com/blevesearch/bleve"
+	"github.com/hashicorp/raft"
 	"github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/errors"
-	"github.com/mosuka/blast/grpc"
 	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/logutils"
-	"github.com/mosuka/blast/protobuf"
+	"github.com/mosuka/blast/protobuf/index"
 	"github.com/mosuka/blast/testutils"
 )
 
@@ -119,7 +117,7 @@ func TestServer_LivenessProbe(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// create gRPC client
-	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
+	client, err := NewGRPCClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -137,7 +135,7 @@ func TestServer_LivenessProbe(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expLiveness := protobuf.LivenessProbeResponse_ALIVE.String()
+	expLiveness := index.LivenessProbeResponse_ALIVE.String()
 	actLiveness := liveness
 	if expLiveness != actLiveness {
 		t.Fatalf("expected content to see %v, saw %v", expLiveness, actLiveness)
@@ -186,7 +184,7 @@ func TestServer_ReadinessProbe(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// create gRPC client
-	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
+	client, err := NewGRPCClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -204,7 +202,7 @@ func TestServer_ReadinessProbe(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expReadiness := protobuf.ReadinessProbeResponse_READY.String()
+	expReadiness := index.ReadinessProbeResponse_READY.String()
 	actReadiness := readiness
 	if expReadiness != actReadiness {
 		t.Fatalf("expected content to see %v, saw %v", expReadiness, actReadiness)
@@ -253,7 +251,7 @@ func TestServer_GetNode(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// create gRPC client
-	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
+	client, err := NewGRPCClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -323,7 +321,7 @@ func TestServer_GetCluster(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// create gRPC client
-	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
+	client, err := NewGRPCClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -395,7 +393,7 @@ func TestServer_GetIndexMapping(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// create gRPC client
-	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
+	client, err := NewGRPCClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -470,7 +468,7 @@ func TestServer_GetIndexType(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// create gRPC client
-	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
+	client, err := NewGRPCClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -542,7 +540,7 @@ func TestServer_GetIndexStorageType(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// create gRPC client
-	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
+	client, err := NewGRPCClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -614,7 +612,7 @@ func TestServer_GetIndexStats(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// create gRPC client
-	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
+	client, err := NewGRPCClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -695,7 +693,7 @@ func TestServer_PutDocument(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// create gRPC client
-	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
+	client, err := NewGRPCClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -788,7 +786,7 @@ func TestServer_GetDocument(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// create gRPC client
-	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
+	client, err := NewGRPCClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -896,7 +894,7 @@ func TestServer_DeleteDocument(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// create gRPC client
-	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
+	client, err := NewGRPCClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -1033,7 +1031,7 @@ func TestServer_Search(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// create gRPC client
-	client, err := grpc.NewClient(nodeConfig.GRPCAddr)
+	client, err := NewGRPCClient(nodeConfig.GRPCAddr)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -1278,21 +1276,21 @@ func TestCluster_LivenessProbe(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// gRPC client for all servers
-	client1, err := grpc.NewClient(nodeConfig1.GRPCAddr)
+	client1, err := NewGRPCClient(nodeConfig1.GRPCAddr)
 	defer func() {
 		_ = client1.Close()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	client2, err := grpc.NewClient(nodeConfig2.GRPCAddr)
+	client2, err := NewGRPCClient(nodeConfig2.GRPCAddr)
 	defer func() {
 		_ = client2.Close()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	client3, err := grpc.NewClient(nodeConfig3.GRPCAddr)
+	client3, err := NewGRPCClient(nodeConfig3.GRPCAddr)
 	defer func() {
 		_ = client3.Close()
 	}()
@@ -1305,7 +1303,7 @@ func TestCluster_LivenessProbe(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expLiveness1 := protobuf.LivenessProbeResponse_ALIVE.String()
+	expLiveness1 := index.LivenessProbeResponse_ALIVE.String()
 	actLiveness1 := liveness1
 	if expLiveness1 != actLiveness1 {
 		t.Fatalf("expected content to see %v, saw %v", expLiveness1, actLiveness1)
@@ -1316,7 +1314,7 @@ func TestCluster_LivenessProbe(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expLiveness2 := protobuf.LivenessProbeResponse_ALIVE.String()
+	expLiveness2 := index.LivenessProbeResponse_ALIVE.String()
 	actLiveness2 := liveness2
 	if expLiveness2 != actLiveness2 {
 		t.Fatalf("expected content to see %v, saw %v", expLiveness2, actLiveness2)
@@ -1327,7 +1325,7 @@ func TestCluster_LivenessProbe(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expLiveness3 := protobuf.LivenessProbeResponse_ALIVE.String()
+	expLiveness3 := index.LivenessProbeResponse_ALIVE.String()
 	actLiveness3 := liveness3
 	if expLiveness3 != actLiveness3 {
 		t.Fatalf("expected content to see %v, saw %v", expLiveness3, actLiveness3)
@@ -1415,21 +1413,21 @@ func TestCluster_ReadinessProbe(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// gRPC client for all servers
-	client1, err := grpc.NewClient(nodeConfig1.GRPCAddr)
+	client1, err := NewGRPCClient(nodeConfig1.GRPCAddr)
 	defer func() {
 		_ = client1.Close()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	client2, err := grpc.NewClient(nodeConfig2.GRPCAddr)
+	client2, err := NewGRPCClient(nodeConfig2.GRPCAddr)
 	defer func() {
 		_ = client2.Close()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	client3, err := grpc.NewClient(nodeConfig3.GRPCAddr)
+	client3, err := NewGRPCClient(nodeConfig3.GRPCAddr)
 	defer func() {
 		_ = client3.Close()
 	}()
@@ -1442,7 +1440,7 @@ func TestCluster_ReadinessProbe(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expReadiness1 := protobuf.ReadinessProbeResponse_READY.String()
+	expReadiness1 := index.ReadinessProbeResponse_READY.String()
 	actReadiness1 := readiness1
 	if expReadiness1 != actReadiness1 {
 		t.Fatalf("expected content to see %v, saw %v", expReadiness1, actReadiness1)
@@ -1453,7 +1451,7 @@ func TestCluster_ReadinessProbe(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expReadiness2 := protobuf.ReadinessProbeResponse_READY.String()
+	expReadiness2 := index.ReadinessProbeResponse_READY.String()
 	actReadiness2 := readiness2
 	if expReadiness2 != actReadiness2 {
 		t.Fatalf("expected content to see %v, saw %v", expReadiness2, actReadiness2)
@@ -1464,7 +1462,7 @@ func TestCluster_ReadinessProbe(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expReadiness3 := protobuf.ReadinessProbeResponse_READY.String()
+	expReadiness3 := index.ReadinessProbeResponse_READY.String()
 	actReadiness3 := readiness3
 	if expReadiness3 != actReadiness3 {
 		t.Fatalf("expected content to see %v, saw %v", expReadiness3, actReadiness3)
@@ -1552,21 +1550,21 @@ func TestCluster_GetNode(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// gRPC client for all servers
-	client1, err := grpc.NewClient(nodeConfig1.GRPCAddr)
+	client1, err := NewGRPCClient(nodeConfig1.GRPCAddr)
 	defer func() {
 		_ = client1.Close()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	client2, err := grpc.NewClient(nodeConfig2.GRPCAddr)
+	client2, err := NewGRPCClient(nodeConfig2.GRPCAddr)
 	defer func() {
 		_ = client2.Close()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	client3, err := grpc.NewClient(nodeConfig3.GRPCAddr)
+	client3, err := NewGRPCClient(nodeConfig3.GRPCAddr)
 	defer func() {
 		_ = client3.Close()
 	}()
@@ -1774,21 +1772,21 @@ func TestCluster_GetCluster(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// gRPC client for manager1
-	client1, err := grpc.NewClient(nodeConfig1.GRPCAddr)
+	client1, err := NewGRPCClient(nodeConfig1.GRPCAddr)
 	defer func() {
 		_ = client1.Close()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	client2, err := grpc.NewClient(nodeConfig2.GRPCAddr)
+	client2, err := NewGRPCClient(nodeConfig2.GRPCAddr)
 	defer func() {
 		_ = client2.Close()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	client3, err := grpc.NewClient(nodeConfig3.GRPCAddr)
+	client3, err := NewGRPCClient(nodeConfig3.GRPCAddr)
 	defer func() {
 		_ = client3.Close()
 	}()

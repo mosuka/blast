@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mosuka/blast/grpc"
+	"github.com/mosuka/blast/manager"
 	"github.com/urfave/cli"
 )
 
@@ -32,7 +32,7 @@ func clusterDelete(c *cli.Context) error {
 		return err
 	}
 
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := manager.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
 	}

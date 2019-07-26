@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package http
+package manager
 
 import (
 	"net"
@@ -22,7 +22,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type Server struct {
+type HTTPServer struct {
 	listener net.Listener
 	router   *Router
 
@@ -30,13 +30,13 @@ type Server struct {
 	httpLogger accesslog.Logger
 }
 
-func NewServer(httpAddr string, router *Router, logger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
+func NewHTTPServer(httpAddr string, router *Router, logger *zap.Logger, httpLogger accesslog.Logger) (*HTTPServer, error) {
 	listener, err := net.Listen("tcp", httpAddr)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Server{
+	return &HTTPServer{
 		listener:   listener,
 		router:     router,
 		logger:     logger,
@@ -44,7 +44,7 @@ func NewServer(httpAddr string, router *Router, logger *zap.Logger, httpLogger a
 	}, nil
 }
 
-func (s *Server) Start() error {
+func (s *HTTPServer) Start() error {
 	err := http.Serve(
 		s.listener,
 		accesslog.NewLoggingHandler(
@@ -59,7 +59,7 @@ func (s *Server) Start() error {
 	return nil
 }
 
-func (s *Server) Stop() error {
+func (s *HTTPServer) Stop() error {
 	err := s.listener.Close()
 	if err != nil {
 		return err

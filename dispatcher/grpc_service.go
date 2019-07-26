@@ -25,14 +25,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mosuka/blast/indexutils"
-
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search"
 	"github.com/golang/protobuf/ptypes/any"
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/hashicorp/raft"
-	"github.com/mosuka/blast/grpc"
+	"github.com/mosuka/blast/indexer"
+	"github.com/mosuka/blast/indexutils"
+	"github.com/mosuka/blast/manager"
 	"github.com/mosuka/blast/protobuf"
+	"github.com/mosuka/blast/protobuf/distribute"
 	"github.com/mosuka/blast/sortutils"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
@@ -40,18 +42,16 @@ import (
 )
 
 type GRPCService struct {
-	*grpc.Service
-
 	managerAddr string
 	logger      *zap.Logger
 
 	managers             map[string]interface{}
-	managerClients       map[string]*grpc.Client
+	managerClients       map[string]*manager.GRPCClient
 	updateManagersStopCh chan struct{}
 	updateManagersDoneCh chan struct{}
 
 	indexers             map[string]interface{}
-	indexerClients       map[string]map[string]*grpc.Client
+	indexerClients       map[string]map[string]*indexer.GRPCClient
 	updateIndexersStopCh chan struct{}
 	updateIndexersDoneCh chan struct{}
 }
@@ -62,10 +62,10 @@ func NewGRPCService(managerAddr string, logger *zap.Logger) (*GRPCService, error
 		logger:      logger,
 
 		managers:       make(map[string]interface{}, 0),
-		managerClients: make(map[string]*grpc.Client, 0),
+		managerClients: make(map[string]*manager.GRPCClient, 0),
 
 		indexers:       make(map[string]interface{}, 0),
-		indexerClients: make(map[string]map[string]*grpc.Client, 0),
+		indexerClients: make(map[string]map[string]*indexer.GRPCClient, 0),
 	}, nil
 }
 
@@ -89,8 +89,8 @@ func (s *GRPCService) Stop() error {
 	return nil
 }
 
-func (s *GRPCService) getManagerClient() (*grpc.Client, error) {
-	var client *grpc.Client
+func (s *GRPCService) getManagerClient() (*manager.GRPCClient, error) {
+	var client *manager.GRPCClient
 
 	for id, node := range s.managers {
 		nm, ok := node.(map[string]interface{})
@@ -124,7 +124,7 @@ func (s *GRPCService) getManagerClient() (*grpc.Client, error) {
 }
 
 func (s *GRPCService) getInitialManagers(managerAddr string) (map[string]interface{}, error) {
-	client, err := grpc.NewClient(s.managerAddr)
+	client, err := manager.NewGRPCClient(s.managerAddr)
 	defer func() {
 		err := client.Close()
 		if err != nil {
@@ -185,7 +185,7 @@ func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 		}
 
 		s.logger.Debug("create gRPC client", zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
-		client, err := grpc.NewClient(grpcAddr)
+		client, err := manager.NewGRPCClient(grpcAddr)
 		if err != nil {
 			s.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
 		}
@@ -266,7 +266,7 @@ func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 								s.logger.Error(err.Error(), zap.String("node_id", nodeId))
 							}
 
-							newClient, err := grpc.NewClient(grpcAddr)
+							newClient, err := manager.NewGRPCClient(grpcAddr)
 							if err != nil {
 								s.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
 							}
@@ -281,7 +281,7 @@ func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 						s.logger.Debug("client does not exist in peer list", zap.String("node_id", nodeId))
 
 						s.logger.Debug("create gRPC client", zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
-						newClient, err := grpc.NewClient(grpcAddr)
+						newClient, err := manager.NewGRPCClient(grpcAddr)
 						if err != nil {
 							s.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
 						}
@@ -403,12 +403,12 @@ func (s *GRPCService) startUpdateIndexers(checkInterval time.Duration) {
 			}
 
 			s.logger.Debug("create gRPC client", zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
-			client, err := grpc.NewClient(metadata["grpc_addr"].(string))
+			client, err := indexer.NewGRPCClient(metadata["grpc_addr"].(string))
 			if err != nil {
 				s.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
 			}
 			if _, exist := s.indexerClients[clusterId]; !exist {
-				s.indexerClients[clusterId] = make(map[string]*grpc.Client)
+				s.indexerClients[clusterId] = make(map[string]*indexer.GRPCClient)
 			}
 			s.indexerClients[clusterId][nodeId] = client
 		}
@@ -504,7 +504,7 @@ func (s *GRPCService) startUpdateIndexers(checkInterval time.Duration) {
 									s.logger.Error(err.Error(), zap.String("node_id", nodeId))
 								}
 
-								newClient, err := grpc.NewClient(grpcAddr)
+								newClient, err := indexer.NewGRPCClient(grpcAddr)
 								if err != nil {
 									s.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
 								}
@@ -518,12 +518,12 @@ func (s *GRPCService) startUpdateIndexers(checkInterval time.Duration) {
 							s.logger.Debug("client does not exist in peer list", zap.String("node_id", nodeId))
 
 							s.logger.Debug("create gRPC client", zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
-							newClient, err := grpc.NewClient(nodeConfig["grpc_addr"].(string))
+							newClient, err := indexer.NewGRPCClient(nodeConfig["grpc_addr"].(string))
 							if err != nil {
 								s.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
 							}
 							if _, exist := s.indexerClients[clusterId]; !exist {
-								s.indexerClients[clusterId] = make(map[string]*grpc.Client)
+								s.indexerClients[clusterId] = make(map[string]*indexer.GRPCClient)
 							}
 							s.indexerClients[clusterId][nodeId] = newClient
 						}
@@ -557,8 +557,8 @@ func (s *GRPCService) stopUpdateIndexers() {
 	s.logger.Info("the indexer cluster update has been stopped")
 }
 
-func (s *GRPCService) getIndexerClients() map[string]*grpc.Client {
-	indexerClients := make(map[string]*grpc.Client, 0)
+func (s *GRPCService) getIndexerClients() map[string]*indexer.GRPCClient {
+	indexerClients := make(map[string]*indexer.GRPCClient, 0)
 
 	for clusterId, cluster := range s.indexerClients {
 		nodeIds := make([]string, 0)
@@ -575,7 +575,23 @@ func (s *GRPCService) getIndexerClients() map[string]*grpc.Client {
 	return indexerClients
 }
 
-func (s *GRPCService) GetDocument(ctx context.Context, req *protobuf.GetDocumentRequest) (*protobuf.GetDocumentResponse, error) {
+func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*distribute.LivenessProbeResponse, error) {
+	resp := &distribute.LivenessProbeResponse{
+		State: distribute.LivenessProbeResponse_ALIVE,
+	}
+
+	return resp, nil
+}
+
+func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*distribute.ReadinessProbeResponse, error) {
+	resp := &distribute.ReadinessProbeResponse{
+		State: distribute.ReadinessProbeResponse_READY,
+	}
+
+	return resp, nil
+}
+
+func (s *GRPCService) GetDocument(ctx context.Context, req *distribute.GetDocumentRequest) (*distribute.GetDocumentResponse, error) {
 	indexerClients := s.getIndexerClients()
 
 	// cluster id list sorted by cluster id
@@ -597,7 +613,7 @@ func (s *GRPCService) GetDocument(ctx context.Context, req *protobuf.GetDocument
 	wg := &sync.WaitGroup{}
 	for clusterId, client := range indexerClients {
 		wg.Add(1)
-		go func(clusterId string, client *grpc.Client, id string, respChan chan respVal) {
+		go func(clusterId string, client *indexer.GRPCClient, id string, respChan chan respVal) {
 			// index documents
 			fields, err := client.GetDocument(id)
 			wg.Done()
@@ -624,7 +640,7 @@ func (s *GRPCService) GetDocument(ctx context.Context, req *protobuf.GetDocument
 		}
 	}
 
-	resp := &protobuf.GetDocumentResponse{}
+	resp := &distribute.GetDocumentResponse{}
 
 	fieldsAny := &any.Any{}
 	err := protobuf.UnmarshalAny(fields, fieldsAny)
@@ -639,10 +655,10 @@ func (s *GRPCService) GetDocument(ctx context.Context, req *protobuf.GetDocument
 	return resp, nil
 }
 
-func (s *GRPCService) Search(ctx context.Context, req *protobuf.SearchRequest) (*protobuf.SearchResponse, error) {
+func (s *GRPCService) Search(ctx context.Context, req *distribute.SearchRequest) (*distribute.SearchResponse, error) {
 	start := time.Now()
 
-	resp := &protobuf.SearchResponse{}
+	resp := &distribute.SearchResponse{}
 
 	indexerClients := s.getIndexerClients()
 
@@ -679,7 +695,7 @@ func (s *GRPCService) Search(ctx context.Context, req *protobuf.SearchRequest) (
 	wg := &sync.WaitGroup{}
 	for clusterId, client := range indexerClients {
 		wg.Add(1)
-		go func(clusterId string, client *grpc.Client, searchRequest *bleve.SearchRequest, respChan chan respVal) {
+		go func(clusterId string, client *indexer.GRPCClient, searchRequest *bleve.SearchRequest, respChan chan respVal) {
 			searchResult, err := client.Search(searchRequest)
 			wg.Done()
 			respChan <- respVal{
@@ -773,7 +789,7 @@ func (s *GRPCService) docIdHash(docId string) uint64 {
 	return hash.Sum64()
 }
 
-func (s *GRPCService) IndexDocument(stream protobuf.Blast_IndexDocumentServer) error {
+func (s *GRPCService) IndexDocument(stream distribute.Distribute_IndexDocumentServer) error {
 	indexerClients := s.getIndexerClients()
 
 	// cluster id list sorted by cluster id
@@ -861,14 +877,14 @@ func (s *GRPCService) IndexDocument(stream protobuf.Blast_IndexDocumentServer) e
 	}
 
 	// response
-	resp := &protobuf.IndexDocumentResponse{
+	resp := &distribute.IndexDocumentResponse{
 		Count: int32(totalCount),
 	}
 
 	return stream.SendAndClose(resp)
 }
 
-func (s *GRPCService) DeleteDocument(stream protobuf.Blast_DeleteDocumentServer) error {
+func (s *GRPCService) DeleteDocument(stream distribute.Distribute_DeleteDocumentServer) error {
 	indexerClients := s.getIndexerClients()
 
 	// cluster id list sorted by cluster id
@@ -906,7 +922,7 @@ func (s *GRPCService) DeleteDocument(stream protobuf.Blast_DeleteDocumentServer)
 	wg := &sync.WaitGroup{}
 	for clusterId, client := range indexerClients {
 		wg.Add(1)
-		go func(clusterId string, client *grpc.Client, ids []string, respChan chan respVal) {
+		go func(clusterId string, client *indexer.GRPCClient, ids []string, respChan chan respVal) {
 			// index documents
 			count, err := client.DeleteDocument(ids)
 			wg.Done()
@@ -931,7 +947,7 @@ func (s *GRPCService) DeleteDocument(stream protobuf.Blast_DeleteDocumentServer)
 	}
 
 	// response
-	resp := &protobuf.DeleteDocumentResponse{
+	resp := &distribute.DeleteDocumentResponse{
 		Count: int32(totalCount),
 	}
 

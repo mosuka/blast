@@ -22,7 +22,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/mosuka/blast/grpc"
+	"github.com/mosuka/blast/manager"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/urfave/cli"
 )
@@ -30,7 +30,7 @@ import (
 func clusterPeersWatch(c *cli.Context) error {
 	grpcAddr := c.String("grpc-address")
 
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := manager.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func clusterPeersWatch(c *cli.Context) error {
 		}
 	}()
 
-	err = indexerPeersInfo(c)
+	err = clusterPeersInfo(c)
 	if err != nil {
 		return err
 	}

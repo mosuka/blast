@@ -49,7 +49,7 @@ func TestRaftFSM_GetNode(t *testing.T) {
 		}
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	_ = fsm.SetNodeConfig("node1", map[string]interface{}{
@@ -70,7 +70,7 @@ func TestRaftFSM_GetNode(t *testing.T) {
 
 	val1, err := fsm.GetNodeConfig("node2")
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	exp1 := map[string]interface{}{
@@ -80,7 +80,7 @@ func TestRaftFSM_GetNode(t *testing.T) {
 	}
 	act1 := val1
 	if !reflect.DeepEqual(exp1, act1) {
-		t.Errorf("expected content to see %v, saw %v", exp1, act1)
+		t.Fatalf("expected content to see %v, saw %v", exp1, act1)
 	}
 
 }
@@ -88,12 +88,12 @@ func TestRaftFSM_GetNode(t *testing.T) {
 func TestRaftFSM_SetNode(t *testing.T) {
 	tmp, err := ioutil.TempDir("", "")
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	defer func() {
 		err := os.RemoveAll(tmp)
 		if err != nil {
-			t.Errorf("%v", err)
+			t.Fatalf("%v", err)
 		}
 	}()
 
@@ -101,17 +101,17 @@ func TestRaftFSM_SetNode(t *testing.T) {
 
 	fsm, err := NewRaftFSM(tmp, logger)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	err = fsm.Start()
 	defer func() {
 		err := fsm.Stop()
 		if err != nil {
-			t.Errorf("%v", err)
+			t.Fatalf("%v", err)
 		}
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	_ = fsm.SetNodeConfig("node1", map[string]interface{}{
@@ -132,7 +132,7 @@ func TestRaftFSM_SetNode(t *testing.T) {
 
 	val1, err := fsm.GetNodeConfig("node2")
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	exp1 := map[string]interface{}{
 		"bind_addr": ":16061",
@@ -141,7 +141,7 @@ func TestRaftFSM_SetNode(t *testing.T) {
 	}
 	act1 := val1
 	if !reflect.DeepEqual(exp1, act1) {
-		t.Errorf("expected content to see %v, saw %v", exp1, act1)
+		t.Fatalf("expected content to see %v, saw %v", exp1, act1)
 	}
 
 	_ = fsm.SetNodeConfig("node2", map[string]interface{}{
@@ -153,7 +153,7 @@ func TestRaftFSM_SetNode(t *testing.T) {
 
 	val2, err := fsm.GetNodeConfig("node2")
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	exp2 := map[string]interface{}{
 		"bind_addr": ":16061",
@@ -163,19 +163,19 @@ func TestRaftFSM_SetNode(t *testing.T) {
 	}
 	act2 := val2
 	if !reflect.DeepEqual(exp2, act2) {
-		t.Errorf("expected content to see %v, saw %v", exp2, act2)
+		t.Fatalf("expected content to see %v, saw %v", exp2, act2)
 	}
 }
 
 func TestRaftFSM_DeleteNode(t *testing.T) {
 	tmp, err := ioutil.TempDir("", "")
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	defer func() {
 		err := os.RemoveAll(tmp)
 		if err != nil {
-			t.Errorf("%v", err)
+			t.Fatalf("%v", err)
 		}
 	}()
 
@@ -183,17 +183,17 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 
 	fsm, err := NewRaftFSM(tmp, logger)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	err = fsm.Start()
 	defer func() {
 		err := fsm.Stop()
 		if err != nil {
-			t.Errorf("%v", err)
+			t.Fatalf("%v", err)
 		}
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	_ = fsm.SetNodeConfig("node1", map[string]interface{}{
@@ -214,7 +214,7 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 
 	val1, err := fsm.GetNodeConfig("node2")
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	exp1 := map[string]interface{}{
 		"bind_addr": ":16061",
@@ -223,34 +223,34 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 	}
 	act1 := val1
 	if !reflect.DeepEqual(exp1, act1) {
-		t.Errorf("expected content to see %v, saw %v", exp1, act1)
+		t.Fatalf("expected content to see %v, saw %v", exp1, act1)
 	}
 
 	err = fsm.DeleteNodeConfig("node2")
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	val2, err := fsm.GetNodeConfig("node2")
 	if err == nil {
-		t.Errorf("expected error: %v", err)
+		t.Fatalf("expected error: %v", err)
 	}
 
 	act1 = val2
 	if reflect.DeepEqual(nil, act1) {
-		t.Errorf("expected content to see nil, saw %v", act1)
+		t.Fatalf("expected content to see nil, saw %v", act1)
 	}
 }
 
 func TestRaftFSM_Get(t *testing.T) {
 	tmp, err := ioutil.TempDir("", "")
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	defer func() {
 		err := os.RemoveAll(tmp)
 		if err != nil {
-			t.Errorf("%v", err)
+			t.Fatalf("%v", err)
 		}
 	}()
 
@@ -258,45 +258,45 @@ func TestRaftFSM_Get(t *testing.T) {
 
 	fsm, err := NewRaftFSM(tmp, logger)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	err = fsm.Start()
 	defer func() {
 		err := fsm.Stop()
 		if err != nil {
-			t.Errorf("%v", err)
+			t.Fatalf("%v", err)
 		}
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	err = fsm.SetValue("/", map[string]interface{}{"a": 1}, false)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	value, err := fsm.GetValue("/a")
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	expectedValue := 1
 	actualValue := value
 	if expectedValue != actualValue {
-		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
+		t.Fatalf("expected content to see %v, saw %v", expectedValue, actualValue)
 	}
 }
 
 func TestRaftFSM_Set(t *testing.T) {
 	tmp, err := ioutil.TempDir("", "")
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	defer func() {
 		err := os.RemoveAll(tmp)
 		if err != nil {
-			t.Errorf("%v", err)
+			t.Fatalf("%v", err)
 		}
 	}()
 
@@ -304,17 +304,17 @@ func TestRaftFSM_Set(t *testing.T) {
 
 	fsm, err := NewRaftFSM(tmp, logger)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	err = fsm.Start()
 	defer func() {
 		err := fsm.Stop()
 		if err != nil {
-			t.Errorf("%v", err)
+			t.Fatalf("%v", err)
 		}
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	// set {"a": 1}
@@ -322,18 +322,18 @@ func TestRaftFSM_Set(t *testing.T) {
 		"a": 1,
 	}, false)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	val1, err := fsm.GetValue("/")
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	exp1 := map[string]interface{}{
 		"a": 1,
 	}
 	act1 := val1
 	if !reflect.DeepEqual(exp1, act1) {
-		t.Errorf("expected content to see %v, saw %v", exp1, act1)
+		t.Fatalf("expected content to see %v, saw %v", exp1, act1)
 	}
 
 	// merge {"a": "A"}
@@ -341,18 +341,18 @@ func TestRaftFSM_Set(t *testing.T) {
 		"a": "A",
 	}, true)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	val2, err := fsm.GetValue("/")
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	exp2 := map[string]interface{}{
 		"a": "A",
 	}
 	act2 := val2
 	if !reflect.DeepEqual(exp2, act2) {
-		t.Errorf("expected content to see %v, saw %v", exp2, act2)
+		t.Fatalf("expected content to see %v, saw %v", exp2, act2)
 	}
 
 	// set {"a": {"b": "AB"}}
@@ -362,12 +362,12 @@ func TestRaftFSM_Set(t *testing.T) {
 		},
 	}, false)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	val3, err := fsm.GetValue("/")
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	exp3 := map[string]interface{}{
 		"a": map[string]interface{}{
@@ -376,7 +376,7 @@ func TestRaftFSM_Set(t *testing.T) {
 	}
 	act3 := val3
 	if !reflect.DeepEqual(exp3, act3) {
-		t.Errorf("expected content to see %v, saw %v", exp3, act3)
+		t.Fatalf("expected content to see %v, saw %v", exp3, act3)
 	}
 
 	// merge {"a": {"c": "AC"}}
@@ -386,11 +386,11 @@ func TestRaftFSM_Set(t *testing.T) {
 		},
 	}, true)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	val4, err := fsm.GetValue("/")
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	exp4 := map[string]interface{}{
 		"a": map[string]interface{}{
@@ -400,7 +400,7 @@ func TestRaftFSM_Set(t *testing.T) {
 	}
 	act4 := val4
 	if !reflect.DeepEqual(exp4, act4) {
-		t.Errorf("expected content to see %v, saw %v", exp4, act4)
+		t.Fatalf("expected content to see %v, saw %v", exp4, act4)
 	}
 
 	// set {"a": 1}
@@ -408,18 +408,18 @@ func TestRaftFSM_Set(t *testing.T) {
 		"a": 1,
 	}, false)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	val5, err := fsm.GetValue("/")
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	exp5 := map[string]interface{}{
 		"a": 1,
 	}
 	act5 := val5
 	if !reflect.DeepEqual(exp5, act5) {
-		t.Errorf("expected content to see %v, saw %v", exp5, act5)
+		t.Fatalf("expected content to see %v, saw %v", exp5, act5)
 	}
 
 	// TODO: merge {"a": {"c": "AC"}}
@@ -430,7 +430,7 @@ func TestRaftFSM_Set(t *testing.T) {
 	//}, true)
 	//val6, err := fsm.Get("/")
 	//if err != nil {
-	//	t.Errorf("%v", err)
+	//	t.Fatalf("%v", err)
 	//}
 	//exp6 := map[string]interface{}{
 	//	"a": map[string]interface{}{
@@ -439,19 +439,19 @@ func TestRaftFSM_Set(t *testing.T) {
 	//}
 	//act6 := val6
 	//if !reflect.DeepEqual(exp6, act6) {
-	//	t.Errorf("expected content to see %v, saw %v", exp6, act6)
+	//	t.Fatalf("expected content to see %v, saw %v", exp6, act6)
 	//}
 }
 
 func TestRaftFSM_Delete(t *testing.T) {
 	tmp, err := ioutil.TempDir("", "")
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	defer func() {
 		err := os.RemoveAll(tmp)
 		if err != nil {
-			t.Errorf("%v", err)
+			t.Fatalf("%v", err)
 		}
 	}()
 
@@ -459,47 +459,47 @@ func TestRaftFSM_Delete(t *testing.T) {
 
 	fsm, err := NewRaftFSM(tmp, logger)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 	err = fsm.Start()
 	defer func() {
 		err := fsm.Stop()
 		if err != nil {
-			t.Errorf("%v", err)
+			t.Fatalf("%v", err)
 		}
 	}()
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	err = fsm.SetValue("/", map[string]interface{}{"a": 1}, false)
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	value, err := fsm.GetValue("/a")
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	expectedValue := 1
 	actualValue := value
 	if expectedValue != actualValue {
-		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
+		t.Fatalf("expected content to see %v, saw %v", expectedValue, actualValue)
 	}
 
 	err = fsm.DeleteValue("/a")
 	if err != nil {
-		t.Errorf("%v", err)
+		t.Fatalf("%v", err)
 	}
 
 	value, err = fsm.GetValue("/a")
 	if err == nil {
-		t.Errorf("expected nil: %v", err)
+		t.Fatalf("expected nil: %v", err)
 	}
 
 	actualValue = value
 	if nil != actualValue {
-		t.Errorf("expected content to see %v, saw %v", expectedValue, actualValue)
+		t.Fatalf("expected content to see %v, saw %v", expectedValue, actualValue)
 	}
 }

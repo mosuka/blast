@@ -26,15 +26,15 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/hashicorp/raft"
 	blasterrors "github.com/mosuka/blast/errors"
-	"github.com/mosuka/blast/grpc"
 	"github.com/mosuka/blast/protobuf"
+	"github.com/mosuka/blast/protobuf/management"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type GRPCService struct {
-	*grpc.Service
+	//*grpc.Service
 
 	raftServer *RaftServer
 	logger     *zap.Logger
@@ -42,12 +42,12 @@ type GRPCService struct {
 	updateClusterStopCh chan struct{}
 	updateClusterDoneCh chan struct{}
 	peers               map[string]interface{}
-	peerClients         map[string]*grpc.Client
+	peerClients         map[string]*GRPCClient
 	cluster             map[string]interface{}
-	clusterChans        map[chan protobuf.GetClusterResponse]struct{}
+	clusterChans        map[chan management.GetClusterResponse]struct{}
 	clusterMutex        sync.RWMutex
 
-	stateChans map[chan protobuf.WatchStoreResponse]struct{}
+	stateChans map[chan management.WatchStoreResponse]struct{}
 	stateMutex sync.RWMutex
 }
 
@@ -57,11 +57,11 @@ func NewGRPCService(raftServer *RaftServer, logger *zap.Logger) (*GRPCService, e
 		logger:     logger,
 
 		peers:        make(map[string]interface{}, 0),
-		peerClients:  make(map[string]*grpc.Client, 0),
+		peerClients:  make(map[string]*GRPCClient, 0),
 		cluster:      make(map[string]interface{}, 0),
-		clusterChans: make(map[chan protobuf.GetClusterResponse]struct{}),
+		clusterChans: make(map[chan management.GetClusterResponse]struct{}),
 
-		stateChans: make(map[chan protobuf.WatchStoreResponse]struct{}),
+		stateChans: make(map[chan management.WatchStoreResponse]struct{}),
 	}, nil
 }
 
@@ -79,8 +79,8 @@ func (s *GRPCService) Stop() error {
 	return nil
 }
 
-func (s *GRPCService) getLeaderClient() (*grpc.Client, error) {
-	var client *grpc.Client
+func (s *GRPCService) getLeaderClient() (*GRPCClient, error) {
+	var client *GRPCClient
 
 	for id, node := range s.cluster {
 		state, ok := node.(map[string]interface{})["state"].(string)
@@ -170,7 +170,7 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 								s.logger.Warn(err.Error(), zap.String("node_id", nodeId))
 							}
 
-							newClient, err := grpc.NewClient(grpcAddr)
+							newClient, err := NewGRPCClient(grpcAddr)
 							if err != nil {
 								s.logger.Warn(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
 							}
@@ -185,7 +185,7 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 						s.logger.Debug("client does not exist in peer list", zap.String("node_id", nodeId))
 
 						s.logger.Debug("create gRPC client", zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
-						peerClient, err := grpc.NewClient(grpcAddr)
+						peerClient, err := NewGRPCClient(grpcAddr)
 						if err != nil {
 							s.logger.Warn(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
 						}
@@ -220,7 +220,7 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 			// notify current cluster
 			if !reflect.DeepEqual(s.cluster, cluster) {
 				// convert to GetClusterResponse for channel output
-				clusterResp := &protobuf.GetClusterResponse{}
+				clusterResp := &management.GetClusterResponse{}
 				clusterAny := &any.Any{}
 				err = protobuf.UnmarshalAny(cluster, clusterAny)
 				if err != nil {
@@ -247,10 +247,11 @@ func (s *GRPCService) stopUpdateCluster() {
 	s.logger.Info("close all peer clients")
 	for id, client := range s.peerClients {
 		s.logger.Debug("close peer client", zap.String("id", id), zap.String("address", client.GetAddress()))
-		err := client.Close()
-		if err != nil {
-			s.logger.Warn(err.Error())
-		}
+		_ = client.Close()
+		//err := client.Close()
+		//if err != nil {
+		//	s.logger.Warn(err.Error())
+		//}
 	}
 
 	if s.updateClusterStopCh != nil {
@@ -261,6 +262,22 @@ func (s *GRPCService) stopUpdateCluster() {
 	s.logger.Info("wait for the cluster update to stop")
 	<-s.updateClusterDoneCh
 	s.logger.Info("the cluster update has been stopped")
+}
+
+func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*management.LivenessProbeResponse, error) {
+	resp := &management.LivenessProbeResponse{
+		State: management.LivenessProbeResponse_ALIVE,
+	}
+
+	return resp, nil
+}
+
+func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*management.ReadinessProbeResponse, error) {
+	resp := &management.ReadinessProbeResponse{
+		State: management.ReadinessProbeResponse_READY,
+	}
+
+	return resp, nil
 }
 
 func (s *GRPCService) NodeID() string {
@@ -316,8 +333,8 @@ func (s *GRPCService) getNode(id string) (map[string]interface{}, error) {
 	return nodeInfo, nil
 }
 
-func (s *GRPCService) GetNode(ctx context.Context, req *protobuf.GetNodeRequest) (*protobuf.GetNodeResponse, error) {
-	resp := &protobuf.GetNodeResponse{}
+func (s *GRPCService) GetNode(ctx context.Context, req *management.GetNodeRequest) (*management.GetNodeResponse, error) {
+	resp := &management.GetNodeResponse{}
 
 	nodeInfo, err := s.getNode(req.Id)
 	if err != nil {
@@ -372,7 +389,7 @@ func (s *GRPCService) setNode(id string, nodeConfig map[string]interface{}) erro
 	return nil
 }
 
-func (s *GRPCService) SetNode(ctx context.Context, req *protobuf.SetNodeRequest) (*empty.Empty, error) {
+func (s *GRPCService) SetNode(ctx context.Context, req *management.SetNodeRequest) (*empty.Empty, error) {
 	resp := &empty.Empty{}
 
 	ins, err := protobuf.MarshalAny(req.NodeConfig)
@@ -416,7 +433,7 @@ func (s *GRPCService) deleteNode(id string) error {
 	return nil
 }
 
-func (s *GRPCService) DeleteNode(ctx context.Context, req *protobuf.DeleteNodeRequest) (*empty.Empty, error) {
+func (s *GRPCService) DeleteNode(ctx context.Context, req *management.DeleteNodeRequest) (*empty.Empty, error) {
 	resp := &empty.Empty{}
 
 	err := s.deleteNode(req.Id)
@@ -453,8 +470,8 @@ func (s *GRPCService) getCluster() (map[string]interface{}, error) {
 	return cluster, nil
 }
 
-func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*protobuf.GetClusterResponse, error) {
-	resp := &protobuf.GetClusterResponse{}
+func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*management.GetClusterResponse, error) {
+	resp := &management.GetClusterResponse{}
 
 	cluster, err := s.getCluster()
 	if err != nil {
@@ -474,8 +491,8 @@ func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*protob
 	return resp, nil
 }
 
-func (s *GRPCService) WatchCluster(req *empty.Empty, server protobuf.Blast_WatchClusterServer) error {
-	chans := make(chan protobuf.GetClusterResponse)
+func (s *GRPCService) WatchCluster(req *empty.Empty, server management.Management_WatchClusterServer) error {
+	chans := make(chan management.GetClusterResponse)
 
 	s.clusterMutex.Lock()
 	s.clusterChans[chans] = struct{}{}
@@ -499,30 +516,13 @@ func (s *GRPCService) WatchCluster(req *empty.Empty, server protobuf.Blast_Watch
 	return nil
 }
 
-func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
-	s.stateMutex.Lock()
-	defer func() {
-		s.stateMutex.Unlock()
-	}()
-
-	resp := &empty.Empty{}
-
-	err := s.raftServer.Snapshot()
-	if err != nil {
-		s.logger.Error(err.Error())
-		return resp, status.Error(codes.Internal, err.Error())
-	}
-
-	return resp, nil
-}
-
-func (s *GRPCService) GetValue(ctx context.Context, req *protobuf.GetValueRequest) (*protobuf.GetValueResponse, error) {
+func (s *GRPCService) GetValue(ctx context.Context, req *management.GetValueRequest) (*management.GetValueResponse, error) {
 	s.stateMutex.RLock()
 	defer func() {
 		s.stateMutex.RUnlock()
 	}()
 
-	resp := &protobuf.GetValueResponse{}
+	resp := &management.GetValueResponse{}
 
 	value, err := s.raftServer.GetValue(req.Key)
 	if err != nil {
@@ -547,7 +547,7 @@ func (s *GRPCService) GetValue(ctx context.Context, req *protobuf.GetValueReques
 	return resp, nil
 }
 
-func (s *GRPCService) SetValue(ctx context.Context, req *protobuf.SetValueRequest) (*empty.Empty, error) {
+func (s *GRPCService) SetValue(ctx context.Context, req *management.SetValueRequest) (*empty.Empty, error) {
 	s.stateMutex.Lock()
 	defer func() {
 		s.stateMutex.Unlock()
@@ -588,8 +588,8 @@ func (s *GRPCService) SetValue(ctx context.Context, req *protobuf.SetValueReques
 
 	// notify
 	for c := range s.stateChans {
-		c <- protobuf.WatchStoreResponse{
-			Command: protobuf.WatchStoreResponse_SET,
+		c <- management.WatchStoreResponse{
+			Command: management.WatchStoreResponse_SET,
 			Key:     req.Key,
 			Value:   req.Value,
 		}
@@ -598,7 +598,7 @@ func (s *GRPCService) SetValue(ctx context.Context, req *protobuf.SetValueReques
 	return resp, nil
 }
 
-func (s *GRPCService) DeleteValue(ctx context.Context, req *protobuf.DeleteValueRequest) (*empty.Empty, error) {
+func (s *GRPCService) DeleteValue(ctx context.Context, req *management.DeleteValueRequest) (*empty.Empty, error) {
 	s.stateMutex.Lock()
 	defer func() {
 		s.stateMutex.Unlock()
@@ -633,8 +633,8 @@ func (s *GRPCService) DeleteValue(ctx context.Context, req *protobuf.DeleteValue
 
 	// notify
 	for c := range s.stateChans {
-		c <- protobuf.WatchStoreResponse{
-			Command: protobuf.WatchStoreResponse_DELETE,
+		c <- management.WatchStoreResponse{
+			Command: management.WatchStoreResponse_DELETE,
 			Key:     req.Key,
 		}
 	}
@@ -642,8 +642,8 @@ func (s *GRPCService) DeleteValue(ctx context.Context, req *protobuf.DeleteValue
 	return resp, nil
 }
 
-func (s *GRPCService) WatchStore(req *protobuf.WatchStoreRequest, server protobuf.Blast_WatchStoreServer) error {
-	chans := make(chan protobuf.WatchStoreResponse)
+func (s *GRPCService) WatchStore(req *management.WatchStoreRequest, server management.Management_WatchStoreServer) error {
+	chans := make(chan management.WatchStoreResponse)
 
 	s.stateMutex.Lock()
 	s.stateChans[chans] = struct{}{}
@@ -668,4 +668,21 @@ func (s *GRPCService) WatchStore(req *protobuf.WatchStoreRequest, server protobu
 	}
 
 	return nil
+}
+
+func (s *GRPCService) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
+	s.stateMutex.Lock()
+	defer func() {
+		s.stateMutex.Unlock()
+	}()
+
+	resp := &empty.Empty{}
+
+	err := s.raftServer.Snapshot()
+	if err != nil {
+		s.logger.Error(err.Error())
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	return resp, nil
 }

@@ -19,14 +19,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mosuka/blast/grpc"
+	"github.com/mosuka/blast/manager"
 	"github.com/urfave/cli"
 )
 
 func clusterPeersInfo(c *cli.Context) error {
 	grpcAddr := c.String("grpc-address")
 
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := manager.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
 	}

@@ -12,40 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package grpc
+package indexer
 
 import (
 	"context"
 	"errors"
 	"math"
 
-	"github.com/mosuka/blast/indexutils"
-
 	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
 	blasterrors "github.com/mosuka/blast/errors"
+	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/protobuf"
+	"github.com/mosuka/blast/protobuf/index"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-type Client struct {
+type GRPCClient struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 	conn   *grpc.ClientConn
-	client protobuf.BlastClient
+	client index.IndexClient
 }
 
-func NewContext() (context.Context, context.CancelFunc) {
+func NewGRPCContext() (context.Context, context.CancelFunc) {
 	baseCtx := context.TODO()
 	//return context.WithTimeout(baseCtx, 60*time.Second)
 	return context.WithCancel(baseCtx)
 }
 
-func NewClient(address string) (*Client, error) {
-	ctx, cancel := NewContext()
+func NewGRPCClient(address string) (*GRPCClient, error) {
+	ctx, cancel := NewGRPCContext()
 
 	//streamRetryOpts := []grpc_retry.CallOption{
 	//	grpc_retry.Disable(),
@@ -72,19 +72,19 @@ func NewClient(address string) (*Client, error) {
 		return nil, err
 	}
 
-	return &Client{
+	return &GRPCClient{
 		ctx:    ctx,
 		cancel: cancel,
 		conn:   conn,
-		client: protobuf.NewBlastClient(conn),
+		client: index.NewIndexClient(conn),
 	}, nil
 }
 
-func (c *Client) Cancel() {
+func (c *GRPCClient) Cancel() {
 	c.cancel()
 }
 
-func (c *Client) Close() error {
+func (c *GRPCClient) Close() error {
 	c.Cancel()
 	if c.conn != nil {
 		return c.conn.Close()
@@ -93,12 +93,34 @@ func (c *Client) Close() error {
 	return c.ctx.Err()
 }
 
-func (c *Client) GetAddress() string {
+func (c *GRPCClient) GetAddress() string {
 	return c.conn.Target()
 }
 
-func (c *Client) GetNode(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
-	req := &protobuf.GetNodeRequest{
+func (c *GRPCClient) LivenessProbe(opts ...grpc.CallOption) (string, error) {
+	resp, err := c.client.LivenessProbe(c.ctx, &empty.Empty{})
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return index.LivenessProbeResponse_UNKNOWN.String(), errors.New(st.Message())
+	}
+
+	return resp.State.String(), nil
+}
+
+func (c *GRPCClient) ReadinessProbe(opts ...grpc.CallOption) (string, error) {
+	resp, err := c.client.ReadinessProbe(c.ctx, &empty.Empty{})
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return index.ReadinessProbeResponse_UNKNOWN.String(), errors.New(st.Message())
+	}
+
+	return resp.State.String(), nil
+}
+
+func (c *GRPCClient) GetNode(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
+	req := &index.GetNodeRequest{
 		Id: id,
 	}
 
@@ -120,14 +142,14 @@ func (c *Client) GetNode(id string, opts ...grpc.CallOption) (map[string]interfa
 	return node, nil
 }
 
-func (c *Client) SetNode(id string, nodeConfig map[string]interface{}, opts ...grpc.CallOption) error {
+func (c *GRPCClient) SetNode(id string, nodeConfig map[string]interface{}, opts ...grpc.CallOption) error {
 	nodeConfigAny := &any.Any{}
 	err := protobuf.UnmarshalAny(nodeConfig, nodeConfigAny)
 	if err != nil {
 		return err
 	}
 
-	req := &protobuf.SetNodeRequest{
+	req := &index.SetNodeRequest{
 		Id:         id,
 		NodeConfig: nodeConfigAny,
 	}
@@ -140,8 +162,8 @@ func (c *Client) SetNode(id string, nodeConfig map[string]interface{}, opts ...g
 	return nil
 }
 
-func (c *Client) DeleteNode(id string, opts ...grpc.CallOption) error {
-	req := &protobuf.DeleteNodeRequest{
+func (c *GRPCClient) DeleteNode(id string, opts ...grpc.CallOption) error {
+	req := &index.DeleteNodeRequest{
 		Id: id,
 	}
 
@@ -153,7 +175,7 @@ func (c *Client) DeleteNode(id string, opts ...grpc.CallOption) error {
 	return nil
 }
 
-func (c *Client) GetCluster(opts ...grpc.CallOption) (map[string]interface{}, error) {
+func (c *GRPCClient) GetCluster(opts ...grpc.CallOption) (map[string]interface{}, error) {
 	resp, err := c.client.GetCluster(c.ctx, &empty.Empty{}, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
@@ -167,7 +189,7 @@ func (c *Client) GetCluster(opts ...grpc.CallOption) (map[string]interface{}, er
 	return cluster, nil
 }
 
-func (c *Client) WatchCluster(opts ...grpc.CallOption) (protobuf.Blast_WatchClusterClient, error) {
+func (c *GRPCClient) WatchCluster(opts ...grpc.CallOption) (index.Index_WatchClusterClient, error) {
 	req := &empty.Empty{}
 
 	watchClient, err := c.client.WatchCluster(c.ctx, req, opts...)
@@ -179,124 +201,8 @@ func (c *Client) WatchCluster(opts ...grpc.CallOption) (protobuf.Blast_WatchClus
 	return watchClient, nil
 }
 
-func (c *Client) Snapshot(opts ...grpc.CallOption) error {
-	_, err := c.client.Snapshot(c.ctx, &empty.Empty{})
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return errors.New(st.Message())
-	}
-
-	return nil
-}
-
-func (c *Client) LivenessProbe(opts ...grpc.CallOption) (string, error) {
-	resp, err := c.client.LivenessProbe(c.ctx, &empty.Empty{})
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return protobuf.LivenessProbeResponse_UNKNOWN.String(), errors.New(st.Message())
-	}
-
-	return resp.State.String(), nil
-}
-
-func (c *Client) ReadinessProbe(opts ...grpc.CallOption) (string, error) {
-	resp, err := c.client.ReadinessProbe(c.ctx, &empty.Empty{})
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return protobuf.ReadinessProbeResponse_UNKNOWN.String(), errors.New(st.Message())
-	}
-
-	return resp.State.String(), nil
-}
-
-func (c *Client) GetValue(key string, opts ...grpc.CallOption) (interface{}, error) {
-	req := &protobuf.GetValueRequest{
-		Key: key,
-	}
-
-	resp, err := c.client.GetValue(c.ctx, req, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		switch st.Code() {
-		case codes.NotFound:
-			return nil, blasterrors.ErrNotFound
-		default:
-			return nil, errors.New(st.Message())
-		}
-	}
-
-	value, err := protobuf.MarshalAny(resp.Value)
-
-	return value, nil
-}
-
-func (c *Client) SetValue(key string, value interface{}, opts ...grpc.CallOption) error {
-	valueAny := &any.Any{}
-	err := protobuf.UnmarshalAny(value, valueAny)
-	if err != nil {
-		return err
-	}
-
-	req := &protobuf.SetValueRequest{
-		Key:   key,
-		Value: valueAny,
-	}
-
-	_, err = c.client.SetValue(c.ctx, req, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		switch st.Code() {
-		case codes.NotFound:
-			return blasterrors.ErrNotFound
-		default:
-			return errors.New(st.Message())
-		}
-	}
-
-	return nil
-}
-
-func (c *Client) DeleteValue(key string, opts ...grpc.CallOption) error {
-	req := &protobuf.DeleteValueRequest{
-		Key: key,
-	}
-
-	_, err := c.client.DeleteValue(c.ctx, req, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		switch st.Code() {
-		case codes.NotFound:
-			return blasterrors.ErrNotFound
-		default:
-			return errors.New(st.Message())
-		}
-	}
-
-	return nil
-}
-
-func (c *Client) WatchStore(key string, opts ...grpc.CallOption) (protobuf.Blast_WatchStoreClient, error) {
-	req := &protobuf.WatchStoreRequest{
-		Key: key,
-	}
-
-	watchClient, err := c.client.WatchStore(c.ctx, req, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-		return nil, errors.New(st.Message())
-	}
-
-	return watchClient, nil
-}
-
-func (c *Client) GetDocument(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
-	req := &protobuf.GetDocumentRequest{
+func (c *GRPCClient) GetDocument(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
+	req := &index.GetDocumentRequest{
 		Id: id,
 	}
 
@@ -318,7 +224,7 @@ func (c *Client) GetDocument(id string, opts ...grpc.CallOption) (map[string]int
 	return fields, nil
 }
 
-func (c *Client) Search(searchRequest *bleve.SearchRequest, opts ...grpc.CallOption) (*bleve.SearchResult, error) {
+func (c *GRPCClient) Search(searchRequest *bleve.SearchRequest, opts ...grpc.CallOption) (*bleve.SearchResult, error) {
 	// bleve.SearchRequest -> Any
 	searchRequestAny := &any.Any{}
 	err := protobuf.UnmarshalAny(searchRequest, searchRequestAny)
@@ -326,7 +232,7 @@ func (c *Client) Search(searchRequest *bleve.SearchRequest, opts ...grpc.CallOpt
 		return nil, err
 	}
 
-	req := &protobuf.SearchRequest{
+	req := &index.SearchRequest{
 		SearchRequest: searchRequestAny,
 	}
 
@@ -352,7 +258,7 @@ func (c *Client) Search(searchRequest *bleve.SearchRequest, opts ...grpc.CallOpt
 	return searchResult, nil
 }
 
-func (c *Client) IndexDocument(docs []*indexutils.Document, opts ...grpc.CallOption) (int, error) {
+func (c *GRPCClient) IndexDocument(docs []*indexutils.Document, opts ...grpc.CallOption) (int, error) {
 	stream, err := c.client.IndexDocument(c.ctx, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
@@ -370,7 +276,7 @@ func (c *Client) IndexDocument(docs []*indexutils.Document, opts ...grpc.CallOpt
 			return -1, err
 		}
 
-		req := &protobuf.IndexDocumentRequest{
+		req := &index.IndexDocumentRequest{
 			Id:     id,
 			Fields: fieldsAny,
 		}
@@ -389,7 +295,7 @@ func (c *Client) IndexDocument(docs []*indexutils.Document, opts ...grpc.CallOpt
 	return int(resp.Count), nil
 }
 
-func (c *Client) DeleteDocument(ids []string, opts ...grpc.CallOption) (int, error) {
+func (c *GRPCClient) DeleteDocument(ids []string, opts ...grpc.CallOption) (int, error) {
 	stream, err := c.client.DeleteDocument(c.ctx, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
@@ -398,7 +304,7 @@ func (c *Client) DeleteDocument(ids []string, opts ...grpc.CallOption) (int, err
 	}
 
 	for _, id := range ids {
-		req := &protobuf.DeleteDocumentRequest{
+		req := &index.DeleteDocumentRequest{
 			Id: id,
 		}
 
@@ -416,7 +322,7 @@ func (c *Client) DeleteDocument(ids []string, opts ...grpc.CallOption) (int, err
 	return int(resp.Count), nil
 }
 
-func (c *Client) GetIndexConfig(opts ...grpc.CallOption) (map[string]interface{}, error) {
+func (c *GRPCClient) GetIndexConfig(opts ...grpc.CallOption) (map[string]interface{}, error) {
 	resp, err := c.client.GetIndexConfig(c.ctx, &empty.Empty{}, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
@@ -435,7 +341,7 @@ func (c *Client) GetIndexConfig(opts ...grpc.CallOption) (map[string]interface{}
 	return indexConfig, nil
 }
 
-func (c *Client) GetIndexStats(opts ...grpc.CallOption) (map[string]interface{}, error) {
+func (c *GRPCClient) GetIndexStats(opts ...grpc.CallOption) (map[string]interface{}, error) {
 	resp, err := c.client.GetIndexStats(c.ctx, &empty.Empty{}, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
@@ -452,4 +358,15 @@ func (c *Client) GetIndexStats(opts ...grpc.CallOption) (map[string]interface{},
 	indexStats := *indexStatsIntr.(*map[string]interface{})
 
 	return indexStats, nil
+}
+
+func (c *GRPCClient) Snapshot(opts ...grpc.CallOption) error {
+	_, err := c.client.Snapshot(c.ctx, &empty.Empty{})
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		return errors.New(st.Message())
+	}
+
+	return nil
 }

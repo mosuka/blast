@@ -23,8 +23,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/mosuka/blast/indexutils"
-
 	"github.com/blevesearch/bleve"
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
@@ -32,6 +30,7 @@ import (
 	_ "github.com/mosuka/blast/builtins"
 	"github.com/mosuka/blast/config"
 	blasterrors "github.com/mosuka/blast/errors"
+	"github.com/mosuka/blast/indexutils"
 	"go.uber.org/zap"
 	//raftmdb "github.com/hashicorp/raft-mdb"
 )

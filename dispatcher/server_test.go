@@ -23,7 +23,6 @@ import (
 
 	"github.com/hashicorp/raft"
 	"github.com/mosuka/blast/config"
-	"github.com/mosuka/blast/grpc"
 	"github.com/mosuka/blast/indexer"
 	"github.com/mosuka/blast/logutils"
 	"github.com/mosuka/blast/manager"
@@ -120,7 +119,7 @@ func TestServer_Start(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// gRPC client for manager1
-	managerClient1, err := grpc.NewClient(managerNodeConfig1.GRPCAddr)
+	managerClient1, err := manager.NewGRPCClient(managerNodeConfig1.GRPCAddr)
 	defer func() {
 		_ = managerClient1.Close()
 	}()
@@ -240,7 +239,7 @@ func TestServer_Start(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// gRPC client for manager1
-	indexerClient1, err := grpc.NewClient(indexerNodeConfig1.GRPCAddr)
+	indexerClient1, err := indexer.NewGRPCClient(indexerNodeConfig1.GRPCAddr)
 	defer func() {
 		_ = indexerClient1.Close()
 	}()
@@ -360,7 +359,7 @@ func TestServer_Start(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// gRPC client for manager1
-	indexerClient2, err := grpc.NewClient(indexerNodeConfig4.GRPCAddr)
+	indexerClient2, err := indexer.NewGRPCClient(indexerNodeConfig4.GRPCAddr)
 	defer func() {
 		_ = indexerClient1.Close()
 	}()

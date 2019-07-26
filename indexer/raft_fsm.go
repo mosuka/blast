@@ -21,6 +21,8 @@ import (
 	"io/ioutil"
 	"sync"
 
+	"github.com/mosuka/blast/protobuf/index"
+
 	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/proto"
 	"github.com/hashicorp/raft"
@@ -278,7 +280,7 @@ func (f *RaftFSM) Restore(rc io.ReadCloser) error {
 
 	buff := proto.NewBuffer(data)
 	for {
-		doc := &protobuf.Document{}
+		doc := &index.Document{}
 		err = buff.DecodeMessage(doc)
 		if err == io.ErrUnexpectedEOF {
 			break

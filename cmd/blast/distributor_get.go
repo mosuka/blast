@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mosuka/blast/grpc"
+	"github.com/mosuka/blast/dispatcher"
 	"github.com/urfave/cli"
 )
 
@@ -32,7 +32,7 @@ func distributorGet(c *cli.Context) error {
 		return err
 	}
 
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := dispatcher.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
 	}

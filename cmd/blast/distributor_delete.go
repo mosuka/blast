@@ -21,7 +21,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/mosuka/blast/grpc"
+	"github.com/mosuka/blast/dispatcher"
 	"github.com/urfave/cli"
 )
 
@@ -77,7 +77,7 @@ func distributorDelete(c *cli.Context) error {
 	}
 
 	// create client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := dispatcher.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
 	}

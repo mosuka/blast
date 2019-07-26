@@ -22,7 +22,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/mosuka/blast/grpc"
+	"github.com/mosuka/blast/indexer"
 	"github.com/mosuka/blast/indexutils"
 	"github.com/urfave/cli"
 )
@@ -113,7 +113,7 @@ func indexerIndex(c *cli.Context) error {
 	}
 
 	// create gRPC client
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := indexer.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
 	}

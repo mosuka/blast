@@ -19,6 +19,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/mosuka/blast/protobuf/index"
+
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/document"
 	"github.com/golang/protobuf/ptypes/any"
@@ -216,8 +218,8 @@ func (i *Index) Stats() (map[string]interface{}, error) {
 	return i.index.StatsMap(), nil
 }
 
-func (i *Index) SnapshotItems() <-chan *protobuf.Document {
-	ch := make(chan *protobuf.Document, 1024)
+func (i *Index) SnapshotItems() <-chan *index.Document {
+	ch := make(chan *index.Document, 1024)
 
 	go func() {
 		idx, _, err := i.index.Advanced()
@@ -268,7 +270,7 @@ func (i *Index) SnapshotItems() <-chan *protobuf.Document {
 				break
 			}
 
-			doc := &protobuf.Document{
+			doc := &index.Document{
 				Id:     string(id),
 				Fields: fieldsAny,
 			}

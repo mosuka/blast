@@ -21,7 +21,7 @@ import (
 	"os"
 
 	"github.com/blevesearch/bleve"
-	"github.com/mosuka/blast/grpc"
+	"github.com/mosuka/blast/dispatcher"
 	"github.com/urfave/cli"
 )
 
@@ -66,7 +66,7 @@ func distributorSearch(c *cli.Context) error {
 		}
 	}
 
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := dispatcher.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
 	}

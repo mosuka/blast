@@ -12,39 +12,55 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package http
+package indexer
 
 import (
-	"github.com/gorilla/mux"
-	"github.com/mosuka/blast/grpc"
+	"net"
+	"net/http"
+
+	accesslog "github.com/mash/go-accesslog"
 	"go.uber.org/zap"
 )
 
-type Router struct {
-	mux.Router
+type HTTPServer struct {
+	listener net.Listener
+	router   *Router
 
-	GRPCClient *grpc.Client
 	logger     *zap.Logger
+	httpLogger accesslog.Logger
 }
 
-func NewRouter(grpcAddr string, logger *zap.Logger) (*Router, error) {
-	grpcClient, err := grpc.NewClient(grpcAddr)
+func NewHTTPServer(httpAddr string, router *Router, logger *zap.Logger, httpLogger accesslog.Logger) (*HTTPServer, error) {
+	listener, err := net.Listen("tcp", httpAddr)
 	if err != nil {
 		return nil, err
 	}
 
-	router := &Router{
-		GRPCClient: grpcClient,
+	return &HTTPServer{
+		listener:   listener,
+		router:     router,
 		logger:     logger,
-	}
-
-	return router, nil
+		httpLogger: httpLogger,
+	}, nil
 }
 
-func (r *Router) Close() error {
-	r.GRPCClient.Cancel()
+func (s *HTTPServer) Start() error {
+	err := http.Serve(
+		s.listener,
+		accesslog.NewLoggingHandler(
+			s.router,
+			s.httpLogger,
+		),
+	)
+	if err != nil {
+		return err
+	}
 
-	err := r.GRPCClient.Close()
+	return nil
+}
+
+func (s *HTTPServer) Stop() error {
+	err := s.listener.Close()
 	if err != nil {
 		return err
 	}

@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mosuka/blast/grpc"
+	"github.com/mosuka/blast/manager"
 	"github.com/urfave/cli"
 )
 
@@ -38,7 +38,7 @@ func clusterNodeInfo(c *cli.Context) error {
 
 	nodeId := c.Args().Get(0)
 
-	client, err := grpc.NewClient(grpcAddr)
+	client, err := manager.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
 	}
