@@ -23,7 +23,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func clusterDelete(c *cli.Context) error {
+func managerDelete(c *cli.Context) error {
 	grpcAddr := c.String("grpc-address")
 
 	key := c.Args().Get(0)

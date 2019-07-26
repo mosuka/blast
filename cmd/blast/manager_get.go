@@ -16,7 +16,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 
@@ -24,31 +23,10 @@ import (
 	"github.com/urfave/cli"
 )
 
-func clusterSet(c *cli.Context) error {
+func managerGet(c *cli.Context) error {
 	grpcAddr := c.String("grpc-address")
 
 	key := c.Args().Get(0)
-	if key == "" {
-		err := errors.New("key argument must be set")
-		return err
-	}
-
-	valueStr := c.Args().Get(1)
-	if valueStr == "" {
-		err := errors.New("value argument must be set")
-		return err
-	}
-
-	var value interface{}
-	err := json.Unmarshal([]byte(valueStr), &value)
-	if err != nil {
-		switch err.(type) {
-		case *json.SyntaxError:
-			value = valueStr
-		default:
-			return err
-		}
-	}
 
 	client, err := manager.NewGRPCClient(grpcAddr)
 	if err != nil {
@@ -61,10 +39,16 @@ func clusterSet(c *cli.Context) error {
 		}
 	}()
 
-	err = client.SetValue(key, value)
+	value, err := client.GetValue(key)
 	if err != nil {
 		return err
 	}
+
+	valueBytes, err := json.MarshalIndent(value, "", "  ")
+	if err != nil {
+		return err
+	}
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(valueBytes)))
 
 	return nil
 }

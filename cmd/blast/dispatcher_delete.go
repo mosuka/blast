@@ -15,24 +15,29 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 
-	"github.com/blevesearch/bleve"
 	"github.com/mosuka/blast/dispatcher"
 	"github.com/urfave/cli"
 )
 
-func distributorSearch(c *cli.Context) error {
+func dispatcherDelete(c *cli.Context) error {
 	grpcAddr := c.String("grpc-address")
-	searchRequestPath := c.String("file")
+	filePath := c.String("file")
+	id := c.Args().Get(0)
 
-	searchRequest := bleve.NewSearchRequest(nil)
+	ids := make([]string, 0)
 
-	if searchRequestPath != "" {
-		_, err := os.Stat(searchRequestPath)
+	if id != "" {
+		ids = append(ids, id)
+	}
+
+	if filePath != "" {
+		_, err := os.Stat(filePath)
 		if err != nil {
 			if os.IsNotExist(err) {
 				// does not exist
@@ -42,30 +47,36 @@ func distributorSearch(c *cli.Context) error {
 			return err
 		}
 
-		// open file
-		searchRequestFile, err := os.Open(searchRequestPath)
+		// read index mapping file
+		file, err := os.Open(filePath)
 		if err != nil {
 			return err
 		}
 		defer func() {
-			_ = searchRequestFile.Close()
+			_ = file.Close()
 		}()
 
-		// read file
-		searchRequestBytes, err := ioutil.ReadAll(searchRequestFile)
-		if err != nil {
-			return err
-		}
-
-		// create search request
-		if searchRequestBytes != nil {
-			err := json.Unmarshal(searchRequestBytes, searchRequest)
+		reader := bufio.NewReader(file)
+		for {
+			docId, err := reader.ReadString('\n')
 			if err != nil {
+				if err == io.EOF || err == io.ErrClosedPipe {
+					if docId != "" {
+						ids = append(ids, docId)
+					}
+					break
+				}
+
 				return err
+			}
+
+			if docId != "" {
+				ids = append(ids, docId)
 			}
 		}
 	}
 
+	// create client
 	client, err := dispatcher.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
@@ -77,17 +88,17 @@ func distributorSearch(c *cli.Context) error {
 		}
 	}()
 
-	searchResult, err := client.Search(searchRequest)
+	result, err := client.DeleteDocument(ids)
 	if err != nil {
 		return err
 	}
 
-	jsonBytes, err := json.MarshalIndent(&searchResult, "", "  ")
+	resultBytes, err := json.MarshalIndent(result, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(jsonBytes)))
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resultBytes)))
 
 	return nil
 }

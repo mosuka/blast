@@ -16,29 +16,21 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"log"
 	"os"
 
-	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/indexer"
+	"github.com/mosuka/blast/protobuf"
 	"github.com/urfave/cli"
 )
 
-func clusterNodeInfo(c *cli.Context) error {
-	clusterGrpcAddr := c.String("cluster-grpc-address")
-	shardId := c.String("shard-id")
-	peerGrpcAddr := c.String("peer-grpc-address")
-
-	if clusterGrpcAddr != "" && shardId != "" {
-
-	} else if peerGrpcAddr != "" {
-
-	}
-
+func indexerClusterWatch(c *cli.Context) error {
 	grpcAddr := c.String("grpc-address")
 
-	nodeId := c.Args().Get(0)
-
-	client, err := manager.NewGRPCClient(grpcAddr)
+	client, err := indexer.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
 	}
@@ -49,17 +41,42 @@ func clusterNodeInfo(c *cli.Context) error {
 		}
 	}()
 
-	metadata, err := client.GetNode(nodeId)
+	err = indexerClusterInfo(c)
 	if err != nil {
 		return err
 	}
 
-	metadataBytes, err := json.MarshalIndent(metadata, "", "  ")
+	watchClient, err := client.WatchCluster()
 	if err != nil {
 		return err
 	}
 
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(metadataBytes)))
+	for {
+		resp, err := watchClient.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Println(err.Error())
+			break
+		}
+
+		cluster, err := protobuf.MarshalAny(resp.Cluster)
+		if err != nil {
+			return err
+		}
+		if cluster == nil {
+			return errors.New("nil")
+		}
+
+		var clusterBytes []byte
+		clusterMap := *cluster.(*map[string]interface{})
+		clusterBytes, err = json.MarshalIndent(clusterMap, "", "  ")
+		if err != nil {
+			return err
+		}
+		_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(clusterBytes)))
+	}
 
 	return nil
 }

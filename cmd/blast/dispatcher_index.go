@@ -19,21 +19,38 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 
 	"github.com/mosuka/blast/dispatcher"
+	"github.com/mosuka/blast/indexutils"
 	"github.com/urfave/cli"
 )
 
-func distributorDelete(c *cli.Context) error {
+func dispatcherIndex(c *cli.Context) error {
 	grpcAddr := c.String("grpc-address")
 	filePath := c.String("file")
+	bulk := c.Bool("bulk")
 	id := c.Args().Get(0)
+	fieldsSrc := c.Args().Get(1)
 
-	ids := make([]string, 0)
+	docs := make([]*indexutils.Document, 0)
 
-	if id != "" {
-		ids = append(ids, id)
+	if id != "" && fieldsSrc != "" {
+		// create fields
+		var fields map[string]interface{}
+		err := json.Unmarshal([]byte(fieldsSrc), &fields)
+		if err != nil {
+			return err
+		}
+
+		// create document
+		doc, err := indexutils.NewDocument(id, fields)
+		if err != nil {
+			return err
+		}
+
+		docs = append(docs, doc)
 	}
 
 	if filePath != "" {
@@ -56,27 +73,46 @@ func distributorDelete(c *cli.Context) error {
 			_ = file.Close()
 		}()
 
-		reader := bufio.NewReader(file)
-		for {
-			docId, err := reader.ReadString('\n')
-			if err != nil {
-				if err == io.EOF || err == io.ErrClosedPipe {
-					if docId != "" {
-						ids = append(ids, docId)
+		if bulk {
+			reader := bufio.NewReader(file)
+			for {
+				docBytes, err := reader.ReadBytes('\n')
+				if err != nil {
+					if err == io.EOF || err == io.ErrClosedPipe {
+						if len(docBytes) > 0 {
+							doc, err := indexutils.NewDocumentFromBytes(docBytes)
+							if err != nil {
+								return err
+							}
+							docs = append(docs, doc)
+						}
+						break
 					}
-					break
 				}
 
+				if len(docBytes) > 0 {
+					doc, err := indexutils.NewDocumentFromBytes(docBytes)
+					if err != nil {
+						return err
+					}
+					docs = append(docs, doc)
+				}
+			}
+		} else {
+			docBytes, err := ioutil.ReadAll(file)
+			if err != nil {
 				return err
 			}
 
-			if docId != "" {
-				ids = append(ids, docId)
+			doc, err := indexutils.NewDocumentFromBytes(docBytes)
+			if err != nil {
+				return err
 			}
+			docs = append(docs, doc)
 		}
 	}
 
-	// create client
+	// create gRPC client
 	client, err := dispatcher.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
@@ -88,12 +124,13 @@ func distributorDelete(c *cli.Context) error {
 		}
 	}()
 
-	result, err := client.DeleteDocument(ids)
+	// index documents in bulk
+	count, err := client.IndexDocument(docs)
 	if err != nil {
 		return err
 	}
 
-	resultBytes, err := json.MarshalIndent(result, "", "  ")
+	resultBytes, err := json.MarshalIndent(count, "", "  ")
 	if err != nil {
 		return err
 	}

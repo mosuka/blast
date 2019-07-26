@@ -15,7 +15,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -23,7 +22,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func indexerPeersInfo(c *cli.Context) error {
+func indexerSnapshot(c *cli.Context) error {
 	grpcAddr := c.String("grpc-address")
 
 	client, err := indexer.NewGRPCClient(grpcAddr)
@@ -37,17 +36,10 @@ func indexerPeersInfo(c *cli.Context) error {
 		}
 	}()
 
-	cluster, err := client.GetCluster()
+	err = client.Snapshot()
 	if err != nil {
 		return err
 	}
-
-	clusterBytes, err := json.MarshalIndent(cluster, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(clusterBytes)))
 
 	return nil
 }

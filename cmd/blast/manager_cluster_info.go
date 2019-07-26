@@ -15,6 +15,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -22,7 +23,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func clusterNodeSnapshot(c *cli.Context) error {
+func managerClusterInfo(c *cli.Context) error {
 	grpcAddr := c.String("grpc-address")
 
 	client, err := manager.NewGRPCClient(grpcAddr)
@@ -36,10 +37,17 @@ func clusterNodeSnapshot(c *cli.Context) error {
 		}
 	}()
 
-	err = client.Snapshot()
+	cluster, err := client.GetCluster()
 	if err != nil {
 		return err
 	}
+
+	clusterBytes, err := json.MarshalIndent(cluster, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(clusterBytes)))
 
 	return nil
 }

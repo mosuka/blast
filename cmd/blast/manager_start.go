@@ -27,7 +27,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func clusterNodeStart(c *cli.Context) error {
+func managerStart(c *cli.Context) error {
 	peerGrpcAddr := c.String("peer-grpc-address")
 
 	grpcAddr := c.String("grpc-address")

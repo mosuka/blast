@@ -171,7 +171,7 @@ You can see the binary file when build successful like so:
 
 ```bash
 $ ls ./bin
-blast blastd
+blast
 ```
 
 
@@ -245,7 +245,7 @@ $ make \
 Running a Blast in standalone mode is easy. Start a indexer like so:
 
 ```bash
-$ ./bin/blast indexer node start \
+$ ./bin/blast indexer start \
     --grpc-address=:5000 \
     --http-address=:8000 \
     --node-id=indexer1 \
@@ -531,7 +531,7 @@ You can see the result in JSON format. The result of the above command is:
 Indexing documents in bulk, run the following command:
 
 ```bash
-$ ./bin/blast indexer index --grpc-address=:5000 --file=./example/wiki_bulk_index.txt --bulk
+$ ./bin/blast indexer index --grpc-address=:5000 --file=./example/wiki_bulk_index.jsonl --bulk
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -566,7 +566,7 @@ Also you can do above commands via HTTP REST API that listened port 5002.
 Indexing a document via HTTP is as following:
 
 ```bash
-$ curl -X PUT 'http://127.0.0.1:8000/documents/enwiki_1' --data-binary '
+$ curl -X PUT 'http://127.0.0.1:8000/documents/enwiki_1' -H 'Content-Type: application/json' --data-binary '
 {
   "title_en": "Search engine (computing)",
   "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
@@ -596,7 +596,7 @@ $ curl -X GET 'http://127.0.0.1:8000/documents/enwiki_1'
 Searching documents via HTTP is as following:
 
 ```bash
-$ curl -X POST 'http://127.0.0.1:8000/search' --data-binary @./example/wiki_search_request.json
+$ curl -X POST 'http://127.0.0.1:8000/search' -H 'Content-Type: application/json' --data-binary @./example/wiki_search_request.json
 ```
 
 
@@ -614,7 +614,7 @@ $ curl -X DELETE 'http://127.0.0.1:8000/documents/enwiki_1'
 Indexing documents in bulk via HTTP is as following:
 
 ```bash
-$ curl -X PUT 'http://127.0.0.1:8000/documents?bulk=true' --data-binary @./example/wiki_bulk_index.txt
+$ curl -X PUT 'http://127.0.0.1:8000/documents?bulk=true' -H 'Content-Type: application/x-ndjson' --data-binary @./example/wiki_bulk_index.jsonl
 ```
 
 
@@ -623,7 +623,7 @@ $ curl -X PUT 'http://127.0.0.1:8000/documents?bulk=true' --data-binary @./examp
 Deleting documents in bulk via HTTP is as following:
 
 ```bash
-$ curl -X DELETE 'http://127.0.0.1:8000/documents' --data-binary @./example/wiki_bulk_delete.txt
+$ curl -X DELETE 'http://127.0.0.1:8000/documents' -H 'Content-Type: text/plain' --data-binary @./example/wiki_bulk_delete.txt
 ```
 
 
@@ -636,7 +636,7 @@ Blast can easily bring up a cluster. Running a Blast in standalone is not fault 
 First of all, start a indexer in standalone.
 
 ```bash
-$ ./bin/blast indexer node start \
+$ ./bin/blast indexer start \
     --grpc-address=:5000 \
     --http-address=:8000 \
     --node-id=indexer1 \
@@ -651,7 +651,7 @@ $ ./bin/blast indexer node start \
 Then, start two more indexers.
 
 ```bash
-$ ./bin/blast indexer node start \
+$ ./bin/blast indexer start \
     --peer-grpc-address=:5000 \
     --grpc-address=:5010 \
     --http-address=:8010 \
@@ -660,7 +660,7 @@ $ ./bin/blast indexer node start \
     --data-dir=/tmp/blast/indexer2 \
     --raft-storage-type=boltdb
 
-$ ./bin/blast indexer node start \
+$ ./bin/blast indexer start \
     --peer-grpc-address=:5000 \
     --grpc-address=:5020 \
     --http-address=:8020 \
@@ -677,7 +677,7 @@ So you have a 3-node cluster. That way you can tolerate the failure of 1 node. Y
 
 
 ```bash
-$ ./bin/blast indexer peers info --grpc-address=:5000
+$ ./bin/blast indexer cluster info --grpc-address=:5000
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -783,7 +783,7 @@ Blast provides the following type of node for federation:
 Manager can also bring up a cluster like an indexer. Specify a common index mapping for federation at startup.
 
 ```bash
-$ ./bin/blast cluster node start \
+$ ./bin/blast manager start \
     --grpc-address=:5100 \
     --http-address=:8100 \
     --node-id=cluster1 \
@@ -794,7 +794,7 @@ $ ./bin/blast cluster node start \
     --index-type=upside_down \
     --index-storage-type=boltdb
 
-$ ./bin/blast cluster node start \
+$ ./bin/blast manager start \
     --peer-grpc-address=:5100 \
     --grpc-address=:5110 \
     --http-address=:8110 \
@@ -803,7 +803,7 @@ $ ./bin/blast cluster node start \
     --data-dir=/tmp/blast/cluster2 \
     --raft-storage-type=boltdb
 
-$ ./bin/blast cluster node start \
+$ ./bin/blast manager start \
     --peer-grpc-address=:5100 \
     --grpc-address=:5120 \
     --http-address=:8120 \
@@ -819,8 +819,8 @@ Federated mode differs from cluster mode that it specifies the manager in start 
 The following example starts two 3-node clusters.
 
 ```bash
-$ ./bin/blast indexer node start \
-    --cluster-grpc-address=:5100 \
+$ ./bin/blast indexer start \
+    --manager-grpc-address=:5100 \
     --shard-id=shard1 \
     --grpc-address=:5000 \
     --http-address=:8000 \
@@ -829,8 +829,8 @@ $ ./bin/blast indexer node start \
     --data-dir=/tmp/blast/indexer1 \
     --raft-storage-type=boltdb
 
-$ ./bin/blast indexer node start \
-    --cluster-grpc-address=:5100 \
+$ ./bin/blast indexer start \
+    --manager-grpc-address=:5100 \
     --shard-id=shard1 \
     --grpc-address=:5010 \
     --http-address=:8010 \
@@ -839,8 +839,8 @@ $ ./bin/blast indexer node start \
     --data-dir=/tmp/blast/indexer2 \
     --raft-storage-type=boltdb
 
-$ ./bin/blast indexer node start \
-    --cluster-grpc-address=:5100 \
+$ ./bin/blast indexer start \
+    --manager-grpc-address=:5100 \
     --shard-id=shard1 \
     --grpc-address=:5020 \
     --http-address=:8020 \
@@ -849,8 +849,8 @@ $ ./bin/blast indexer node start \
     --data-dir=/tmp/blast/indexer3 \
     --raft-storage-type=boltdb
 
-$ ./bin/blast indexer node start \
-    --cluster-grpc-address=:5100 \
+$ ./bin/blast indexer start \
+    --manager-grpc-address=:5100 \
     --shard-id=shard2 \
     --grpc-address=:5030 \
     --http-address=:8030 \
@@ -859,8 +859,8 @@ $ ./bin/blast indexer node start \
     --data-dir=/tmp/blast/indexer4 \
     --raft-storage-type=boltdb
 
-$ ./bin/blast indexer node start \
-    --cluster-grpc-address=:5100 \
+$ ./bin/blast indexer start \
+    --manager-grpc-address=:5100 \
     --shard-id=shard2 \
     --grpc-address=:5040 \
     --http-address=:8040 \
@@ -869,8 +869,8 @@ $ ./bin/blast indexer node start \
     --data-dir=/tmp/blast/indexer5 \
     --raft-storage-type=boltdb
 
-$ ./bin/blast indexer node start \
-    --cluster-grpc-address=:5100 \
+$ ./bin/blast indexer start \
+    --manager-grpc-address=:5100 \
     --shard-id=shard2 \
     --grpc-address=:5050 \
     --http-address=:8050 \
@@ -885,22 +885,28 @@ $ ./bin/blast indexer node start \
 Finally, start the dispatcher with a manager that manages the target federation so that it can perform distributed search and indexing.
 
 ```bash
-$ ./bin/blast distributor node start \
-    --cluster-grpc-address=:5100 \
+$ ./bin/blast dispatcher start \
+    --manager-grpc-address=:5100 \
     --grpc-address=:5200 \
     --http-address=:8200
 ```
 
 ```bash
-$ ./bin/blast distributor index --grpc-address=:5200 --file=./example/wiki_bulk_index.txt --bulk
+$ ./bin/blast manager cluster info --grpc-address=:5100
+$ ./bin/blast indexer cluster info --grpc-address=:5000
+$ ./bin/blast indexer cluster info --grpc-address=:5040
 ```
 
 ```bash
-$ ./bin/blast distributor search --grpc-address=:5200 --file=./example/wiki_search_request_simple.json
+$ ./bin/blast dispatcher index --grpc-address=:5200 --file=./example/wiki_bulk_index.jsonl --bulk
 ```
 
 ```bash
-$ ./bin/blast distributor delete --grpc-address=:5200 --file=./example/wiki_bulk_delete.txt
+$ ./bin/blast dispatcher search --grpc-address=:5200 --file=./example/wiki_search_request_simple.json
+```
+
+```bash
+$ ./bin/blast dispatcher delete --grpc-address=:5200 --file=./example/wiki_bulk_delete.txt
 ```
 
 
@@ -945,7 +951,7 @@ $ docker run --rm --name blast-indexer1 \
     -p 5000:5000 \
     -p 8000:8000 \
     -v $(pwd)/example:/opt/blast/example \
-    mosuka/blast:latest blast indexer node start \
+    mosuka/blast:latest blast indexer start \
       --grpc-address=:5000 \
       --http-address=:8000 \
       --node-id=blast-indexer1 \
@@ -995,7 +1001,7 @@ $ ./WikiExtractor.py -o ~/tmp/enwiki --json ~/tmp/enwiki-20190101-pages-articles
 ### Starting Indexer
 
 ```bash
-$ ./bin/blast indexer node start \
+$ ./bin/blast indexer start \
     --grpc-address=:5000 \
     --http-address=:8000 \
     --node-id=indexer1 \
@@ -1027,7 +1033,7 @@ This section explain how to index Spatial/Geospatial data to Blast.
 ### Starting Indexer with Spatial/Geospatial index mapping
 
 ```bash
-$ ./bin/blast indexer node start \
+$ ./bin/blast indexer start \
     --grpc-address=:5000 \
     --http-address=:8000 \
     --node-id=indexer1 \

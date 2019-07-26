@@ -22,8 +22,19 @@ import (
 	"github.com/urfave/cli"
 )
 
-func indexerNodeSnapshot(c *cli.Context) error {
+func indexerClusterLeave(c *cli.Context) error {
+	clusterGrpcAddr := c.String("manager-grpc-address")
+	shardId := c.String("shard-id")
+	peerGrpcAddr := c.String("peer-grpc-address")
+
+	if clusterGrpcAddr != "" && shardId != "" {
+		// get grpc address of leader node
+	} else if peerGrpcAddr != "" {
+		// get grpc address of leader node
+	}
+
 	grpcAddr := c.String("grpc-address")
+	nodeId := c.String("node-id")
 
 	client, err := indexer.NewGRPCClient(grpcAddr)
 	if err != nil {
@@ -36,7 +47,7 @@ func indexerNodeSnapshot(c *cli.Context) error {
 		}
 	}()
 
-	err = client.Snapshot()
+	err = client.DeleteNode(nodeId)
 	if err != nil {
 		return err
 	}
