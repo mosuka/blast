@@ -16,20 +16,54 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 
+	"github.com/blevesearch/bleve"
 	"github.com/mosuka/blast/dispatcher"
 	"github.com/urfave/cli"
 )
 
-func distributorGet(c *cli.Context) error {
+func dispatcherSearch(c *cli.Context) error {
 	grpcAddr := c.String("grpc-address")
-	id := c.Args().Get(0)
-	if id == "" {
-		err := errors.New("arguments are not correct")
-		return err
+	searchRequestPath := c.String("file")
+
+	searchRequest := bleve.NewSearchRequest(nil)
+
+	if searchRequestPath != "" {
+		_, err := os.Stat(searchRequestPath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				// does not exist
+				return err
+			}
+			// other error
+			return err
+		}
+
+		// open file
+		searchRequestFile, err := os.Open(searchRequestPath)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			_ = searchRequestFile.Close()
+		}()
+
+		// read file
+		searchRequestBytes, err := ioutil.ReadAll(searchRequestFile)
+		if err != nil {
+			return err
+		}
+
+		// create search request
+		if searchRequestBytes != nil {
+			err := json.Unmarshal(searchRequestBytes, searchRequest)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	client, err := dispatcher.NewGRPCClient(grpcAddr)
@@ -43,17 +77,17 @@ func distributorGet(c *cli.Context) error {
 		}
 	}()
 
-	fields, err := client.GetDocument(id)
+	searchResult, err := client.Search(searchRequest)
 	if err != nil {
 		return err
 	}
 
-	fieldsBytes, err := json.MarshalIndent(fields, "", "  ")
+	jsonBytes, err := json.MarshalIndent(&searchResult, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(fieldsBytes)))
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(jsonBytes)))
 
 	return nil
 }

@@ -22,7 +22,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func clusterNodeHealth(c *cli.Context) error {
+func managerNodeHealth(c *cli.Context) error {
 	grpcAddr := c.String("grpc-address")
 	liveness := c.Bool("liveness")
 	readiness := c.Bool("readiness")

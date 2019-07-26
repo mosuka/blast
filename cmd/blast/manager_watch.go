@@ -22,15 +22,17 @@ import (
 	"log"
 	"os"
 
-	"github.com/mosuka/blast/indexer"
+	"github.com/mosuka/blast/manager"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/urfave/cli"
 )
 
-func indexerPeersWatch(c *cli.Context) error {
+func managerWatch(c *cli.Context) error {
 	grpcAddr := c.String("grpc-address")
 
-	client, err := indexer.NewGRPCClient(grpcAddr)
+	key := c.Args().Get(0)
+
+	client, err := manager.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
 	}
@@ -41,12 +43,7 @@ func indexerPeersWatch(c *cli.Context) error {
 		}
 	}()
 
-	err = indexerPeersInfo(c)
-	if err != nil {
-		return err
-	}
-
-	watchClient, err := client.WatchCluster()
+	watchClient, err := client.WatchStore(key)
 	if err != nil {
 		return err
 	}
@@ -61,21 +58,29 @@ func indexerPeersWatch(c *cli.Context) error {
 			break
 		}
 
-		cluster, err := protobuf.MarshalAny(resp.Cluster)
+		value, err := protobuf.MarshalAny(resp.Value)
 		if err != nil {
 			return err
 		}
-		if cluster == nil {
+		if value == nil {
 			return errors.New("nil")
 		}
 
-		var clusterBytes []byte
-		clusterMap := *cluster.(*map[string]interface{})
-		clusterBytes, err = json.MarshalIndent(clusterMap, "", "  ")
-		if err != nil {
-			return err
+		var valueBytes []byte
+		switch value.(type) {
+		case *map[string]interface{}:
+			valueMap := *value.(*map[string]interface{})
+			valueBytes, err = json.MarshalIndent(valueMap, "", "  ")
+			if err != nil {
+				return err
+			}
+			_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%s %s %v", resp.Command.String(), resp.Key, string(valueBytes)))
+		case *string:
+			valueStr := *value.(*string)
+			_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%s %s %s", resp.Command.String(), resp.Key, valueStr))
+		default:
+			_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%s %s %v", resp.Command.String(), resp.Key, &value))
 		}
-		_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(clusterBytes)))
 	}
 
 	return nil

@@ -15,6 +15,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -22,19 +23,8 @@ import (
 	"github.com/urfave/cli"
 )
 
-func indexerNodeLeave(c *cli.Context) error {
-	clusterGrpcAddr := c.String("cluster-grpc-address")
-	shardId := c.String("shard-id")
-	peerGrpcAddr := c.String("peer-grpc-address")
-
-	if clusterGrpcAddr != "" && shardId != "" {
-		// get grpc address of leader node
-	} else if peerGrpcAddr != "" {
-		// get grpc address of leader node
-	}
-
+func indexerClusterInfo(c *cli.Context) error {
 	grpcAddr := c.String("grpc-address")
-	nodeId := c.String("node-id")
 
 	client, err := indexer.NewGRPCClient(grpcAddr)
 	if err != nil {
@@ -47,10 +37,17 @@ func indexerNodeLeave(c *cli.Context) error {
 		}
 	}()
 
-	err = client.DeleteNode(nodeId)
+	cluster, err := client.GetCluster()
 	if err != nil {
 		return err
 	}
+
+	clusterBytes, err := json.MarshalIndent(cluster, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(clusterBytes)))
 
 	return nil
 }

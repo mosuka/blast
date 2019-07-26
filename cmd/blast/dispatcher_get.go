@@ -16,19 +16,23 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 
-	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/dispatcher"
 	"github.com/urfave/cli"
 )
 
-func clusterGet(c *cli.Context) error {
+func dispatcherGet(c *cli.Context) error {
 	grpcAddr := c.String("grpc-address")
+	id := c.Args().Get(0)
+	if id == "" {
+		err := errors.New("arguments are not correct")
+		return err
+	}
 
-	key := c.Args().Get(0)
-
-	client, err := manager.NewGRPCClient(grpcAddr)
+	client, err := dispatcher.NewGRPCClient(grpcAddr)
 	if err != nil {
 		return err
 	}
@@ -39,16 +43,17 @@ func clusterGet(c *cli.Context) error {
 		}
 	}()
 
-	value, err := client.GetValue(key)
+	fields, err := client.GetDocument(id)
 	if err != nil {
 		return err
 	}
 
-	valueBytes, err := json.MarshalIndent(value, "", "  ")
+	fieldsBytes, err := json.MarshalIndent(fields, "", "  ")
 	if err != nil {
 		return err
 	}
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(valueBytes)))
+
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(fieldsBytes)))
 
 	return nil
 }

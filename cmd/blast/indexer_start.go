@@ -27,8 +27,8 @@ import (
 	"github.com/urfave/cli"
 )
 
-func indexerNodeStart(c *cli.Context) error {
-	clusterGRPCAddr := c.String("cluster-grpc-address")
+func indexerStart(c *cli.Context) error {
+	clusterGRPCAddr := c.String("manager-grpc-address")
 	shardId := c.String("shard-id")
 	peerGRPCAddr := c.String("peer-grpc-address")
 

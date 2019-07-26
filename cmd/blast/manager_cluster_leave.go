@@ -15,20 +15,22 @@
 package main
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
-	"log"
 	"os"
 
 	"github.com/mosuka/blast/manager"
-	"github.com/mosuka/blast/protobuf"
 	"github.com/urfave/cli"
 )
 
-func clusterPeersWatch(c *cli.Context) error {
+func managerClusterLeave(c *cli.Context) error {
+	peerGrpcAddr := c.String("peer-grpc-address")
+
+	if peerGrpcAddr != "" {
+		// get grpc address of leader node
+	}
+
 	grpcAddr := c.String("grpc-address")
+	nodeId := c.String("node-id")
 
 	client, err := manager.NewGRPCClient(grpcAddr)
 	if err != nil {
@@ -41,41 +43,9 @@ func clusterPeersWatch(c *cli.Context) error {
 		}
 	}()
 
-	err = clusterPeersInfo(c)
+	err = client.DeleteNode(nodeId)
 	if err != nil {
 		return err
-	}
-
-	watchClient, err := client.WatchCluster()
-	if err != nil {
-		return err
-	}
-
-	for {
-		resp, err := watchClient.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			log.Println(err.Error())
-			break
-		}
-
-		cluster, err := protobuf.MarshalAny(resp.Cluster)
-		if err != nil {
-			return err
-		}
-		if cluster == nil {
-			return errors.New("nil")
-		}
-
-		var clusterBytes []byte
-		clusterMap := *cluster.(*map[string]interface{})
-		clusterBytes, err = json.MarshalIndent(clusterMap, "", "  ")
-		if err != nil {
-			return err
-		}
-		_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(clusterBytes)))
 	}
 
 	return nil

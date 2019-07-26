@@ -25,8 +25,8 @@ import (
 	"github.com/urfave/cli"
 )
 
-func distributorNodeStart(c *cli.Context) error {
-	managerAddr := c.String("cluster-grpc-address")
+func dispatcherStart(c *cli.Context) error {
+	managerAddr := c.String("manager-grpc-address")
 
 	grpcAddr := c.String("grpc-address")
 	httpAddr := c.String("http-address")
