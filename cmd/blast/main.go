@@ -234,13 +234,17 @@ func main() {
 							Action: managerNodeInfo,
 						},
 						{
-							Name:  "health",
+							Name:  "healthcheck",
 							Usage: "Health check the node",
 							Flags: []cli.Flag{
 								cli.StringFlag{
 									Name:  "grpc-address",
-									Value: "",
+									Value: ":5100",
 									Usage: "The gRPC listen address",
+								},
+								cli.BoolFlag{
+									Name:  "healthiness",
+									Usage: "healthiness probe",
 								},
 								cli.BoolFlag{
 									Name:  "liveness",
@@ -251,7 +255,7 @@ func main() {
 									Usage: "Readiness probe",
 								},
 							},
-							Action: managerNodeHealth,
+							Action: managerNodeHealthCheck,
 						},
 					},
 				},

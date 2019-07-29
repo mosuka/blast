@@ -95,34 +95,58 @@ func (c *GRPCClient) GetAddress() string {
 	return c.conn.Target()
 }
 
-func (c *GRPCClient) LivenessProbe(opts ...grpc.CallOption) (string, error) {
-	resp, err := c.client.LivenessProbe(c.ctx, &empty.Empty{})
+//func (c *GRPCClient) LivenessProbe(opts ...grpc.CallOption) (string, error) {
+//	resp, err := c.client.LivenessProbe(c.ctx, &empty.Empty{})
+//	if err != nil {
+//		st, _ := status.FromError(err)
+//
+//		return management.LivenessProbeResponse_UNKNOWN.String(), errors.New(st.Message())
+//	}
+//
+//	return resp.State.String(), nil
+//}
+
+//func (c *GRPCClient) ReadinessProbe(opts ...grpc.CallOption) (string, error) {
+//	resp, err := c.client.ReadinessProbe(c.ctx, &empty.Empty{})
+//	if err != nil {
+//		st, _ := status.FromError(err)
+//
+//		return management.ReadinessProbeResponse_UNKNOWN.String(), errors.New(st.Message())
+//	}
+//
+//	return resp.State.String(), nil
+//}
+
+func (c *GRPCClient) NodeHealthCheck(probe string, opts ...grpc.CallOption) (string, error) {
+	req := &management.NodeHealthCheckRequest{}
+
+	switch probe {
+	case management.NodeHealthCheckRequest_HEALTHINESS.String():
+		req.Probe = management.NodeHealthCheckRequest_HEALTHINESS
+	case management.NodeHealthCheckRequest_LIVENESS.String():
+		req.Probe = management.NodeHealthCheckRequest_LIVENESS
+	case management.NodeHealthCheckRequest_READINESS.String():
+		req.Probe = management.NodeHealthCheckRequest_READINESS
+	default:
+		req.Probe = management.NodeHealthCheckRequest_HEALTHINESS
+	}
+
+	resp, err := c.client.NodeHealthCheck(c.ctx, req, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
-		return management.LivenessProbeResponse_UNKNOWN.String(), errors.New(st.Message())
+		return management.NodeHealthCheckResponse_UNHEALTHY.String(), errors.New(st.Message())
 	}
 
 	return resp.State.String(), nil
 }
 
-func (c *GRPCClient) ReadinessProbe(opts ...grpc.CallOption) (string, error) {
-	resp, err := c.client.ReadinessProbe(c.ctx, &empty.Empty{})
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return management.ReadinessProbeResponse_UNKNOWN.String(), errors.New(st.Message())
-	}
-
-	return resp.State.String(), nil
-}
-
-func (c *GRPCClient) GetNode(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
-	req := &management.GetNodeRequest{
+func (c *GRPCClient) NodeInfo(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
+	req := &management.NodeInfoRequest{
 		Id: id,
 	}
 
-	resp, err := c.client.GetNode(c.ctx, req, opts...)
+	resp, err := c.client.NodeInfo(c.ctx, req, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
@@ -140,19 +164,19 @@ func (c *GRPCClient) GetNode(id string, opts ...grpc.CallOption) (map[string]int
 	return node, nil
 }
 
-func (c *GRPCClient) SetNode(id string, nodeConfig map[string]interface{}, opts ...grpc.CallOption) error {
+func (c *GRPCClient) ClusterJoin(id string, nodeConfig map[string]interface{}, opts ...grpc.CallOption) error {
 	nodeConfigAny := &any.Any{}
 	err := protobuf.UnmarshalAny(nodeConfig, nodeConfigAny)
 	if err != nil {
 		return err
 	}
 
-	req := &management.SetNodeRequest{
+	req := &management.ClusterJoinRequest{
 		Id:         id,
 		NodeConfig: nodeConfigAny,
 	}
 
-	_, err = c.client.SetNode(c.ctx, req, opts...)
+	_, err = c.client.ClusterJoin(c.ctx, req, opts...)
 	if err != nil {
 		return err
 	}
@@ -160,12 +184,12 @@ func (c *GRPCClient) SetNode(id string, nodeConfig map[string]interface{}, opts 
 	return nil
 }
 
-func (c *GRPCClient) DeleteNode(id string, opts ...grpc.CallOption) error {
-	req := &management.DeleteNodeRequest{
+func (c *GRPCClient) ClusterLeave(id string, opts ...grpc.CallOption) error {
+	req := &management.ClusterLeaveRequest{
 		Id: id,
 	}
 
-	_, err := c.client.DeleteNode(c.ctx, req, opts...)
+	_, err := c.client.ClusterLeave(c.ctx, req, opts...)
 	if err != nil {
 		return err
 	}
@@ -173,8 +197,8 @@ func (c *GRPCClient) DeleteNode(id string, opts ...grpc.CallOption) error {
 	return nil
 }
 
-func (c *GRPCClient) GetCluster(opts ...grpc.CallOption) (map[string]interface{}, error) {
-	resp, err := c.client.GetCluster(c.ctx, &empty.Empty{}, opts...)
+func (c *GRPCClient) ClusterInfo(opts ...grpc.CallOption) (map[string]interface{}, error) {
+	resp, err := c.client.ClusterInfo(c.ctx, &empty.Empty{}, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
@@ -187,10 +211,10 @@ func (c *GRPCClient) GetCluster(opts ...grpc.CallOption) (map[string]interface{}
 	return cluster, nil
 }
 
-func (c *GRPCClient) WatchCluster(opts ...grpc.CallOption) (management.Management_WatchClusterClient, error) {
+func (c *GRPCClient) ClusterWatch(opts ...grpc.CallOption) (management.Management_ClusterWatchClient, error) {
 	req := &empty.Empty{}
 
-	watchClient, err := c.client.WatchCluster(c.ctx, req, opts...)
+	watchClient, err := c.client.ClusterWatch(c.ctx, req, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 		return nil, errors.New(st.Message())
@@ -199,12 +223,12 @@ func (c *GRPCClient) WatchCluster(opts ...grpc.CallOption) (management.Managemen
 	return watchClient, nil
 }
 
-func (c *GRPCClient) GetValue(key string, opts ...grpc.CallOption) (interface{}, error) {
-	req := &management.GetValueRequest{
+func (c *GRPCClient) Get(key string, opts ...grpc.CallOption) (interface{}, error) {
+	req := &management.GetRequest{
 		Key: key,
 	}
 
-	resp, err := c.client.GetValue(c.ctx, req, opts...)
+	resp, err := c.client.Get(c.ctx, req, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
@@ -221,19 +245,19 @@ func (c *GRPCClient) GetValue(key string, opts ...grpc.CallOption) (interface{},
 	return value, nil
 }
 
-func (c *GRPCClient) SetValue(key string, value interface{}, opts ...grpc.CallOption) error {
+func (c *GRPCClient) Set(key string, value interface{}, opts ...grpc.CallOption) error {
 	valueAny := &any.Any{}
 	err := protobuf.UnmarshalAny(value, valueAny)
 	if err != nil {
 		return err
 	}
 
-	req := &management.SetValueRequest{
+	req := &management.SetRequest{
 		Key:   key,
 		Value: valueAny,
 	}
 
-	_, err = c.client.SetValue(c.ctx, req, opts...)
+	_, err = c.client.Set(c.ctx, req, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
@@ -248,12 +272,12 @@ func (c *GRPCClient) SetValue(key string, value interface{}, opts ...grpc.CallOp
 	return nil
 }
 
-func (c *GRPCClient) DeleteValue(key string, opts ...grpc.CallOption) error {
-	req := &management.DeleteValueRequest{
+func (c *GRPCClient) Delete(key string, opts ...grpc.CallOption) error {
+	req := &management.DeleteRequest{
 		Key: key,
 	}
 
-	_, err := c.client.DeleteValue(c.ctx, req, opts...)
+	_, err := c.client.Delete(c.ctx, req, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
@@ -268,12 +292,12 @@ func (c *GRPCClient) DeleteValue(key string, opts ...grpc.CallOption) error {
 	return nil
 }
 
-func (c *GRPCClient) WatchStore(key string, opts ...grpc.CallOption) (management.Management_WatchStoreClient, error) {
-	req := &management.WatchStoreRequest{
+func (c *GRPCClient) Watch(key string, opts ...grpc.CallOption) (management.Management_WatchClient, error) {
+	req := &management.WatchRequest{
 		Key: key,
 	}
 
-	watchClient, err := c.client.WatchStore(c.ctx, req, opts...)
+	watchClient, err := c.client.Watch(c.ctx, req, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 		return nil, errors.New(st.Message())

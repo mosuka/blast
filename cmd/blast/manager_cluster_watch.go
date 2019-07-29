@@ -46,7 +46,7 @@ func managerClusterWatch(c *cli.Context) error {
 		return err
 	}
 
-	watchClient, err := client.WatchCluster()
+	watchClient, err := client.ClusterWatch()
 	if err != nil {
 		return err
 	}

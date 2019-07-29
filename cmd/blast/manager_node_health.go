@@ -19,11 +19,13 @@ import (
 	"os"
 
 	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/protobuf/management"
 	"github.com/urfave/cli"
 )
 
-func managerNodeHealth(c *cli.Context) error {
+func managerNodeHealthCheck(c *cli.Context) error {
 	grpcAddr := c.String("grpc-address")
+	healthiness := c.Bool("healthiness")
 	liveness := c.Bool("liveness")
 	readiness := c.Bool("readiness")
 
@@ -38,34 +40,30 @@ func managerNodeHealth(c *cli.Context) error {
 		}
 	}()
 
-	if !liveness && !readiness {
-		LivenessState, err := client.LivenessProbe()
+	var state string
+	if healthiness {
+		state, err = client.NodeHealthCheck(management.NodeHealthCheckRequest_HEALTHINESS.String())
 		if err != nil {
-			return err
+			state = management.NodeHealthCheckResponse_UNHEALTHY.String()
 		}
-		_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", LivenessState))
-
-		readinessState, err := client.ReadinessProbe()
+	} else if liveness {
+		state, err = client.NodeHealthCheck(management.NodeHealthCheckRequest_LIVENESS.String())
 		if err != nil {
-			return err
+			state = management.NodeHealthCheckResponse_DEAD.String()
 		}
-		_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", readinessState))
+	} else if readiness {
+		state, err = client.NodeHealthCheck(management.NodeHealthCheckRequest_READINESS.String())
+		if err != nil {
+			state = management.NodeHealthCheckResponse_NOT_READY.String()
+		}
 	} else {
-		if liveness {
-			state, err := client.LivenessProbe()
-			if err != nil {
-				return err
-			}
-			_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", state))
-		}
-		if readiness {
-			state, err := client.ReadinessProbe()
-			if err != nil {
-				return err
-			}
-			_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", state))
+		state, err = client.NodeHealthCheck(management.NodeHealthCheckRequest_HEALTHINESS.String())
+		if err != nil {
+			state = management.NodeHealthCheckResponse_UNHEALTHY.String()
 		}
 	}
+
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", state))
 
 	return nil
 }

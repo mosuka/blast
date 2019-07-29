@@ -43,7 +43,7 @@ func managerDelete(c *cli.Context) error {
 		}
 	}()
 
-	err = client.DeleteValue(key)
+	err = client.Delete(key)
 	if err != nil {
 		return err
 	}
