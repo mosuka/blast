@@ -127,7 +127,7 @@ func TestServer_Start(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 	// get cluster info from manager1
-	managerCluster1, err := managerClient1.GetCluster()
+	managerCluster1, err := managerClient1.ClusterInfo()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

@@ -61,7 +61,7 @@ func managerSet(c *cli.Context) error {
 		}
 	}()
 
-	err = client.SetValue(key, value)
+	err = client.Set(key, value)
 	if err != nil {
 		return err
 	}

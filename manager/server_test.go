@@ -75,7 +75,7 @@ func TestServer_Start(t *testing.T) {
 	time.Sleep(5 * time.Second)
 }
 
-func TestServer_LivenessProbe(t *testing.T) {
+func TestServer_HealthCheck(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
@@ -133,82 +133,34 @@ func TestServer_LivenessProbe(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	// liveness
-	liveness, err := client.LivenessProbe()
+	// healthiness
+	healthiness, err := client.NodeHealthCheck(management.NodeHealthCheckRequest_HEALTHINESS.String())
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expLiveness := management.LivenessProbeResponse_ALIVE.String()
+	expHealthiness := management.NodeHealthCheckResponse_HEALTHY.String()
+	actHealthiness := healthiness
+	if expHealthiness != actHealthiness {
+		t.Fatalf("expected content to see %v, saw %v", expHealthiness, actHealthiness)
+	}
+
+	// liveness
+	liveness, err := client.NodeHealthCheck(management.NodeHealthCheckRequest_LIVENESS.String())
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	expLiveness := management.NodeHealthCheckResponse_ALIVE.String()
 	actLiveness := liveness
 	if expLiveness != actLiveness {
 		t.Fatalf("expected content to see %v, saw %v", expLiveness, actLiveness)
 	}
-}
-
-func TestServer_ReadinessProbe(t *testing.T) {
-	curDir, _ := os.Getwd()
-
-	// create logger
-	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create gRPC logger
-	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create HTTP access logger
-	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
-
-	// create cluster config
-	clusterConfig := config.DefaultClusterConfig()
-
-	// create node config
-	nodeConfig := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig.DataDir)
-	}()
-
-	// create index config
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	// create server
-	server, err := NewServer(clusterConfig, nodeConfig, indexConfig, logger, grpcLogger, httpAccessLogger)
-	defer func() {
-		if server != nil {
-			server.Stop()
-		}
-	}()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	// start server
-	server.Start()
-
-	// sleep
-	time.Sleep(5 * time.Second)
-
-	// create gRPC client
-	client, err := NewGRPCClient(nodeConfig.GRPCAddr)
-	defer func() {
-		if client != nil {
-			err = client.Close()
-			if err != nil {
-				t.Fatalf("%v", err)
-			}
-		}
-	}()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
 
 	// readiness
-	readiness, err := client.ReadinessProbe()
+	readiness, err := client.NodeHealthCheck(management.NodeHealthCheckRequest_READINESS.String())
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expReadiness := management.ReadinessProbeResponse_READY.String()
+	expReadiness := management.NodeHealthCheckResponse_READY.String()
 	actReadiness := readiness
 	if expReadiness != actReadiness {
 		t.Fatalf("expected content to see %v, saw %v", expReadiness, actReadiness)
@@ -274,7 +226,7 @@ func TestServer_GetNode(t *testing.T) {
 	}
 
 	// get node
-	nodeInfo, err := client.GetNode(nodeConfig.NodeId)
+	nodeInfo, err := client.NodeInfo(nodeConfig.NodeId)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -347,7 +299,7 @@ func TestServer_GetCluster(t *testing.T) {
 	}
 
 	// get cluster
-	cluster, err := client.GetCluster()
+	cluster, err := client.ClusterInfo()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -426,7 +378,7 @@ func TestServer_GetIndexMapping(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	actIntr, err := client.GetValue("index_config/index_mapping")
+	actIntr, err := client.Get("index_config/index_mapping")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -504,7 +456,7 @@ func TestServer_GetIndexType(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	actIndexType, err := client.GetValue("index_config/index_type")
+	actIndexType, err := client.Get("index_config/index_type")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -577,7 +529,7 @@ func TestServer_GetIndexStorageType(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	actIndexStorageType, err := client.GetValue("index_config/index_storage_type")
+	actIndexStorageType, err := client.Get("index_config/index_storage_type")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -646,13 +598,13 @@ func TestServer_SetState(t *testing.T) {
 	}
 
 	// set value
-	err = client.SetValue("test/key1", "val1")
+	err = client.Set("test/key1", "val1")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
 	// get value
-	val1, err := client.GetValue("test/key1")
+	val1, err := client.Get("test/key1")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -725,13 +677,13 @@ func TestServer_GetState(t *testing.T) {
 	}
 
 	// set value
-	err = client.SetValue("test/key1", "val1")
+	err = client.Set("test/key1", "val1")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
 	// get value
-	val1, err := client.GetValue("test/key1")
+	val1, err := client.Get("test/key1")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -804,13 +756,13 @@ func TestServer_DeleteState(t *testing.T) {
 	}
 
 	// set value
-	err = client.SetValue("test/key1", "val1")
+	err = client.Set("test/key1", "val1")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
 	// get value
-	val1, err := client.GetValue("test/key1")
+	val1, err := client.Get("test/key1")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -824,12 +776,12 @@ func TestServer_DeleteState(t *testing.T) {
 	}
 
 	// delete value
-	err = client.DeleteValue("test/key1")
+	err = client.Delete("test/key1")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	val1, err = client.GetValue("test/key1")
+	val1, err = client.Get("test/key1")
 	if err != blasterrors.ErrNotFound {
 		t.Fatalf("%v", err)
 	}
@@ -839,7 +791,7 @@ func TestServer_DeleteState(t *testing.T) {
 	}
 
 	// delete non-existing data
-	err = client.DeleteValue("test/non-existing")
+	err = client.Delete("test/non-existing")
 	if err != blasterrors.ErrNotFound {
 		t.Fatalf("%v", err)
 	}
@@ -926,7 +878,7 @@ func TestCluster_Start(t *testing.T) {
 	time.Sleep(5 * time.Second)
 }
 
-func TestCluster_LivenessProbe(t *testing.T) {
+func TestCluster_HealthCheck(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	// create logger
@@ -1029,175 +981,105 @@ func TestCluster_LivenessProbe(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	// liveness check for manager1
-	liveness1, err := client1.LivenessProbe()
+	// healthiness
+	healthiness1, err := client1.NodeHealthCheck(management.NodeHealthCheckRequest_HEALTHINESS.String())
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expLiveness1 := management.LivenessProbeResponse_ALIVE.String()
+	expHealthiness1 := management.NodeHealthCheckResponse_HEALTHY.String()
+	actHealthiness1 := healthiness1
+	if expHealthiness1 != actHealthiness1 {
+		t.Fatalf("expected content to see %v, saw %v", expHealthiness1, actHealthiness1)
+	}
+
+	// liveness
+	liveness1, err := client1.NodeHealthCheck(management.NodeHealthCheckRequest_LIVENESS.String())
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	expLiveness1 := management.NodeHealthCheckResponse_ALIVE.String()
 	actLiveness1 := liveness1
 	if expLiveness1 != actLiveness1 {
 		t.Fatalf("expected content to see %v, saw %v", expLiveness1, actLiveness1)
 	}
 
-	// liveness check for manager2
-	liveness2, err := client2.LivenessProbe()
+	// readiness
+	readiness1, err := client1.NodeHealthCheck(management.NodeHealthCheckRequest_READINESS.String())
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expLiveness2 := management.LivenessProbeResponse_ALIVE.String()
-	actLiveness2 := liveness2
-	if expLiveness2 != actLiveness2 {
-		t.Fatalf("expected content to see %v, saw %v", expLiveness2, actLiveness2)
-	}
-
-	// liveness check for manager3
-	liveness3, err := client3.LivenessProbe()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	expLiveness3 := management.LivenessProbeResponse_ALIVE.String()
-	actLiveness3 := liveness3
-	if expLiveness3 != actLiveness3 {
-		t.Fatalf("expected content to see %v, saw %v", expLiveness3, actLiveness3)
-	}
-}
-
-func TestCluster_ReadinessProbe(t *testing.T) {
-	curDir, _ := os.Getwd()
-
-	// create logger
-	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create gRPC logger
-	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create HTTP access logger
-	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
-
-	// create index config
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	// create configs for server1
-	clusterConfig1 := config.DefaultClusterConfig()
-	nodeConfig1 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig1.DataDir)
-	}()
-	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named("manager1"), grpcLogger, httpAccessLogger)
-	defer func() {
-		if server1 != nil {
-			server1.Stop()
-		}
-	}()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	// start server1
-	server1.Start()
-
-	// create configs for server2
-	clusterConfig2 := config.DefaultClusterConfig()
-	clusterConfig2.PeerAddr = nodeConfig1.GRPCAddr
-	nodeConfig2 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig2.DataDir)
-	}()
-	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named("manager2"), grpcLogger, httpAccessLogger)
-	defer func() {
-		if server2 != nil {
-			server2.Stop()
-		}
-	}()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	// start server2
-	server2.Start()
-
-	// create configs for server3
-	clusterConfig3 := config.DefaultClusterConfig()
-	clusterConfig3.PeerAddr = nodeConfig1.GRPCAddr
-	nodeConfig3 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig3.DataDir)
-	}()
-	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named("manager3"), grpcLogger, httpAccessLogger)
-	defer func() {
-		if server3 != nil {
-			server3.Stop()
-		}
-	}()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	// start server3
-	server3.Start()
-
-	// sleep
-	time.Sleep(5 * time.Second)
-
-	// gRPC client for all servers
-	client1, err := NewGRPCClient(nodeConfig1.GRPCAddr)
-	defer func() {
-		_ = client1.Close()
-	}()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	client2, err := NewGRPCClient(nodeConfig2.GRPCAddr)
-	defer func() {
-		_ = client2.Close()
-	}()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	client3, err := NewGRPCClient(nodeConfig3.GRPCAddr)
-	defer func() {
-		_ = client3.Close()
-	}()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	// readiness check for manager1
-	readiness1, err := client1.ReadinessProbe()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	expReadiness1 := management.ReadinessProbeResponse_READY.String()
+	expReadiness1 := management.NodeHealthCheckResponse_READY.String()
 	actReadiness1 := readiness1
 	if expReadiness1 != actReadiness1 {
 		t.Fatalf("expected content to see %v, saw %v", expReadiness1, actReadiness1)
 	}
 
-	// readiness check for manager2
-	readiness2, err := client2.ReadinessProbe()
+	// healthiness
+	healthiness2, err := client2.NodeHealthCheck(management.NodeHealthCheckRequest_HEALTHINESS.String())
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expReadiness2 := management.ReadinessProbeResponse_READY.String()
+	expHealthiness2 := management.NodeHealthCheckResponse_HEALTHY.String()
+	actHealthiness2 := healthiness2
+	if expHealthiness2 != actHealthiness2 {
+		t.Fatalf("expected content to see %v, saw %v", expHealthiness2, actHealthiness2)
+	}
+
+	// liveness
+	liveness2, err := client2.NodeHealthCheck(management.NodeHealthCheckRequest_LIVENESS.String())
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	expLiveness2 := management.NodeHealthCheckResponse_ALIVE.String()
+	actLiveness2 := liveness2
+	if expLiveness2 != actLiveness2 {
+		t.Fatalf("expected content to see %v, saw %v", expLiveness2, actLiveness2)
+	}
+
+	// readiness
+	readiness2, err := client2.NodeHealthCheck(management.NodeHealthCheckRequest_READINESS.String())
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	expReadiness2 := management.NodeHealthCheckResponse_READY.String()
 	actReadiness2 := readiness2
 	if expReadiness2 != actReadiness2 {
 		t.Fatalf("expected content to see %v, saw %v", expReadiness2, actReadiness2)
 	}
 
-	// readiness check for manager3
-	readiness3, err := client3.ReadinessProbe()
+	// healthiness
+	healthiness3, err := client3.NodeHealthCheck(management.NodeHealthCheckRequest_HEALTHINESS.String())
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expReadiness3 := management.ReadinessProbeResponse_READY.String()
+	expHealthiness3 := management.NodeHealthCheckResponse_HEALTHY.String()
+	actHealthiness3 := healthiness3
+	if expHealthiness3 != actHealthiness3 {
+		t.Fatalf("expected content to see %v, saw %v", expHealthiness3, actHealthiness3)
+	}
+
+	// liveness
+	liveness3, err := client3.NodeHealthCheck(management.NodeHealthCheckRequest_LIVENESS.String())
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	expLiveness3 := management.NodeHealthCheckResponse_ALIVE.String()
+	actLiveness3 := liveness3
+	if expLiveness3 != actLiveness3 {
+		t.Fatalf("expected content to see %v, saw %v", expLiveness3, actLiveness3)
+	}
+
+	// readiness
+	readiness3, err := client3.NodeHealthCheck(management.NodeHealthCheckRequest_READINESS.String())
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	expReadiness3 := management.NodeHealthCheckResponse_READY.String()
 	actReadiness3 := readiness3
 	if expReadiness3 != actReadiness3 {
 		t.Fatalf("expected content to see %v, saw %v", expReadiness3, actReadiness3)
 	}
+
 }
 
 func TestCluster_GetNode(t *testing.T) {
@@ -1304,7 +1186,7 @@ func TestCluster_GetNode(t *testing.T) {
 	}
 
 	// get all node info from all nodes
-	node11, err := client1.GetNode(nodeConfig1.NodeId)
+	node11, err := client1.NodeInfo(nodeConfig1.NodeId)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1317,7 +1199,7 @@ func TestCluster_GetNode(t *testing.T) {
 		t.Fatalf("expected content to see %v, saw %v", expNode11, actNode11)
 	}
 
-	node12, err := client1.GetNode(nodeConfig2.NodeId)
+	node12, err := client1.NodeInfo(nodeConfig2.NodeId)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1330,7 +1212,7 @@ func TestCluster_GetNode(t *testing.T) {
 		t.Fatalf("expected content to see %v, saw %v", expNode12, actNode12)
 	}
 
-	node13, err := client1.GetNode(nodeConfig3.NodeId)
+	node13, err := client1.NodeInfo(nodeConfig3.NodeId)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1343,7 +1225,7 @@ func TestCluster_GetNode(t *testing.T) {
 		t.Fatalf("expected content to see %v, saw %v", expNode13, actNode13)
 	}
 
-	node21, err := client2.GetNode(nodeConfig1.NodeId)
+	node21, err := client2.NodeInfo(nodeConfig1.NodeId)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1356,7 +1238,7 @@ func TestCluster_GetNode(t *testing.T) {
 		t.Fatalf("expected content to see %v, saw %v", expNode21, actNode21)
 	}
 
-	node22, err := client2.GetNode(nodeConfig2.NodeId)
+	node22, err := client2.NodeInfo(nodeConfig2.NodeId)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1369,7 +1251,7 @@ func TestCluster_GetNode(t *testing.T) {
 		t.Fatalf("expected content to see %v, saw %v", expNode22, actNode22)
 	}
 
-	node23, err := client2.GetNode(nodeConfig3.NodeId)
+	node23, err := client2.NodeInfo(nodeConfig3.NodeId)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1382,7 +1264,7 @@ func TestCluster_GetNode(t *testing.T) {
 		t.Fatalf("expected content to see %v, saw %v", expNode23, actNode23)
 	}
 
-	node31, err := client3.GetNode(nodeConfig1.NodeId)
+	node31, err := client3.NodeInfo(nodeConfig1.NodeId)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1395,7 +1277,7 @@ func TestCluster_GetNode(t *testing.T) {
 		t.Fatalf("expected content to see %v, saw %v", expNode31, actNode31)
 	}
 
-	node32, err := client3.GetNode(nodeConfig2.NodeId)
+	node32, err := client3.NodeInfo(nodeConfig2.NodeId)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1408,7 +1290,7 @@ func TestCluster_GetNode(t *testing.T) {
 		t.Fatalf("expected content to see %v, saw %v", expNode32, actNode32)
 	}
 
-	node33, err := client3.GetNode(nodeConfig3.NodeId)
+	node33, err := client3.NodeInfo(nodeConfig3.NodeId)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1526,7 +1408,7 @@ func TestCluster_GetCluster(t *testing.T) {
 	}
 
 	// get cluster info from manager1
-	cluster1, err := client1.GetCluster()
+	cluster1, err := client1.ClusterInfo()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1549,7 +1431,7 @@ func TestCluster_GetCluster(t *testing.T) {
 		t.Fatalf("expected content to see %v, saw %v", expCluster1, actCluster1)
 	}
 
-	cluster2, err := client2.GetCluster()
+	cluster2, err := client2.ClusterInfo()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1572,7 +1454,7 @@ func TestCluster_GetCluster(t *testing.T) {
 		t.Fatalf("expected content to see %v, saw %v", expCluster2, actCluster2)
 	}
 
-	cluster3, err := client3.GetCluster()
+	cluster3, err := client3.ClusterInfo()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1700,7 +1582,7 @@ func TestCluster_GetState(t *testing.T) {
 	}
 
 	// get index mapping from all nodes
-	indexConfig1, err := client1.GetValue("index_config")
+	indexConfig1, err := client1.Get("index_config")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1710,7 +1592,7 @@ func TestCluster_GetState(t *testing.T) {
 		t.Fatalf("expected content to see %v, saw %v", expIndexConfig1, actIndexConfig1)
 	}
 
-	indexConfig2, err := client2.GetValue("index_config")
+	indexConfig2, err := client2.Get("index_config")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1720,7 +1602,7 @@ func TestCluster_GetState(t *testing.T) {
 		t.Fatalf("expected content to see %v, saw %v", expIndexConfig2, actIndexConfig2)
 	}
 
-	indexConfig3, err := client3.GetValue("index_config")
+	indexConfig3, err := client3.Get("index_config")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1834,14 +1716,14 @@ func TestCluster_SetState(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	err = client1.SetValue("test/key1", "val1")
+	err = client1.Set("test/key1", "val1")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 	time.Sleep(2 * time.Second) // wait for data to propagate
 
 	// get value from all nodes
-	val11, err := client1.GetValue("test/key1")
+	val11, err := client1.Get("test/key1")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1850,7 +1732,7 @@ func TestCluster_SetState(t *testing.T) {
 	if expVal11 != actVal11 {
 		t.Fatalf("expected content to see %v, saw %v", expVal11, actVal11)
 	}
-	val21, err := client2.GetValue("test/key1")
+	val21, err := client2.Get("test/key1")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1859,7 +1741,7 @@ func TestCluster_SetState(t *testing.T) {
 	if expVal21 != actVal21 {
 		t.Fatalf("expected content to see %v, saw %v", expVal21, actVal21)
 	}
-	val31, err := client3.GetValue("test/key1")
+	val31, err := client3.Get("test/key1")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1869,14 +1751,14 @@ func TestCluster_SetState(t *testing.T) {
 		t.Fatalf("expected content to see %v, saw %v", expVal31, actVal31)
 	}
 
-	err = client2.SetValue("test/key2", "val2")
+	err = client2.Set("test/key2", "val2")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 	time.Sleep(2 * time.Second) // wait for data to propagate
 
 	// get value from all nodes
-	val12, err := client1.GetValue("test/key2")
+	val12, err := client1.Get("test/key2")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1885,7 +1767,7 @@ func TestCluster_SetState(t *testing.T) {
 	if expVal12 != actVal12 {
 		t.Fatalf("expected content to see %v, saw %v", expVal12, actVal12)
 	}
-	val22, err := client2.GetValue("test/key2")
+	val22, err := client2.Get("test/key2")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1894,7 +1776,7 @@ func TestCluster_SetState(t *testing.T) {
 	if expVal22 != actVal22 {
 		t.Fatalf("expected content to see %v, saw %v", expVal22, actVal22)
 	}
-	val32, err := client3.GetValue("test/key2")
+	val32, err := client3.Get("test/key2")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1904,14 +1786,14 @@ func TestCluster_SetState(t *testing.T) {
 		t.Fatalf("expected content to see %v, saw %v", expVal32, actVal32)
 	}
 
-	err = client3.SetValue("test/key3", "val3")
+	err = client3.Set("test/key3", "val3")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 	time.Sleep(2 * time.Second) // wait for data to propagate
 
 	// get value from all nodes
-	val13, err := client1.GetValue("test/key3")
+	val13, err := client1.Get("test/key3")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1920,7 +1802,7 @@ func TestCluster_SetState(t *testing.T) {
 	if expVal13 != actVal13 {
 		t.Fatalf("expected content to see %v, saw %v", expVal13, actVal13)
 	}
-	val23, err := client2.GetValue("test/key3")
+	val23, err := client2.Get("test/key3")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1929,7 +1811,7 @@ func TestCluster_SetState(t *testing.T) {
 	if expVal23 != actVal23 {
 		t.Fatalf("expected content to see %v, saw %v", expVal23, actVal23)
 	}
-	val33, err := client3.GetValue("test/key3")
+	val33, err := client3.Get("test/key3")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -2044,14 +1926,14 @@ func TestCluster_DeleteState(t *testing.T) {
 	}
 
 	// set test data before delete
-	err = client1.SetValue("test/key1", "val1")
+	err = client1.Set("test/key1", "val1")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 	time.Sleep(2 * time.Second) // wait for data to propagate
 
 	// get value from all nodes
-	val11, err := client1.GetValue("test/key1")
+	val11, err := client1.Get("test/key1")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -2060,7 +1942,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	if expVal11 != actVal11 {
 		t.Fatalf("expected content to see %v, saw %v", expVal11, actVal11)
 	}
-	val21, err := client2.GetValue("test/key1")
+	val21, err := client2.Get("test/key1")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -2069,7 +1951,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	if expVal21 != actVal21 {
 		t.Fatalf("expected content to see %v, saw %v", expVal21, actVal21)
 	}
-	val31, err := client3.GetValue("test/key1")
+	val31, err := client3.Get("test/key1")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -2079,14 +1961,14 @@ func TestCluster_DeleteState(t *testing.T) {
 		t.Fatalf("expected content to see %v, saw %v", expVal31, actVal31)
 	}
 
-	err = client2.SetValue("test/key2", "val2")
+	err = client2.Set("test/key2", "val2")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 	time.Sleep(2 * time.Second) // wait for data to propagate
 
 	// get value from all nodes
-	val12, err := client1.GetValue("test/key2")
+	val12, err := client1.Get("test/key2")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -2095,7 +1977,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	if expVal12 != actVal12 {
 		t.Fatalf("expected content to see %v, saw %v", expVal12, actVal12)
 	}
-	val22, err := client2.GetValue("test/key2")
+	val22, err := client2.Get("test/key2")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -2104,7 +1986,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	if expVal22 != actVal22 {
 		t.Fatalf("expected content to see %v, saw %v", expVal22, actVal22)
 	}
-	val32, err := client3.GetValue("test/key2")
+	val32, err := client3.Get("test/key2")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -2114,14 +1996,14 @@ func TestCluster_DeleteState(t *testing.T) {
 		t.Fatalf("expected content to see %v, saw %v", expVal32, actVal32)
 	}
 
-	err = client3.SetValue("test/key3", "val3")
+	err = client3.Set("test/key3", "val3")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 	time.Sleep(2 * time.Second) // wait for data to propagate
 
 	// get value from all nodes
-	val13, err := client1.GetValue("test/key3")
+	val13, err := client1.Get("test/key3")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -2130,7 +2012,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	if expVal13 != actVal13 {
 		t.Fatalf("expected content to see %v, saw %v", expVal13, actVal13)
 	}
-	val23, err := client2.GetValue("test/key3")
+	val23, err := client2.Get("test/key3")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -2139,7 +2021,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	if expVal23 != actVal23 {
 		t.Fatalf("expected content to see %v, saw %v", expVal23, actVal23)
 	}
-	val33, err := client3.GetValue("test/key3")
+	val33, err := client3.Get("test/key3")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -2150,28 +2032,28 @@ func TestCluster_DeleteState(t *testing.T) {
 	}
 
 	// delete
-	err = client1.DeleteValue("test/key1")
+	err = client1.Delete("test/key1")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 	time.Sleep(2 * time.Second) // wait for data to propagate
 
 	// get value from all nodes
-	val11, err = client1.GetValue("test/key1")
+	val11, err = client1.Get("test/key1")
 	if err != blasterrors.ErrNotFound {
 		t.Fatalf("%v", err)
 	}
 	if val11 != nil {
 		t.Fatalf("%v", err)
 	}
-	val21, err = client2.GetValue("test/key1")
+	val21, err = client2.Get("test/key1")
 	if err != blasterrors.ErrNotFound {
 		t.Fatalf("%v", err)
 	}
 	if val21 != nil {
 		t.Fatalf("%v", err)
 	}
-	val31, err = client3.GetValue("test/key1")
+	val31, err = client3.Get("test/key1")
 	if err != blasterrors.ErrNotFound {
 		t.Fatalf("%v", err)
 	}
@@ -2179,28 +2061,28 @@ func TestCluster_DeleteState(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	err = client2.DeleteValue("test/key2")
+	err = client2.Delete("test/key2")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 	time.Sleep(2 * time.Second) // wait for data to propagate
 
 	// get value from all nodes
-	val12, err = client1.GetValue("test/key2")
+	val12, err = client1.Get("test/key2")
 	if err != blasterrors.ErrNotFound {
 		t.Fatalf("%v", err)
 	}
 	if val12 != nil {
 		t.Fatalf("%v", err)
 	}
-	val22, err = client2.GetValue("test/key2")
+	val22, err = client2.Get("test/key2")
 	if err != blasterrors.ErrNotFound {
 		t.Fatalf("%v", err)
 	}
 	if val22 != nil {
 		t.Fatalf("%v", err)
 	}
-	val32, err = client3.GetValue("test/key2")
+	val32, err = client3.Get("test/key2")
 	if err != blasterrors.ErrNotFound {
 		t.Fatalf("%v", err)
 	}
@@ -2208,28 +2090,28 @@ func TestCluster_DeleteState(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	err = client3.DeleteValue("test/key3")
+	err = client3.Delete("test/key3")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 	time.Sleep(2 * time.Second) // wait for data to propagate
 
 	// get value from all nodes
-	val13, err = client1.GetValue("test/key3")
+	val13, err = client1.Get("test/key3")
 	if err != blasterrors.ErrNotFound {
 		t.Fatalf("%v", err)
 	}
 	if val13 != nil {
 		t.Fatalf("%v", err)
 	}
-	val23, err = client2.GetValue("test/key3")
+	val23, err = client2.Get("test/key3")
 	if err != blasterrors.ErrNotFound {
 		t.Fatalf("%v", err)
 	}
 	if val23 != nil {
 		t.Fatalf("%v", err)
 	}
-	val33, err = client3.GetValue("test/key3")
+	val33, err = client3.Get("test/key3")
 	if err != blasterrors.ErrNotFound {
 		t.Fatalf("%v", err)
 	}
@@ -2238,19 +2120,19 @@ func TestCluster_DeleteState(t *testing.T) {
 	}
 
 	// delete non-existing data from manager1
-	err = client1.DeleteValue("test/non-existing")
+	err = client1.Delete("test/non-existing")
 	if err == nil {
 		t.Fatalf("%v", err)
 	}
 
 	// delete non-existing data from manager2
-	err = client2.DeleteValue("test/non-existing")
+	err = client2.Delete("test/non-existing")
 	if err == nil {
 		t.Fatalf("%v", err)
 	}
 
 	// delete non-existing data from manager3
-	err = client3.DeleteValue("test/non-existing")
+	err = client3.Delete("test/non-existing")
 	if err == nil {
 		t.Fatalf("%v", err)
 	}

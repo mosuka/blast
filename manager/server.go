@@ -136,7 +136,7 @@ func (s *Server) Start() {
 			return
 		}
 
-		err = client.SetNode(s.nodeConfig.NodeId, s.nodeConfig.ToMap())
+		err = client.ClusterJoin(s.nodeConfig.NodeId, s.nodeConfig.ToMap())
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return

@@ -43,7 +43,7 @@ func managerWatch(c *cli.Context) error {
 		}
 	}()
 
-	watchClient, err := client.WatchStore(key)
+	watchClient, err := client.Watch(key)
 	if err != nil {
 		return err
 	}

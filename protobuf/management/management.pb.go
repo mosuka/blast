@@ -24,212 +24,218 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
-type LivenessProbeResponse_State int32
+type NodeHealthCheckRequest_Probe int32
 
 const (
-	LivenessProbeResponse_UNKNOWN LivenessProbeResponse_State = 0
-	LivenessProbeResponse_ALIVE   LivenessProbeResponse_State = 1
-	LivenessProbeResponse_DEAD    LivenessProbeResponse_State = 2
+	NodeHealthCheckRequest_HEALTHINESS NodeHealthCheckRequest_Probe = 0
+	NodeHealthCheckRequest_LIVENESS    NodeHealthCheckRequest_Probe = 1
+	NodeHealthCheckRequest_READINESS   NodeHealthCheckRequest_Probe = 2
 )
 
-var LivenessProbeResponse_State_name = map[int32]string{
-	0: "UNKNOWN",
-	1: "ALIVE",
-	2: "DEAD",
+var NodeHealthCheckRequest_Probe_name = map[int32]string{
+	0: "HEALTHINESS",
+	1: "LIVENESS",
+	2: "READINESS",
 }
 
-var LivenessProbeResponse_State_value = map[string]int32{
-	"UNKNOWN": 0,
-	"ALIVE":   1,
-	"DEAD":    2,
+var NodeHealthCheckRequest_Probe_value = map[string]int32{
+	"HEALTHINESS": 0,
+	"LIVENESS":    1,
+	"READINESS":   2,
 }
 
-func (x LivenessProbeResponse_State) String() string {
-	return proto.EnumName(LivenessProbeResponse_State_name, int32(x))
+func (x NodeHealthCheckRequest_Probe) String() string {
+	return proto.EnumName(NodeHealthCheckRequest_Probe_name, int32(x))
 }
 
-func (LivenessProbeResponse_State) EnumDescriptor() ([]byte, []int) {
+func (NodeHealthCheckRequest_Probe) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_5e030ad796566078, []int{0, 0}
 }
 
-type ReadinessProbeResponse_State int32
+type NodeHealthCheckResponse_State int32
 
 const (
-	ReadinessProbeResponse_UNKNOWN   ReadinessProbeResponse_State = 0
-	ReadinessProbeResponse_READY     ReadinessProbeResponse_State = 1
-	ReadinessProbeResponse_NOT_READY ReadinessProbeResponse_State = 2
+	NodeHealthCheckResponse_HEALTHY   NodeHealthCheckResponse_State = 0
+	NodeHealthCheckResponse_UNHEALTHY NodeHealthCheckResponse_State = 1
+	NodeHealthCheckResponse_ALIVE     NodeHealthCheckResponse_State = 2
+	NodeHealthCheckResponse_DEAD      NodeHealthCheckResponse_State = 3
+	NodeHealthCheckResponse_READY     NodeHealthCheckResponse_State = 4
+	NodeHealthCheckResponse_NOT_READY NodeHealthCheckResponse_State = 5
 )
 
-var ReadinessProbeResponse_State_name = map[int32]string{
-	0: "UNKNOWN",
-	1: "READY",
-	2: "NOT_READY",
+var NodeHealthCheckResponse_State_name = map[int32]string{
+	0: "HEALTHY",
+	1: "UNHEALTHY",
+	2: "ALIVE",
+	3: "DEAD",
+	4: "READY",
+	5: "NOT_READY",
 }
 
-var ReadinessProbeResponse_State_value = map[string]int32{
-	"UNKNOWN":   0,
-	"READY":     1,
-	"NOT_READY": 2,
+var NodeHealthCheckResponse_State_value = map[string]int32{
+	"HEALTHY":   0,
+	"UNHEALTHY": 1,
+	"ALIVE":     2,
+	"DEAD":      3,
+	"READY":     4,
+	"NOT_READY": 5,
 }
 
-func (x ReadinessProbeResponse_State) String() string {
-	return proto.EnumName(ReadinessProbeResponse_State_name, int32(x))
+func (x NodeHealthCheckResponse_State) String() string {
+	return proto.EnumName(NodeHealthCheckResponse_State_name, int32(x))
 }
 
-func (ReadinessProbeResponse_State) EnumDescriptor() ([]byte, []int) {
+func (NodeHealthCheckResponse_State) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_5e030ad796566078, []int{1, 0}
 }
 
-type WatchStoreResponse_Command int32
+type WatchResponse_Command int32
 
 const (
-	WatchStoreResponse_UNKNOWN WatchStoreResponse_Command = 0
-	WatchStoreResponse_SET     WatchStoreResponse_Command = 1
-	WatchStoreResponse_DELETE  WatchStoreResponse_Command = 2
+	WatchResponse_UNKNOWN WatchResponse_Command = 0
+	WatchResponse_SET     WatchResponse_Command = 1
+	WatchResponse_DELETE  WatchResponse_Command = 2
 )
 
-var WatchStoreResponse_Command_name = map[int32]string{
+var WatchResponse_Command_name = map[int32]string{
 	0: "UNKNOWN",
 	1: "SET",
 	2: "DELETE",
 }
 
-var WatchStoreResponse_Command_value = map[string]int32{
+var WatchResponse_Command_value = map[string]int32{
 	"UNKNOWN": 0,
 	"SET":     1,
 	"DELETE":  2,
 }
 
-func (x WatchStoreResponse_Command) String() string {
-	return proto.EnumName(WatchStoreResponse_Command_name, int32(x))
+func (x WatchResponse_Command) String() string {
+	return proto.EnumName(WatchResponse_Command_name, int32(x))
 }
 
-func (WatchStoreResponse_Command) EnumDescriptor() ([]byte, []int) {
+func (WatchResponse_Command) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_5e030ad796566078, []int{12, 0}
 }
 
-// use for health check
-type LivenessProbeResponse struct {
-	State                LivenessProbeResponse_State `protobuf:"varint,1,opt,name=state,proto3,enum=management.LivenessProbeResponse_State" json:"state,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
-	XXX_unrecognized     []byte                      `json:"-"`
-	XXX_sizecache        int32                       `json:"-"`
-}
-
-func (m *LivenessProbeResponse) Reset()         { *m = LivenessProbeResponse{} }
-func (m *LivenessProbeResponse) String() string { return proto.CompactTextString(m) }
-func (*LivenessProbeResponse) ProtoMessage()    {}
-func (*LivenessProbeResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5e030ad796566078, []int{0}
-}
-
-func (m *LivenessProbeResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_LivenessProbeResponse.Unmarshal(m, b)
-}
-func (m *LivenessProbeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_LivenessProbeResponse.Marshal(b, m, deterministic)
-}
-func (m *LivenessProbeResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LivenessProbeResponse.Merge(m, src)
-}
-func (m *LivenessProbeResponse) XXX_Size() int {
-	return xxx_messageInfo_LivenessProbeResponse.Size(m)
-}
-func (m *LivenessProbeResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_LivenessProbeResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_LivenessProbeResponse proto.InternalMessageInfo
-
-func (m *LivenessProbeResponse) GetState() LivenessProbeResponse_State {
-	if m != nil {
-		return m.State
-	}
-	return LivenessProbeResponse_UNKNOWN
-}
-
-// use for health check
-type ReadinessProbeResponse struct {
-	State                ReadinessProbeResponse_State `protobuf:"varint,1,opt,name=state,proto3,enum=management.ReadinessProbeResponse_State" json:"state,omitempty"`
+type NodeHealthCheckRequest struct {
+	Probe                NodeHealthCheckRequest_Probe `protobuf:"varint,1,opt,name=probe,proto3,enum=management.NodeHealthCheckRequest_Probe" json:"probe,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
 	XXX_unrecognized     []byte                       `json:"-"`
 	XXX_sizecache        int32                        `json:"-"`
 }
 
-func (m *ReadinessProbeResponse) Reset()         { *m = ReadinessProbeResponse{} }
-func (m *ReadinessProbeResponse) String() string { return proto.CompactTextString(m) }
-func (*ReadinessProbeResponse) ProtoMessage()    {}
-func (*ReadinessProbeResponse) Descriptor() ([]byte, []int) {
+func (m *NodeHealthCheckRequest) Reset()         { *m = NodeHealthCheckRequest{} }
+func (m *NodeHealthCheckRequest) String() string { return proto.CompactTextString(m) }
+func (*NodeHealthCheckRequest) ProtoMessage()    {}
+func (*NodeHealthCheckRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5e030ad796566078, []int{0}
+}
+
+func (m *NodeHealthCheckRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_NodeHealthCheckRequest.Unmarshal(m, b)
+}
+func (m *NodeHealthCheckRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_NodeHealthCheckRequest.Marshal(b, m, deterministic)
+}
+func (m *NodeHealthCheckRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NodeHealthCheckRequest.Merge(m, src)
+}
+func (m *NodeHealthCheckRequest) XXX_Size() int {
+	return xxx_messageInfo_NodeHealthCheckRequest.Size(m)
+}
+func (m *NodeHealthCheckRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_NodeHealthCheckRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NodeHealthCheckRequest proto.InternalMessageInfo
+
+func (m *NodeHealthCheckRequest) GetProbe() NodeHealthCheckRequest_Probe {
+	if m != nil {
+		return m.Probe
+	}
+	return NodeHealthCheckRequest_HEALTHINESS
+}
+
+type NodeHealthCheckResponse struct {
+	State                NodeHealthCheckResponse_State `protobuf:"varint,1,opt,name=state,proto3,enum=management.NodeHealthCheckResponse_State" json:"state,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
+	XXX_unrecognized     []byte                        `json:"-"`
+	XXX_sizecache        int32                         `json:"-"`
+}
+
+func (m *NodeHealthCheckResponse) Reset()         { *m = NodeHealthCheckResponse{} }
+func (m *NodeHealthCheckResponse) String() string { return proto.CompactTextString(m) }
+func (*NodeHealthCheckResponse) ProtoMessage()    {}
+func (*NodeHealthCheckResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5e030ad796566078, []int{1}
 }
 
-func (m *ReadinessProbeResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ReadinessProbeResponse.Unmarshal(m, b)
+func (m *NodeHealthCheckResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_NodeHealthCheckResponse.Unmarshal(m, b)
 }
-func (m *ReadinessProbeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ReadinessProbeResponse.Marshal(b, m, deterministic)
+func (m *NodeHealthCheckResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_NodeHealthCheckResponse.Marshal(b, m, deterministic)
 }
-func (m *ReadinessProbeResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ReadinessProbeResponse.Merge(m, src)
+func (m *NodeHealthCheckResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NodeHealthCheckResponse.Merge(m, src)
 }
-func (m *ReadinessProbeResponse) XXX_Size() int {
-	return xxx_messageInfo_ReadinessProbeResponse.Size(m)
+func (m *NodeHealthCheckResponse) XXX_Size() int {
+	return xxx_messageInfo_NodeHealthCheckResponse.Size(m)
 }
-func (m *ReadinessProbeResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_ReadinessProbeResponse.DiscardUnknown(m)
+func (m *NodeHealthCheckResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_NodeHealthCheckResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ReadinessProbeResponse proto.InternalMessageInfo
+var xxx_messageInfo_NodeHealthCheckResponse proto.InternalMessageInfo
 
-func (m *ReadinessProbeResponse) GetState() ReadinessProbeResponse_State {
+func (m *NodeHealthCheckResponse) GetState() NodeHealthCheckResponse_State {
 	if m != nil {
 		return m.State
 	}
-	return ReadinessProbeResponse_UNKNOWN
+	return NodeHealthCheckResponse_HEALTHY
 }
 
-// use for raft cluster status
-type GetNodeRequest struct {
+// use for raft
+type NodeInfoRequest struct {
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetNodeRequest) Reset()         { *m = GetNodeRequest{} }
-func (m *GetNodeRequest) String() string { return proto.CompactTextString(m) }
-func (*GetNodeRequest) ProtoMessage()    {}
-func (*GetNodeRequest) Descriptor() ([]byte, []int) {
+func (m *NodeInfoRequest) Reset()         { *m = NodeInfoRequest{} }
+func (m *NodeInfoRequest) String() string { return proto.CompactTextString(m) }
+func (*NodeInfoRequest) ProtoMessage()    {}
+func (*NodeInfoRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5e030ad796566078, []int{2}
 }
 
-func (m *GetNodeRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetNodeRequest.Unmarshal(m, b)
+func (m *NodeInfoRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_NodeInfoRequest.Unmarshal(m, b)
 }
-func (m *GetNodeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetNodeRequest.Marshal(b, m, deterministic)
+func (m *NodeInfoRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_NodeInfoRequest.Marshal(b, m, deterministic)
 }
-func (m *GetNodeRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetNodeRequest.Merge(m, src)
+func (m *NodeInfoRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NodeInfoRequest.Merge(m, src)
 }
-func (m *GetNodeRequest) XXX_Size() int {
-	return xxx_messageInfo_GetNodeRequest.Size(m)
+func (m *NodeInfoRequest) XXX_Size() int {
+	return xxx_messageInfo_NodeInfoRequest.Size(m)
 }
-func (m *GetNodeRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetNodeRequest.DiscardUnknown(m)
+func (m *NodeInfoRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_NodeInfoRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetNodeRequest proto.InternalMessageInfo
+var xxx_messageInfo_NodeInfoRequest proto.InternalMessageInfo
 
-func (m *GetNodeRequest) GetId() string {
+func (m *NodeInfoRequest) GetId() string {
 	if m != nil {
 		return m.Id
 	}
 	return ""
 }
 
-// use for raft cluster status
-type GetNodeResponse struct {
+type NodeInfoResponse struct {
 	NodeConfig           *any.Any `protobuf:"bytes,1,opt,name=nodeConfig,proto3" json:"nodeConfig,omitempty"`
 	State                string   `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -237,47 +243,46 @@ type GetNodeResponse struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetNodeResponse) Reset()         { *m = GetNodeResponse{} }
-func (m *GetNodeResponse) String() string { return proto.CompactTextString(m) }
-func (*GetNodeResponse) ProtoMessage()    {}
-func (*GetNodeResponse) Descriptor() ([]byte, []int) {
+func (m *NodeInfoResponse) Reset()         { *m = NodeInfoResponse{} }
+func (m *NodeInfoResponse) String() string { return proto.CompactTextString(m) }
+func (*NodeInfoResponse) ProtoMessage()    {}
+func (*NodeInfoResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5e030ad796566078, []int{3}
 }
 
-func (m *GetNodeResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetNodeResponse.Unmarshal(m, b)
+func (m *NodeInfoResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_NodeInfoResponse.Unmarshal(m, b)
 }
-func (m *GetNodeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetNodeResponse.Marshal(b, m, deterministic)
+func (m *NodeInfoResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_NodeInfoResponse.Marshal(b, m, deterministic)
 }
-func (m *GetNodeResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetNodeResponse.Merge(m, src)
+func (m *NodeInfoResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NodeInfoResponse.Merge(m, src)
 }
-func (m *GetNodeResponse) XXX_Size() int {
-	return xxx_messageInfo_GetNodeResponse.Size(m)
+func (m *NodeInfoResponse) XXX_Size() int {
+	return xxx_messageInfo_NodeInfoResponse.Size(m)
 }
-func (m *GetNodeResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetNodeResponse.DiscardUnknown(m)
+func (m *NodeInfoResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_NodeInfoResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetNodeResponse proto.InternalMessageInfo
+var xxx_messageInfo_NodeInfoResponse proto.InternalMessageInfo
 
-func (m *GetNodeResponse) GetNodeConfig() *any.Any {
+func (m *NodeInfoResponse) GetNodeConfig() *any.Any {
 	if m != nil {
 		return m.NodeConfig
 	}
 	return nil
 }
 
-func (m *GetNodeResponse) GetState() string {
+func (m *NodeInfoResponse) GetState() string {
 	if m != nil {
 		return m.State
 	}
 	return ""
 }
 
-// use for raft cluster status
-type SetNodeRequest struct {
+type ClusterJoinRequest struct {
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	NodeConfig           *any.Any `protobuf:"bytes,2,opt,name=nodeConfig,proto3" json:"nodeConfig,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -285,204 +290,202 @@ type SetNodeRequest struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *SetNodeRequest) Reset()         { *m = SetNodeRequest{} }
-func (m *SetNodeRequest) String() string { return proto.CompactTextString(m) }
-func (*SetNodeRequest) ProtoMessage()    {}
-func (*SetNodeRequest) Descriptor() ([]byte, []int) {
+func (m *ClusterJoinRequest) Reset()         { *m = ClusterJoinRequest{} }
+func (m *ClusterJoinRequest) String() string { return proto.CompactTextString(m) }
+func (*ClusterJoinRequest) ProtoMessage()    {}
+func (*ClusterJoinRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5e030ad796566078, []int{4}
 }
 
-func (m *SetNodeRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_SetNodeRequest.Unmarshal(m, b)
+func (m *ClusterJoinRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ClusterJoinRequest.Unmarshal(m, b)
 }
-func (m *SetNodeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_SetNodeRequest.Marshal(b, m, deterministic)
+func (m *ClusterJoinRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ClusterJoinRequest.Marshal(b, m, deterministic)
 }
-func (m *SetNodeRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SetNodeRequest.Merge(m, src)
+func (m *ClusterJoinRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ClusterJoinRequest.Merge(m, src)
 }
-func (m *SetNodeRequest) XXX_Size() int {
-	return xxx_messageInfo_SetNodeRequest.Size(m)
+func (m *ClusterJoinRequest) XXX_Size() int {
+	return xxx_messageInfo_ClusterJoinRequest.Size(m)
 }
-func (m *SetNodeRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_SetNodeRequest.DiscardUnknown(m)
+func (m *ClusterJoinRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ClusterJoinRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_SetNodeRequest proto.InternalMessageInfo
+var xxx_messageInfo_ClusterJoinRequest proto.InternalMessageInfo
 
-func (m *SetNodeRequest) GetId() string {
+func (m *ClusterJoinRequest) GetId() string {
 	if m != nil {
 		return m.Id
 	}
 	return ""
 }
 
-func (m *SetNodeRequest) GetNodeConfig() *any.Any {
+func (m *ClusterJoinRequest) GetNodeConfig() *any.Any {
 	if m != nil {
 		return m.NodeConfig
 	}
 	return nil
 }
 
-// use for raft cluster status
-type DeleteNodeRequest struct {
+type ClusterLeaveRequest struct {
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteNodeRequest) Reset()         { *m = DeleteNodeRequest{} }
-func (m *DeleteNodeRequest) String() string { return proto.CompactTextString(m) }
-func (*DeleteNodeRequest) ProtoMessage()    {}
-func (*DeleteNodeRequest) Descriptor() ([]byte, []int) {
+func (m *ClusterLeaveRequest) Reset()         { *m = ClusterLeaveRequest{} }
+func (m *ClusterLeaveRequest) String() string { return proto.CompactTextString(m) }
+func (*ClusterLeaveRequest) ProtoMessage()    {}
+func (*ClusterLeaveRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5e030ad796566078, []int{5}
 }
 
-func (m *DeleteNodeRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DeleteNodeRequest.Unmarshal(m, b)
+func (m *ClusterLeaveRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ClusterLeaveRequest.Unmarshal(m, b)
 }
-func (m *DeleteNodeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DeleteNodeRequest.Marshal(b, m, deterministic)
+func (m *ClusterLeaveRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ClusterLeaveRequest.Marshal(b, m, deterministic)
 }
-func (m *DeleteNodeRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeleteNodeRequest.Merge(m, src)
+func (m *ClusterLeaveRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ClusterLeaveRequest.Merge(m, src)
 }
-func (m *DeleteNodeRequest) XXX_Size() int {
-	return xxx_messageInfo_DeleteNodeRequest.Size(m)
+func (m *ClusterLeaveRequest) XXX_Size() int {
+	return xxx_messageInfo_ClusterLeaveRequest.Size(m)
 }
-func (m *DeleteNodeRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeleteNodeRequest.DiscardUnknown(m)
+func (m *ClusterLeaveRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ClusterLeaveRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_DeleteNodeRequest proto.InternalMessageInfo
+var xxx_messageInfo_ClusterLeaveRequest proto.InternalMessageInfo
 
-func (m *DeleteNodeRequest) GetId() string {
+func (m *ClusterLeaveRequest) GetId() string {
 	if m != nil {
 		return m.Id
 	}
 	return ""
 }
 
-// use for raft cluster status
-type GetClusterResponse struct {
+type ClusterInfoResponse struct {
 	Cluster              *any.Any `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetClusterResponse) Reset()         { *m = GetClusterResponse{} }
-func (m *GetClusterResponse) String() string { return proto.CompactTextString(m) }
-func (*GetClusterResponse) ProtoMessage()    {}
-func (*GetClusterResponse) Descriptor() ([]byte, []int) {
+func (m *ClusterInfoResponse) Reset()         { *m = ClusterInfoResponse{} }
+func (m *ClusterInfoResponse) String() string { return proto.CompactTextString(m) }
+func (*ClusterInfoResponse) ProtoMessage()    {}
+func (*ClusterInfoResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5e030ad796566078, []int{6}
 }
 
-func (m *GetClusterResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetClusterResponse.Unmarshal(m, b)
+func (m *ClusterInfoResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ClusterInfoResponse.Unmarshal(m, b)
 }
-func (m *GetClusterResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetClusterResponse.Marshal(b, m, deterministic)
+func (m *ClusterInfoResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ClusterInfoResponse.Marshal(b, m, deterministic)
 }
-func (m *GetClusterResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetClusterResponse.Merge(m, src)
+func (m *ClusterInfoResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ClusterInfoResponse.Merge(m, src)
 }
-func (m *GetClusterResponse) XXX_Size() int {
-	return xxx_messageInfo_GetClusterResponse.Size(m)
+func (m *ClusterInfoResponse) XXX_Size() int {
+	return xxx_messageInfo_ClusterInfoResponse.Size(m)
 }
-func (m *GetClusterResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetClusterResponse.DiscardUnknown(m)
+func (m *ClusterInfoResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ClusterInfoResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetClusterResponse proto.InternalMessageInfo
+var xxx_messageInfo_ClusterInfoResponse proto.InternalMessageInfo
 
-func (m *GetClusterResponse) GetCluster() *any.Any {
+func (m *ClusterInfoResponse) GetCluster() *any.Any {
 	if m != nil {
 		return m.Cluster
 	}
 	return nil
 }
 
-type GetValueRequest struct {
+type GetRequest struct {
 	Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetValueRequest) Reset()         { *m = GetValueRequest{} }
-func (m *GetValueRequest) String() string { return proto.CompactTextString(m) }
-func (*GetValueRequest) ProtoMessage()    {}
-func (*GetValueRequest) Descriptor() ([]byte, []int) {
+func (m *GetRequest) Reset()         { *m = GetRequest{} }
+func (m *GetRequest) String() string { return proto.CompactTextString(m) }
+func (*GetRequest) ProtoMessage()    {}
+func (*GetRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5e030ad796566078, []int{7}
 }
 
-func (m *GetValueRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetValueRequest.Unmarshal(m, b)
+func (m *GetRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetRequest.Unmarshal(m, b)
 }
-func (m *GetValueRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetValueRequest.Marshal(b, m, deterministic)
+func (m *GetRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetRequest.Marshal(b, m, deterministic)
 }
-func (m *GetValueRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetValueRequest.Merge(m, src)
+func (m *GetRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetRequest.Merge(m, src)
 }
-func (m *GetValueRequest) XXX_Size() int {
-	return xxx_messageInfo_GetValueRequest.Size(m)
+func (m *GetRequest) XXX_Size() int {
+	return xxx_messageInfo_GetRequest.Size(m)
 }
-func (m *GetValueRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetValueRequest.DiscardUnknown(m)
+func (m *GetRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetValueRequest proto.InternalMessageInfo
+var xxx_messageInfo_GetRequest proto.InternalMessageInfo
 
-func (m *GetValueRequest) GetKey() string {
+func (m *GetRequest) GetKey() string {
 	if m != nil {
 		return m.Key
 	}
 	return ""
 }
 
-type GetValueResponse struct {
+type GetResponse struct {
 	Value                *any.Any `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetValueResponse) Reset()         { *m = GetValueResponse{} }
-func (m *GetValueResponse) String() string { return proto.CompactTextString(m) }
-func (*GetValueResponse) ProtoMessage()    {}
-func (*GetValueResponse) Descriptor() ([]byte, []int) {
+func (m *GetResponse) Reset()         { *m = GetResponse{} }
+func (m *GetResponse) String() string { return proto.CompactTextString(m) }
+func (*GetResponse) ProtoMessage()    {}
+func (*GetResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5e030ad796566078, []int{8}
 }
 
-func (m *GetValueResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetValueResponse.Unmarshal(m, b)
+func (m *GetResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetResponse.Unmarshal(m, b)
 }
-func (m *GetValueResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetValueResponse.Marshal(b, m, deterministic)
+func (m *GetResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetResponse.Marshal(b, m, deterministic)
 }
-func (m *GetValueResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetValueResponse.Merge(m, src)
+func (m *GetResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetResponse.Merge(m, src)
 }
-func (m *GetValueResponse) XXX_Size() int {
-	return xxx_messageInfo_GetValueResponse.Size(m)
+func (m *GetResponse) XXX_Size() int {
+	return xxx_messageInfo_GetResponse.Size(m)
 }
-func (m *GetValueResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetValueResponse.DiscardUnknown(m)
+func (m *GetResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetValueResponse proto.InternalMessageInfo
+var xxx_messageInfo_GetResponse proto.InternalMessageInfo
 
-func (m *GetValueResponse) GetValue() *any.Any {
+func (m *GetResponse) GetValue() *any.Any {
 	if m != nil {
 		return m.Value
 	}
 	return nil
 }
 
-type SetValueRequest struct {
+type SetRequest struct {
 	Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	Value                *any.Any `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -490,172 +493,172 @@ type SetValueRequest struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *SetValueRequest) Reset()         { *m = SetValueRequest{} }
-func (m *SetValueRequest) String() string { return proto.CompactTextString(m) }
-func (*SetValueRequest) ProtoMessage()    {}
-func (*SetValueRequest) Descriptor() ([]byte, []int) {
+func (m *SetRequest) Reset()         { *m = SetRequest{} }
+func (m *SetRequest) String() string { return proto.CompactTextString(m) }
+func (*SetRequest) ProtoMessage()    {}
+func (*SetRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5e030ad796566078, []int{9}
 }
 
-func (m *SetValueRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_SetValueRequest.Unmarshal(m, b)
+func (m *SetRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SetRequest.Unmarshal(m, b)
 }
-func (m *SetValueRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_SetValueRequest.Marshal(b, m, deterministic)
+func (m *SetRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SetRequest.Marshal(b, m, deterministic)
 }
-func (m *SetValueRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SetValueRequest.Merge(m, src)
+func (m *SetRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SetRequest.Merge(m, src)
 }
-func (m *SetValueRequest) XXX_Size() int {
-	return xxx_messageInfo_SetValueRequest.Size(m)
+func (m *SetRequest) XXX_Size() int {
+	return xxx_messageInfo_SetRequest.Size(m)
 }
-func (m *SetValueRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_SetValueRequest.DiscardUnknown(m)
+func (m *SetRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SetRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_SetValueRequest proto.InternalMessageInfo
+var xxx_messageInfo_SetRequest proto.InternalMessageInfo
 
-func (m *SetValueRequest) GetKey() string {
+func (m *SetRequest) GetKey() string {
 	if m != nil {
 		return m.Key
 	}
 	return ""
 }
 
-func (m *SetValueRequest) GetValue() *any.Any {
+func (m *SetRequest) GetValue() *any.Any {
 	if m != nil {
 		return m.Value
 	}
 	return nil
 }
 
-type DeleteValueRequest struct {
+type DeleteRequest struct {
 	Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteValueRequest) Reset()         { *m = DeleteValueRequest{} }
-func (m *DeleteValueRequest) String() string { return proto.CompactTextString(m) }
-func (*DeleteValueRequest) ProtoMessage()    {}
-func (*DeleteValueRequest) Descriptor() ([]byte, []int) {
+func (m *DeleteRequest) Reset()         { *m = DeleteRequest{} }
+func (m *DeleteRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteRequest) ProtoMessage()    {}
+func (*DeleteRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5e030ad796566078, []int{10}
 }
 
-func (m *DeleteValueRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DeleteValueRequest.Unmarshal(m, b)
+func (m *DeleteRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteRequest.Unmarshal(m, b)
 }
-func (m *DeleteValueRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DeleteValueRequest.Marshal(b, m, deterministic)
+func (m *DeleteRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteRequest.Marshal(b, m, deterministic)
 }
-func (m *DeleteValueRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeleteValueRequest.Merge(m, src)
+func (m *DeleteRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteRequest.Merge(m, src)
 }
-func (m *DeleteValueRequest) XXX_Size() int {
-	return xxx_messageInfo_DeleteValueRequest.Size(m)
+func (m *DeleteRequest) XXX_Size() int {
+	return xxx_messageInfo_DeleteRequest.Size(m)
 }
-func (m *DeleteValueRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeleteValueRequest.DiscardUnknown(m)
+func (m *DeleteRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_DeleteValueRequest proto.InternalMessageInfo
+var xxx_messageInfo_DeleteRequest proto.InternalMessageInfo
 
-func (m *DeleteValueRequest) GetKey() string {
+func (m *DeleteRequest) GetKey() string {
 	if m != nil {
 		return m.Key
 	}
 	return ""
 }
 
-type WatchStoreRequest struct {
+type WatchRequest struct {
 	Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *WatchStoreRequest) Reset()         { *m = WatchStoreRequest{} }
-func (m *WatchStoreRequest) String() string { return proto.CompactTextString(m) }
-func (*WatchStoreRequest) ProtoMessage()    {}
-func (*WatchStoreRequest) Descriptor() ([]byte, []int) {
+func (m *WatchRequest) Reset()         { *m = WatchRequest{} }
+func (m *WatchRequest) String() string { return proto.CompactTextString(m) }
+func (*WatchRequest) ProtoMessage()    {}
+func (*WatchRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5e030ad796566078, []int{11}
 }
 
-func (m *WatchStoreRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_WatchStoreRequest.Unmarshal(m, b)
+func (m *WatchRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_WatchRequest.Unmarshal(m, b)
 }
-func (m *WatchStoreRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_WatchStoreRequest.Marshal(b, m, deterministic)
+func (m *WatchRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_WatchRequest.Marshal(b, m, deterministic)
 }
-func (m *WatchStoreRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_WatchStoreRequest.Merge(m, src)
+func (m *WatchRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WatchRequest.Merge(m, src)
 }
-func (m *WatchStoreRequest) XXX_Size() int {
-	return xxx_messageInfo_WatchStoreRequest.Size(m)
+func (m *WatchRequest) XXX_Size() int {
+	return xxx_messageInfo_WatchRequest.Size(m)
 }
-func (m *WatchStoreRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_WatchStoreRequest.DiscardUnknown(m)
+func (m *WatchRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_WatchRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_WatchStoreRequest proto.InternalMessageInfo
+var xxx_messageInfo_WatchRequest proto.InternalMessageInfo
 
-func (m *WatchStoreRequest) GetKey() string {
+func (m *WatchRequest) GetKey() string {
 	if m != nil {
 		return m.Key
 	}
 	return ""
 }
 
-type WatchStoreResponse struct {
-	Command              WatchStoreResponse_Command `protobuf:"varint,1,opt,name=command,proto3,enum=management.WatchStoreResponse_Command" json:"command,omitempty"`
-	Key                  string                     `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
-	Value                *any.Any                   `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
-	XXX_unrecognized     []byte                     `json:"-"`
-	XXX_sizecache        int32                      `json:"-"`
+type WatchResponse struct {
+	Command              WatchResponse_Command `protobuf:"varint,1,opt,name=command,proto3,enum=management.WatchResponse_Command" json:"command,omitempty"`
+	Key                  string                `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
+	Value                *any.Any              `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
 }
 
-func (m *WatchStoreResponse) Reset()         { *m = WatchStoreResponse{} }
-func (m *WatchStoreResponse) String() string { return proto.CompactTextString(m) }
-func (*WatchStoreResponse) ProtoMessage()    {}
-func (*WatchStoreResponse) Descriptor() ([]byte, []int) {
+func (m *WatchResponse) Reset()         { *m = WatchResponse{} }
+func (m *WatchResponse) String() string { return proto.CompactTextString(m) }
+func (*WatchResponse) ProtoMessage()    {}
+func (*WatchResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5e030ad796566078, []int{12}
 }
 
-func (m *WatchStoreResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_WatchStoreResponse.Unmarshal(m, b)
+func (m *WatchResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_WatchResponse.Unmarshal(m, b)
 }
-func (m *WatchStoreResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_WatchStoreResponse.Marshal(b, m, deterministic)
+func (m *WatchResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_WatchResponse.Marshal(b, m, deterministic)
 }
-func (m *WatchStoreResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_WatchStoreResponse.Merge(m, src)
+func (m *WatchResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WatchResponse.Merge(m, src)
 }
-func (m *WatchStoreResponse) XXX_Size() int {
-	return xxx_messageInfo_WatchStoreResponse.Size(m)
+func (m *WatchResponse) XXX_Size() int {
+	return xxx_messageInfo_WatchResponse.Size(m)
 }
-func (m *WatchStoreResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_WatchStoreResponse.DiscardUnknown(m)
+func (m *WatchResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_WatchResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_WatchStoreResponse proto.InternalMessageInfo
+var xxx_messageInfo_WatchResponse proto.InternalMessageInfo
 
-func (m *WatchStoreResponse) GetCommand() WatchStoreResponse_Command {
+func (m *WatchResponse) GetCommand() WatchResponse_Command {
 	if m != nil {
 		return m.Command
 	}
-	return WatchStoreResponse_UNKNOWN
+	return WatchResponse_UNKNOWN
 }
 
-func (m *WatchStoreResponse) GetKey() string {
+func (m *WatchResponse) GetKey() string {
 	if m != nil {
 		return m.Key
 	}
 	return ""
 }
 
-func (m *WatchStoreResponse) GetValue() *any.Any {
+func (m *WatchResponse) GetValue() *any.Any {
 	if m != nil {
 		return m.Value
 	}
@@ -663,22 +666,22 @@ func (m *WatchStoreResponse) GetValue() *any.Any {
 }
 
 func init() {
-	proto.RegisterEnum("management.LivenessProbeResponse_State", LivenessProbeResponse_State_name, LivenessProbeResponse_State_value)
-	proto.RegisterEnum("management.ReadinessProbeResponse_State", ReadinessProbeResponse_State_name, ReadinessProbeResponse_State_value)
-	proto.RegisterEnum("management.WatchStoreResponse_Command", WatchStoreResponse_Command_name, WatchStoreResponse_Command_value)
-	proto.RegisterType((*LivenessProbeResponse)(nil), "management.LivenessProbeResponse")
-	proto.RegisterType((*ReadinessProbeResponse)(nil), "management.ReadinessProbeResponse")
-	proto.RegisterType((*GetNodeRequest)(nil), "management.GetNodeRequest")
-	proto.RegisterType((*GetNodeResponse)(nil), "management.GetNodeResponse")
-	proto.RegisterType((*SetNodeRequest)(nil), "management.SetNodeRequest")
-	proto.RegisterType((*DeleteNodeRequest)(nil), "management.DeleteNodeRequest")
-	proto.RegisterType((*GetClusterResponse)(nil), "management.GetClusterResponse")
-	proto.RegisterType((*GetValueRequest)(nil), "management.GetValueRequest")
-	proto.RegisterType((*GetValueResponse)(nil), "management.GetValueResponse")
-	proto.RegisterType((*SetValueRequest)(nil), "management.SetValueRequest")
-	proto.RegisterType((*DeleteValueRequest)(nil), "management.DeleteValueRequest")
-	proto.RegisterType((*WatchStoreRequest)(nil), "management.WatchStoreRequest")
-	proto.RegisterType((*WatchStoreResponse)(nil), "management.WatchStoreResponse")
+	proto.RegisterEnum("management.NodeHealthCheckRequest_Probe", NodeHealthCheckRequest_Probe_name, NodeHealthCheckRequest_Probe_value)
+	proto.RegisterEnum("management.NodeHealthCheckResponse_State", NodeHealthCheckResponse_State_name, NodeHealthCheckResponse_State_value)
+	proto.RegisterEnum("management.WatchResponse_Command", WatchResponse_Command_name, WatchResponse_Command_value)
+	proto.RegisterType((*NodeHealthCheckRequest)(nil), "management.NodeHealthCheckRequest")
+	proto.RegisterType((*NodeHealthCheckResponse)(nil), "management.NodeHealthCheckResponse")
+	proto.RegisterType((*NodeInfoRequest)(nil), "management.NodeInfoRequest")
+	proto.RegisterType((*NodeInfoResponse)(nil), "management.NodeInfoResponse")
+	proto.RegisterType((*ClusterJoinRequest)(nil), "management.ClusterJoinRequest")
+	proto.RegisterType((*ClusterLeaveRequest)(nil), "management.ClusterLeaveRequest")
+	proto.RegisterType((*ClusterInfoResponse)(nil), "management.ClusterInfoResponse")
+	proto.RegisterType((*GetRequest)(nil), "management.GetRequest")
+	proto.RegisterType((*GetResponse)(nil), "management.GetResponse")
+	proto.RegisterType((*SetRequest)(nil), "management.SetRequest")
+	proto.RegisterType((*DeleteRequest)(nil), "management.DeleteRequest")
+	proto.RegisterType((*WatchRequest)(nil), "management.WatchRequest")
+	proto.RegisterType((*WatchResponse)(nil), "management.WatchResponse")
 }
 
 func init() {
@@ -686,50 +689,52 @@ func init() {
 }
 
 var fileDescriptor_5e030ad796566078 = []byte{
-	// 674 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x56, 0xef, 0x4f, 0xd3, 0x50,
-	0x14, 0x5d, 0x8b, 0xa3, 0xe3, 0x22, 0xa3, 0xbc, 0x20, 0xd1, 0xa2, 0x04, 0x1f, 0x8a, 0x28, 0xb1,
-	0x33, 0xe8, 0x47, 0x45, 0x27, 0xad, 0x8b, 0x3a, 0x37, 0xd3, 0x22, 0x44, 0x13, 0x63, 0xba, 0xed,
-	0x31, 0x16, 0xd6, 0xbe, 0xb9, 0xbe, 0x91, 0xf0, 0xd1, 0x6f, 0xfe, 0x5b, 0xfe, 0x47, 0xfe, 0x09,
-	0x66, 0xfd, 0xfd, 0xbb, 0x24, 0x7e, 0x6b, 0xdf, 0xbd, 0xf7, 0x9c, 0x73, 0xcf, 0xde, 0x69, 0x06,
-	0x0f, 0x26, 0x53, 0xca, 0x68, 0x6f, 0x76, 0xd6, 0x30, 0x0d, 0xcb, 0x18, 0x12, 0x93, 0x58, 0x2c,
-	0xf2, 0x28, 0x3b, 0x65, 0x04, 0xe1, 0x89, 0x74, 0x67, 0x48, 0xe9, 0x70, 0x4c, 0x1a, 0xc1, 0xa0,
-	0x61, 0x5d, 0xb9, 0x6d, 0xd2, 0x66, 0xb2, 0x44, 0xcc, 0x09, 0xf3, 0x8a, 0xf8, 0x17, 0x07, 0xb7,
-	0xda, 0xa3, 0x4b, 0x62, 0x11, 0xdb, 0xfe, 0x3c, 0xa5, 0x3d, 0xa2, 0x11, 0x7b, 0x42, 0x2d, 0x9b,
-	0xa0, 0x57, 0x50, 0xb5, 0x99, 0xc1, 0xc8, 0x6d, 0x6e, 0x9b, 0xdb, 0xab, 0x1f, 0x3c, 0x92, 0x23,
-	0xfc, 0x99, 0x13, 0xb2, 0x3e, 0x6f, 0xd7, 0xdc, 0x29, 0xfc, 0x18, 0xaa, 0xce, 0x3b, 0x5a, 0x06,
-	0xe1, 0x4b, 0xe7, 0x63, 0xa7, 0x7b, 0xda, 0x11, 0x2b, 0x68, 0x09, 0xaa, 0xcd, 0xf6, 0xfb, 0x13,
-	0x55, 0xe4, 0x50, 0x0d, 0x6e, 0x28, 0x6a, 0x53, 0x11, 0x79, 0xfc, 0x9b, 0x83, 0x0d, 0x8d, 0x18,
-	0x83, 0x51, 0x5a, 0xc4, 0x61, 0x5c, 0xc4, 0x5e, 0x54, 0x44, 0xf6, 0x48, 0x5c, 0x85, 0x9c, 0xa7,
-	0x42, 0x53, 0x9b, 0xca, 0x57, 0x91, 0x43, 0x2b, 0xb0, 0xd4, 0xe9, 0x1e, 0xff, 0x70, 0x5f, 0x79,
-	0xbc, 0x0d, 0xf5, 0x16, 0x61, 0x1d, 0x3a, 0x20, 0x1a, 0xf9, 0x39, 0x23, 0x36, 0x43, 0x75, 0xe0,
-	0x47, 0x03, 0x87, 0x7e, 0x49, 0xe3, 0x47, 0x03, 0xfc, 0x1d, 0x56, 0x83, 0x0e, 0x4f, 0xe4, 0x0b,
-	0x00, 0x8b, 0x0e, 0xc8, 0x11, 0xb5, 0xce, 0x46, 0x43, 0xa7, 0x75, 0xf9, 0x60, 0x5d, 0x76, 0x5d,
-	0x97, 0x7d, 0xd7, 0xe5, 0xa6, 0x75, 0xa5, 0x45, 0xfa, 0xd0, 0xba, 0xbf, 0x1a, 0xef, 0x60, 0x7b,
-	0x82, 0x4f, 0xa0, 0xae, 0x17, 0x0a, 0x48, 0xb0, 0xf1, 0xd7, 0x63, 0xc3, 0x3b, 0xb0, 0xa6, 0x90,
-	0x31, 0x61, 0xa4, 0x68, 0x37, 0x05, 0x50, 0x8b, 0xb0, 0xa3, 0xf1, 0xcc, 0x66, 0x64, 0x1a, 0xac,
-	0x27, 0x83, 0xd0, 0x77, 0x8f, 0x0a, 0x77, 0xf3, 0x9b, 0xf0, 0x8e, 0xe3, 0xd0, 0x89, 0x31, 0x9e,
-	0x05, 0x44, 0x22, 0x2c, 0x5c, 0x90, 0x2b, 0x8f, 0x69, 0xfe, 0x88, 0x0f, 0x41, 0x0c, 0x9b, 0x3c,
-	0xa2, 0x27, 0x50, 0xbd, 0x9c, 0x1f, 0x14, 0xd2, 0xb8, 0x2d, 0xb8, 0x0b, 0xab, 0x7a, 0x19, 0x49,
-	0x08, 0xc8, 0x97, 0x03, 0xee, 0x02, 0x72, 0x0d, 0x2a, 0x11, 0xfe, 0x10, 0xd6, 0x4e, 0x0d, 0xd6,
-	0x3f, 0xd7, 0x19, 0x9d, 0x16, 0xb4, 0xfd, 0xe1, 0x00, 0x45, 0xfb, 0xbc, 0x15, 0xdf, 0x80, 0xd0,
-	0xa7, 0xa6, 0x69, 0x58, 0x03, 0xef, 0x46, 0xef, 0x46, 0x6f, 0x74, 0x7a, 0x40, 0x3e, 0x72, 0xbb,
-	0x35, 0x7f, 0xcc, 0xa7, 0xe2, 0x33, 0xb6, 0x5c, 0x28, 0xdf, 0x72, 0x1f, 0x04, 0x0f, 0x31, 0x9e,
-	0x08, 0x01, 0x16, 0x74, 0xf5, 0x58, 0xe4, 0x10, 0xc0, 0xa2, 0xa2, 0xb6, 0xd5, 0x63, 0x55, 0xe4,
-	0x0f, 0xfe, 0x2e, 0x02, 0x7c, 0x0a, 0xd4, 0xa1, 0x36, 0xac, 0xc4, 0x72, 0x8f, 0x36, 0x52, 0x4c,
-	0xea, 0xfc, 0xcb, 0x22, 0xdd, 0x2f, 0xfd, 0x54, 0xe0, 0x0a, 0xea, 0x40, 0x3d, 0x1e, 0xe0, 0x5c,
-	0x38, 0x5c, 0x1e, 0x7a, 0x5c, 0x41, 0x0a, 0x08, 0x5e, 0x2e, 0x91, 0x14, 0x1d, 0x88, 0xc7, 0x59,
-	0xda, 0xcc, 0xac, 0x05, 0x28, 0xaf, 0x41, 0xd0, 0xb3, 0x50, 0xe2, 0x99, 0x94, 0x72, 0xa4, 0xe2,
-	0x0a, 0x52, 0x01, 0xc2, 0x9c, 0xa1, 0x7b, 0x51, 0x8c, 0x54, 0xfe, 0x0a, 0x60, 0xde, 0x01, 0x84,
-	0x49, 0xcc, 0x75, 0x66, 0x2b, 0xb1, 0x4c, 0x22, 0xb9, 0xb8, 0x82, 0x3e, 0xc0, 0x4d, 0xe7, 0x52,
-	0xfd, 0x37, 0xd2, 0x33, 0x0e, 0xb5, 0xa0, 0xe6, 0x47, 0x16, 0x25, 0x6d, 0x8c, 0x86, 0x46, 0xba,
-	0x9b, 0x5d, 0x0c, 0x44, 0x35, 0xa1, 0xa6, 0x67, 0x02, 0x25, 0x12, 0x5d, 0xe0, 0x4f, 0x0b, 0x96,
-	0x23, 0x69, 0x45, 0x5b, 0x69, 0x9f, 0xaf, 0x09, 0xd4, 0x05, 0x08, 0x53, 0x17, 0xff, 0xbd, 0x52,
-	0x31, 0x8f, 0xbb, 0x94, 0x0e, 0xab, 0xe3, 0xd2, 0x4b, 0xa8, 0xe9, 0x96, 0x31, 0xb1, 0xcf, 0x29,
-	0xcb, 0x75, 0x3b, 0x57, 0xce, 0xdb, 0xa7, 0xdf, 0xf6, 0x87, 0x23, 0x76, 0x3e, 0xeb, 0xc9, 0x7d,
-	0x6a, 0x36, 0x4c, 0x6a, 0xcf, 0x2e, 0x8c, 0x46, 0x6f, 0x6c, 0xd8, 0xac, 0x91, 0xf1, 0x97, 0xa0,
-	0xb7, 0xe8, 0x1c, 0x3e, 0xff, 0x17, 0x00, 0x00, 0xff, 0xff, 0x12, 0x52, 0x02, 0x9b, 0x30, 0x08,
-	0x00, 0x00,
+	// 719 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x55, 0xff, 0x6f, 0xd2, 0x40,
+	0x1c, 0xa5, 0x65, 0x05, 0xf6, 0x61, 0x5f, 0x9a, 0x73, 0xd9, 0x17, 0x66, 0xe6, 0x56, 0x35, 0x99,
+	0x2e, 0x16, 0x33, 0x35, 0x6a, 0xfc, 0x8a, 0xd0, 0x0c, 0x36, 0xec, 0x4c, 0xcb, 0x5c, 0xb6, 0x18,
+	0x4d, 0x81, 0x1b, 0x90, 0xd1, 0x1e, 0xae, 0xc7, 0x92, 0xfd, 0x15, 0xfa, 0x97, 0xf8, 0xab, 0xff,
+	0x9e, 0x69, 0xaf, 0x85, 0x1b, 0xb4, 0xdd, 0x12, 0x7f, 0xe3, 0xee, 0xde, 0x7b, 0x9f, 0xf7, 0xae,
+	0x7d, 0x05, 0x1e, 0x0c, 0x2e, 0x08, 0x25, 0xcd, 0xe1, 0x59, 0xd1, 0xb6, 0x1c, 0xab, 0x83, 0x6d,
+	0xec, 0x50, 0xee, 0xa7, 0xea, 0x1f, 0x23, 0x18, 0xef, 0x14, 0xd6, 0x3a, 0x84, 0x74, 0xfa, 0xb8,
+	0x38, 0x22, 0x5a, 0xce, 0x15, 0x83, 0x15, 0xd6, 0x27, 0x8f, 0xb0, 0x3d, 0xa0, 0xc1, 0xa1, 0xf2,
+	0x4b, 0x80, 0x65, 0x9d, 0xb4, 0x71, 0x15, 0x5b, 0x7d, 0xda, 0x2d, 0x77, 0x71, 0xeb, 0xdc, 0xc0,
+	0x3f, 0x87, 0xd8, 0xa5, 0xe8, 0x3d, 0x48, 0x83, 0x0b, 0xd2, 0xc4, 0xab, 0xc2, 0xa6, 0xb0, 0xbd,
+	0xb0, 0xbb, 0xad, 0x72, 0x06, 0xa2, 0x29, 0xea, 0x17, 0x0f, 0x6f, 0x30, 0x9a, 0xf2, 0x02, 0x24,
+	0x7f, 0x8d, 0x16, 0x21, 0x5f, 0xd5, 0x4a, 0xf5, 0x46, 0xb5, 0xa6, 0x6b, 0xa6, 0x29, 0xa7, 0xd0,
+	0x1c, 0xe4, 0xea, 0xb5, 0xaf, 0x9a, 0xbf, 0x12, 0xd0, 0x3c, 0xcc, 0x1a, 0x5a, 0xa9, 0xc2, 0x0e,
+	0x45, 0xe5, 0x8f, 0x00, 0x2b, 0x53, 0xf2, 0xee, 0x80, 0x38, 0x2e, 0x46, 0x1f, 0x40, 0x72, 0xa9,
+	0x45, 0x43, 0x4b, 0x8f, 0x12, 0x2d, 0x31, 0x8e, 0x6a, 0x7a, 0x04, 0x83, 0xf1, 0x14, 0x03, 0x24,
+	0x7f, 0x8d, 0xf2, 0x90, 0x65, 0x9e, 0x4e, 0xe4, 0x94, 0xe7, 0xe0, 0x48, 0x0f, 0x97, 0x02, 0x9a,
+	0x05, 0xa9, 0xe4, 0xf9, 0x93, 0x45, 0x94, 0x83, 0x99, 0x8a, 0x56, 0xaa, 0xc8, 0x69, 0x6f, 0xd3,
+	0x73, 0x79, 0x22, 0xcf, 0x78, 0x70, 0xfd, 0xb0, 0xf1, 0x83, 0x2d, 0x25, 0x65, 0x0b, 0x16, 0xbd,
+	0xd9, 0x35, 0xe7, 0x8c, 0x84, 0x57, 0xb7, 0x00, 0x62, 0xaf, 0xed, 0x9b, 0x9c, 0x35, 0xc4, 0x5e,
+	0x5b, 0xf9, 0x0e, 0xf2, 0x18, 0x12, 0x64, 0x79, 0x0e, 0xe0, 0x90, 0x36, 0x2e, 0x13, 0xe7, 0xac,
+	0xd7, 0xf1, 0xb1, 0xf9, 0xdd, 0x25, 0x95, 0x3d, 0x2b, 0x35, 0x7c, 0x56, 0x6a, 0xc9, 0xb9, 0x32,
+	0x38, 0x1c, 0x5a, 0x0a, 0x6f, 0x40, 0xf4, 0xc5, 0x83, 0x58, 0xa7, 0x80, 0xca, 0xfd, 0xa1, 0x4b,
+	0xf1, 0xc5, 0x3e, 0xe9, 0x39, 0x31, 0x2e, 0x26, 0x26, 0x8a, 0xb7, 0x9b, 0xa8, 0x3c, 0x84, 0x3b,
+	0x81, 0x76, 0x1d, 0x5b, 0x97, 0x38, 0x2e, 0xa2, 0x36, 0x82, 0x5d, 0x4b, 0xa9, 0x42, 0xb6, 0xc5,
+	0xb6, 0x13, 0x23, 0x86, 0x20, 0x65, 0x03, 0x60, 0x0f, 0xd3, 0x70, 0x88, 0x0c, 0xe9, 0x73, 0x7c,
+	0x15, 0x4c, 0xf1, 0x7e, 0x2a, 0xaf, 0x21, 0xef, 0x9f, 0x07, 0xf2, 0x8f, 0x41, 0xba, 0xb4, 0xfa,
+	0x43, 0x9c, 0x28, 0xce, 0x20, 0xca, 0x3e, 0x80, 0x99, 0x20, 0x3d, 0xd6, 0x12, 0x6f, 0xd6, 0xda,
+	0x82, 0xf9, 0x0a, 0xee, 0x63, 0x8a, 0xe3, 0x9d, 0x6e, 0xc2, 0xdc, 0xb1, 0x45, 0x5b, 0xdd, 0x78,
+	0xc4, 0x5f, 0x01, 0xe6, 0x03, 0x48, 0x10, 0xe7, 0x0d, 0x64, 0x5b, 0xc4, 0xb6, 0x2d, 0xa7, 0x1d,
+	0xbc, 0xe1, 0x5b, 0xfc, 0x1b, 0x7e, 0x0d, 0xab, 0x96, 0x19, 0xd0, 0x08, 0x19, 0xe1, 0x00, 0x31,
+	0x22, 0x51, 0xfa, 0xe6, 0x44, 0x3b, 0x90, 0x0d, 0x14, 0xbd, 0x6e, 0x1c, 0xe9, 0x07, 0xfa, 0xe1,
+	0xb1, 0x2e, 0xa7, 0x50, 0x16, 0xd2, 0xa6, 0xd6, 0x90, 0x05, 0x04, 0x90, 0xa9, 0x68, 0x75, 0xad,
+	0xa1, 0xc9, 0xe2, 0xee, 0xef, 0x0c, 0xc0, 0xe7, 0x91, 0x31, 0xf4, 0x8d, 0x35, 0x80, 0x6b, 0x1f,
+	0x52, 0x6e, 0xfe, 0x5a, 0x14, 0xee, 0xdf, 0xa2, 0xbe, 0x4a, 0x0a, 0xed, 0x41, 0x2e, 0x2c, 0x0f,
+	0x5a, 0x9f, 0xa4, 0x70, 0xad, 0x2b, 0xdc, 0x8d, 0x3e, 0xe4, 0x84, 0xf2, 0x5c, 0x4b, 0xd0, 0x06,
+	0x0f, 0x9f, 0xae, 0x4f, 0x61, 0x79, 0xea, 0xba, 0x34, 0xef, 0xc3, 0xa9, 0xa4, 0x50, 0x0d, 0xe6,
+	0xf8, 0x4a, 0xa0, 0x7b, 0x11, 0x4a, 0x7c, 0x59, 0x12, 0xa4, 0xaa, 0x23, 0x4f, 0x7e, 0xbe, 0x18,
+	0x60, 0x21, 0x6a, 0xc2, 0x44, 0xba, 0x83, 0x91, 0x29, 0xff, 0x3d, 0xf9, 0x0f, 0xa9, 0xa7, 0x02,
+	0x7a, 0x05, 0xe9, 0x3d, 0x4c, 0xd1, 0x32, 0x8f, 0x1d, 0xf7, 0xb2, 0xb0, 0x32, 0xb5, 0x3f, 0xb2,
+	0xf1, 0x12, 0xd2, 0xe6, 0x24, 0x73, 0x5c, 0xbb, 0x84, 0x9b, 0x78, 0x07, 0x19, 0x56, 0x29, 0xb4,
+	0xc6, 0x73, 0xaf, 0xd5, 0x2c, 0x81, 0xfe, 0x11, 0x24, 0x96, 0x7b, 0x35, 0xa2, 0x32, 0x8c, 0xbc,
+	0x16, 0x5b, 0x26, 0x3f, 0xf3, 0x5b, 0xc8, 0x99, 0x8e, 0x35, 0x70, 0xbb, 0x84, 0xc6, 0x5e, 0x5e,
+	0xec, 0xfc, 0x4f, 0x4f, 0x4e, 0x77, 0x3a, 0x3d, 0xda, 0x1d, 0x36, 0xd5, 0x16, 0xb1, 0x8b, 0x36,
+	0x71, 0x87, 0xe7, 0x56, 0xb1, 0xd9, 0xb7, 0x5c, 0x5a, 0x8c, 0xf8, 0x33, 0x6f, 0x66, 0xfc, 0xcd,
+	0x67, 0xff, 0x02, 0x00, 0x00, 0xff, 0xff, 0x53, 0x09, 0x0b, 0x91, 0xea, 0x07, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -744,17 +749,16 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type ManagementClient interface {
-	LivenessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*LivenessProbeResponse, error)
-	ReadinessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ReadinessProbeResponse, error)
-	GetNode(ctx context.Context, in *GetNodeRequest, opts ...grpc.CallOption) (*GetNodeResponse, error)
-	SetNode(ctx context.Context, in *SetNodeRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-	DeleteNode(ctx context.Context, in *DeleteNodeRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-	GetCluster(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetClusterResponse, error)
-	WatchCluster(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (Management_WatchClusterClient, error)
-	GetValue(ctx context.Context, in *GetValueRequest, opts ...grpc.CallOption) (*GetValueResponse, error)
-	SetValue(ctx context.Context, in *SetValueRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-	DeleteValue(ctx context.Context, in *DeleteValueRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-	WatchStore(ctx context.Context, in *WatchStoreRequest, opts ...grpc.CallOption) (Management_WatchStoreClient, error)
+	NodeHealthCheck(ctx context.Context, in *NodeHealthCheckRequest, opts ...grpc.CallOption) (*NodeHealthCheckResponse, error)
+	NodeInfo(ctx context.Context, in *NodeInfoRequest, opts ...grpc.CallOption) (*NodeInfoResponse, error)
+	ClusterJoin(ctx context.Context, in *ClusterJoinRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	ClusterLeave(ctx context.Context, in *ClusterLeaveRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	ClusterInfo(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ClusterInfoResponse, error)
+	ClusterWatch(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (Management_ClusterWatchClient, error)
+	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
+	Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	Watch(ctx context.Context, in *WatchRequest, opts ...grpc.CallOption) (Management_WatchClient, error)
 	Snapshot(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
@@ -766,66 +770,57 @@ func NewManagementClient(cc *grpc.ClientConn) ManagementClient {
 	return &managementClient{cc}
 }
 
-func (c *managementClient) LivenessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*LivenessProbeResponse, error) {
-	out := new(LivenessProbeResponse)
-	err := c.cc.Invoke(ctx, "/management.Management/LivenessProbe", in, out, opts...)
+func (c *managementClient) NodeHealthCheck(ctx context.Context, in *NodeHealthCheckRequest, opts ...grpc.CallOption) (*NodeHealthCheckResponse, error) {
+	out := new(NodeHealthCheckResponse)
+	err := c.cc.Invoke(ctx, "/management.Management/NodeHealthCheck", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *managementClient) ReadinessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ReadinessProbeResponse, error) {
-	out := new(ReadinessProbeResponse)
-	err := c.cc.Invoke(ctx, "/management.Management/ReadinessProbe", in, out, opts...)
+func (c *managementClient) NodeInfo(ctx context.Context, in *NodeInfoRequest, opts ...grpc.CallOption) (*NodeInfoResponse, error) {
+	out := new(NodeInfoResponse)
+	err := c.cc.Invoke(ctx, "/management.Management/NodeInfo", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *managementClient) GetNode(ctx context.Context, in *GetNodeRequest, opts ...grpc.CallOption) (*GetNodeResponse, error) {
-	out := new(GetNodeResponse)
-	err := c.cc.Invoke(ctx, "/management.Management/GetNode", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *managementClient) SetNode(ctx context.Context, in *SetNodeRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *managementClient) ClusterJoin(ctx context.Context, in *ClusterJoinRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, "/management.Management/SetNode", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/management.Management/ClusterJoin", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *managementClient) DeleteNode(ctx context.Context, in *DeleteNodeRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *managementClient) ClusterLeave(ctx context.Context, in *ClusterLeaveRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, "/management.Management/DeleteNode", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/management.Management/ClusterLeave", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *managementClient) GetCluster(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetClusterResponse, error) {
-	out := new(GetClusterResponse)
-	err := c.cc.Invoke(ctx, "/management.Management/GetCluster", in, out, opts...)
+func (c *managementClient) ClusterInfo(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ClusterInfoResponse, error) {
+	out := new(ClusterInfoResponse)
+	err := c.cc.Invoke(ctx, "/management.Management/ClusterInfo", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *managementClient) WatchCluster(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (Management_WatchClusterClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Management_serviceDesc.Streams[0], "/management.Management/WatchCluster", opts...)
+func (c *managementClient) ClusterWatch(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (Management_ClusterWatchClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_Management_serviceDesc.Streams[0], "/management.Management/ClusterWatch", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &managementWatchClusterClient{stream}
+	x := &managementClusterWatchClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -835,56 +830,56 @@ func (c *managementClient) WatchCluster(ctx context.Context, in *empty.Empty, op
 	return x, nil
 }
 
-type Management_WatchClusterClient interface {
-	Recv() (*GetClusterResponse, error)
+type Management_ClusterWatchClient interface {
+	Recv() (*ClusterInfoResponse, error)
 	grpc.ClientStream
 }
 
-type managementWatchClusterClient struct {
+type managementClusterWatchClient struct {
 	grpc.ClientStream
 }
 
-func (x *managementWatchClusterClient) Recv() (*GetClusterResponse, error) {
-	m := new(GetClusterResponse)
+func (x *managementClusterWatchClient) Recv() (*ClusterInfoResponse, error) {
+	m := new(ClusterInfoResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (c *managementClient) GetValue(ctx context.Context, in *GetValueRequest, opts ...grpc.CallOption) (*GetValueResponse, error) {
-	out := new(GetValueResponse)
-	err := c.cc.Invoke(ctx, "/management.Management/GetValue", in, out, opts...)
+func (c *managementClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
+	out := new(GetResponse)
+	err := c.cc.Invoke(ctx, "/management.Management/Get", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *managementClient) SetValue(ctx context.Context, in *SetValueRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *managementClient) Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, "/management.Management/SetValue", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/management.Management/Set", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *managementClient) DeleteValue(ctx context.Context, in *DeleteValueRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *managementClient) Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, "/management.Management/DeleteValue", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/management.Management/Delete", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *managementClient) WatchStore(ctx context.Context, in *WatchStoreRequest, opts ...grpc.CallOption) (Management_WatchStoreClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Management_serviceDesc.Streams[1], "/management.Management/WatchStore", opts...)
+func (c *managementClient) Watch(ctx context.Context, in *WatchRequest, opts ...grpc.CallOption) (Management_WatchClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_Management_serviceDesc.Streams[1], "/management.Management/Watch", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &managementWatchStoreClient{stream}
+	x := &managementWatchClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -894,17 +889,17 @@ func (c *managementClient) WatchStore(ctx context.Context, in *WatchStoreRequest
 	return x, nil
 }
 
-type Management_WatchStoreClient interface {
-	Recv() (*WatchStoreResponse, error)
+type Management_WatchClient interface {
+	Recv() (*WatchResponse, error)
 	grpc.ClientStream
 }
 
-type managementWatchStoreClient struct {
+type managementWatchClient struct {
 	grpc.ClientStream
 }
 
-func (x *managementWatchStoreClient) Recv() (*WatchStoreResponse, error) {
-	m := new(WatchStoreResponse)
+func (x *managementWatchClient) Recv() (*WatchResponse, error) {
+	m := new(WatchResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -922,17 +917,16 @@ func (c *managementClient) Snapshot(ctx context.Context, in *empty.Empty, opts .
 
 // ManagementServer is the server API for Management service.
 type ManagementServer interface {
-	LivenessProbe(context.Context, *empty.Empty) (*LivenessProbeResponse, error)
-	ReadinessProbe(context.Context, *empty.Empty) (*ReadinessProbeResponse, error)
-	GetNode(context.Context, *GetNodeRequest) (*GetNodeResponse, error)
-	SetNode(context.Context, *SetNodeRequest) (*empty.Empty, error)
-	DeleteNode(context.Context, *DeleteNodeRequest) (*empty.Empty, error)
-	GetCluster(context.Context, *empty.Empty) (*GetClusterResponse, error)
-	WatchCluster(*empty.Empty, Management_WatchClusterServer) error
-	GetValue(context.Context, *GetValueRequest) (*GetValueResponse, error)
-	SetValue(context.Context, *SetValueRequest) (*empty.Empty, error)
-	DeleteValue(context.Context, *DeleteValueRequest) (*empty.Empty, error)
-	WatchStore(*WatchStoreRequest, Management_WatchStoreServer) error
+	NodeHealthCheck(context.Context, *NodeHealthCheckRequest) (*NodeHealthCheckResponse, error)
+	NodeInfo(context.Context, *NodeInfoRequest) (*NodeInfoResponse, error)
+	ClusterJoin(context.Context, *ClusterJoinRequest) (*empty.Empty, error)
+	ClusterLeave(context.Context, *ClusterLeaveRequest) (*empty.Empty, error)
+	ClusterInfo(context.Context, *empty.Empty) (*ClusterInfoResponse, error)
+	ClusterWatch(*empty.Empty, Management_ClusterWatchServer) error
+	Get(context.Context, *GetRequest) (*GetResponse, error)
+	Set(context.Context, *SetRequest) (*empty.Empty, error)
+	Delete(context.Context, *DeleteRequest) (*empty.Empty, error)
+	Watch(*WatchRequest, Management_WatchServer) error
 	Snapshot(context.Context, *empty.Empty) (*empty.Empty, error)
 }
 
@@ -940,207 +934,189 @@ func RegisterManagementServer(s *grpc.Server, srv ManagementServer) {
 	s.RegisterService(&_Management_serviceDesc, srv)
 }
 
-func _Management_LivenessProbe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Management_NodeHealthCheck_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeHealthCheckRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ManagementServer).NodeHealthCheck(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/management.Management/NodeHealthCheck",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ManagementServer).NodeHealthCheck(ctx, req.(*NodeHealthCheckRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Management_NodeInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ManagementServer).NodeInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/management.Management/NodeInfo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ManagementServer).NodeInfo(ctx, req.(*NodeInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Management_ClusterJoin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClusterJoinRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ManagementServer).ClusterJoin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/management.Management/ClusterJoin",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ManagementServer).ClusterJoin(ctx, req.(*ClusterJoinRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Management_ClusterLeave_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClusterLeaveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ManagementServer).ClusterLeave(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/management.Management/ClusterLeave",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ManagementServer).ClusterLeave(ctx, req.(*ClusterLeaveRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Management_ClusterInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(empty.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ManagementServer).LivenessProbe(ctx, in)
+		return srv.(ManagementServer).ClusterInfo(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/management.Management/LivenessProbe",
+		FullMethod: "/management.Management/ClusterInfo",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ManagementServer).LivenessProbe(ctx, req.(*empty.Empty))
+		return srv.(ManagementServer).ClusterInfo(ctx, req.(*empty.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Management_ReadinessProbe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ManagementServer).ReadinessProbe(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/management.Management/ReadinessProbe",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ManagementServer).ReadinessProbe(ctx, req.(*empty.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Management_GetNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetNodeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ManagementServer).GetNode(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/management.Management/GetNode",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ManagementServer).GetNode(ctx, req.(*GetNodeRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Management_SetNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetNodeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ManagementServer).SetNode(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/management.Management/SetNode",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ManagementServer).SetNode(ctx, req.(*SetNodeRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Management_DeleteNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteNodeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ManagementServer).DeleteNode(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/management.Management/DeleteNode",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ManagementServer).DeleteNode(ctx, req.(*DeleteNodeRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Management_GetCluster_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ManagementServer).GetCluster(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/management.Management/GetCluster",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ManagementServer).GetCluster(ctx, req.(*empty.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Management_WatchCluster_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _Management_ClusterWatch_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(empty.Empty)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(ManagementServer).WatchCluster(m, &managementWatchClusterServer{stream})
+	return srv.(ManagementServer).ClusterWatch(m, &managementClusterWatchServer{stream})
 }
 
-type Management_WatchClusterServer interface {
-	Send(*GetClusterResponse) error
+type Management_ClusterWatchServer interface {
+	Send(*ClusterInfoResponse) error
 	grpc.ServerStream
 }
 
-type managementWatchClusterServer struct {
+type managementClusterWatchServer struct {
 	grpc.ServerStream
 }
 
-func (x *managementWatchClusterServer) Send(m *GetClusterResponse) error {
+func (x *managementClusterWatchServer) Send(m *ClusterInfoResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _Management_GetValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetValueRequest)
+func _Management_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ManagementServer).GetValue(ctx, in)
+		return srv.(ManagementServer).Get(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/management.Management/GetValue",
+		FullMethod: "/management.Management/Get",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ManagementServer).GetValue(ctx, req.(*GetValueRequest))
+		return srv.(ManagementServer).Get(ctx, req.(*GetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Management_SetValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetValueRequest)
+func _Management_Set_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ManagementServer).SetValue(ctx, in)
+		return srv.(ManagementServer).Set(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/management.Management/SetValue",
+		FullMethod: "/management.Management/Set",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ManagementServer).SetValue(ctx, req.(*SetValueRequest))
+		return srv.(ManagementServer).Set(ctx, req.(*SetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Management_DeleteValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteValueRequest)
+func _Management_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ManagementServer).DeleteValue(ctx, in)
+		return srv.(ManagementServer).Delete(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/management.Management/DeleteValue",
+		FullMethod: "/management.Management/Delete",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ManagementServer).DeleteValue(ctx, req.(*DeleteValueRequest))
+		return srv.(ManagementServer).Delete(ctx, req.(*DeleteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Management_WatchStore_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(WatchStoreRequest)
+func _Management_Watch_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(WatchRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(ManagementServer).WatchStore(m, &managementWatchStoreServer{stream})
+	return srv.(ManagementServer).Watch(m, &managementWatchServer{stream})
 }
 
-type Management_WatchStoreServer interface {
-	Send(*WatchStoreResponse) error
+type Management_WatchServer interface {
+	Send(*WatchResponse) error
 	grpc.ServerStream
 }
 
-type managementWatchStoreServer struct {
+type managementWatchServer struct {
 	grpc.ServerStream
 }
 
-func (x *managementWatchStoreServer) Send(m *WatchStoreResponse) error {
+func (x *managementWatchServer) Send(m *WatchResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -1167,40 +1143,36 @@ var _Management_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*ManagementServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "LivenessProbe",
-			Handler:    _Management_LivenessProbe_Handler,
+			MethodName: "NodeHealthCheck",
+			Handler:    _Management_NodeHealthCheck_Handler,
 		},
 		{
-			MethodName: "ReadinessProbe",
-			Handler:    _Management_ReadinessProbe_Handler,
+			MethodName: "NodeInfo",
+			Handler:    _Management_NodeInfo_Handler,
 		},
 		{
-			MethodName: "GetNode",
-			Handler:    _Management_GetNode_Handler,
+			MethodName: "ClusterJoin",
+			Handler:    _Management_ClusterJoin_Handler,
 		},
 		{
-			MethodName: "SetNode",
-			Handler:    _Management_SetNode_Handler,
+			MethodName: "ClusterLeave",
+			Handler:    _Management_ClusterLeave_Handler,
 		},
 		{
-			MethodName: "DeleteNode",
-			Handler:    _Management_DeleteNode_Handler,
+			MethodName: "ClusterInfo",
+			Handler:    _Management_ClusterInfo_Handler,
 		},
 		{
-			MethodName: "GetCluster",
-			Handler:    _Management_GetCluster_Handler,
+			MethodName: "Get",
+			Handler:    _Management_Get_Handler,
 		},
 		{
-			MethodName: "GetValue",
-			Handler:    _Management_GetValue_Handler,
+			MethodName: "Set",
+			Handler:    _Management_Set_Handler,
 		},
 		{
-			MethodName: "SetValue",
-			Handler:    _Management_SetValue_Handler,
-		},
-		{
-			MethodName: "DeleteValue",
-			Handler:    _Management_DeleteValue_Handler,
+			MethodName: "Delete",
+			Handler:    _Management_Delete_Handler,
 		},
 		{
 			MethodName: "Snapshot",
@@ -1209,13 +1181,13 @@ var _Management_serviceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "WatchCluster",
-			Handler:       _Management_WatchCluster_Handler,
+			StreamName:    "ClusterWatch",
+			Handler:       _Management_ClusterWatch_Handler,
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "WatchStore",
-			Handler:       _Management_WatchStore_Handler,
+			StreamName:    "Watch",
+			Handler:       _Management_Watch_Handler,
 			ServerStreams: true,
 		},
 	},

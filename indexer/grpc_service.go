@@ -147,7 +147,7 @@ func (s *GRPCService) getInitialManagers(managerAddr string) (map[string]interfa
 		return nil, err
 	}
 
-	managers, err := client.GetCluster()
+	managers, err := client.ClusterInfo()
 	if err != nil {
 		s.logger.Error(err.Error())
 		return nil, err
@@ -216,7 +216,7 @@ func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 				continue
 			}
 
-			stream, err := client.WatchCluster()
+			stream, err := client.ClusterWatch()
 			if err != nil {
 				s.logger.Error(err.Error())
 				continue
@@ -504,7 +504,7 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 					if err != nil {
 						s.logger.Error(err.Error())
 					}
-					err = client.SetValue(fmt.Sprintf("cluster_config/clusters/%s/nodes", s.clusterConfig.ClusterId), cluster)
+					err = client.Set(fmt.Sprintf("cluster_config/clusters/%s/nodes", s.clusterConfig.ClusterId), cluster)
 					if err != nil {
 						s.logger.Error(err.Error())
 					}

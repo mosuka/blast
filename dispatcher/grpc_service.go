@@ -137,7 +137,7 @@ func (s *GRPCService) getInitialManagers(managerAddr string) (map[string]interfa
 		return nil, err
 	}
 
-	managers, err := client.GetCluster()
+	managers, err := client.ClusterInfo()
 	if err != nil {
 		s.logger.Error(err.Error())
 		return nil, err
@@ -207,7 +207,7 @@ func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 			}
 
 			// create stream
-			stream, err := client.WatchCluster()
+			stream, err := client.ClusterWatch()
 			if err != nil {
 				s.logger.Error(err.Error())
 				continue
@@ -360,7 +360,7 @@ func (s *GRPCService) startUpdateIndexers(checkInterval time.Duration) {
 	}
 
 	// get initial indexers
-	clusters, err := client.GetValue("/cluster_config/clusters/")
+	clusters, err := client.Get("/cluster_config/clusters/")
 	if err != nil {
 		s.logger.Error(err.Error())
 	}
@@ -426,7 +426,7 @@ func (s *GRPCService) startUpdateIndexers(checkInterval time.Duration) {
 				continue
 			}
 
-			stream, err := client.WatchStore("/cluster_config/clusters/")
+			stream, err := client.Watch("/cluster_config/clusters/")
 			if err != nil {
 				s.logger.Error(err.Error())
 				continue
@@ -443,7 +443,7 @@ func (s *GRPCService) startUpdateIndexers(checkInterval time.Duration) {
 			}
 			s.logger.Debug("data has changed", zap.String("key", resp.Key))
 
-			cluster, err := client.GetValue("/cluster_config/clusters/")
+			cluster, err := client.Get("/cluster_config/clusters/")
 			if err != nil {
 				s.logger.Error(err.Error())
 				continue

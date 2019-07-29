@@ -37,7 +37,7 @@ func managerClusterInfo(c *cli.Context) error {
 		}
 	}()
 
-	cluster, err := client.GetCluster()
+	cluster, err := client.ClusterInfo()
 	if err != nil {
 		return err
 	}

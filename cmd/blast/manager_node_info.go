@@ -43,7 +43,7 @@ func managerNodeInfo(c *cli.Context) error {
 		}
 	}()
 
-	metadata, err := client.GetNode(nodeId)
+	metadata, err := client.NodeInfo(nodeId)
 	if err != nil {
 		return err
 	}

@@ -43,7 +43,7 @@ func managerClusterLeave(c *cli.Context) error {
 		}
 	}()
 
-	err = client.DeleteNode(nodeId)
+	err = client.ClusterLeave(nodeId)
 	if err != nil {
 		return err
 	}

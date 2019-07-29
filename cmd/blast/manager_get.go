@@ -39,7 +39,7 @@ func managerGet(c *cli.Context) error {
 		}
 	}()
 
-	value, err := client.GetValue(key)
+	value, err := client.Get(key)
 	if err != nil {
 		return err
 	}

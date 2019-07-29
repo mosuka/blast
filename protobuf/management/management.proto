@@ -22,91 +22,87 @@ package management;
 option go_package = "github.com/mosuka/blast/protobuf/management";
 
 service Management {
-    rpc LivenessProbe (google.protobuf.Empty) returns (LivenessProbeResponse) {}
-    rpc ReadinessProbe (google.protobuf.Empty) returns (ReadinessProbeResponse) {}
+    rpc NodeHealthCheck (NodeHealthCheckRequest) returns (NodeHealthCheckResponse) {}
+    rpc NodeInfo (NodeInfoRequest) returns (NodeInfoResponse) {}
 
-    rpc GetNode (GetNodeRequest) returns (GetNodeResponse) {}
-    rpc SetNode (SetNodeRequest) returns (google.protobuf.Empty) {}
-    rpc DeleteNode (DeleteNodeRequest) returns (google.protobuf.Empty) {}
-    rpc GetCluster (google.protobuf.Empty) returns (GetClusterResponse) {}
-    rpc WatchCluster (google.protobuf.Empty) returns (stream GetClusterResponse) {}
+    rpc ClusterJoin (ClusterJoinRequest) returns (google.protobuf.Empty) {}
+    rpc ClusterLeave (ClusterLeaveRequest) returns (google.protobuf.Empty) {}
+    rpc ClusterInfo (google.protobuf.Empty) returns (ClusterInfoResponse) {}
+    rpc ClusterWatch (google.protobuf.Empty) returns (stream ClusterInfoResponse) {}
 
-    rpc GetValue (GetValueRequest) returns (GetValueResponse) {}
-    rpc SetValue (SetValueRequest) returns (google.protobuf.Empty) {}
-    rpc DeleteValue (DeleteValueRequest) returns (google.protobuf.Empty) {}
-    rpc WatchStore (WatchStoreRequest) returns (stream WatchStoreResponse) {}
+    rpc Get (GetRequest) returns (GetResponse) {}
+    rpc Set (SetRequest) returns (google.protobuf.Empty) {}
+    rpc Delete (DeleteRequest) returns (google.protobuf.Empty) {}
+    rpc Watch (WatchRequest) returns (stream WatchResponse) {}
     rpc Snapshot (google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }
 
-// use for health check
-message LivenessProbeResponse {
+message NodeHealthCheckRequest {
+    enum Probe {
+        HEALTHINESS = 0;
+        LIVENESS = 1;
+        READINESS = 2;
+    }
+    Probe probe = 1;
+}
+
+message NodeHealthCheckResponse {
     enum State {
-        UNKNOWN = 0;
-        ALIVE = 1;
-        DEAD = 2;
+        HEALTHY = 0;
+        UNHEALTHY = 1;
+        ALIVE = 2;
+        DEAD = 3;
+        READY = 4;
+        NOT_READY = 5;
     }
     State state = 1;
 }
 
-// use for health check
-message ReadinessProbeResponse {
-    enum State {
-        UNKNOWN = 0;
-        READY = 1;
-        NOT_READY = 2;
-    }
-    State state = 1;
-}
-
-// use for raft cluster status
-message GetNodeRequest {
+// use for raft
+message NodeInfoRequest {
     string id = 1;
 }
 
-// use for raft cluster status
-message GetNodeResponse {
+message NodeInfoResponse {
     google.protobuf.Any nodeConfig = 1;
     string state = 2;
 }
 
-// use for raft cluster status
-message SetNodeRequest {
+message ClusterJoinRequest {
     string id = 1;
     google.protobuf.Any nodeConfig = 2;
 }
 
-// use for raft cluster status
-message DeleteNodeRequest {
+message ClusterLeaveRequest {
     string id = 1;
 }
 
-// use for raft cluster status
-message GetClusterResponse {
+message ClusterInfoResponse {
     google.protobuf.Any cluster = 1;
 }
 
-message GetValueRequest {
+message GetRequest {
     string key = 1;
 }
 
-message GetValueResponse {
+message GetResponse {
     google.protobuf.Any value = 1;
 }
 
-message SetValueRequest {
+message SetRequest {
     string key = 1;
     google.protobuf.Any value = 2;
 }
 
-message DeleteValueRequest {
+message DeleteRequest {
     string key = 1;
 }
 
-message WatchStoreRequest {
+message WatchRequest {
     string key = 1;
 }
 
-message WatchStoreResponse {
+message WatchResponse {
     enum Command {
         UNKNOWN = 0;
         SET = 1;
