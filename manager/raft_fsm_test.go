@@ -58,7 +58,7 @@ func TestRaftFSM_GetNode(t *testing.T) {
 		"node1",
 		&management.Node{
 			BindAddress: "2100",
-			Status:      raft.Leader.String(),
+			State:       raft.Leader.String(),
 			Metadata: &management.Metadata{
 				GrpcAddress: "5100",
 				HttpAddress: "8100",
@@ -69,7 +69,7 @@ func TestRaftFSM_GetNode(t *testing.T) {
 		"node2",
 		&management.Node{
 			BindAddress: "2110",
-			Status:      raft.Follower.String(),
+			State:       raft.Follower.String(),
 			Metadata: &management.Metadata{
 				GrpcAddress: "5110",
 				HttpAddress: "8110",
@@ -80,7 +80,7 @@ func TestRaftFSM_GetNode(t *testing.T) {
 		"node3",
 		&management.Node{
 			BindAddress: "2120",
-			Status:      raft.Follower.String(),
+			State:       raft.Follower.String(),
 			Metadata: &management.Metadata{
 				GrpcAddress: "5120",
 				HttpAddress: "8120",
@@ -95,7 +95,7 @@ func TestRaftFSM_GetNode(t *testing.T) {
 
 	exp1 := &management.Node{
 		BindAddress: "2110",
-		Status:      raft.Follower.String(),
+		State:       raft.Follower.String(),
 		Metadata: &management.Metadata{
 			GrpcAddress: "5110",
 			HttpAddress: "8110",
@@ -142,7 +142,7 @@ func TestRaftFSM_SetNode(t *testing.T) {
 		"node1",
 		&management.Node{
 			BindAddress: "2100",
-			Status:      raft.Leader.String(),
+			State:       raft.Leader.String(),
 			Metadata: &management.Metadata{
 				GrpcAddress: "5100",
 				HttpAddress: "8100",
@@ -153,7 +153,7 @@ func TestRaftFSM_SetNode(t *testing.T) {
 		"node2",
 		&management.Node{
 			BindAddress: "2110",
-			Status:      raft.Follower.String(),
+			State:       raft.Follower.String(),
 			Metadata: &management.Metadata{
 				GrpcAddress: "5110",
 				HttpAddress: "8110",
@@ -164,7 +164,7 @@ func TestRaftFSM_SetNode(t *testing.T) {
 		"node3",
 		&management.Node{
 			BindAddress: "2120",
-			Status:      raft.Follower.String(),
+			State:       raft.Follower.String(),
 			Metadata: &management.Metadata{
 				GrpcAddress: "5120",
 				HttpAddress: "8120",
@@ -178,7 +178,7 @@ func TestRaftFSM_SetNode(t *testing.T) {
 	}
 	exp1 := &management.Node{
 		BindAddress: "2110",
-		Status:      raft.Follower.String(),
+		State:       raft.Follower.String(),
 		Metadata: &management.Metadata{
 			GrpcAddress: "5110",
 			HttpAddress: "8110",
@@ -193,7 +193,7 @@ func TestRaftFSM_SetNode(t *testing.T) {
 		"node2",
 		&management.Node{
 			BindAddress: "2110",
-			Status:      raft.Shutdown.String(),
+			State:       raft.Shutdown.String(),
 			Metadata: &management.Metadata{
 				GrpcAddress: "5110",
 				HttpAddress: "8110",
@@ -207,7 +207,7 @@ func TestRaftFSM_SetNode(t *testing.T) {
 	}
 	exp2 := &management.Node{
 		BindAddress: "2110",
-		Status:      raft.Shutdown.String(),
+		State:       raft.Shutdown.String(),
 		Metadata: &management.Metadata{
 			GrpcAddress: "5110",
 			HttpAddress: "8110",
@@ -253,7 +253,7 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 		"node1",
 		&management.Node{
 			BindAddress: "2100",
-			Status:      raft.Leader.String(),
+			State:       raft.Leader.String(),
 			Metadata: &management.Metadata{
 				GrpcAddress: "5100",
 				HttpAddress: "8100",
@@ -264,7 +264,7 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 		"node2",
 		&management.Node{
 			BindAddress: "2110",
-			Status:      raft.Follower.String(),
+			State:       raft.Follower.String(),
 			Metadata: &management.Metadata{
 				GrpcAddress: "5110",
 				HttpAddress: "8110",
@@ -275,7 +275,7 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 		"node3",
 		&management.Node{
 			BindAddress: "2120",
-			Status:      raft.Follower.String(),
+			State:       raft.Follower.String(),
 			Metadata: &management.Metadata{
 				GrpcAddress: "5120",
 				HttpAddress: "8120",
@@ -289,7 +289,7 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 	}
 	exp1 := &management.Node{
 		BindAddress: "2110",
-		Status:      raft.Follower.String(),
+		State:       raft.Follower.String(),
 		Metadata: &management.Metadata{
 			GrpcAddress: "5110",
 			HttpAddress: "8110",

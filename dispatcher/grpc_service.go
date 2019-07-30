@@ -99,7 +99,7 @@ func (s *GRPCService) getManagerClient() (*manager.GRPCClient, error) {
 			continue
 		}
 
-		if node.Status == raft.Leader.String() || node.Status == raft.Follower.String() {
+		if node.State == raft.Leader.String() || node.State == raft.Follower.String() {
 			var ok bool
 			client, ok = s.managerClients[id]
 			if ok {
@@ -108,7 +108,7 @@ func (s *GRPCService) getManagerClient() (*manager.GRPCClient, error) {
 				s.logger.Error("node does not exist", zap.String("id", id))
 			}
 		} else {
-			s.logger.Debug("node has not available", zap.String("id", id), zap.String("state", node.Status))
+			s.logger.Debug("node has not available", zap.String("id", id), zap.String("state", node.State))
 		}
 	}
 

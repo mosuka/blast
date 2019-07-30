@@ -77,7 +77,7 @@ func main() {
 						},
 						cli.StringFlag{
 							Name:   "data-dir",
-							Value:  "/tmp/blast/indexer",
+							Value:  "/tmp/blast/manager",
 							EnvVar: "BLAST_MANAGER_DATA_DIR",
 							Usage:  "A data directory for the node to store state",
 						},
@@ -216,18 +216,8 @@ func main() {
 							Usage: "Get node information",
 							Flags: []cli.Flag{
 								cli.StringFlag{
-									Name:  "peer-grpc-address",
-									Value: "",
-									Usage: "The gRPC address of the peer node in which the target node for retrieving the information is joining",
-								},
-								cli.StringFlag{
-									Name:  "node-id",
-									Value: "",
-									Usage: "The node ID for which to retrieve the node information",
-								},
-								cli.StringFlag{
 									Name:  "grpc-address",
-									Value: "",
+									Value: ":5100",
 									Usage: "The gRPC address of the node for which to retrieve the node information",
 								},
 							},
@@ -267,26 +257,6 @@ func main() {
 							Name:  "info",
 							Usage: "Get cluster information",
 							Flags: []cli.Flag{
-								//cli.StringFlag{
-								//	Name:  "cluster-grpc-address",
-								//	Value: "",
-								//	Usage: "The gRPC address of the cluster in which the target node for retrieving the information is joining",
-								//},
-								//cli.StringFlag{
-								//	Name:  "shard-id",
-								//	Value: "",
-								//	Usage: "Shard ID registered in which the target node for retrieving the information is joining",
-								//},
-								//cli.StringFlag{
-								//	Name:  "peer-grpc-address",
-								//	Value: "",
-								//	Usage: "The gRPC address of the peer node in which the target node for retrieving the information is joining",
-								//},
-								//cli.StringFlag{
-								//	Name:  "node-id",
-								//	Value: "",
-								//	Usage: "The node ID for which to retrieve the node information",
-								//},
 								cli.StringFlag{
 									Name:  "grpc-address",
 									Value: ":5100",
@@ -299,26 +269,6 @@ func main() {
 							Name:  "watch",
 							Usage: "Watch peers",
 							Flags: []cli.Flag{
-								//cli.StringFlag{
-								//	Name:  "cluster-grpc-address",
-								//	Value: "",
-								//	Usage: "The gRPC address of the cluster in which the target node for retrieving the information is joining",
-								//},
-								//cli.StringFlag{
-								//	Name:  "shard-id",
-								//	Value: "",
-								//	Usage: "Shard ID registered in which the target node for retrieving the information is joining",
-								//},
-								//cli.StringFlag{
-								//	Name:  "peer-grpc-address",
-								//	Value: "",
-								//	Usage: "The gRPC address of the peer node in which the target node for retrieving the information is joining",
-								//},
-								//cli.StringFlag{
-								//	Name:  "node-id",
-								//	Value: "",
-								//	Usage: "The node ID for which to retrieve the node information",
-								//},
 								cli.StringFlag{
 									Name:  "grpc-address",
 									Value: ":5100",
@@ -352,7 +302,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-address",
-							Value: "",
+							Value: ":5100",
 							Usage: "The gRPC listen address",
 						},
 					},
@@ -365,7 +315,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-address",
-							Value: "",
+							Value: ":5100",
 							Usage: "The gRPC listen address",
 						},
 						cli.StringFlag{
@@ -383,7 +333,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-address",
-							Value: "",
+							Value: ":5100",
 							Usage: "The gRPC listen address",
 						},
 					},
@@ -396,7 +346,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-address",
-							Value: "",
+							Value: ":5100",
 							Usage: "The gRPC listen address",
 						},
 					},
@@ -409,7 +359,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-address",
-							Value: "",
+							Value: ":5100",
 							Usage: "The gRPC listen address",
 						},
 					},

@@ -24,13 +24,7 @@ import (
 )
 
 func managerNodeInfo(c *cli.Context) error {
-	peerGrpcAddr := c.String("peer-grpc-address")
-	nodeId := c.String("node-id")
 	grpcAddr := c.String("grpc-address")
-
-	if peerGrpcAddr != "" {
-
-	}
 
 	client, err := manager.NewGRPCClient(grpcAddr)
 	if err != nil {
@@ -43,7 +37,7 @@ func managerNodeInfo(c *cli.Context) error {
 		}
 	}()
 
-	metadata, err := client.NodeInfo(nodeId)
+	metadata, err := client.NodeInfo()
 	if err != nil {
 		return err
 	}

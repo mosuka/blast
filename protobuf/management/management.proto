@@ -23,7 +23,7 @@ option go_package = "github.com/mosuka/blast/protobuf/management";
 
 service Management {
     rpc NodeHealthCheck (NodeHealthCheckRequest) returns (NodeHealthCheckResponse) {}
-    rpc NodeInfo (NodeInfoRequest) returns (NodeInfoResponse) {}
+    rpc NodeInfo (google.protobuf.Empty) returns (NodeInfoResponse) {}
 
     rpc ClusterJoin (ClusterJoinRequest) returns (google.protobuf.Empty) {}
     rpc ClusterLeave (ClusterLeaveRequest) returns (google.protobuf.Empty) {}
@@ -66,16 +66,12 @@ message Metadata {
 
 message Node {
     string bind_address = 1;
-    string status = 2;
+    string state = 2;
     Metadata metadata = 3;
 }
 
 message Cluster {
     map<string, Node> nodes = 1;
-}
-
-message NodeInfoRequest {
-    string id = 1;
 }
 
 message NodeInfoResponse {
