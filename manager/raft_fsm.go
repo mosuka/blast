@@ -24,6 +24,7 @@ import (
 	"github.com/hashicorp/raft"
 	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/maputils"
+	"github.com/mosuka/blast/protobuf/management"
 	"go.uber.org/zap"
 )
 
@@ -31,10 +32,11 @@ type RaftFSM struct {
 	path   string
 	logger *zap.Logger
 
-	metadata      maputils.Map
-	metadataMutex sync.RWMutex
+	cluster      *management.Cluster
+	clusterMutex sync.RWMutex
 
-	data maputils.Map
+	data      maputils.Map
+	dataMutex sync.RWMutex
 }
 
 func NewRaftFSM(path string, logger *zap.Logger) (*RaftFSM, error) {
@@ -46,7 +48,7 @@ func NewRaftFSM(path string, logger *zap.Logger) (*RaftFSM, error) {
 
 func (f *RaftFSM) Start() error {
 	f.logger.Info("initialize metadata")
-	f.metadata = maputils.Map{}
+	f.cluster = &management.Cluster{Nodes: make(map[string]*management.Node, 0)}
 
 	f.logger.Info("initialize store data")
 	f.data = maputils.Map{}
@@ -58,44 +60,36 @@ func (f *RaftFSM) Stop() error {
 	return nil
 }
 
-func (f *RaftFSM) GetNodeConfig(nodeId string) (map[string]interface{}, error) {
-	f.metadataMutex.RLock()
-	defer f.metadataMutex.RUnlock()
+func (f *RaftFSM) GetNodeConfig(nodeId string) (*management.Node, error) {
+	f.clusterMutex.RLock()
+	defer f.clusterMutex.RUnlock()
 
-	nodeConfig, err := f.metadata.Get(nodeId)
-	if err != nil {
-		f.logger.Error(err.Error(), zap.String("node_id", nodeId))
-		if err == maputils.ErrNotFound {
-			return nil, blasterrors.ErrNotFound
-		}
-		return nil, err
+	node, ok := f.cluster.Nodes[nodeId]
+	if !ok {
+		return nil, blasterrors.ErrNotFound
 	}
 
-	return nodeConfig.(maputils.Map).ToMap(), nil
+	return node, nil
 }
 
-func (f *RaftFSM) SetNodeConfig(nodeId string, nodeConfig map[string]interface{}) error {
-	f.metadataMutex.RLock()
-	defer f.metadataMutex.RUnlock()
+func (f *RaftFSM) SetNodeConfig(nodeId string, node *management.Node) error {
+	f.clusterMutex.RLock()
+	defer f.clusterMutex.RUnlock()
 
-	err := f.metadata.Merge(nodeId, nodeConfig)
-	if err != nil {
-		f.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.Any("node_config", nodeConfig))
-		return err
-	}
+	f.cluster.Nodes[nodeId] = node
 
 	return nil
 }
 
 func (f *RaftFSM) DeleteNodeConfig(nodeId string) error {
-	f.metadataMutex.RLock()
-	defer f.metadataMutex.RUnlock()
+	f.clusterMutex.RLock()
+	defer f.clusterMutex.RUnlock()
 
-	err := f.metadata.Delete(nodeId)
-	if err != nil {
-		f.logger.Error(err.Error(), zap.String("node_id", nodeId))
-		return err
+	if _, ok := f.cluster.Nodes[nodeId]; !ok {
+		return blasterrors.ErrNotFound
 	}
+
+	delete(f.cluster.Nodes, nodeId)
 
 	return nil
 }
@@ -178,7 +172,22 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
-		err = f.SetNodeConfig(data["node_id"].(string), data["node_config"].(map[string]interface{}))
+		b, err := json.Marshal(data["node"])
+		if err != nil {
+			f.logger.Error(err.Error())
+			return &fsmResponse{error: err}
+		}
+		var node *management.Node
+		err = json.Unmarshal(b, &node)
+		if err != nil {
+			f.logger.Error(err.Error())
+			return &fsmResponse{error: err}
+		}
+		err = f.SetNodeConfig(data["node_id"].(string), node)
+		if err != nil {
+			f.logger.Error(err.Error())
+			return &fsmResponse{error: err}
+		}
 		return &fsmResponse{error: err}
 	case deleteNode:
 		var data map[string]interface{}

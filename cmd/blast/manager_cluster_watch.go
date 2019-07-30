@@ -16,14 +16,12 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
 
 	"github.com/mosuka/blast/manager"
-	"github.com/mosuka/blast/protobuf"
 	"github.com/urfave/cli"
 )
 
@@ -61,17 +59,7 @@ func managerClusterWatch(c *cli.Context) error {
 			break
 		}
 
-		cluster, err := protobuf.MarshalAny(resp.Cluster)
-		if err != nil {
-			return err
-		}
-		if cluster == nil {
-			return errors.New("nil")
-		}
-
-		var clusterBytes []byte
-		clusterMap := *cluster.(*map[string]interface{})
-		clusterBytes, err = json.MarshalIndent(clusterMap, "", "  ")
+		clusterBytes, err := json.MarshalIndent(resp.Cluster, "", "  ")
 		if err != nil {
 			return err
 		}

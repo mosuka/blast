@@ -45,16 +45,6 @@ func NewGRPCContext() (context.Context, context.CancelFunc) {
 func NewGRPCClient(address string) (*GRPCClient, error) {
 	ctx, cancel := NewGRPCContext()
 
-	//streamRetryOpts := []grpc_retry.CallOption{
-	//	grpc_retry.Disable(),
-	//}
-
-	//unaryRetryOpts := []grpc_retry.CallOption{
-	//	grpc_retry.WithBackoff(grpc_retry.BackoffLinear(100 * time.Millisecond)),
-	//	grpc_retry.WithCodes(codes.Unavailable),
-	//	grpc_retry.WithMax(100),
-	//}
-
 	dialOpts := []grpc.DialOption{
 		grpc.WithInsecure(),
 		grpc.WithDefaultCallOptions(
@@ -95,28 +85,6 @@ func (c *GRPCClient) GetAddress() string {
 	return c.conn.Target()
 }
 
-//func (c *GRPCClient) LivenessProbe(opts ...grpc.CallOption) (string, error) {
-//	resp, err := c.client.LivenessProbe(c.ctx, &empty.Empty{})
-//	if err != nil {
-//		st, _ := status.FromError(err)
-//
-//		return management.LivenessProbeResponse_UNKNOWN.String(), errors.New(st.Message())
-//	}
-//
-//	return resp.State.String(), nil
-//}
-
-//func (c *GRPCClient) ReadinessProbe(opts ...grpc.CallOption) (string, error) {
-//	resp, err := c.client.ReadinessProbe(c.ctx, &empty.Empty{})
-//	if err != nil {
-//		st, _ := status.FromError(err)
-//
-//		return management.ReadinessProbeResponse_UNKNOWN.String(), errors.New(st.Message())
-//	}
-//
-//	return resp.State.String(), nil
-//}
-
 func (c *GRPCClient) NodeHealthCheck(probe string, opts ...grpc.CallOption) (string, error) {
 	req := &management.NodeHealthCheckRequest{}
 
@@ -141,7 +109,7 @@ func (c *GRPCClient) NodeHealthCheck(probe string, opts ...grpc.CallOption) (str
 	return resp.State.String(), nil
 }
 
-func (c *GRPCClient) NodeInfo(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
+func (c *GRPCClient) NodeInfo(id string, opts ...grpc.CallOption) (*management.Node, error) {
 	req := &management.NodeInfoRequest{
 		Id: id,
 	}
@@ -153,30 +121,16 @@ func (c *GRPCClient) NodeInfo(id string, opts ...grpc.CallOption) (map[string]in
 		return nil, errors.New(st.Message())
 	}
 
-	ins, err := protobuf.MarshalAny(resp.NodeConfig)
-	nodeConfig := *ins.(*map[string]interface{})
-
-	node := map[string]interface{}{
-		"node_config": nodeConfig,
-		"state":       resp.State,
-	}
-
-	return node, nil
+	return resp.Node, nil
 }
 
-func (c *GRPCClient) ClusterJoin(id string, nodeConfig map[string]interface{}, opts ...grpc.CallOption) error {
-	nodeConfigAny := &any.Any{}
-	err := protobuf.UnmarshalAny(nodeConfig, nodeConfigAny)
-	if err != nil {
-		return err
-	}
-
+func (c *GRPCClient) ClusterJoin(id string, node *management.Node, opts ...grpc.CallOption) error {
 	req := &management.ClusterJoinRequest{
-		Id:         id,
-		NodeConfig: nodeConfigAny,
+		Id:   id,
+		Node: node,
 	}
 
-	_, err = c.client.ClusterJoin(c.ctx, req, opts...)
+	_, err := c.client.ClusterJoin(c.ctx, req, opts...)
 	if err != nil {
 		return err
 	}
@@ -197,7 +151,7 @@ func (c *GRPCClient) ClusterLeave(id string, opts ...grpc.CallOption) error {
 	return nil
 }
 
-func (c *GRPCClient) ClusterInfo(opts ...grpc.CallOption) (map[string]interface{}, error) {
+func (c *GRPCClient) ClusterInfo(opts ...grpc.CallOption) (*management.Cluster, error) {
 	resp, err := c.client.ClusterInfo(c.ctx, &empty.Empty{}, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
@@ -205,10 +159,7 @@ func (c *GRPCClient) ClusterInfo(opts ...grpc.CallOption) (map[string]interface{
 		return nil, errors.New(st.Message())
 	}
 
-	ins, err := protobuf.MarshalAny(resp.Cluster)
-	cluster := *ins.(*map[string]interface{})
-
-	return cluster, nil
+	return resp.Cluster, nil
 }
 
 func (c *GRPCClient) ClusterWatch(opts ...grpc.CallOption) (management.Management_ClusterWatchClient, error) {

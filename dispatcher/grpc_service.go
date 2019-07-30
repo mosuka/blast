@@ -35,6 +35,7 @@ import (
 	"github.com/mosuka/blast/manager"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/distribute"
+	"github.com/mosuka/blast/protobuf/management"
 	"github.com/mosuka/blast/sortutils"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
@@ -45,7 +46,7 @@ type GRPCService struct {
 	managerAddr string
 	logger      *zap.Logger
 
-	managers             map[string]interface{}
+	managers             *management.Cluster
 	managerClients       map[string]*manager.GRPCClient
 	updateManagersStopCh chan struct{}
 	updateManagersDoneCh chan struct{}
@@ -61,7 +62,7 @@ func NewGRPCService(managerAddr string, logger *zap.Logger) (*GRPCService, error
 		managerAddr: managerAddr,
 		logger:      logger,
 
-		managers:       make(map[string]interface{}, 0),
+		managers:       &management.Cluster{Nodes: make(map[string]*management.Node, 0)},
 		managerClients: make(map[string]*manager.GRPCClient, 0),
 
 		indexers:       make(map[string]interface{}, 0),
@@ -92,20 +93,14 @@ func (s *GRPCService) Stop() error {
 func (s *GRPCService) getManagerClient() (*manager.GRPCClient, error) {
 	var client *manager.GRPCClient
 
-	for id, node := range s.managers {
-		nm, ok := node.(map[string]interface{})
-		if !ok {
-			s.logger.Warn("assertion failed", zap.String("id", id))
+	for id, node := range s.managers.Nodes {
+		if node.Metadata == nil {
+			s.logger.Warn("missing metadata", zap.String("id", id))
 			continue
 		}
 
-		state, ok := nm["state"].(string)
-		if !ok {
-			s.logger.Warn("missing state", zap.String("id", id), zap.String("state", state))
-			continue
-		}
-
-		if state == raft.Leader.String() || state == raft.Follower.String() {
+		if node.Status == raft.Leader.String() || node.Status == raft.Follower.String() {
+			var ok bool
 			client, ok = s.managerClients[id]
 			if ok {
 				return client, nil
@@ -113,7 +108,7 @@ func (s *GRPCService) getManagerClient() (*manager.GRPCClient, error) {
 				s.logger.Error("node does not exist", zap.String("id", id))
 			}
 		} else {
-			s.logger.Debug("node has not available", zap.String("id", id), zap.String("state", state))
+			s.logger.Debug("node has not available", zap.String("id", id), zap.String("state", node.Status))
 		}
 	}
 
@@ -123,7 +118,7 @@ func (s *GRPCService) getManagerClient() (*manager.GRPCClient, error) {
 	return nil, err
 }
 
-func (s *GRPCService) getInitialManagers(managerAddr string) (map[string]interface{}, error) {
+func (s *GRPCService) getInitialManagers(managerAddr string) (*management.Cluster, error) {
 	client, err := manager.NewGRPCClient(s.managerAddr)
 	defer func() {
 		err := client.Close()
@@ -165,29 +160,21 @@ func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 	s.logger.Debug("initialize manager list", zap.Any("managers", s.managers))
 
 	// create clients for managers
-	for nodeId, node := range s.managers {
-		nm, ok := node.(map[string]interface{})
-		if !ok {
-			s.logger.Warn("assertion failed", zap.String("node_id", nodeId))
+	for nodeId, node := range s.managers.Nodes {
+		if node.Metadata == nil {
+			s.logger.Warn("missing metadata", zap.String("node_id", nodeId))
 			continue
 		}
 
-		nodeConfig, ok := nm["node_config"].(map[string]interface{})
-		if !ok {
-			s.logger.Warn("missing metadata", zap.String("node_id", nodeId), zap.Any("node_config", nodeConfig))
+		if node.Metadata.GrpcAddress == "" {
+			s.logger.Warn("missing gRPC address", zap.String("node_id", nodeId), zap.String("grpc_addr", node.Metadata.GrpcAddress))
 			continue
 		}
 
-		grpcAddr, ok := nodeConfig["grpc_addr"].(string)
-		if !ok {
-			s.logger.Warn("missing gRPC address", zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
-			continue
-		}
-
-		s.logger.Debug("create gRPC client", zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
-		client, err := manager.NewGRPCClient(grpcAddr)
+		s.logger.Debug("create gRPC client", zap.String("node_id", nodeId), zap.String("grpc_addr", node.Metadata.GrpcAddress))
+		client, err := manager.NewGRPCClient(node.Metadata.GrpcAddress)
 		if err != nil {
-			s.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
+			s.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", node.Metadata.GrpcAddress))
 		}
 		if client != nil {
 			s.managerClients[nodeId] = client
@@ -223,31 +210,18 @@ func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 				s.logger.Error(err.Error())
 				continue
 			}
-
-			// get current manager cluster
-			managersIntr, err := protobuf.MarshalAny(resp.Cluster)
-			if err != nil {
-				s.logger.Error(err.Error())
-				continue
-			}
-			if managersIntr == nil {
-				s.logger.Error(err.Error())
-				continue
-			}
-			managers := *managersIntr.(*map[string]interface{})
+			managers := resp.Cluster
 
 			if !reflect.DeepEqual(s.managers, managers) {
 				// open clients
-				for nodeId, metadata := range managers {
-					mm, ok := metadata.(map[string]interface{})
-					if !ok {
-						s.logger.Warn("assertion failed", zap.String("node_id", nodeId))
+				for nodeId, node := range managers.Nodes {
+					if node.Metadata == nil {
+						s.logger.Warn("missing metadata", zap.String("node_id", nodeId))
 						continue
 					}
 
-					grpcAddr, ok := mm["grpc_addr"].(string)
-					if !ok {
-						s.logger.Warn("missing metadata", zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
+					if node.Metadata.GrpcAddress == "" {
+						s.logger.Warn("missing gRPC address", zap.String("node_id", nodeId), zap.String("grpc_addr", node.Metadata.GrpcAddress))
 						continue
 					}
 
@@ -255,9 +229,9 @@ func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 					if exist {
 						s.logger.Debug("client has already exist in manager list", zap.String("node_id", nodeId))
 
-						if client.GetAddress() != grpcAddr {
-							s.logger.Debug("gRPC address has been changed", zap.String("node_id", nodeId), zap.String("client_grpc_addr", client.GetAddress()), zap.String("grpc_addr", grpcAddr))
-							s.logger.Debug("recreate gRPC client", zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
+						if client.GetAddress() != node.Metadata.GrpcAddress {
+							s.logger.Debug("gRPC address has been changed", zap.String("node_id", nodeId), zap.String("client_grpc_addr", client.GetAddress()), zap.String("grpc_addr", node.Metadata.GrpcAddress))
+							s.logger.Debug("recreate gRPC client", zap.String("node_id", nodeId), zap.String("grpc_addr", node.Metadata.GrpcAddress))
 
 							delete(s.managerClients, nodeId)
 
@@ -266,24 +240,24 @@ func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 								s.logger.Error(err.Error(), zap.String("node_id", nodeId))
 							}
 
-							newClient, err := manager.NewGRPCClient(grpcAddr)
+							newClient, err := manager.NewGRPCClient(node.Metadata.GrpcAddress)
 							if err != nil {
-								s.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
+								s.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", node.Metadata.GrpcAddress))
 							}
 
 							if newClient != nil {
 								s.managerClients[nodeId] = newClient
 							}
 						} else {
-							s.logger.Debug("gRPC address has not changed", zap.String("node_id", nodeId), zap.String("client_grpc_addr", client.GetAddress()), zap.String("grpc_addr", grpcAddr))
+							s.logger.Debug("gRPC address has not changed", zap.String("node_id", nodeId), zap.String("client_grpc_addr", client.GetAddress()), zap.String("grpc_addr", node.Metadata.GrpcAddress))
 						}
 					} else {
 						s.logger.Debug("client does not exist in peer list", zap.String("node_id", nodeId))
 
-						s.logger.Debug("create gRPC client", zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
-						newClient, err := manager.NewGRPCClient(grpcAddr)
+						s.logger.Debug("create gRPC client", zap.String("node_id", nodeId), zap.String("grpc_addr", node.Metadata.GrpcAddress))
+						newClient, err := manager.NewGRPCClient(node.Metadata.GrpcAddress)
 						if err != nil {
-							s.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
+							s.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", node.Metadata.GrpcAddress))
 						}
 						if newClient != nil {
 							s.managerClients[nodeId] = newClient
@@ -293,7 +267,7 @@ func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 
 				// close nonexistent clients
 				for nodeId, client := range s.managerClients {
-					if nodeConfig, exist := managers[nodeId]; !exist {
+					if nodeConfig, exist := managers.Nodes[nodeId]; !exist {
 						s.logger.Info("this client is no longer in use", zap.String("node_id", nodeId), zap.Any("node_config", nodeConfig))
 
 						s.logger.Debug("close client", zap.String("node_id", nodeId), zap.String("grpc_addr", client.GetAddress()))

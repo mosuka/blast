@@ -3,7 +3,6 @@ module github.com/mosuka/blast
 go 1.12
 
 require (
-	github.com/armon/gomdb v0.0.0-20180202201627-75f545a47e89 // indirect
 	github.com/blevesearch/bleve v0.7.0
 	github.com/blevesearch/blevex v0.0.0-20180227211930-4b158bb555a3 // indirect
 	github.com/blevesearch/cld2 v0.0.0-20150916130542-10f17c049ec9 // indirect
@@ -18,13 +17,13 @@ require (
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
 	github.com/facebookgo/subset v0.0.0-20150612182917-8dac2c3c4870 // indirect
 	github.com/golang/protobuf v1.3.1
+	github.com/google/go-cmp v0.3.0
 	github.com/gorilla/mux v1.7.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
 	github.com/hashicorp/raft v1.1.0
 	github.com/hashicorp/raft-boltdb v0.0.0-20190605210249-ef2e128ed477
-	github.com/hashicorp/raft-mdb v0.0.0-20180824152511-9ee9663b6ffa
 	github.com/ikawaha/kagome.ipadic v1.0.1 // indirect
 	github.com/imdario/mergo v0.3.7
 	github.com/jmhodges/levigo v1.0.0 // indirect
@@ -38,7 +37,6 @@ require (
 	github.com/prometheus/procfs v0.0.0-20190322151404-55ae3d9d5573 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20190321074620-2f0d2b0e0001 // indirect
 	github.com/stretchr/objx v0.1.1
-	github.com/stretchr/testify v1.3.0
 	github.com/syndtr/goleveldb v1.0.0 // indirect
 	github.com/tebeka/snowball v0.0.0-20130405174319-16e884df4e19 // indirect
 	github.com/tecbot/gorocksdb v0.0.0-20181010114359-8752a9433481 // indirect

@@ -15,6 +15,7 @@
 package manager
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -22,43 +23,44 @@ import (
 	"time"
 
 	"github.com/hashicorp/raft"
-	"github.com/mosuka/blast/config"
 	blasterrors "github.com/mosuka/blast/errors"
-	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/logutils"
 	"github.com/mosuka/blast/protobuf/management"
+	"github.com/mosuka/blast/strutils"
 	"github.com/mosuka/blast/testutils"
 )
 
 func TestServer_Start(t *testing.T) {
 	curDir, _ := os.Getwd()
 
-	// create logger
 	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create HTTP access logger
 	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
 
-	// create cluster config
-	clusterConfig := config.DefaultClusterConfig()
+	peerGrpcAddress := ""
+	grpcAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir := testutils.TmpDir()
+	raftStorageType := "boltdb"
 
-	// create node config
-	nodeConfig := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig.DataDir)
-	}()
+	node := &management.Node{
+		BindAddress: bindAddress,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress,
+			HttpAddress: httpAddress,
+		},
+	}
 
-	// create index config
 	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
 	// create server
-	server, err := NewServer(clusterConfig, nodeConfig, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(peerGrpcAddress, nodeId, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server != nil {
 			server.Stop()
@@ -78,32 +80,34 @@ func TestServer_Start(t *testing.T) {
 func TestServer_HealthCheck(t *testing.T) {
 	curDir, _ := os.Getwd()
 
-	// create logger
 	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create HTTP access logger
 	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
 
-	// create cluster config
-	clusterConfig := config.DefaultClusterConfig()
+	peerGrpcAddress := ""
+	grpcAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir := testutils.TmpDir()
+	raftStorageType := "boltdb"
 
-	// create node config
-	nodeConfig := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig.DataDir)
-	}()
+	node := &management.Node{
+		BindAddress: bindAddress,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress,
+			HttpAddress: httpAddress,
+		},
+	}
 
-	// create index config
 	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
 	// create server
-	server, err := NewServer(clusterConfig, nodeConfig, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(peerGrpcAddress, nodeId, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server != nil {
 			server.Stop()
@@ -120,7 +124,7 @@ func TestServer_HealthCheck(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// create gRPC client
-	client, err := NewGRPCClient(nodeConfig.GRPCAddr)
+	client, err := NewGRPCClient(node.Metadata.GrpcAddress)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -170,32 +174,34 @@ func TestServer_HealthCheck(t *testing.T) {
 func TestServer_GetNode(t *testing.T) {
 	curDir, _ := os.Getwd()
 
-	// create logger
 	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create HTTP access logger
 	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
 
-	// create cluster config
-	clusterConfig := config.DefaultClusterConfig()
+	peerGrpcAddress := ""
+	grpcAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir := testutils.TmpDir()
+	raftStorageType := "boltdb"
 
-	// create node config
-	nodeConfig := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig.DataDir)
-	}()
+	node := &management.Node{
+		BindAddress: bindAddress,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress,
+			HttpAddress: httpAddress,
+		},
+	}
 
-	// create index config
 	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
 	// create server
-	server, err := NewServer(clusterConfig, nodeConfig, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(peerGrpcAddress, nodeId, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server != nil {
 			server.Stop()
@@ -212,7 +218,7 @@ func TestServer_GetNode(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// create gRPC client
-	client, err := NewGRPCClient(nodeConfig.GRPCAddr)
+	client, err := NewGRPCClient(node.Metadata.GrpcAddress)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -226,13 +232,17 @@ func TestServer_GetNode(t *testing.T) {
 	}
 
 	// get node
-	nodeInfo, err := client.NodeInfo(nodeConfig.NodeId)
+	nodeInfo, err := client.NodeInfo(nodeId)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expNodeInfo := map[string]interface{}{
-		"node_config": nodeConfig.ToMap(),
-		"state":       "Leader",
+	expNodeInfo := &management.Node{
+		BindAddress: bindAddress,
+		Status:      raft.Leader.String(),
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress,
+			HttpAddress: httpAddress,
+		},
 	}
 	actNodeInfo := nodeInfo
 	if !reflect.DeepEqual(expNodeInfo, actNodeInfo) {
@@ -243,32 +253,34 @@ func TestServer_GetNode(t *testing.T) {
 func TestServer_GetCluster(t *testing.T) {
 	curDir, _ := os.Getwd()
 
-	// create logger
 	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create HTTP access logger
 	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
 
-	// create cluster config
-	clusterConfig := config.DefaultClusterConfig()
+	peerGrpcAddress := ""
+	grpcAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir := testutils.TmpDir()
+	raftStorageType := "boltdb"
 
-	// create node config
-	nodeConfig := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig.DataDir)
-	}()
+	node := &management.Node{
+		BindAddress: bindAddress,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress,
+			HttpAddress: httpAddress,
+		},
+	}
 
-	// create index config
 	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
 	// create server
-	server, err := NewServer(clusterConfig, nodeConfig, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(peerGrpcAddress, nodeId, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server != nil {
 			server.Stop()
@@ -285,7 +297,7 @@ func TestServer_GetCluster(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// create gRPC client
-	client, err := NewGRPCClient(nodeConfig.GRPCAddr)
+	client, err := NewGRPCClient(node.Metadata.GrpcAddress)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -303,10 +315,16 @@ func TestServer_GetCluster(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expCluster := map[string]interface{}{
-		nodeConfig.NodeId: map[string]interface{}{
-			"node_config": nodeConfig.ToMap(),
-			"state":       "Leader",
+	expCluster := &management.Cluster{
+		Nodes: map[string]*management.Node{
+			nodeId: {
+				BindAddress: bindAddress,
+				Status:      raft.Leader.String(),
+				Metadata: &management.Metadata{
+					GrpcAddress: grpcAddress,
+					HttpAddress: httpAddress,
+				},
+			},
 		},
 	}
 	actCluster := cluster
@@ -315,259 +333,37 @@ func TestServer_GetCluster(t *testing.T) {
 	}
 }
 
-func TestServer_GetIndexMapping(t *testing.T) {
-	curDir, _ := os.Getwd()
-
-	// create logger
-	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create gRPC logger
-	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create HTTP access logger
-	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
-
-	// create cluster config
-	clusterConfig := config.DefaultClusterConfig()
-
-	// create node config
-	nodeConfig := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig.DataDir)
-	}()
-
-	// create index config
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	// create server
-	server, err := NewServer(clusterConfig, nodeConfig, indexConfig, logger, grpcLogger, httpAccessLogger)
-	defer func() {
-		if server != nil {
-			server.Stop()
-		}
-	}()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	// start server
-	server.Start()
-
-	// sleep
-	time.Sleep(5 * time.Second)
-
-	// create gRPC client
-	client, err := NewGRPCClient(nodeConfig.GRPCAddr)
-	defer func() {
-		if client != nil {
-			err = client.Close()
-			if err != nil {
-				t.Fatalf("%v", err)
-			}
-		}
-	}()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	expIndexMapping := indexConfig.IndexMapping
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	actIntr, err := client.Get("index_config/index_mapping")
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	actIndexMapping, err := indexutils.NewIndexMappingFromMap(*actIntr.(*map[string]interface{}))
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	if !reflect.DeepEqual(expIndexMapping, actIndexMapping) {
-		t.Fatalf("expected content to see %v, saw %v", expIndexMapping, actIndexMapping)
-	}
-}
-
-func TestServer_GetIndexType(t *testing.T) {
-	curDir, _ := os.Getwd()
-
-	// create logger
-	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create gRPC logger
-	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create HTTP access logger
-	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
-
-	// create cluster config
-	clusterConfig := config.DefaultClusterConfig()
-
-	// create node config
-	nodeConfig := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig.DataDir)
-	}()
-
-	// create index config
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	// create server
-	server, err := NewServer(clusterConfig, nodeConfig, indexConfig, logger, grpcLogger, httpAccessLogger)
-	defer func() {
-		if server != nil {
-			server.Stop()
-		}
-	}()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	// start server
-	server.Start()
-
-	// sleep
-	time.Sleep(5 * time.Second)
-
-	// create gRPC client
-	client, err := NewGRPCClient(nodeConfig.GRPCAddr)
-	defer func() {
-		if client != nil {
-			err = client.Close()
-			if err != nil {
-				t.Fatalf("%v", err)
-			}
-		}
-	}()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	expIndexType := indexConfig.IndexType
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	actIndexType, err := client.Get("index_config/index_type")
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	if expIndexType != *actIndexType.(*string) {
-		t.Fatalf("expected content to see %v, saw %v", expIndexType, *actIndexType.(*string))
-	}
-}
-
-func TestServer_GetIndexStorageType(t *testing.T) {
-	curDir, _ := os.Getwd()
-
-	// create logger
-	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create gRPC logger
-	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create HTTP access logger
-	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
-
-	// create cluster config
-	clusterConfig := config.DefaultClusterConfig()
-
-	// create node config
-	nodeConfig := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig.DataDir)
-	}()
-
-	// create index config
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	// create server
-	server, err := NewServer(clusterConfig, nodeConfig, indexConfig, logger, grpcLogger, httpAccessLogger)
-	defer func() {
-		if server != nil {
-			server.Stop()
-		}
-	}()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	// start server
-	server.Start()
-
-	// sleep
-	time.Sleep(5 * time.Second)
-
-	// create gRPC client
-	client, err := NewGRPCClient(nodeConfig.GRPCAddr)
-	defer func() {
-		if client != nil {
-			err = client.Close()
-			if err != nil {
-				t.Fatalf("%v", err)
-			}
-		}
-	}()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	expIndexStorageType := indexConfig.IndexStorageType
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	actIndexStorageType, err := client.Get("index_config/index_storage_type")
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	if expIndexStorageType != *actIndexStorageType.(*string) {
-		t.Fatalf("expected content to see %v, saw %v", expIndexStorageType, *actIndexStorageType.(*string))
-	}
-}
-
 func TestServer_SetState(t *testing.T) {
 	curDir, _ := os.Getwd()
 
-	// create logger
 	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create HTTP access logger
 	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
 
-	// create cluster config
-	clusterConfig := config.DefaultClusterConfig()
+	peerGrpcAddress := ""
+	grpcAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir := testutils.TmpDir()
+	raftStorageType := "boltdb"
 
-	// create node config
-	nodeConfig := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig.DataDir)
-	}()
+	node := &management.Node{
+		BindAddress: bindAddress,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress,
+			HttpAddress: httpAddress,
+		},
+	}
 
-	// create index config
 	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
 	// create server
-	server, err := NewServer(clusterConfig, nodeConfig, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(peerGrpcAddress, nodeId, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server != nil {
 			server.Stop()
@@ -584,7 +380,7 @@ func TestServer_SetState(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// create gRPC client
-	client, err := NewGRPCClient(nodeConfig.GRPCAddr)
+	client, err := NewGRPCClient(node.Metadata.GrpcAddress)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -621,32 +417,34 @@ func TestServer_SetState(t *testing.T) {
 func TestServer_GetState(t *testing.T) {
 	curDir, _ := os.Getwd()
 
-	// create logger
 	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create HTTP access logger
 	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
 
-	// create cluster config
-	clusterConfig := config.DefaultClusterConfig()
+	peerGrpcAddress := ""
+	grpcAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir := testutils.TmpDir()
+	raftStorageType := "boltdb"
 
-	// create node config
-	nodeConfig := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig.DataDir)
-	}()
+	node := &management.Node{
+		BindAddress: bindAddress,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress,
+			HttpAddress: httpAddress,
+		},
+	}
 
-	// create index config
 	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
 	// create server
-	server, err := NewServer(clusterConfig, nodeConfig, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(peerGrpcAddress, nodeId, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server != nil {
 			server.Stop()
@@ -663,7 +461,7 @@ func TestServer_GetState(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// create gRPC client
-	client, err := NewGRPCClient(nodeConfig.GRPCAddr)
+	client, err := NewGRPCClient(node.Metadata.GrpcAddress)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -700,32 +498,34 @@ func TestServer_GetState(t *testing.T) {
 func TestServer_DeleteState(t *testing.T) {
 	curDir, _ := os.Getwd()
 
-	// create logger
 	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create HTTP access logger
 	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
 
-	// create cluster config
-	clusterConfig := config.DefaultClusterConfig()
+	peerGrpcAddress := ""
+	grpcAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir := testutils.TmpDir()
+	raftStorageType := "boltdb"
 
-	// create node config
-	nodeConfig := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig.DataDir)
-	}()
+	node := &management.Node{
+		BindAddress: bindAddress,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress,
+			HttpAddress: httpAddress,
+		},
+	}
 
-	// create index config
 	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
 	// create server
-	server, err := NewServer(clusterConfig, nodeConfig, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(peerGrpcAddress, nodeId, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server != nil {
 			server.Stop()
@@ -742,7 +542,7 @@ func TestServer_DeleteState(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// create gRPC client
-	client, err := NewGRPCClient(nodeConfig.GRPCAddr)
+	client, err := NewGRPCClient(node.Metadata.GrpcAddress)
 	defer func() {
 		if client != nil {
 			err = client.Close()
@@ -800,29 +600,34 @@ func TestServer_DeleteState(t *testing.T) {
 func TestCluster_Start(t *testing.T) {
 	curDir, _ := os.Getwd()
 
-	// create logger
 	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create HTTP access logger
 	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
 
-	// create index config
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	peerGrpcAddress1 := ""
+	grpcAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId1 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir1 := testutils.TmpDir()
+	raftStorageType1 := "boltdb"
+
+	node1 := &management.Node{
+		BindAddress: bindAddress1,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress1,
+			HttpAddress: httpAddress1,
+		},
+	}
+
+	indexConfig1, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	// create configs for server1
-	clusterConfig1 := config.DefaultClusterConfig()
-	nodeConfig1 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig1.DataDir)
-	}()
-	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named("manager1"), grpcLogger, httpAccessLogger)
+	// create server
+	server1, err := NewServer(peerGrpcAddress1, nodeId1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -831,18 +636,34 @@ func TestCluster_Start(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server1
+
+	// start server
 	server1.Start()
 
-	// create configs for server2
-	clusterConfig2 := config.DefaultClusterConfig()
-	clusterConfig2.PeerAddr = nodeConfig1.GRPCAddr
-	nodeConfig2 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig2.DataDir)
-	}()
-	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named("manager2"), grpcLogger, httpAccessLogger)
+	peerGrpcAddress2 := grpcAddress1
+	grpcAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId2 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir2 := testutils.TmpDir()
+	raftStorageType2 := "boltdb"
+
+	node2 := &management.Node{
+		BindAddress: bindAddress2,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress2,
+			HttpAddress: httpAddress2,
+		},
+	}
+
+	indexConfig2, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// create server
+	server2, err := NewServer(peerGrpcAddress2, nodeId2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -851,18 +672,34 @@ func TestCluster_Start(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server2
+
+	// start server
 	server2.Start()
 
-	// create configs for server3
-	clusterConfig3 := config.DefaultClusterConfig()
-	clusterConfig3.PeerAddr = nodeConfig1.GRPCAddr
-	nodeConfig3 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig3.DataDir)
-	}()
-	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named("manager3"), grpcLogger, httpAccessLogger)
+	peerGrpcAddress3 := grpcAddress1
+	grpcAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId3 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir3 := testutils.TmpDir()
+	raftStorageType3 := "boltdb"
+
+	node3 := &management.Node{
+		BindAddress: bindAddress3,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress3,
+			HttpAddress: httpAddress3,
+		},
+	}
+
+	indexConfig3, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// create server
+	server3, err := NewServer(peerGrpcAddress3, nodeId3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -871,7 +708,8 @@ func TestCluster_Start(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server3
+
+	// start server
 	server3.Start()
 
 	// sleep
@@ -881,29 +719,34 @@ func TestCluster_Start(t *testing.T) {
 func TestCluster_HealthCheck(t *testing.T) {
 	curDir, _ := os.Getwd()
 
-	// create logger
 	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create HTTP access logger
 	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
 
-	// create index config
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	peerGrpcAddress1 := ""
+	grpcAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId1 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir1 := testutils.TmpDir()
+	raftStorageType1 := "boltdb"
+
+	node1 := &management.Node{
+		BindAddress: bindAddress1,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress1,
+			HttpAddress: httpAddress1,
+		},
+	}
+
+	indexConfig1, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	// create configs for server1
-	clusterConfig1 := config.DefaultClusterConfig()
-	nodeConfig1 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig1.DataDir)
-	}()
-	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named("manager1"), grpcLogger, httpAccessLogger)
+	// create server
+	server1, err := NewServer(peerGrpcAddress1, nodeId1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -912,18 +755,34 @@ func TestCluster_HealthCheck(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server1
+
+	// start server
 	server1.Start()
 
-	// create configs for server2
-	clusterConfig2 := config.DefaultClusterConfig()
-	clusterConfig2.PeerAddr = nodeConfig1.GRPCAddr
-	nodeConfig2 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig2.DataDir)
-	}()
-	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named("manager2"), grpcLogger, httpAccessLogger)
+	peerGrpcAddress2 := grpcAddress1
+	grpcAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId2 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir2 := testutils.TmpDir()
+	raftStorageType2 := "boltdb"
+
+	node2 := &management.Node{
+		BindAddress: bindAddress2,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress2,
+			HttpAddress: httpAddress2,
+		},
+	}
+
+	indexConfig2, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// create server
+	server2, err := NewServer(peerGrpcAddress2, nodeId2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -932,18 +791,34 @@ func TestCluster_HealthCheck(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server2
+
+	// start server
 	server2.Start()
 
-	// create configs for server3
-	clusterConfig3 := config.DefaultClusterConfig()
-	clusterConfig3.PeerAddr = nodeConfig1.GRPCAddr
-	nodeConfig3 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig3.DataDir)
-	}()
-	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named("manager3"), grpcLogger, httpAccessLogger)
+	peerGrpcAddress3 := grpcAddress1
+	grpcAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId3 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir3 := testutils.TmpDir()
+	raftStorageType3 := "boltdb"
+
+	node3 := &management.Node{
+		BindAddress: bindAddress3,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress3,
+			HttpAddress: httpAddress3,
+		},
+	}
+
+	indexConfig3, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// create server
+	server3, err := NewServer(peerGrpcAddress3, nodeId3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -952,28 +827,29 @@ func TestCluster_HealthCheck(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server3
+
+	// start server
 	server3.Start()
 
 	// sleep
 	time.Sleep(5 * time.Second)
 
 	// gRPC client for all servers
-	client1, err := NewGRPCClient(nodeConfig1.GRPCAddr)
+	client1, err := NewGRPCClient(node1.Metadata.GrpcAddress)
 	defer func() {
 		_ = client1.Close()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	client2, err := NewGRPCClient(nodeConfig2.GRPCAddr)
+	client2, err := NewGRPCClient(node2.Metadata.GrpcAddress)
 	defer func() {
 		_ = client2.Close()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	client3, err := NewGRPCClient(nodeConfig3.GRPCAddr)
+	client3, err := NewGRPCClient(node3.Metadata.GrpcAddress)
 	defer func() {
 		_ = client3.Close()
 	}()
@@ -1085,29 +961,34 @@ func TestCluster_HealthCheck(t *testing.T) {
 func TestCluster_GetNode(t *testing.T) {
 	curDir, _ := os.Getwd()
 
-	// create logger
 	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create HTTP access logger
 	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
 
-	// create index config
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	peerGrpcAddress1 := ""
+	grpcAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId1 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir1 := testutils.TmpDir()
+	raftStorageType1 := "boltdb"
+
+	node1 := &management.Node{
+		BindAddress: bindAddress1,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress1,
+			HttpAddress: httpAddress1,
+		},
+	}
+
+	indexConfig1, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	// create configs for server1
-	clusterConfig1 := config.DefaultClusterConfig()
-	nodeConfig1 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig1.DataDir)
-	}()
-	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named("manager1"), grpcLogger, httpAccessLogger)
+	// create server
+	server1, err := NewServer(peerGrpcAddress1, nodeId1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -1116,18 +997,34 @@ func TestCluster_GetNode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server1
+
+	// start server
 	server1.Start()
 
-	// create configs for server2
-	clusterConfig2 := config.DefaultClusterConfig()
-	clusterConfig2.PeerAddr = nodeConfig1.GRPCAddr
-	nodeConfig2 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig2.DataDir)
-	}()
-	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named("manager2"), grpcLogger, httpAccessLogger)
+	peerGrpcAddress2 := grpcAddress1
+	grpcAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId2 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir2 := testutils.TmpDir()
+	raftStorageType2 := "boltdb"
+
+	node2 := &management.Node{
+		BindAddress: bindAddress2,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress2,
+			HttpAddress: httpAddress2,
+		},
+	}
+
+	indexConfig2, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// create server
+	server2, err := NewServer(peerGrpcAddress2, nodeId2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -1136,18 +1033,34 @@ func TestCluster_GetNode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server2
+
+	// start server
 	server2.Start()
 
-	// create configs for server3
-	clusterConfig3 := config.DefaultClusterConfig()
-	clusterConfig3.PeerAddr = nodeConfig1.GRPCAddr
-	nodeConfig3 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig3.DataDir)
-	}()
-	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named("manager3"), grpcLogger, httpAccessLogger)
+	peerGrpcAddress3 := grpcAddress1
+	grpcAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId3 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir3 := testutils.TmpDir()
+	raftStorageType3 := "boltdb"
+
+	node3 := &management.Node{
+		BindAddress: bindAddress3,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress3,
+			HttpAddress: httpAddress3,
+		},
+	}
+
+	indexConfig3, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// create server
+	server3, err := NewServer(peerGrpcAddress3, nodeId3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -1156,28 +1069,29 @@ func TestCluster_GetNode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server3
+
+	// start server
 	server3.Start()
 
 	// sleep
 	time.Sleep(5 * time.Second)
 
 	// gRPC client for all servers
-	client1, err := NewGRPCClient(nodeConfig1.GRPCAddr)
+	client1, err := NewGRPCClient(node1.Metadata.GrpcAddress)
 	defer func() {
 		_ = client1.Close()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	client2, err := NewGRPCClient(nodeConfig2.GRPCAddr)
+	client2, err := NewGRPCClient(node2.Metadata.GrpcAddress)
 	defer func() {
 		_ = client2.Close()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	client3, err := NewGRPCClient(nodeConfig3.GRPCAddr)
+	client3, err := NewGRPCClient(node3.Metadata.GrpcAddress)
 	defer func() {
 		_ = client3.Close()
 	}()
@@ -1186,117 +1100,153 @@ func TestCluster_GetNode(t *testing.T) {
 	}
 
 	// get all node info from all nodes
-	node11, err := client1.NodeInfo(nodeConfig1.NodeId)
+	node11, err := client1.NodeInfo(nodeId1)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expNode11 := map[string]interface{}{
-		"node_config": server1.nodeConfig.ToMap(),
-		"state":       raft.Leader.String(),
+	expNode11 := &management.Node{
+		BindAddress: bindAddress1,
+		Status:      raft.Leader.String(),
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress1,
+			HttpAddress: httpAddress1,
+		},
 	}
 	actNode11 := node11
 	if !reflect.DeepEqual(expNode11, actNode11) {
 		t.Fatalf("expected content to see %v, saw %v", expNode11, actNode11)
 	}
 
-	node12, err := client1.NodeInfo(nodeConfig2.NodeId)
+	node12, err := client1.NodeInfo(nodeId2)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expNode12 := map[string]interface{}{
-		"node_config": server2.nodeConfig.ToMap(),
-		"state":       raft.Follower.String(),
+	expNode12 := &management.Node{
+		BindAddress: bindAddress2,
+		Status:      raft.Follower.String(),
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress2,
+			HttpAddress: httpAddress2,
+		},
 	}
 	actNode12 := node12
 	if !reflect.DeepEqual(expNode12, actNode12) {
 		t.Fatalf("expected content to see %v, saw %v", expNode12, actNode12)
 	}
 
-	node13, err := client1.NodeInfo(nodeConfig3.NodeId)
+	node13, err := client1.NodeInfo(nodeId3)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expNode13 := map[string]interface{}{
-		"node_config": server3.nodeConfig.ToMap(),
-		"state":       raft.Follower.String(),
+	expNode13 := &management.Node{
+		BindAddress: bindAddress3,
+		Status:      raft.Follower.String(),
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress3,
+			HttpAddress: httpAddress3,
+		},
 	}
 	actNode13 := node13
 	if !reflect.DeepEqual(expNode13, actNode13) {
 		t.Fatalf("expected content to see %v, saw %v", expNode13, actNode13)
 	}
 
-	node21, err := client2.NodeInfo(nodeConfig1.NodeId)
+	node21, err := client2.NodeInfo(nodeId1)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expNode21 := map[string]interface{}{
-		"node_config": server1.nodeConfig.ToMap(),
-		"state":       raft.Leader.String(),
+	expNode21 := &management.Node{
+		BindAddress: bindAddress1,
+		Status:      raft.Leader.String(),
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress1,
+			HttpAddress: httpAddress1,
+		},
 	}
 	actNode21 := node21
 	if !reflect.DeepEqual(expNode21, actNode21) {
 		t.Fatalf("expected content to see %v, saw %v", expNode21, actNode21)
 	}
 
-	node22, err := client2.NodeInfo(nodeConfig2.NodeId)
+	node22, err := client2.NodeInfo(nodeId2)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expNode22 := map[string]interface{}{
-		"node_config": server2.nodeConfig.ToMap(),
-		"state":       raft.Follower.String(),
+	expNode22 := &management.Node{
+		BindAddress: bindAddress2,
+		Status:      raft.Follower.String(),
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress2,
+			HttpAddress: httpAddress2,
+		},
 	}
 	actNode22 := node22
 	if !reflect.DeepEqual(expNode22, actNode22) {
 		t.Fatalf("expected content to see %v, saw %v", expNode22, actNode22)
 	}
 
-	node23, err := client2.NodeInfo(nodeConfig3.NodeId)
+	node23, err := client2.NodeInfo(nodeId3)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expNode23 := map[string]interface{}{
-		"node_config": server3.nodeConfig.ToMap(),
-		"state":       raft.Follower.String(),
+	expNode23 := &management.Node{
+		BindAddress: bindAddress3,
+		Status:      raft.Follower.String(),
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress3,
+			HttpAddress: httpAddress3,
+		},
 	}
 	actNode23 := node23
 	if !reflect.DeepEqual(expNode23, actNode23) {
 		t.Fatalf("expected content to see %v, saw %v", expNode23, actNode23)
 	}
 
-	node31, err := client3.NodeInfo(nodeConfig1.NodeId)
+	node31, err := client3.NodeInfo(nodeId1)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expNode31 := map[string]interface{}{
-		"node_config": server1.nodeConfig.ToMap(),
-		"state":       raft.Leader.String(),
+	expNode31 := &management.Node{
+		BindAddress: bindAddress1,
+		Status:      raft.Leader.String(),
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress1,
+			HttpAddress: httpAddress1,
+		},
 	}
 	actNode31 := node31
 	if !reflect.DeepEqual(expNode31, actNode31) {
 		t.Fatalf("expected content to see %v, saw %v", expNode31, actNode31)
 	}
 
-	node32, err := client3.NodeInfo(nodeConfig2.NodeId)
+	node32, err := client3.NodeInfo(nodeId2)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expNode32 := map[string]interface{}{
-		"node_config": server2.nodeConfig.ToMap(),
-		"state":       raft.Follower.String(),
+	expNode32 := &management.Node{
+		BindAddress: bindAddress2,
+		Status:      raft.Follower.String(),
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress2,
+			HttpAddress: httpAddress2,
+		},
 	}
 	actNode32 := node32
 	if !reflect.DeepEqual(expNode32, actNode32) {
 		t.Fatalf("expected content to see %v, saw %v", expNode32, actNode32)
 	}
 
-	node33, err := client3.NodeInfo(nodeConfig3.NodeId)
+	node33, err := client3.NodeInfo(nodeId3)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expNode33 := map[string]interface{}{
-		"node_config": server3.nodeConfig.ToMap(),
-		"state":       raft.Follower.String(),
+	expNode33 := &management.Node{
+		BindAddress: bindAddress3,
+		Status:      raft.Follower.String(),
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress3,
+			HttpAddress: httpAddress3,
+		},
 	}
 	actNode33 := node33
 	if !reflect.DeepEqual(expNode33, actNode33) {
@@ -1307,29 +1257,34 @@ func TestCluster_GetNode(t *testing.T) {
 func TestCluster_GetCluster(t *testing.T) {
 	curDir, _ := os.Getwd()
 
-	// create logger
 	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create HTTP access logger
 	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
 
-	// create index config
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	peerGrpcAddress1 := ""
+	grpcAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId1 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir1 := testutils.TmpDir()
+	raftStorageType1 := "boltdb"
+
+	node1 := &management.Node{
+		BindAddress: bindAddress1,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress1,
+			HttpAddress: httpAddress1,
+		},
+	}
+
+	indexConfig1, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	// create configs for server1
-	clusterConfig1 := config.DefaultClusterConfig()
-	nodeConfig1 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig1.DataDir)
-	}()
-	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named("manager1"), grpcLogger, httpAccessLogger)
+	// create server
+	server1, err := NewServer(peerGrpcAddress1, nodeId1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -1338,18 +1293,34 @@ func TestCluster_GetCluster(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server1
+
+	// start server
 	server1.Start()
 
-	// create configs for server2
-	clusterConfig2 := config.DefaultClusterConfig()
-	clusterConfig2.PeerAddr = nodeConfig1.GRPCAddr
-	nodeConfig2 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig2.DataDir)
-	}()
-	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named("manager2"), grpcLogger, httpAccessLogger)
+	peerGrpcAddress2 := grpcAddress1
+	grpcAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId2 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir2 := testutils.TmpDir()
+	raftStorageType2 := "boltdb"
+
+	node2 := &management.Node{
+		BindAddress: bindAddress2,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress2,
+			HttpAddress: httpAddress2,
+		},
+	}
+
+	indexConfig2, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// create server
+	server2, err := NewServer(peerGrpcAddress2, nodeId2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -1358,18 +1329,34 @@ func TestCluster_GetCluster(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server2
+
+	// start server
 	server2.Start()
 
-	// create configs for server3
-	clusterConfig3 := config.DefaultClusterConfig()
-	clusterConfig3.PeerAddr = nodeConfig1.GRPCAddr
-	nodeConfig3 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig3.DataDir)
-	}()
-	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named("manager3"), grpcLogger, httpAccessLogger)
+	peerGrpcAddress3 := grpcAddress1
+	grpcAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId3 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir3 := testutils.TmpDir()
+	raftStorageType3 := "boltdb"
+
+	node3 := &management.Node{
+		BindAddress: bindAddress3,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress3,
+			HttpAddress: httpAddress3,
+		},
+	}
+
+	indexConfig3, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// create server
+	server3, err := NewServer(peerGrpcAddress3, nodeId3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -1378,28 +1365,29 @@ func TestCluster_GetCluster(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server3
+
+	// start server
 	server3.Start()
 
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	// gRPC client for manager1
-	client1, err := NewGRPCClient(nodeConfig1.GRPCAddr)
+	// gRPC client for all servers
+	client1, err := NewGRPCClient(node1.Metadata.GrpcAddress)
 	defer func() {
 		_ = client1.Close()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	client2, err := NewGRPCClient(nodeConfig2.GRPCAddr)
+	client2, err := NewGRPCClient(node2.Metadata.GrpcAddress)
 	defer func() {
 		_ = client2.Close()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	client3, err := NewGRPCClient(nodeConfig3.GRPCAddr)
+	client3, err := NewGRPCClient(node3.Metadata.GrpcAddress)
 	defer func() {
 		_ = client3.Close()
 	}()
@@ -1412,18 +1400,32 @@ func TestCluster_GetCluster(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expCluster1 := map[string]interface{}{
-		nodeConfig1.NodeId: map[string]interface{}{
-			"node_config": nodeConfig1.ToMap(),
-			"state":       raft.Leader.String(),
-		},
-		nodeConfig2.NodeId: map[string]interface{}{
-			"node_config": nodeConfig2.ToMap(),
-			"state":       raft.Follower.String(),
-		},
-		nodeConfig3.NodeId: map[string]interface{}{
-			"node_config": nodeConfig3.ToMap(),
-			"state":       raft.Follower.String(),
+	expCluster1 := &management.Cluster{
+		Nodes: map[string]*management.Node{
+			nodeId1: {
+				BindAddress: bindAddress1,
+				Status:      raft.Leader.String(),
+				Metadata: &management.Metadata{
+					GrpcAddress: grpcAddress1,
+					HttpAddress: httpAddress1,
+				},
+			},
+			nodeId2: {
+				BindAddress: bindAddress2,
+				Status:      raft.Follower.String(),
+				Metadata: &management.Metadata{
+					GrpcAddress: grpcAddress2,
+					HttpAddress: httpAddress2,
+				},
+			},
+			nodeId3: {
+				BindAddress: bindAddress3,
+				Status:      raft.Follower.String(),
+				Metadata: &management.Metadata{
+					GrpcAddress: grpcAddress3,
+					HttpAddress: httpAddress3,
+				},
+			},
 		},
 	}
 	actCluster1 := cluster1
@@ -1435,18 +1437,32 @@ func TestCluster_GetCluster(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expCluster2 := map[string]interface{}{
-		nodeConfig1.NodeId: map[string]interface{}{
-			"node_config": nodeConfig1.ToMap(),
-			"state":       raft.Leader.String(),
-		},
-		nodeConfig2.NodeId: map[string]interface{}{
-			"node_config": nodeConfig2.ToMap(),
-			"state":       raft.Follower.String(),
-		},
-		nodeConfig3.NodeId: map[string]interface{}{
-			"node_config": nodeConfig3.ToMap(),
-			"state":       raft.Follower.String(),
+	expCluster2 := &management.Cluster{
+		Nodes: map[string]*management.Node{
+			nodeId1: {
+				BindAddress: bindAddress1,
+				Status:      raft.Leader.String(),
+				Metadata: &management.Metadata{
+					GrpcAddress: grpcAddress1,
+					HttpAddress: httpAddress1,
+				},
+			},
+			nodeId2: {
+				BindAddress: bindAddress2,
+				Status:      raft.Follower.String(),
+				Metadata: &management.Metadata{
+					GrpcAddress: grpcAddress2,
+					HttpAddress: httpAddress2,
+				},
+			},
+			nodeId3: {
+				BindAddress: bindAddress3,
+				Status:      raft.Follower.String(),
+				Metadata: &management.Metadata{
+					GrpcAddress: grpcAddress3,
+					HttpAddress: httpAddress3,
+				},
+			},
 		},
 	}
 	actCluster2 := cluster2
@@ -1458,18 +1474,32 @@ func TestCluster_GetCluster(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expCluster3 := map[string]interface{}{
-		nodeConfig1.NodeId: map[string]interface{}{
-			"node_config": nodeConfig1.ToMap(),
-			"state":       raft.Leader.String(),
-		},
-		nodeConfig2.NodeId: map[string]interface{}{
-			"node_config": nodeConfig2.ToMap(),
-			"state":       raft.Follower.String(),
-		},
-		nodeConfig3.NodeId: map[string]interface{}{
-			"node_config": nodeConfig3.ToMap(),
-			"state":       raft.Follower.String(),
+	expCluster3 := &management.Cluster{
+		Nodes: map[string]*management.Node{
+			nodeId1: {
+				BindAddress: bindAddress1,
+				Status:      raft.Leader.String(),
+				Metadata: &management.Metadata{
+					GrpcAddress: grpcAddress1,
+					HttpAddress: httpAddress1,
+				},
+			},
+			nodeId2: {
+				BindAddress: bindAddress2,
+				Status:      raft.Follower.String(),
+				Metadata: &management.Metadata{
+					GrpcAddress: grpcAddress2,
+					HttpAddress: httpAddress2,
+				},
+			},
+			nodeId3: {
+				BindAddress: bindAddress3,
+				Status:      raft.Follower.String(),
+				Metadata: &management.Metadata{
+					GrpcAddress: grpcAddress3,
+					HttpAddress: httpAddress3,
+				},
+			},
 		},
 	}
 	actCluster3 := cluster3
@@ -1478,32 +1508,37 @@ func TestCluster_GetCluster(t *testing.T) {
 	}
 }
 
-func TestCluster_GetState(t *testing.T) {
+func TestCluster_SetState(t *testing.T) {
 	curDir, _ := os.Getwd()
 
-	// create logger
 	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create HTTP access logger
 	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
 
-	// create index config
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	peerGrpcAddress1 := ""
+	grpcAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId1 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir1 := testutils.TmpDir()
+	raftStorageType1 := "boltdb"
+
+	node1 := &management.Node{
+		BindAddress: bindAddress1,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress1,
+			HttpAddress: httpAddress1,
+		},
+	}
+
+	indexConfig1, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	// create configs for server1
-	clusterConfig1 := config.DefaultClusterConfig()
-	nodeConfig1 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig1.DataDir)
-	}()
-	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named("manager1"), grpcLogger, httpAccessLogger)
+	// create server
+	server1, err := NewServer(peerGrpcAddress1, nodeId1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -1512,18 +1547,34 @@ func TestCluster_GetState(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server1
+
+	// start server
 	server1.Start()
 
-	// create configs for server2
-	clusterConfig2 := config.DefaultClusterConfig()
-	clusterConfig2.PeerAddr = nodeConfig1.GRPCAddr
-	nodeConfig2 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig2.DataDir)
-	}()
-	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named("manager2"), grpcLogger, httpAccessLogger)
+	peerGrpcAddress2 := grpcAddress1
+	grpcAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId2 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir2 := testutils.TmpDir()
+	raftStorageType2 := "boltdb"
+
+	node2 := &management.Node{
+		BindAddress: bindAddress2,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress2,
+			HttpAddress: httpAddress2,
+		},
+	}
+
+	indexConfig2, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// create server
+	server2, err := NewServer(peerGrpcAddress2, nodeId2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -1532,18 +1583,34 @@ func TestCluster_GetState(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server2
+
+	// start server
 	server2.Start()
 
-	// create configs for server3
-	clusterConfig3 := config.DefaultClusterConfig()
-	clusterConfig3.PeerAddr = nodeConfig1.GRPCAddr
-	nodeConfig3 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig3.DataDir)
-	}()
-	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named("manager3"), grpcLogger, httpAccessLogger)
+	peerGrpcAddress3 := grpcAddress1
+	grpcAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId3 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir3 := testutils.TmpDir()
+	raftStorageType3 := "boltdb"
+
+	node3 := &management.Node{
+		BindAddress: bindAddress3,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress3,
+			HttpAddress: httpAddress3,
+		},
+	}
+
+	indexConfig3, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// create server
+	server3, err := NewServer(peerGrpcAddress3, nodeId3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -1552,28 +1619,29 @@ func TestCluster_GetState(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server3
+
+	// start server
 	server3.Start()
 
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	// gRPC client for manager1
-	client1, err := NewGRPCClient(nodeConfig1.GRPCAddr)
+	// gRPC client for all servers
+	client1, err := NewGRPCClient(node1.Metadata.GrpcAddress)
 	defer func() {
 		_ = client1.Close()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	client2, err := NewGRPCClient(nodeConfig2.GRPCAddr)
+	client2, err := NewGRPCClient(node2.Metadata.GrpcAddress)
 	defer func() {
 		_ = client2.Close()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	client3, err := NewGRPCClient(nodeConfig3.GRPCAddr)
+	client3, err := NewGRPCClient(node3.Metadata.GrpcAddress)
 	defer func() {
 		_ = client3.Close()
 	}()
@@ -1581,64 +1649,143 @@ func TestCluster_GetState(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	// get index mapping from all nodes
-	indexConfig1, err := client1.Get("index_config")
+	err = client1.Set("test/key1", "val1")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expIndexConfig1 := indexConfig.ToMap()
-	actIndexConfig1 := *indexConfig1.(*map[string]interface{})
-	if !reflect.DeepEqual(expIndexConfig1, actIndexConfig1) {
-		t.Fatalf("expected content to see %v, saw %v", expIndexConfig1, actIndexConfig1)
+	time.Sleep(2 * time.Second) // wait for data to propagate
+
+	// get value from all nodes
+	val11, err := client1.Get("test/key1")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	expVal11 := "val1"
+	actVal11 := *val11.(*string)
+	if expVal11 != actVal11 {
+		t.Fatalf("expected content to see %v, saw %v", expVal11, actVal11)
+	}
+	val21, err := client2.Get("test/key1")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	expVal21 := "val1"
+	actVal21 := *val21.(*string)
+	if expVal21 != actVal21 {
+		t.Fatalf("expected content to see %v, saw %v", expVal21, actVal21)
+	}
+	val31, err := client3.Get("test/key1")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	expVal31 := "val1"
+	actVal31 := *val31.(*string)
+	if expVal31 != actVal31 {
+		t.Fatalf("expected content to see %v, saw %v", expVal31, actVal31)
 	}
 
-	indexConfig2, err := client2.Get("index_config")
+	err = client2.Set("test/key2", "val2")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expIndexConfig2 := indexConfig.ToMap()
-	actIndexConfig2 := *indexConfig2.(*map[string]interface{})
-	if !reflect.DeepEqual(expIndexConfig2, actIndexConfig2) {
-		t.Fatalf("expected content to see %v, saw %v", expIndexConfig2, actIndexConfig2)
+	time.Sleep(2 * time.Second) // wait for data to propagate
+
+	// get value from all nodes
+	val12, err := client1.Get("test/key2")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	expVal12 := "val2"
+	actVal12 := *val12.(*string)
+	if expVal12 != actVal12 {
+		t.Fatalf("expected content to see %v, saw %v", expVal12, actVal12)
+	}
+	val22, err := client2.Get("test/key2")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	expVal22 := "val2"
+	actVal22 := *val22.(*string)
+	if expVal22 != actVal22 {
+		t.Fatalf("expected content to see %v, saw %v", expVal22, actVal22)
+	}
+	val32, err := client3.Get("test/key2")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	expVal32 := "val2"
+	actVal32 := *val32.(*string)
+	if expVal32 != actVal32 {
+		t.Fatalf("expected content to see %v, saw %v", expVal32, actVal32)
 	}
 
-	indexConfig3, err := client3.Get("index_config")
+	err = client3.Set("test/key3", "val3")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expIndexConfig3 := indexConfig.ToMap()
-	actIndexConfig3 := *indexConfig3.(*map[string]interface{})
-	if !reflect.DeepEqual(expIndexConfig3, actIndexConfig3) {
-		t.Fatalf("expected content to see %v, saw %v", expIndexConfig3, actIndexConfig3)
+	time.Sleep(2 * time.Second) // wait for data to propagate
+
+	// get value from all nodes
+	val13, err := client1.Get("test/key3")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	expVal13 := "val3"
+	actVal13 := *val13.(*string)
+	if expVal13 != actVal13 {
+		t.Fatalf("expected content to see %v, saw %v", expVal13, actVal13)
+	}
+	val23, err := client2.Get("test/key3")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	expVal23 := "val3"
+	actVal23 := *val23.(*string)
+	if expVal23 != actVal23 {
+		t.Fatalf("expected content to see %v, saw %v", expVal23, actVal23)
+	}
+	val33, err := client3.Get("test/key3")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	expVal33 := "val3"
+	actVal33 := *val33.(*string)
+	if expVal33 != actVal33 {
+		t.Fatalf("expected content to see %v, saw %v", expVal33, actVal33)
 	}
 }
 
-func TestCluster_SetState(t *testing.T) {
+func TestCluster_GetState(t *testing.T) {
 	curDir, _ := os.Getwd()
 
-	// create logger
 	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create HTTP access logger
 	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
 
-	// create index config
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	peerGrpcAddress1 := ""
+	grpcAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId1 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir1 := testutils.TmpDir()
+	raftStorageType1 := "boltdb"
+
+	node1 := &management.Node{
+		BindAddress: bindAddress1,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress1,
+			HttpAddress: httpAddress1,
+		},
+	}
+
+	indexConfig1, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	// create configs for server1
-	clusterConfig1 := config.DefaultClusterConfig()
-	nodeConfig1 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig1.DataDir)
-	}()
-	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named("manager1"), grpcLogger, httpAccessLogger)
+	// create server
+	server1, err := NewServer(peerGrpcAddress1, nodeId1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -1647,18 +1794,34 @@ func TestCluster_SetState(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server1
+
+	// start server
 	server1.Start()
 
-	// create configs for server2
-	clusterConfig2 := config.DefaultClusterConfig()
-	clusterConfig2.PeerAddr = nodeConfig1.GRPCAddr
-	nodeConfig2 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig2.DataDir)
-	}()
-	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named("manager2"), grpcLogger, httpAccessLogger)
+	peerGrpcAddress2 := grpcAddress1
+	grpcAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId2 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir2 := testutils.TmpDir()
+	raftStorageType2 := "boltdb"
+
+	node2 := &management.Node{
+		BindAddress: bindAddress2,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress2,
+			HttpAddress: httpAddress2,
+		},
+	}
+
+	indexConfig2, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// create server
+	server2, err := NewServer(peerGrpcAddress2, nodeId2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -1667,18 +1830,34 @@ func TestCluster_SetState(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server2
+
+	// start server
 	server2.Start()
 
-	// create configs for server3
-	clusterConfig3 := config.DefaultClusterConfig()
-	clusterConfig3.PeerAddr = nodeConfig1.GRPCAddr
-	nodeConfig3 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig3.DataDir)
-	}()
-	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named("manager3"), grpcLogger, httpAccessLogger)
+	peerGrpcAddress3 := grpcAddress1
+	grpcAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId3 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir3 := testutils.TmpDir()
+	raftStorageType3 := "boltdb"
+
+	node3 := &management.Node{
+		BindAddress: bindAddress3,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress3,
+			HttpAddress: httpAddress3,
+		},
+	}
+
+	indexConfig3, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// create server
+	server3, err := NewServer(peerGrpcAddress3, nodeId3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -1687,28 +1866,29 @@ func TestCluster_SetState(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server3
+
+	// start server
 	server3.Start()
 
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	// gRPC client for manager1
-	client1, err := NewGRPCClient(nodeConfig1.GRPCAddr)
+	// gRPC client for all servers
+	client1, err := NewGRPCClient(node1.Metadata.GrpcAddress)
 	defer func() {
 		_ = client1.Close()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	client2, err := NewGRPCClient(nodeConfig2.GRPCAddr)
+	client2, err := NewGRPCClient(node2.Metadata.GrpcAddress)
 	defer func() {
 		_ = client2.Close()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	client3, err := NewGRPCClient(nodeConfig3.GRPCAddr)
+	client3, err := NewGRPCClient(node3.Metadata.GrpcAddress)
 	defer func() {
 		_ = client3.Close()
 	}()
@@ -1825,29 +2005,34 @@ func TestCluster_SetState(t *testing.T) {
 func TestCluster_DeleteState(t *testing.T) {
 	curDir, _ := os.Getwd()
 
-	// create logger
 	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create HTTP access logger
 	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
 
-	// create index config
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	peerGrpcAddress1 := ""
+	grpcAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId1 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir1 := testutils.TmpDir()
+	raftStorageType1 := "boltdb"
+
+	node1 := &management.Node{
+		BindAddress: bindAddress1,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress1,
+			HttpAddress: httpAddress1,
+		},
+	}
+
+	indexConfig1, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	// create configs for server1
-	clusterConfig1 := config.DefaultClusterConfig()
-	nodeConfig1 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig1.DataDir)
-	}()
-	// create server1
-	server1, err := NewServer(clusterConfig1, nodeConfig1, indexConfig, logger.Named("manager1"), grpcLogger, httpAccessLogger)
+	// create server
+	server1, err := NewServer(peerGrpcAddress1, nodeId1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -1856,18 +2041,34 @@ func TestCluster_DeleteState(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server1
+
+	// start server
 	server1.Start()
 
-	// create configs for server2
-	clusterConfig2 := config.DefaultClusterConfig()
-	clusterConfig2.PeerAddr = nodeConfig1.GRPCAddr
-	nodeConfig2 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig2.DataDir)
-	}()
-	// create server2
-	server2, err := NewServer(clusterConfig2, nodeConfig2, config.DefaultIndexConfig(), logger.Named("manager2"), grpcLogger, httpAccessLogger)
+	peerGrpcAddress2 := grpcAddress1
+	grpcAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId2 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir2 := testutils.TmpDir()
+	raftStorageType2 := "boltdb"
+
+	node2 := &management.Node{
+		BindAddress: bindAddress2,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress2,
+			HttpAddress: httpAddress2,
+		},
+	}
+
+	indexConfig2, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// create server
+	server2, err := NewServer(peerGrpcAddress2, nodeId2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -1876,18 +2077,34 @@ func TestCluster_DeleteState(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server2
+
+	// start server
 	server2.Start()
 
-	// create configs for server3
-	clusterConfig3 := config.DefaultClusterConfig()
-	clusterConfig3.PeerAddr = nodeConfig1.GRPCAddr
-	nodeConfig3 := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(nodeConfig3.DataDir)
-	}()
-	// create server3
-	server3, err := NewServer(clusterConfig3, nodeConfig3, config.DefaultIndexConfig(), logger.Named("manager3"), grpcLogger, httpAccessLogger)
+	peerGrpcAddress3 := grpcAddress1
+	grpcAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	httpAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	nodeId3 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	bindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	dataDir3 := testutils.TmpDir()
+	raftStorageType3 := "boltdb"
+
+	node3 := &management.Node{
+		BindAddress: bindAddress3,
+		Status:      "",
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddress3,
+			HttpAddress: httpAddress3,
+		},
+	}
+
+	indexConfig3, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// create server
+	server3, err := NewServer(peerGrpcAddress3, nodeId3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -1896,28 +2113,29 @@ func TestCluster_DeleteState(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server3
+
+	// start server
 	server3.Start()
 
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	// gRPC client for manager1
-	client1, err := NewGRPCClient(nodeConfig1.GRPCAddr)
+	// gRPC client for all servers
+	client1, err := NewGRPCClient(node1.Metadata.GrpcAddress)
 	defer func() {
 		_ = client1.Close()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	client2, err := NewGRPCClient(nodeConfig2.GRPCAddr)
+	client2, err := NewGRPCClient(node2.Metadata.GrpcAddress)
 	defer func() {
 		_ = client2.Close()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	client3, err := NewGRPCClient(nodeConfig3.GRPCAddr)
+	client3, err := NewGRPCClient(node3.Metadata.GrpcAddress)
 	defer func() {
 		_ = client3.Close()
 	}()
