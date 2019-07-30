@@ -289,7 +289,7 @@ func main() {
 								//},
 								cli.StringFlag{
 									Name:  "grpc-address",
-									Value: "",
+									Value: ":5100",
 									Usage: "The gRPC address of the node for which to retrieve the node information",
 								},
 							},
@@ -321,7 +321,7 @@ func main() {
 								//},
 								cli.StringFlag{
 									Name:  "grpc-address",
-									Value: "",
+									Value: ":5100",
 									Usage: "The gRPC address of the node for which to retrieve the node information",
 								},
 							},

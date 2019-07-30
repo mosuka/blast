@@ -59,18 +59,32 @@ message NodeHealthCheckResponse {
 }
 
 // use for raft
+message Metadata {
+    string grpc_address = 1;
+    string http_address = 2;
+}
+
+message Node {
+    string bind_address = 1;
+    string status = 2;
+    Metadata metadata = 3;
+}
+
+message Cluster {
+    map<string, Node> nodes = 1;
+}
+
 message NodeInfoRequest {
     string id = 1;
 }
 
 message NodeInfoResponse {
-    google.protobuf.Any nodeConfig = 1;
-    string state = 2;
+    Node node = 1;
 }
 
 message ClusterJoinRequest {
     string id = 1;
-    google.protobuf.Any nodeConfig = 2;
+    Node node = 2;
 }
 
 message ClusterLeaveRequest {
@@ -78,7 +92,7 @@ message ClusterLeaveRequest {
 }
 
 message ClusterInfoResponse {
-    google.protobuf.Any cluster = 1;
+    Cluster cluster = 1;
 }
 
 message GetRequest {

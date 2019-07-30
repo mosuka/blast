@@ -24,6 +24,7 @@ import (
 	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/logutils"
 	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/protobuf/management"
 	"github.com/urfave/cli"
 )
 
@@ -91,20 +92,12 @@ func managerStart(c *cli.Context) error {
 		httpLogCompress,
 	)
 
-	// create cluster config
-	clusterConfig := config.DefaultClusterConfig()
-	if peerGrpcAddr != "" {
-		clusterConfig.PeerAddr = peerGrpcAddr
-	}
-
-	// create node config
-	nodeConfig := &config.NodeConfig{
-		NodeId:          nodeId,
-		BindAddr:        nodeAddr,
-		GRPCAddr:        grpcAddr,
-		HTTPAddr:        httpAddr,
-		DataDir:         dataDir,
-		RaftStorageType: raftStorageType,
+	node := &management.Node{
+		BindAddress: nodeAddr,
+		Metadata: &management.Metadata{
+			GrpcAddress: grpcAddr,
+			HttpAddress: httpAddr,
+		},
 	}
 
 	var err error
@@ -127,7 +120,7 @@ func managerStart(c *cli.Context) error {
 		IndexStorageType: indexStorageType,
 	}
 
-	svr, err := manager.NewServer(clusterConfig, nodeConfig, indexConfig, logger.Named(nodeId), grpcLogger.Named(nodeId), httpLogger)
+	svr, err := manager.NewServer(peerGrpcAddr, nodeId, node, dataDir, raftStorageType, indexConfig, logger.Named(nodeId), grpcLogger.Named(nodeId), httpLogger)
 	if err != nil {
 		return err
 	}

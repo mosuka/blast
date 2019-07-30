@@ -20,7 +20,9 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/hashicorp/raft"
 	"github.com/mosuka/blast/logutils"
+	"github.com/mosuka/blast/protobuf/management"
 )
 
 func TestRaftFSM_GetNode(t *testing.T) {
@@ -52,32 +54,54 @@ func TestRaftFSM_GetNode(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	_ = fsm.SetNodeConfig("node1", map[string]interface{}{
-		"bind_addr": ":16060",
-		"grpc_addr": ":17070",
-		"http_addr": ":18080",
-	})
-	_ = fsm.SetNodeConfig("node2", map[string]interface{}{
-		"bind_addr": ":16061",
-		"grpc_addr": ":17071",
-		"http_addr": ":18081",
-	})
-	_ = fsm.SetNodeConfig("node3", map[string]interface{}{
-		"bind_addr": ":16062",
-		"grpc_addr": ":17072",
-		"http_addr": ":18082",
-	})
+	_ = fsm.SetNodeConfig(
+		"node1",
+		&management.Node{
+			BindAddress: "2100",
+			Status:      raft.Leader.String(),
+			Metadata: &management.Metadata{
+				GrpcAddress: "5100",
+				HttpAddress: "8100",
+			},
+		},
+	)
+	_ = fsm.SetNodeConfig(
+		"node2",
+		&management.Node{
+			BindAddress: "2110",
+			Status:      raft.Follower.String(),
+			Metadata: &management.Metadata{
+				GrpcAddress: "5110",
+				HttpAddress: "8110",
+			},
+		},
+	)
+	_ = fsm.SetNodeConfig(
+		"node3",
+		&management.Node{
+			BindAddress: "2120",
+			Status:      raft.Follower.String(),
+			Metadata: &management.Metadata{
+				GrpcAddress: "5120",
+				HttpAddress: "8120",
+			},
+		},
+	)
 
 	val1, err := fsm.GetNodeConfig("node2")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	exp1 := map[string]interface{}{
-		"bind_addr": ":16061",
-		"grpc_addr": ":17071",
-		"http_addr": ":18081",
+	exp1 := &management.Node{
+		BindAddress: "2110",
+		Status:      raft.Follower.String(),
+		Metadata: &management.Metadata{
+			GrpcAddress: "5110",
+			HttpAddress: "8110",
+		},
 	}
+
 	act1 := val1
 	if !reflect.DeepEqual(exp1, act1) {
 		t.Fatalf("expected content to see %v, saw %v", exp1, act1)
@@ -114,53 +138,82 @@ func TestRaftFSM_SetNode(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	_ = fsm.SetNodeConfig("node1", map[string]interface{}{
-		"bind_addr": ":16060",
-		"grpc_addr": ":17070",
-		"http_addr": ":18080",
-	})
-	_ = fsm.SetNodeConfig("node2", map[string]interface{}{
-		"bind_addr": ":16061",
-		"grpc_addr": ":17071",
-		"http_addr": ":18081",
-	})
-	_ = fsm.SetNodeConfig("node3", map[string]interface{}{
-		"bind_addr": ":16062",
-		"grpc_addr": ":17072",
-		"http_addr": ":18082",
-	})
+	_ = fsm.SetNodeConfig(
+		"node1",
+		&management.Node{
+			BindAddress: "2100",
+			Status:      raft.Leader.String(),
+			Metadata: &management.Metadata{
+				GrpcAddress: "5100",
+				HttpAddress: "8100",
+			},
+		},
+	)
+	_ = fsm.SetNodeConfig(
+		"node2",
+		&management.Node{
+			BindAddress: "2110",
+			Status:      raft.Follower.String(),
+			Metadata: &management.Metadata{
+				GrpcAddress: "5110",
+				HttpAddress: "8110",
+			},
+		},
+	)
+	_ = fsm.SetNodeConfig(
+		"node3",
+		&management.Node{
+			BindAddress: "2120",
+			Status:      raft.Follower.String(),
+			Metadata: &management.Metadata{
+				GrpcAddress: "5120",
+				HttpAddress: "8120",
+			},
+		},
+	)
 
 	val1, err := fsm.GetNodeConfig("node2")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	exp1 := map[string]interface{}{
-		"bind_addr": ":16061",
-		"grpc_addr": ":17071",
-		"http_addr": ":18081",
+	exp1 := &management.Node{
+		BindAddress: "2110",
+		Status:      raft.Follower.String(),
+		Metadata: &management.Metadata{
+			GrpcAddress: "5110",
+			HttpAddress: "8110",
+		},
 	}
 	act1 := val1
 	if !reflect.DeepEqual(exp1, act1) {
 		t.Fatalf("expected content to see %v, saw %v", exp1, act1)
 	}
 
-	_ = fsm.SetNodeConfig("node2", map[string]interface{}{
-		"bind_addr": ":16061",
-		"grpc_addr": ":17071",
-		"http_addr": ":18081",
-		"leader":    true,
-	})
+	_ = fsm.SetNodeConfig(
+		"node2",
+		&management.Node{
+			BindAddress: "2110",
+			Status:      raft.Shutdown.String(),
+			Metadata: &management.Metadata{
+				GrpcAddress: "5110",
+				HttpAddress: "8110",
+			},
+		},
+	)
 
 	val2, err := fsm.GetNodeConfig("node2")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	exp2 := map[string]interface{}{
-		"bind_addr": ":16061",
-		"grpc_addr": ":17071",
-		"http_addr": ":18081",
-		"leader":    true,
+	exp2 := &management.Node{
+		BindAddress: "2110",
+		Status:      raft.Shutdown.String(),
+		Metadata: &management.Metadata{
+			GrpcAddress: "5110",
+			HttpAddress: "8110",
+		},
 	}
+
 	act2 := val2
 	if !reflect.DeepEqual(exp2, act2) {
 		t.Fatalf("expected content to see %v, saw %v", exp2, act2)
@@ -196,30 +249,51 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	_ = fsm.SetNodeConfig("node1", map[string]interface{}{
-		"bind_addr": ":16060",
-		"grpc_addr": ":17070",
-		"http_addr": ":18080",
-	})
-	_ = fsm.SetNodeConfig("node2", map[string]interface{}{
-		"bind_addr": ":16061",
-		"grpc_addr": ":17071",
-		"http_addr": ":18081",
-	})
-	_ = fsm.SetNodeConfig("node3", map[string]interface{}{
-		"bind_addr": ":16062",
-		"grpc_addr": ":17072",
-		"http_addr": ":18082",
-	})
+	_ = fsm.SetNodeConfig(
+		"node1",
+		&management.Node{
+			BindAddress: "2100",
+			Status:      raft.Leader.String(),
+			Metadata: &management.Metadata{
+				GrpcAddress: "5100",
+				HttpAddress: "8100",
+			},
+		},
+	)
+	_ = fsm.SetNodeConfig(
+		"node2",
+		&management.Node{
+			BindAddress: "2110",
+			Status:      raft.Follower.String(),
+			Metadata: &management.Metadata{
+				GrpcAddress: "5110",
+				HttpAddress: "8110",
+			},
+		},
+	)
+	_ = fsm.SetNodeConfig(
+		"node3",
+		&management.Node{
+			BindAddress: "2120",
+			Status:      raft.Follower.String(),
+			Metadata: &management.Metadata{
+				GrpcAddress: "5120",
+				HttpAddress: "8120",
+			},
+		},
+	)
 
 	val1, err := fsm.GetNodeConfig("node2")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	exp1 := map[string]interface{}{
-		"bind_addr": ":16061",
-		"grpc_addr": ":17071",
-		"http_addr": ":18081",
+	exp1 := &management.Node{
+		BindAddress: "2110",
+		Status:      raft.Follower.String(),
+		Metadata: &management.Metadata{
+			GrpcAddress: "5110",
+			HttpAddress: "8110",
+		},
 	}
 	act1 := val1
 	if !reflect.DeepEqual(exp1, act1) {
@@ -340,9 +414,6 @@ func TestRaftFSM_Set(t *testing.T) {
 	_ = fsm.SetValue("/", map[string]interface{}{
 		"a": "A",
 	}, true)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
 	val2, err := fsm.GetValue("/")
 	if err != nil {
 		t.Fatalf("%v", err)
