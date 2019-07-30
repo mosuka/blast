@@ -208,7 +208,7 @@ func (s *RaftServer) Start() error {
 
 		// set node config
 		s.logger.Info("register its own node config", zap.String("node_id", s.nodeId), zap.Any("node", s.node))
-		err = s.setNodeConfig(s.nodeId, s.node)
+		err = s.setNode(s.nodeId, s.node)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return err
@@ -317,17 +317,17 @@ func (s *RaftServer) WaitForDetectLeader(timeout time.Duration) error {
 	return nil
 }
 
-func (s *RaftServer) getNodeConfig(nodeId string) (*management.Node, error) {
+func (s *RaftServer) getNode(nodeId string) (*management.Node, error) {
 	nodeConfig, err := s.fsm.GetNodeConfig(nodeId)
 	if err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Debug(err.Error(), zap.String("id", nodeId))
 		return nil, err
 	}
 
 	return nodeConfig, nil
 }
 
-func (s *RaftServer) setNodeConfig(nodeId string, node *management.Node) error {
+func (s *RaftServer) setNode(nodeId string, node *management.Node) error {
 	msg, err := newMessage(
 		setNode,
 		map[string]interface{}{
@@ -336,32 +336,32 @@ func (s *RaftServer) setNodeConfig(nodeId string, node *management.Node) error {
 		},
 	)
 	if err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Error(err.Error(), zap.String("id", nodeId), zap.Any("node", node))
 		return err
 	}
 
 	msgBytes, err := json.Marshal(msg)
 	if err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Error(err.Error(), zap.String("id", nodeId), zap.Any("node", node))
 		return err
 	}
 
 	f := s.raft.Apply(msgBytes, 10*time.Second)
 	err = f.Error()
 	if err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Error(err.Error(), zap.String("id", nodeId), zap.Any("node", node))
 		return err
 	}
 	err = f.Response().(*fsmResponse).error
 	if err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Error(err.Error(), zap.String("id", nodeId), zap.Any("node", node))
 		return err
 	}
 
 	return nil
 }
 
-func (s *RaftServer) deleteNodeConfig(nodeId string) error {
+func (s *RaftServer) deleteNode(nodeId string) error {
 	msg, err := newMessage(
 		deleteNode,
 		map[string]interface{}{
@@ -369,25 +369,25 @@ func (s *RaftServer) deleteNodeConfig(nodeId string) error {
 		},
 	)
 	if err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Error(err.Error(), zap.String("id", nodeId))
 		return err
 	}
 
 	msgBytes, err := json.Marshal(msg)
 	if err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Error(err.Error(), zap.String("id", nodeId))
 		return err
 	}
 
 	f := s.raft.Apply(msgBytes, 10*time.Second)
 	err = f.Error()
 	if err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Error(err.Error(), zap.String("id", nodeId))
 		return err
 	}
 	err = f.Response().(*fsmResponse).error
 	if err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Error(err.Error(), zap.String("id", nodeId))
 		return err
 	}
 
@@ -405,9 +405,9 @@ func (s *RaftServer) GetNode(id string) (*management.Node, error) {
 	var node *management.Node
 	for _, server := range cf.Configuration().Servers {
 		if server.ID == raft.ServerID(id) {
-			node, err = s.getNodeConfig(id)
+			node, err = s.getNode(id)
 			if err != nil {
-				s.logger.Error(err.Error())
+				s.logger.Debug(err.Error(), zap.String("id", id))
 				return nil, err
 			}
 			break
@@ -444,18 +444,18 @@ func (s *RaftServer) SetNode(nodeId string, node *management.Node) error {
 	}
 
 	// add node to Raft cluster
-	s.logger.Info("add voter", zap.String("nodeId", nodeId), zap.Any("node", node))
+	s.logger.Info("join the node to the raft cluster", zap.String("id", nodeId), zap.Any("bind_address", node.BindAddress))
 	f := s.raft.AddVoter(raft.ServerID(nodeId), raft.ServerAddress(node.BindAddress), 0, 0)
 	err = f.Error()
 	if err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Error(err.Error(), zap.String("id", nodeId), zap.String("bind_address", node.BindAddress))
 		return err
 	}
 
 	// set node config
-	err = s.setNodeConfig(nodeId, node)
+	err = s.setNode(nodeId, node)
 	if err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Error(err.Error(), zap.String("id", nodeId), zap.Any("node", node))
 		return err
 	}
 
@@ -471,27 +471,27 @@ func (s *RaftServer) DeleteNode(nodeId string) error {
 	cf := s.raft.GetConfiguration()
 	err := cf.Error()
 	if err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Error(err.Error(), zap.String("id", nodeId))
 		return err
 	}
 
 	// delete node from Raft cluster
 	for _, server := range cf.Configuration().Servers {
 		if server.ID == raft.ServerID(nodeId) {
-			s.logger.Debug("remove server", zap.String("node_id", nodeId))
+			s.logger.Info("remove the node from the raft cluster", zap.String("id", nodeId))
 			f := s.raft.RemoveServer(server.ID, 0, 0)
 			err = f.Error()
 			if err != nil {
-				s.logger.Error(err.Error())
+				s.logger.Error(err.Error(), zap.String("id", string(server.ID)))
 				return err
 			}
 		}
 	}
 
 	// delete node config
-	err = s.deleteNodeConfig(nodeId)
+	err = s.deleteNode(nodeId)
 	if err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Error(err.Error(), zap.String("id", nodeId))
 		return err
 	}
 
@@ -510,7 +510,7 @@ func (s *RaftServer) GetCluster() (*management.Cluster, error) {
 	for _, server := range cf.Configuration().Servers {
 		node, err := s.GetNode(string(server.ID))
 		if err != nil {
-			s.logger.Warn(err.Error())
+			s.logger.Debug(err.Error(), zap.String("id", string(server.ID)))
 			continue
 		}
 

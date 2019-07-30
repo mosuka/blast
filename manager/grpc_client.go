@@ -109,12 +109,8 @@ func (c *GRPCClient) NodeHealthCheck(probe string, opts ...grpc.CallOption) (str
 	return resp.State.String(), nil
 }
 
-func (c *GRPCClient) NodeInfo(id string, opts ...grpc.CallOption) (*management.Node, error) {
-	req := &management.NodeInfoRequest{
-		Id: id,
-	}
-
-	resp, err := c.client.NodeInfo(c.ctx, req, opts...)
+func (c *GRPCClient) NodeInfo(opts ...grpc.CallOption) (*management.Node, error) {
+	resp, err := c.client.NodeInfo(c.ctx, &empty.Empty{}, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 

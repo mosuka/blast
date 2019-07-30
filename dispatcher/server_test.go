@@ -15,6 +15,7 @@
 package dispatcher
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -26,100 +27,131 @@ import (
 	"github.com/mosuka/blast/indexer"
 	"github.com/mosuka/blast/logutils"
 	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/protobuf/management"
+	"github.com/mosuka/blast/strutils"
 	"github.com/mosuka/blast/testutils"
 )
 
 func TestServer_Start(t *testing.T) {
 	curDir, _ := os.Getwd()
 
-	// create logger
 	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create gRPC logger
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
-
-	// create HTTP access logger
 	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
 
-	// create index config
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	managerPeerGrpcAddress1 := ""
+	managerGrpcAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	managerHttpAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	managerNodeId1 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	managerBindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	managerDataDir1 := testutils.TmpDir()
+	managerRaftStorageType1 := "boltdb"
+
+	managerNode1 := &management.Node{
+		BindAddress: managerBindAddress1,
+		State:       "",
+		Metadata: &management.Metadata{
+			GrpcAddress: managerGrpcAddress1,
+			HttpAddress: managerHttpAddress1,
+		},
+	}
+
+	managerIndexConfig1, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	//
-	// manager
-	//
-	// create cluster config
-	managerClusterConfig1 := config.DefaultClusterConfig()
-	// create node config
-	managerNodeConfig1 := testutils.TmpNodeConfig()
+	// create server
+	managerServer1, err := manager.NewServer(managerPeerGrpcAddress1, managerNodeId1, managerNode1, managerDataDir1, managerRaftStorageType1, managerIndexConfig1, logger, grpcLogger, httpAccessLogger)
 	defer func() {
-		_ = os.RemoveAll(managerNodeConfig1.DataDir)
-	}()
-	// create manager
-	manager1, err := manager.NewServer(managerClusterConfig1, managerNodeConfig1, indexConfig, logger.Named("manager1"), grpcLogger.Named("manager1"), httpAccessLogger)
-	defer func() {
-		if manager1 != nil {
-			manager1.Stop()
+		if managerServer1 != nil {
+			managerServer1.Stop()
 		}
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start manager
-	manager1.Start()
-	// sleep
-	time.Sleep(5 * time.Second)
 
-	// create cluster config
-	managerClusterConfig2 := config.DefaultClusterConfig()
-	managerClusterConfig2.PeerAddr = managerNodeConfig1.GRPCAddr
-	// create node config
-	managerNodeConfig2 := testutils.TmpNodeConfig()
+	// start server
+	managerServer1.Start()
+
+	managerPeerGrpcAddress2 := managerGrpcAddress1
+	managerGrpcAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	managerHttpAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	managerNodeId2 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	managerBindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	managerDataDir2 := testutils.TmpDir()
+	managerRaftStorageType2 := "boltdb"
+
+	managerNode2 := &management.Node{
+		BindAddress: managerBindAddress2,
+		State:       "",
+		Metadata: &management.Metadata{
+			GrpcAddress: managerGrpcAddress2,
+			HttpAddress: managerHttpAddress2,
+		},
+	}
+
+	managerIndexConfig2, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// create server
+	managerServer2, err := manager.NewServer(managerPeerGrpcAddress2, managerNodeId2, managerNode2, managerDataDir2, managerRaftStorageType2, managerIndexConfig2, logger, grpcLogger, httpAccessLogger)
 	defer func() {
-		_ = os.RemoveAll(managerNodeConfig2.DataDir)
-	}()
-	// create manager
-	manager2, err := manager.NewServer(managerClusterConfig2, managerNodeConfig2, indexConfig, logger.Named("manager2"), grpcLogger.Named("manager2"), httpAccessLogger)
-	defer func() {
-		if manager2 != nil {
-			manager2.Stop()
+		if managerServer2 != nil {
+			managerServer2.Stop()
 		}
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start manager
-	manager2.Start()
-	// sleep
-	time.Sleep(5 * time.Second)
 
-	// create cluster config
-	managerClusterConfig3 := config.DefaultClusterConfig()
-	managerClusterConfig3.PeerAddr = managerNodeConfig1.GRPCAddr
-	// create node config
-	managerNodeConfig3 := testutils.TmpNodeConfig()
+	// start server
+	managerServer2.Start()
+
+	managerPeerGrpcAddress3 := managerGrpcAddress1
+	managerGrpcAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	managerHttpAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	managerNodeId3 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	managerBindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	managerDataDir3 := testutils.TmpDir()
+	managerRaftStorageType3 := "boltdb"
+
+	managerNode3 := &management.Node{
+		BindAddress: managerBindAddress3,
+		State:       "",
+		Metadata: &management.Metadata{
+			GrpcAddress: managerGrpcAddress3,
+			HttpAddress: managerHttpAddress3,
+		},
+	}
+
+	managerIndexConfig3, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// create server
+	managerServer3, err := manager.NewServer(managerPeerGrpcAddress3, managerNodeId3, managerNode3, managerDataDir3, managerRaftStorageType3, managerIndexConfig3, logger, grpcLogger, httpAccessLogger)
 	defer func() {
-		_ = os.RemoveAll(managerNodeConfig3.DataDir)
-	}()
-	// create manager
-	manager3, err := manager.NewServer(managerClusterConfig3, managerNodeConfig3, indexConfig, logger.Named("manager3"), grpcLogger.Named("manager3"), httpAccessLogger)
-	defer func() {
-		if manager3 != nil {
-			manager3.Stop()
+		if managerServer3 != nil {
+			managerServer3.Stop()
 		}
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start manager
-	manager3.Start()
+
+	// start server
+	managerServer3.Start()
+
 	// sleep
 	time.Sleep(5 * time.Second)
 
 	// gRPC client for manager1
-	managerClient1, err := manager.NewGRPCClient(managerNodeConfig1.GRPCAddr)
+	managerClient1, err := manager.NewGRPCClient(managerNode1.Metadata.GrpcAddress)
 	defer func() {
 		_ = managerClient1.Close()
 	}()
@@ -131,47 +163,37 @@ func TestServer_Start(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expManagerCluster1 := map[string]interface{}{
-		managerNodeConfig1.NodeId: map[string]interface{}{
-			"node_config": managerNodeConfig1.ToMap(),
-			"state":       raft.Leader.String(),
-		},
-		managerNodeConfig2.NodeId: map[string]interface{}{
-			"node_config": managerNodeConfig2.ToMap(),
-			"state":       raft.Follower.String(),
-		},
-		managerNodeConfig3.NodeId: map[string]interface{}{
-			"node_config": managerNodeConfig3.ToMap(),
-			"state":       raft.Follower.String(),
+	expManagerCluster1 := &management.Cluster{
+		Nodes: map[string]*management.Node{
+			managerNodeId1: {
+				BindAddress: managerBindAddress1,
+				State:       raft.Leader.String(),
+				Metadata: &management.Metadata{
+					GrpcAddress: managerGrpcAddress1,
+					HttpAddress: managerHttpAddress1,
+				},
+			},
+			managerNodeId2: {
+				BindAddress: managerBindAddress2,
+				State:       raft.Follower.String(),
+				Metadata: &management.Metadata{
+					GrpcAddress: managerGrpcAddress2,
+					HttpAddress: managerHttpAddress2,
+				},
+			},
+			managerNodeId3: {
+				BindAddress: managerBindAddress3,
+				State:       raft.Follower.String(),
+				Metadata: &management.Metadata{
+					GrpcAddress: managerGrpcAddress3,
+					HttpAddress: managerHttpAddress3,
+				},
+			},
 		},
 	}
 	actManagerCluster1 := managerCluster1
-	expManagerNodeConfig1 := expManagerCluster1[managerNodeConfig1.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
-	actManagerNodeConfig1 := actManagerCluster1[managerNodeConfig1.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
-	if !reflect.DeepEqual(expManagerNodeConfig1, actManagerNodeConfig1) {
-		t.Fatalf("expected content to see %v, saw %v", expManagerNodeConfig1, actManagerNodeConfig1)
-	}
-	actManagerState1 := actManagerCluster1[managerNodeConfig1.NodeId].(map[string]interface{})["state"].(string)
-	if raft.Leader.String() != actManagerState1 && raft.Follower.String() != actManagerState1 {
-		t.Fatalf("expected content to see %v or %v, saw %v", raft.Leader.String(), raft.Follower.String(), actManagerState1)
-	}
-	expManagerNodeConfig2 := expManagerCluster1[managerNodeConfig2.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
-	actManagerNodeConfig2 := actManagerCluster1[managerNodeConfig2.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
-	if !reflect.DeepEqual(expManagerNodeConfig2, actManagerNodeConfig2) {
-		t.Fatalf("expected content to see %v, saw %v", expManagerNodeConfig2, actManagerNodeConfig2)
-	}
-	actManagerState2 := actManagerCluster1[managerNodeConfig2.NodeId].(map[string]interface{})["state"].(string)
-	if raft.Leader.String() != actManagerState2 && raft.Follower.String() != actManagerState2 {
-		t.Fatalf("expected content to see %v or %v, saw %v", raft.Leader.String(), raft.Follower.String(), actManagerState2)
-	}
-	expManagerNodeConfig3 := expManagerCluster1[managerNodeConfig3.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
-	actManagerNodeConfig3 := actManagerCluster1[managerNodeConfig3.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
-	if !reflect.DeepEqual(expManagerNodeConfig3, actManagerNodeConfig3) {
-		t.Fatalf("expected content to see %v, saw %v", expManagerNodeConfig3, actManagerNodeConfig3)
-	}
-	actManagerState3 := actManagerCluster1[managerNodeConfig3.NodeId].(map[string]interface{})["state"].(string)
-	if raft.Leader.String() != actManagerState3 && raft.Follower.String() != actManagerState3 {
-		t.Fatalf("expected content to see %v or %v, saw %v", raft.Leader.String(), raft.Follower.String(), actManagerState3)
+	if !reflect.DeepEqual(expManagerCluster1, actManagerCluster1) {
+		t.Fatalf("expected content to see %v, saw %v", expManagerCluster1, actManagerCluster1)
 	}
 
 	//
@@ -179,7 +201,7 @@ func TestServer_Start(t *testing.T) {
 	//
 	// create cluster config
 	indexerClusterConfig1 := config.DefaultClusterConfig()
-	indexerClusterConfig1.ManagerAddr = managerNodeConfig1.GRPCAddr
+	indexerClusterConfig1.ManagerAddr = managerGrpcAddress1
 	indexerClusterConfig1.ClusterId = "cluster1"
 	// create node config
 	indexerNodeConfig1 := testutils.TmpNodeConfig()
@@ -299,7 +321,7 @@ func TestServer_Start(t *testing.T) {
 	//
 	// create cluster config
 	indexerClusterConfig2 := config.DefaultClusterConfig()
-	indexerClusterConfig2.ManagerAddr = managerNodeConfig1.GRPCAddr
+	indexerClusterConfig2.ManagerAddr = managerGrpcAddress1
 	indexerClusterConfig2.ClusterId = "cluster2"
 	// create node config
 	indexerNodeConfig4 := testutils.TmpNodeConfig()
@@ -419,7 +441,7 @@ func TestServer_Start(t *testing.T) {
 	//
 	// create cluster config
 	dispatcherClusterConfig1 := config.DefaultClusterConfig()
-	dispatcherClusterConfig1.ManagerAddr = managerNodeConfig1.GRPCAddr
+	dispatcherClusterConfig1.ManagerAddr = managerGrpcAddress1
 	// create node config
 	dispatcherNodeConfig := testutils.TmpNodeConfig()
 	defer func() {
