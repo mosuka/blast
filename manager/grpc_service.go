@@ -16,6 +16,7 @@ package manager
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 	"sync"
@@ -43,7 +44,7 @@ type GRPCService struct {
 	peers               *management.Cluster
 	peerClients         map[string]*GRPCClient
 	cluster             *management.Cluster
-	clusterChans        map[chan management.ClusterInfoResponse]struct{}
+	clusterChans        map[chan management.ClusterWatchResponse]struct{}
 	clusterMutex        sync.RWMutex
 
 	stateChans map[chan management.WatchResponse]struct{}
@@ -58,7 +59,7 @@ func NewGRPCService(raftServer *RaftServer, logger *zap.Logger) (*GRPCService, e
 		peers:        &management.Cluster{Nodes: make(map[string]*management.Node, 0)},
 		peerClients:  make(map[string]*GRPCClient, 0),
 		cluster:      &management.Cluster{Nodes: make(map[string]*management.Node, 0)},
-		clusterChans: make(map[chan management.ClusterInfoResponse]struct{}),
+		clusterChans: make(map[chan management.ClusterWatchResponse]struct{}),
 
 		stateChans: make(map[chan management.WatchResponse]struct{}),
 	}, nil
@@ -110,6 +111,21 @@ func (s *GRPCService) getLeaderClient() (*GRPCClient, error) {
 	return client, nil
 }
 
+func (s *GRPCService) cloneCluster(cluster *management.Cluster) (*management.Cluster, error) {
+	b, err := json.Marshal(cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	var clone *management.Cluster
+	err = json.Unmarshal(b, &clone)
+	if err != nil {
+		return nil, err
+	}
+
+	return clone, nil
+}
+
 func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 	s.updateClusterStopCh = make(chan struct{})
 	s.updateClusterDoneCh = make(chan struct{})
@@ -123,6 +139,12 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 
 	// create initial cluster hash
 	clusterHash, err := hashutils.Hash(s.cluster)
+	if err != nil {
+		s.logger.Error(err.Error())
+		return
+	}
+
+	savedCluster, err := s.cloneCluster(s.cluster)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return
@@ -153,8 +175,14 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 				return
 			}
 
+			snapshotCluster, err := s.cloneCluster(s.cluster)
+			if err != nil {
+				s.logger.Error(err.Error())
+				return
+			}
+
 			// create peer node list with out self node
-			for id, node := range s.cluster.Nodes {
+			for id, node := range snapshotCluster.Nodes {
 				if id != s.NodeID() {
 					s.peers.Nodes[id] = node
 				}
@@ -221,17 +249,69 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 
 			// compare cluster hash
 			if !cmp.Equal(clusterHash, newClusterHash) {
-				clusterResp := &management.ClusterInfoResponse{
-					Cluster: s.cluster,
+				// check joined and updated nodes
+				for id, node := range snapshotCluster.Nodes {
+					nodeSnapshot, exist := savedCluster.Nodes[id]
+					if exist {
+						// node updated
+						n1, err := json.Marshal(node)
+						if err != nil {
+							s.logger.Warn(err.Error(), zap.String("id", id), zap.Any("node", node))
+						}
+						n2, err := json.Marshal(nodeSnapshot)
+						if err != nil {
+							s.logger.Warn(err.Error(), zap.String("id", id), zap.Any("node", nodeSnapshot))
+						}
+						if !cmp.Equal(n1, n2) {
+							// notify the cluster changes
+							clusterResp := &management.ClusterWatchResponse{
+								Event:   management.ClusterWatchResponse_UPDATE,
+								Id:      id,
+								Node:    node,
+								Cluster: snapshotCluster,
+							}
+							for c := range s.clusterChans {
+								c <- *clusterResp
+							}
+						} else {
+							// no change
+						}
+					} else {
+						// node joined
+						// notify the cluster changes
+						clusterResp := &management.ClusterWatchResponse{
+							Event:   management.ClusterWatchResponse_JOIN,
+							Id:      id,
+							Node:    node,
+							Cluster: snapshotCluster,
+						}
+						for c := range s.clusterChans {
+							c <- *clusterResp
+						}
+					}
 				}
 
-				// output to channel
-				for c := range s.clusterChans {
-					c <- *clusterResp
+				// check left nodes
+				for id, node := range savedCluster.Nodes {
+					if _, exist := snapshotCluster.Nodes[id]; !exist {
+						// node left
+						// notify the cluster changes
+						clusterResp := &management.ClusterWatchResponse{
+							Event:   management.ClusterWatchResponse_LEAVE,
+							Id:      id,
+							Node:    node,
+							Cluster: snapshotCluster,
+						}
+						for c := range s.clusterChans {
+							c <- *clusterResp
+						}
+					}
 				}
 
 				// update cluster hash
 				clusterHash = newClusterHash
+
+				savedCluster = snapshotCluster
 			}
 		default:
 			time.Sleep(100 * time.Millisecond)
@@ -278,73 +358,61 @@ func (s *GRPCService) NodeID() string {
 	return s.raftServer.NodeID()
 }
 
-func (s *GRPCService) getSelfNode() (*management.Node, error) {
+func (s *GRPCService) getSelfNode() *management.Node {
 	node := s.raftServer.node
 	node.State = s.raftServer.State().String()
+
+	return node
+}
+
+func (s *GRPCService) getPeerNode(id string) (*management.Node, error) {
+	if _, exist := s.peerClients[id]; !exist {
+		err := errors.New("node does not exist in peers")
+		s.logger.Debug(err.Error(), zap.String("id", id))
+		return nil, err
+	}
+
+	node, err := s.peerClients[id].NodeInfo()
+	if err != nil {
+		s.logger.Debug(err.Error(), zap.String("id", id))
+		return &management.Node{
+			BindAddress: "",
+			State:       raft.Shutdown.String(),
+			Metadata: &management.Metadata{
+				GrpcAddress: "",
+				HttpAddress: "",
+			},
+		}, nil
+	}
 
 	return node, nil
 }
 
-func (s *GRPCService) getPeerNode(id string) (*management.Node, error) {
-	var nodeInfo *management.Node
-	var err error
-
-	if peerClient, exist := s.peerClients[id]; exist {
-		nodeInfo, err = peerClient.NodeInfo()
-		if err != nil {
-			s.logger.Debug(err.Error())
-			nodeInfo = &management.Node{
-				BindAddress: "",
-				State:       raft.Shutdown.String(),
-				Metadata:    &management.Metadata{},
-			}
-		}
-	} else {
-		nodeInfo = &management.Node{
-			BindAddress: "",
-			State:       raft.Shutdown.String(),
-			Metadata:    &management.Metadata{},
-		}
-	}
-
-	return nodeInfo, nil
-}
-
 func (s *GRPCService) getNode(id string) (*management.Node, error) {
-	var nodeInfo *management.Node
-	var err error
-
 	if id == "" || id == s.NodeID() {
-		nodeInfo, err = s.getSelfNode()
+		return s.getSelfNode(), nil
 	} else {
-		nodeInfo, err = s.getPeerNode(id)
+		return s.getPeerNode(id)
 	}
-
-	if err != nil {
-		s.logger.Error(err.Error())
-		return nil, err
-	}
-
-	return nodeInfo, nil
 }
 
 func (s *GRPCService) NodeInfo(ctx context.Context, req *empty.Empty) (*management.NodeInfoResponse, error) {
 	resp := &management.NodeInfoResponse{}
 
-	nodeInfo, err := s.getNode(s.NodeID())
+	node, err := s.getNode(s.NodeID())
 	if err != nil {
 		s.logger.Error(err.Error())
 		return resp, status.Error(codes.Internal, err.Error())
 	}
 
-	resp.Node = nodeInfo
-
-	return resp, nil
+	return &management.NodeInfoResponse{
+		Node: node,
+	}, nil
 }
 
-func (s *GRPCService) setNode(id string, nodeConfig *management.Node) error {
+func (s *GRPCService) setNode(id string, node *management.Node) error {
 	if s.raftServer.IsLeader() {
-		err := s.raftServer.SetNode(id, nodeConfig)
+		err := s.raftServer.SetNode(id, node)
 		if err != nil {
 			s.logger.Error(err.Error())
 			return err
@@ -356,7 +424,7 @@ func (s *GRPCService) setNode(id string, nodeConfig *management.Node) error {
 			s.logger.Error(err.Error())
 			return err
 		}
-		err = client.ClusterJoin(id, nodeConfig)
+		err = client.ClusterJoin(id, node)
 		if err != nil {
 			s.logger.Error(err.Error())
 			return err
@@ -422,13 +490,13 @@ func (s *GRPCService) getCluster() (*management.Cluster, error) {
 	}
 
 	// update latest node state
-	for nodeId := range cluster.Nodes {
-		node, err := s.getNode(nodeId)
+	for id := range cluster.Nodes {
+		node, err := s.getNode(id)
 		if err != nil {
-			s.logger.Warn(err.Error())
+			s.logger.Debug(err.Error())
 			continue
 		}
-		cluster.Nodes[nodeId].State = node.State
+		cluster.Nodes[id] = node
 	}
 
 	return cluster, nil
@@ -449,7 +517,7 @@ func (s *GRPCService) ClusterInfo(ctx context.Context, req *empty.Empty) (*manag
 }
 
 func (s *GRPCService) ClusterWatch(req *empty.Empty, server management.Management_ClusterWatchServer) error {
-	chans := make(chan management.ClusterInfoResponse)
+	chans := make(chan management.ClusterWatchResponse)
 
 	s.clusterMutex.Lock()
 	s.clusterChans[chans] = struct{}{}
