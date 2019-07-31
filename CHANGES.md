@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Change subcommands #85
 - Update protobuf #86
 - Change protobuf #87
+- Change the cluster watching method #90
 
 ## [v0.7.1] - 2019-07-18
 
