@@ -59,7 +59,7 @@ func managerClusterWatch(c *cli.Context) error {
 			break
 		}
 
-		clusterBytes, err := json.MarshalIndent(resp.Cluster, "", "  ")
+		clusterBytes, err := json.MarshalIndent(resp, "", "  ")
 		if err != nil {
 			return err
 		}

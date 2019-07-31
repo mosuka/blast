@@ -28,7 +28,7 @@ service Management {
     rpc ClusterJoin (ClusterJoinRequest) returns (google.protobuf.Empty) {}
     rpc ClusterLeave (ClusterLeaveRequest) returns (google.protobuf.Empty) {}
     rpc ClusterInfo (google.protobuf.Empty) returns (ClusterInfoResponse) {}
-    rpc ClusterWatch (google.protobuf.Empty) returns (stream ClusterInfoResponse) {}
+    rpc ClusterWatch (google.protobuf.Empty) returns (stream ClusterWatchResponse) {}
 
     rpc Get (GetRequest) returns (GetResponse) {}
     rpc Set (SetRequest) returns (google.protobuf.Empty) {}
@@ -58,7 +58,6 @@ message NodeHealthCheckResponse {
     State state = 1;
 }
 
-// use for raft
 message Metadata {
     string grpc_address = 1;
     string http_address = 2;
@@ -89,6 +88,19 @@ message ClusterLeaveRequest {
 
 message ClusterInfoResponse {
     Cluster cluster = 1;
+}
+
+message ClusterWatchResponse {
+    enum Event {
+        UNKNOWN = 0;
+        JOIN = 1;
+        LEAVE = 2;
+        UPDATE = 3;
+    }
+    Event event = 1;
+    string id = 2;
+    Node node = 3;
+    Cluster cluster = 4;
 }
 
 message GetRequest {
