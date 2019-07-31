@@ -29,7 +29,6 @@ import (
 	"github.com/blevesearch/bleve/search"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/hashicorp/raft"
 	"github.com/mosuka/blast/indexer"
 	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/manager"
@@ -99,7 +98,7 @@ func (s *GRPCService) getManagerClient() (*manager.GRPCClient, error) {
 			continue
 		}
 
-		if node.State == raft.Leader.String() || node.State == raft.Follower.String() {
+		if node.State == management.Node_FOLLOWER || node.State == management.Node_LEADER {
 			var ok bool
 			client, ok = s.managerClients[id]
 			if ok {
@@ -108,7 +107,7 @@ func (s *GRPCService) getManagerClient() (*manager.GRPCClient, error) {
 				s.logger.Error("node does not exist", zap.String("id", id))
 			}
 		} else {
-			s.logger.Debug("node has not available", zap.String("id", id), zap.String("state", node.State))
+			s.logger.Debug("node has not available", zap.String("id", id), zap.String("state", node.State.String()))
 		}
 	}
 

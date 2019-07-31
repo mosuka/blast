@@ -20,7 +20,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/hashicorp/raft"
 	"github.com/mosuka/blast/logutils"
 	"github.com/mosuka/blast/protobuf/management"
 )
@@ -58,7 +57,7 @@ func TestRaftFSM_GetNode(t *testing.T) {
 		"node1",
 		&management.Node{
 			BindAddress: "2100",
-			State:       raft.Leader.String(),
+			State:       management.Node_LEADER,
 			Metadata: &management.Metadata{
 				GrpcAddress: "5100",
 				HttpAddress: "8100",
@@ -69,7 +68,7 @@ func TestRaftFSM_GetNode(t *testing.T) {
 		"node2",
 		&management.Node{
 			BindAddress: "2110",
-			State:       raft.Follower.String(),
+			State:       management.Node_FOLLOWER,
 			Metadata: &management.Metadata{
 				GrpcAddress: "5110",
 				HttpAddress: "8110",
@@ -80,7 +79,7 @@ func TestRaftFSM_GetNode(t *testing.T) {
 		"node3",
 		&management.Node{
 			BindAddress: "2120",
-			State:       raft.Follower.String(),
+			State:       management.Node_FOLLOWER,
 			Metadata: &management.Metadata{
 				GrpcAddress: "5120",
 				HttpAddress: "8120",
@@ -95,7 +94,7 @@ func TestRaftFSM_GetNode(t *testing.T) {
 
 	exp1 := &management.Node{
 		BindAddress: "2110",
-		State:       raft.Follower.String(),
+		State:       management.Node_FOLLOWER,
 		Metadata: &management.Metadata{
 			GrpcAddress: "5110",
 			HttpAddress: "8110",
@@ -142,7 +141,7 @@ func TestRaftFSM_SetNode(t *testing.T) {
 		"node1",
 		&management.Node{
 			BindAddress: "2100",
-			State:       raft.Leader.String(),
+			State:       management.Node_LEADER,
 			Metadata: &management.Metadata{
 				GrpcAddress: "5100",
 				HttpAddress: "8100",
@@ -153,7 +152,7 @@ func TestRaftFSM_SetNode(t *testing.T) {
 		"node2",
 		&management.Node{
 			BindAddress: "2110",
-			State:       raft.Follower.String(),
+			State:       management.Node_FOLLOWER,
 			Metadata: &management.Metadata{
 				GrpcAddress: "5110",
 				HttpAddress: "8110",
@@ -164,7 +163,7 @@ func TestRaftFSM_SetNode(t *testing.T) {
 		"node3",
 		&management.Node{
 			BindAddress: "2120",
-			State:       raft.Follower.String(),
+			State:       management.Node_FOLLOWER,
 			Metadata: &management.Metadata{
 				GrpcAddress: "5120",
 				HttpAddress: "8120",
@@ -178,7 +177,7 @@ func TestRaftFSM_SetNode(t *testing.T) {
 	}
 	exp1 := &management.Node{
 		BindAddress: "2110",
-		State:       raft.Follower.String(),
+		State:       management.Node_FOLLOWER,
 		Metadata: &management.Metadata{
 			GrpcAddress: "5110",
 			HttpAddress: "8110",
@@ -193,7 +192,7 @@ func TestRaftFSM_SetNode(t *testing.T) {
 		"node2",
 		&management.Node{
 			BindAddress: "2110",
-			State:       raft.Shutdown.String(),
+			State:       management.Node_SHUTDOWN,
 			Metadata: &management.Metadata{
 				GrpcAddress: "5110",
 				HttpAddress: "8110",
@@ -207,7 +206,7 @@ func TestRaftFSM_SetNode(t *testing.T) {
 	}
 	exp2 := &management.Node{
 		BindAddress: "2110",
-		State:       raft.Shutdown.String(),
+		State:       management.Node_SHUTDOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: "5110",
 			HttpAddress: "8110",
@@ -253,7 +252,7 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 		"node1",
 		&management.Node{
 			BindAddress: "2100",
-			State:       raft.Leader.String(),
+			State:       management.Node_LEADER,
 			Metadata: &management.Metadata{
 				GrpcAddress: "5100",
 				HttpAddress: "8100",
@@ -264,7 +263,7 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 		"node2",
 		&management.Node{
 			BindAddress: "2110",
-			State:       raft.Follower.String(),
+			State:       management.Node_FOLLOWER,
 			Metadata: &management.Metadata{
 				GrpcAddress: "5110",
 				HttpAddress: "8110",
@@ -275,7 +274,7 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 		"node3",
 		&management.Node{
 			BindAddress: "2120",
-			State:       raft.Follower.String(),
+			State:       management.Node_FOLLOWER,
 			Metadata: &management.Metadata{
 				GrpcAddress: "5120",
 				HttpAddress: "8120",
@@ -289,7 +288,7 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 	}
 	exp1 := &management.Node{
 		BindAddress: "2110",
-		State:       raft.Follower.String(),
+		State:       management.Node_FOLLOWER,
 		Metadata: &management.Metadata{
 			GrpcAddress: "5110",
 			HttpAddress: "8110",

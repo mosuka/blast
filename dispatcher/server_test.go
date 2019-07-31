@@ -49,7 +49,7 @@ func TestServer_Start(t *testing.T) {
 
 	managerNode1 := &management.Node{
 		BindAddress: managerBindAddress1,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: managerGrpcAddress1,
 			HttpAddress: managerHttpAddress1,
@@ -85,7 +85,7 @@ func TestServer_Start(t *testing.T) {
 
 	managerNode2 := &management.Node{
 		BindAddress: managerBindAddress2,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: managerGrpcAddress2,
 			HttpAddress: managerHttpAddress2,
@@ -121,7 +121,7 @@ func TestServer_Start(t *testing.T) {
 
 	managerNode3 := &management.Node{
 		BindAddress: managerBindAddress3,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: managerGrpcAddress3,
 			HttpAddress: managerHttpAddress3,
@@ -167,7 +167,7 @@ func TestServer_Start(t *testing.T) {
 		Nodes: map[string]*management.Node{
 			managerNodeId1: {
 				BindAddress: managerBindAddress1,
-				State:       raft.Leader.String(),
+				State:       management.Node_LEADER,
 				Metadata: &management.Metadata{
 					GrpcAddress: managerGrpcAddress1,
 					HttpAddress: managerHttpAddress1,
@@ -175,7 +175,7 @@ func TestServer_Start(t *testing.T) {
 			},
 			managerNodeId2: {
 				BindAddress: managerBindAddress2,
-				State:       raft.Follower.String(),
+				State:       management.Node_FOLLOWER,
 				Metadata: &management.Metadata{
 					GrpcAddress: managerGrpcAddress2,
 					HttpAddress: managerHttpAddress2,
@@ -183,7 +183,7 @@ func TestServer_Start(t *testing.T) {
 			},
 			managerNodeId3: {
 				BindAddress: managerBindAddress3,
-				State:       raft.Follower.String(),
+				State:       management.Node_FOLLOWER,
 				Metadata: &management.Metadata{
 					GrpcAddress: managerGrpcAddress3,
 					HttpAddress: managerHttpAddress3,
