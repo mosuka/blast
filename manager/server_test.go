@@ -22,7 +22,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/raft"
 	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/logutils"
 	"github.com/mosuka/blast/protobuf/management"
@@ -47,7 +46,7 @@ func TestServer_Start(t *testing.T) {
 
 	node := &management.Node{
 		BindAddress: bindAddress,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress,
 			HttpAddress: httpAddress,
@@ -94,7 +93,7 @@ func TestServer_HealthCheck(t *testing.T) {
 
 	node := &management.Node{
 		BindAddress: bindAddress,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress,
 			HttpAddress: httpAddress,
@@ -188,7 +187,7 @@ func TestServer_GetNode(t *testing.T) {
 
 	node := &management.Node{
 		BindAddress: bindAddress,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress,
 			HttpAddress: httpAddress,
@@ -238,7 +237,7 @@ func TestServer_GetNode(t *testing.T) {
 	}
 	expNodeInfo := &management.Node{
 		BindAddress: bindAddress,
-		State:       raft.Leader.String(),
+		State:       management.Node_LEADER,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress,
 			HttpAddress: httpAddress,
@@ -267,7 +266,7 @@ func TestServer_GetCluster(t *testing.T) {
 
 	node := &management.Node{
 		BindAddress: bindAddress,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress,
 			HttpAddress: httpAddress,
@@ -319,7 +318,7 @@ func TestServer_GetCluster(t *testing.T) {
 		Nodes: map[string]*management.Node{
 			nodeId: {
 				BindAddress: bindAddress,
-				State:       raft.Leader.String(),
+				State:       management.Node_LEADER,
 				Metadata: &management.Metadata{
 					GrpcAddress: grpcAddress,
 					HttpAddress: httpAddress,
@@ -350,7 +349,7 @@ func TestServer_SetState(t *testing.T) {
 
 	node := &management.Node{
 		BindAddress: bindAddress,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress,
 			HttpAddress: httpAddress,
@@ -431,7 +430,7 @@ func TestServer_GetState(t *testing.T) {
 
 	node := &management.Node{
 		BindAddress: bindAddress,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress,
 			HttpAddress: httpAddress,
@@ -512,7 +511,7 @@ func TestServer_DeleteState(t *testing.T) {
 
 	node := &management.Node{
 		BindAddress: bindAddress,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress,
 			HttpAddress: httpAddress,
@@ -614,7 +613,7 @@ func TestCluster_Start(t *testing.T) {
 
 	node1 := &management.Node{
 		BindAddress: bindAddress1,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress1,
 			HttpAddress: httpAddress1,
@@ -650,7 +649,7 @@ func TestCluster_Start(t *testing.T) {
 
 	node2 := &management.Node{
 		BindAddress: bindAddress2,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress2,
 			HttpAddress: httpAddress2,
@@ -686,7 +685,7 @@ func TestCluster_Start(t *testing.T) {
 
 	node3 := &management.Node{
 		BindAddress: bindAddress3,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress3,
 			HttpAddress: httpAddress3,
@@ -733,7 +732,7 @@ func TestCluster_HealthCheck(t *testing.T) {
 
 	node1 := &management.Node{
 		BindAddress: bindAddress1,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress1,
 			HttpAddress: httpAddress1,
@@ -769,7 +768,7 @@ func TestCluster_HealthCheck(t *testing.T) {
 
 	node2 := &management.Node{
 		BindAddress: bindAddress2,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress2,
 			HttpAddress: httpAddress2,
@@ -805,7 +804,7 @@ func TestCluster_HealthCheck(t *testing.T) {
 
 	node3 := &management.Node{
 		BindAddress: bindAddress3,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress3,
 			HttpAddress: httpAddress3,
@@ -975,7 +974,7 @@ func TestCluster_GetNode(t *testing.T) {
 
 	node1 := &management.Node{
 		BindAddress: bindAddress1,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress1,
 			HttpAddress: httpAddress1,
@@ -1011,7 +1010,7 @@ func TestCluster_GetNode(t *testing.T) {
 
 	node2 := &management.Node{
 		BindAddress: bindAddress2,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress2,
 			HttpAddress: httpAddress2,
@@ -1047,7 +1046,7 @@ func TestCluster_GetNode(t *testing.T) {
 
 	node3 := &management.Node{
 		BindAddress: bindAddress3,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress3,
 			HttpAddress: httpAddress3,
@@ -1106,7 +1105,7 @@ func TestCluster_GetNode(t *testing.T) {
 	}
 	expNode11 := &management.Node{
 		BindAddress: bindAddress1,
-		State:       raft.Leader.String(),
+		State:       management.Node_LEADER,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress1,
 			HttpAddress: httpAddress1,
@@ -1123,7 +1122,7 @@ func TestCluster_GetNode(t *testing.T) {
 	}
 	expNode21 := &management.Node{
 		BindAddress: bindAddress2,
-		State:       raft.Follower.String(),
+		State:       management.Node_FOLLOWER,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress2,
 			HttpAddress: httpAddress2,
@@ -1140,7 +1139,7 @@ func TestCluster_GetNode(t *testing.T) {
 	}
 	expNode31 := &management.Node{
 		BindAddress: bindAddress3,
-		State:       raft.Follower.String(),
+		State:       management.Node_FOLLOWER,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress3,
 			HttpAddress: httpAddress3,
@@ -1169,7 +1168,7 @@ func TestCluster_GetCluster(t *testing.T) {
 
 	node1 := &management.Node{
 		BindAddress: bindAddress1,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress1,
 			HttpAddress: httpAddress1,
@@ -1205,7 +1204,7 @@ func TestCluster_GetCluster(t *testing.T) {
 
 	node2 := &management.Node{
 		BindAddress: bindAddress2,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress2,
 			HttpAddress: httpAddress2,
@@ -1241,7 +1240,7 @@ func TestCluster_GetCluster(t *testing.T) {
 
 	node3 := &management.Node{
 		BindAddress: bindAddress3,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress3,
 			HttpAddress: httpAddress3,
@@ -1302,7 +1301,7 @@ func TestCluster_GetCluster(t *testing.T) {
 		Nodes: map[string]*management.Node{
 			nodeId1: {
 				BindAddress: bindAddress1,
-				State:       raft.Leader.String(),
+				State:       management.Node_LEADER,
 				Metadata: &management.Metadata{
 					GrpcAddress: grpcAddress1,
 					HttpAddress: httpAddress1,
@@ -1310,7 +1309,7 @@ func TestCluster_GetCluster(t *testing.T) {
 			},
 			nodeId2: {
 				BindAddress: bindAddress2,
-				State:       raft.Follower.String(),
+				State:       management.Node_FOLLOWER,
 				Metadata: &management.Metadata{
 					GrpcAddress: grpcAddress2,
 					HttpAddress: httpAddress2,
@@ -1318,7 +1317,7 @@ func TestCluster_GetCluster(t *testing.T) {
 			},
 			nodeId3: {
 				BindAddress: bindAddress3,
-				State:       raft.Follower.String(),
+				State:       management.Node_FOLLOWER,
 				Metadata: &management.Metadata{
 					GrpcAddress: grpcAddress3,
 					HttpAddress: httpAddress3,
@@ -1339,7 +1338,7 @@ func TestCluster_GetCluster(t *testing.T) {
 		Nodes: map[string]*management.Node{
 			nodeId1: {
 				BindAddress: bindAddress1,
-				State:       raft.Leader.String(),
+				State:       management.Node_LEADER,
 				Metadata: &management.Metadata{
 					GrpcAddress: grpcAddress1,
 					HttpAddress: httpAddress1,
@@ -1347,7 +1346,7 @@ func TestCluster_GetCluster(t *testing.T) {
 			},
 			nodeId2: {
 				BindAddress: bindAddress2,
-				State:       raft.Follower.String(),
+				State:       management.Node_FOLLOWER,
 				Metadata: &management.Metadata{
 					GrpcAddress: grpcAddress2,
 					HttpAddress: httpAddress2,
@@ -1355,7 +1354,7 @@ func TestCluster_GetCluster(t *testing.T) {
 			},
 			nodeId3: {
 				BindAddress: bindAddress3,
-				State:       raft.Follower.String(),
+				State:       management.Node_FOLLOWER,
 				Metadata: &management.Metadata{
 					GrpcAddress: grpcAddress3,
 					HttpAddress: httpAddress3,
@@ -1376,7 +1375,7 @@ func TestCluster_GetCluster(t *testing.T) {
 		Nodes: map[string]*management.Node{
 			nodeId1: {
 				BindAddress: bindAddress1,
-				State:       raft.Leader.String(),
+				State:       management.Node_LEADER,
 				Metadata: &management.Metadata{
 					GrpcAddress: grpcAddress1,
 					HttpAddress: httpAddress1,
@@ -1384,7 +1383,7 @@ func TestCluster_GetCluster(t *testing.T) {
 			},
 			nodeId2: {
 				BindAddress: bindAddress2,
-				State:       raft.Follower.String(),
+				State:       management.Node_FOLLOWER,
 				Metadata: &management.Metadata{
 					GrpcAddress: grpcAddress2,
 					HttpAddress: httpAddress2,
@@ -1392,7 +1391,7 @@ func TestCluster_GetCluster(t *testing.T) {
 			},
 			nodeId3: {
 				BindAddress: bindAddress3,
-				State:       raft.Follower.String(),
+				State:       management.Node_FOLLOWER,
 				Metadata: &management.Metadata{
 					GrpcAddress: grpcAddress3,
 					HttpAddress: httpAddress3,
@@ -1423,7 +1422,7 @@ func TestCluster_SetState(t *testing.T) {
 
 	node1 := &management.Node{
 		BindAddress: bindAddress1,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress1,
 			HttpAddress: httpAddress1,
@@ -1459,7 +1458,7 @@ func TestCluster_SetState(t *testing.T) {
 
 	node2 := &management.Node{
 		BindAddress: bindAddress2,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress2,
 			HttpAddress: httpAddress2,
@@ -1495,7 +1494,7 @@ func TestCluster_SetState(t *testing.T) {
 
 	node3 := &management.Node{
 		BindAddress: bindAddress3,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress3,
 			HttpAddress: httpAddress3,
@@ -1670,7 +1669,7 @@ func TestCluster_GetState(t *testing.T) {
 
 	node1 := &management.Node{
 		BindAddress: bindAddress1,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress1,
 			HttpAddress: httpAddress1,
@@ -1706,7 +1705,7 @@ func TestCluster_GetState(t *testing.T) {
 
 	node2 := &management.Node{
 		BindAddress: bindAddress2,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress2,
 			HttpAddress: httpAddress2,
@@ -1742,7 +1741,7 @@ func TestCluster_GetState(t *testing.T) {
 
 	node3 := &management.Node{
 		BindAddress: bindAddress3,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress3,
 			HttpAddress: httpAddress3,
@@ -1917,7 +1916,7 @@ func TestCluster_DeleteState(t *testing.T) {
 
 	node1 := &management.Node{
 		BindAddress: bindAddress1,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress1,
 			HttpAddress: httpAddress1,
@@ -1953,7 +1952,7 @@ func TestCluster_DeleteState(t *testing.T) {
 
 	node2 := &management.Node{
 		BindAddress: bindAddress2,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress2,
 			HttpAddress: httpAddress2,
@@ -1989,7 +1988,7 @@ func TestCluster_DeleteState(t *testing.T) {
 
 	node3 := &management.Node{
 		BindAddress: bindAddress3,
-		State:       "",
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddress3,
 			HttpAddress: httpAddress3,

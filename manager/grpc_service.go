@@ -79,35 +79,18 @@ func (s *GRPCService) Stop() error {
 }
 
 func (s *GRPCService) getLeaderClient() (*GRPCClient, error) {
-	var client *GRPCClient
-
 	for id, node := range s.cluster.Nodes {
-		state := node.State
-		if node.State == "" {
-			s.logger.Warn("missing state", zap.String("id", id), zap.String("state", state))
-			continue
-		}
-
-		if state == raft.Leader.String() {
-			var ok bool
-			client, ok = s.peerClients[id]
-			if ok {
-				break
-			} else {
-				s.logger.Error("node does not exist", zap.String("id", id))
+		switch node.State {
+		case management.Node_LEADER:
+			if client, exist := s.peerClients[id]; exist {
+				return client, nil
 			}
-		} else {
-			s.logger.Debug("not a leader", zap.String("id", id))
 		}
 	}
 
-	if client == nil {
-		err := errors.New("there is no leader")
-		s.logger.Error(err.Error())
-		return nil, err
-	}
-
-	return client, nil
+	err := errors.New("there is no leader")
+	s.logger.Error(err.Error())
+	return nil, err
 }
 
 func (s *GRPCService) cloneCluster(cluster *management.Cluster) (*management.Cluster, error) {
@@ -319,7 +302,19 @@ func (s *GRPCService) NodeID() string {
 
 func (s *GRPCService) getSelfNode() *management.Node {
 	node := s.raftServer.node
-	node.State = s.raftServer.State().String()
+
+	switch s.raftServer.State() {
+	case raft.Follower:
+		node.State = management.Node_FOLLOWER
+	case raft.Candidate:
+		node.State = management.Node_CANDIDATE
+	case raft.Leader:
+		node.State = management.Node_LEADER
+	case raft.Shutdown:
+		node.State = management.Node_SHUTDOWN
+	default:
+		node.State = management.Node_UNKNOWN
+	}
 
 	return node
 }
@@ -336,7 +331,7 @@ func (s *GRPCService) getPeerNode(id string) (*management.Node, error) {
 		s.logger.Debug(err.Error(), zap.String("id", id))
 		return &management.Node{
 			BindAddress: "",
-			State:       raft.Shutdown.String(),
+			State:       management.Node_UNKNOWN,
 			Metadata: &management.Metadata{
 				GrpcAddress: "",
 				HttpAddress: "",

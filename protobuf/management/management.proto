@@ -64,8 +64,15 @@ message Metadata {
 }
 
 message Node {
+    enum State {
+        UNKNOWN = 0;
+        FOLLOWER = 1;
+        CANDIDATE = 2;
+        LEADER = 3;
+        SHUTDOWN = 4;
+    }
     string bind_address = 1;
-    string state = 2;
+    State state = 2;
     Metadata metadata = 3;
 }
 
