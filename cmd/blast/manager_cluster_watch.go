@@ -22,6 +22,7 @@ import (
 	"os"
 
 	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/protobuf/management"
 	"github.com/urfave/cli"
 )
 
@@ -39,10 +40,21 @@ func managerClusterWatch(c *cli.Context) error {
 		}
 	}()
 
-	err = managerClusterInfo(c)
+	cluster, err := client.ClusterInfo()
 	if err != nil {
 		return err
 	}
+	resp := &management.ClusterWatchResponse{
+		Event:   0,
+		Id:      "",
+		Node:    nil,
+		Cluster: cluster,
+	}
+	clusterBytes, err := json.MarshalIndent(resp, "", "  ")
+	if err != nil {
+		return err
+	}
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(clusterBytes)))
 
 	watchClient, err := client.ClusterWatch()
 	if err != nil {
