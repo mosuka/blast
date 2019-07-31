@@ -27,7 +27,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/hashicorp/raft"
 	blasterrors "github.com/mosuka/blast/errors"
-	"github.com/mosuka/blast/hashutils"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/management"
 	"go.uber.org/zap"
@@ -137,20 +136,7 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 	ticker := time.NewTicker(checkInterval)
 	defer ticker.Stop()
 
-	// create initial cluster hash
-	clusterHash, err := hashutils.Hash(s.cluster)
-	if err != nil {
-		s.logger.Error(err.Error())
-		return
-	}
-
 	savedCluster, err := s.cloneCluster(s.cluster)
-	if err != nil {
-		s.logger.Error(err.Error())
-		return
-	}
-
-	peersHash, err := hashutils.Hash(s.peers)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return
@@ -163,13 +149,6 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 			return
 		case <-ticker.C:
 			s.cluster, err = s.getCluster()
-			if err != nil {
-				s.logger.Error(err.Error())
-				return
-			}
-
-			// create latest cluster hash
-			newClusterHash, err := hashutils.Hash(s.cluster)
 			if err != nil {
 				s.logger.Error(err.Error())
 				return
@@ -188,99 +167,70 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 				}
 			}
 
-			// create latest peers hash
-			newPeersHash, err := hashutils.Hash(s.peers)
-			if err != nil {
-				s.logger.Error(err.Error())
-				return
-			}
+			// open clients for peer nodes
+			for id, node := range s.peers.Nodes {
+				if node.Metadata.GrpcAddress == "" {
+					s.logger.Debug("missing gRPC address", zap.String("id", id), zap.String("grpc_addr", node.Metadata.GrpcAddress))
+					continue
+				}
 
-			// compare peers hash
-			if !cmp.Equal(peersHash, newPeersHash) {
-				// open clients
-				for id, node := range s.peers.Nodes {
-					if node.Metadata.GrpcAddress == "" {
-						s.logger.Warn("missing gRPC address", zap.String("id", id), zap.String("grpc_addr", node.Metadata.GrpcAddress))
-						continue
-					}
-
-					client, exist := s.peerClients[id]
-					if exist {
-						if client.GetAddress() != node.Metadata.GrpcAddress {
-							s.logger.Info("recreate gRPC client", zap.String("id", id), zap.String("grpc_addr", node.Metadata.GrpcAddress))
-							delete(s.peerClients, id)
-							err = client.Close()
-							if err != nil {
-								s.logger.Warn(err.Error(), zap.String("id", id))
-							}
-							newClient, err := NewGRPCClient(node.Metadata.GrpcAddress)
-							if err != nil {
-								s.logger.Error(err.Error(), zap.String("id", id), zap.String("grpc_addr", node.Metadata.GrpcAddress))
-								continue
-							}
-							s.peerClients[id] = newClient
+				client, exist := s.peerClients[id]
+				if exist {
+					if client.GetAddress() != node.Metadata.GrpcAddress {
+						s.logger.Info("recreate gRPC client", zap.String("id", id), zap.String("grpc_addr", node.Metadata.GrpcAddress))
+						delete(s.peerClients, id)
+						err = client.Close()
+						if err != nil {
+							s.logger.Warn(err.Error(), zap.String("id", id))
 						}
-					} else {
-						s.logger.Info("create gRPC client", zap.String("id", id), zap.String("grpc_addr", node.Metadata.GrpcAddress))
 						newClient, err := NewGRPCClient(node.Metadata.GrpcAddress)
 						if err != nil {
-							s.logger.Warn(err.Error(), zap.String("id", id), zap.String("grpc_addr", node.Metadata.GrpcAddress))
+							s.logger.Error(err.Error(), zap.String("id", id), zap.String("grpc_addr", node.Metadata.GrpcAddress))
 							continue
 						}
 						s.peerClients[id] = newClient
 					}
-				}
-
-				// close client for non-existent node
-				for id, client := range s.peerClients {
-					if _, exist := s.peers.Nodes[id]; !exist {
-						s.logger.Info("close gRPC client", zap.String("id", id), zap.String("grpc_addr", client.GetAddress()))
-						err = client.Close()
-						if err != nil {
-							s.logger.Warn(err.Error(), zap.String("id", id), zap.String("grpc_addr", client.GetAddress()))
-						}
-						delete(s.peerClients, id)
+				} else {
+					s.logger.Info("create gRPC client", zap.String("id", id), zap.String("grpc_addr", node.Metadata.GrpcAddress))
+					newClient, err := NewGRPCClient(node.Metadata.GrpcAddress)
+					if err != nil {
+						s.logger.Warn(err.Error(), zap.String("id", id), zap.String("grpc_addr", node.Metadata.GrpcAddress))
+						continue
 					}
+					s.peerClients[id] = newClient
 				}
-
-				// update peers hash
-				peersHash = newPeersHash
 			}
 
-			// compare cluster hash
-			if !cmp.Equal(clusterHash, newClusterHash) {
-				// check joined and updated nodes
-				for id, node := range snapshotCluster.Nodes {
-					nodeSnapshot, exist := savedCluster.Nodes[id]
-					if exist {
+			// close clients for non-existent peer nodes
+			for id, client := range s.peerClients {
+				if _, exist := s.peers.Nodes[id]; !exist {
+					s.logger.Info("close gRPC client", zap.String("id", id), zap.String("grpc_addr", client.GetAddress()))
+					err = client.Close()
+					if err != nil {
+						s.logger.Warn(err.Error(), zap.String("id", id), zap.String("grpc_addr", client.GetAddress()))
+					}
+					delete(s.peerClients, id)
+				}
+			}
+
+			// check joined and updated nodes
+			for id, node := range snapshotCluster.Nodes {
+				nodeSnapshot, exist := savedCluster.Nodes[id]
+				if exist {
+					// node exists in the cluster
+					n1, err := json.Marshal(node)
+					if err != nil {
+						s.logger.Warn(err.Error(), zap.String("id", id), zap.Any("node", node))
+					}
+					n2, err := json.Marshal(nodeSnapshot)
+					if err != nil {
+						s.logger.Warn(err.Error(), zap.String("id", id), zap.Any("node", nodeSnapshot))
+					}
+					if !cmp.Equal(n1, n2) {
 						// node updated
-						n1, err := json.Marshal(node)
-						if err != nil {
-							s.logger.Warn(err.Error(), zap.String("id", id), zap.Any("node", node))
-						}
-						n2, err := json.Marshal(nodeSnapshot)
-						if err != nil {
-							s.logger.Warn(err.Error(), zap.String("id", id), zap.Any("node", nodeSnapshot))
-						}
-						if !cmp.Equal(n1, n2) {
-							// notify the cluster changes
-							clusterResp := &management.ClusterWatchResponse{
-								Event:   management.ClusterWatchResponse_UPDATE,
-								Id:      id,
-								Node:    node,
-								Cluster: snapshotCluster,
-							}
-							for c := range s.clusterChans {
-								c <- *clusterResp
-							}
-						} else {
-							// no change
-						}
-					} else {
-						// node joined
 						// notify the cluster changes
 						clusterResp := &management.ClusterWatchResponse{
-							Event:   management.ClusterWatchResponse_JOIN,
+							Event:   management.ClusterWatchResponse_UPDATE,
 							Id:      id,
 							Node:    node,
 							Cluster: snapshotCluster,
@@ -289,30 +239,39 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 							c <- *clusterResp
 						}
 					}
-				}
-
-				// check left nodes
-				for id, node := range savedCluster.Nodes {
-					if _, exist := snapshotCluster.Nodes[id]; !exist {
-						// node left
-						// notify the cluster changes
-						clusterResp := &management.ClusterWatchResponse{
-							Event:   management.ClusterWatchResponse_LEAVE,
-							Id:      id,
-							Node:    node,
-							Cluster: snapshotCluster,
-						}
-						for c := range s.clusterChans {
-							c <- *clusterResp
-						}
+				} else {
+					// node joined
+					// notify the cluster changes
+					clusterResp := &management.ClusterWatchResponse{
+						Event:   management.ClusterWatchResponse_JOIN,
+						Id:      id,
+						Node:    node,
+						Cluster: snapshotCluster,
+					}
+					for c := range s.clusterChans {
+						c <- *clusterResp
 					}
 				}
-
-				// update cluster hash
-				clusterHash = newClusterHash
-
-				savedCluster = snapshotCluster
 			}
+
+			// check left nodes
+			for id, node := range savedCluster.Nodes {
+				if _, exist := snapshotCluster.Nodes[id]; !exist {
+					// node left
+					// notify the cluster changes
+					clusterResp := &management.ClusterWatchResponse{
+						Event:   management.ClusterWatchResponse_LEAVE,
+						Id:      id,
+						Node:    node,
+						Cluster: snapshotCluster,
+					}
+					for c := range s.clusterChans {
+						c <- *clusterResp
+					}
+				}
+			}
+
+			savedCluster = snapshotCluster
 		default:
 			time.Sleep(100 * time.Millisecond)
 		}
