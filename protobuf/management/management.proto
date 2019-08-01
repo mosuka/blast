@@ -71,9 +71,10 @@ message Node {
         LEADER = 3;
         SHUTDOWN = 4;
     }
-    string bind_address = 1;
-    State state = 2;
-    Metadata metadata = 3;
+    string id = 1;
+    string bind_address = 2;
+    State state = 3;
+    Metadata metadata = 4;
 }
 
 message Cluster {
@@ -85,8 +86,7 @@ message NodeInfoResponse {
 }
 
 message ClusterJoinRequest {
-    string id = 1;
-    Node node = 2;
+    Node node = 1;
 }
 
 message ClusterLeaveRequest {
@@ -105,9 +105,8 @@ message ClusterWatchResponse {
         UPDATE = 3;
     }
     Event event = 1;
-    string id = 2;
-    Node node = 3;
-    Cluster cluster = 4;
+    Node node = 2;
+    Cluster cluster = 3;
 }
 
 message GetRequest {

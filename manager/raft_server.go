@@ -36,7 +36,7 @@ import (
 )
 
 type RaftServer struct {
-	nodeId          string
+	//nodeId          string
 	node            *management.Node
 	dataDir         string
 	raftStorageType string
@@ -49,9 +49,9 @@ type RaftServer struct {
 	mu   sync.RWMutex
 }
 
-func NewRaftServer(nodeId string, node *management.Node, dataDir string, raftStorageType string, indexConfig *config.IndexConfig, bootstrap bool, logger *zap.Logger) (*RaftServer, error) {
+func NewRaftServer(node *management.Node, dataDir string, raftStorageType string, indexConfig *config.IndexConfig, bootstrap bool, logger *zap.Logger) (*RaftServer, error) {
 	return &RaftServer{
-		nodeId:          nodeId,
+		//nodeId:          nodeId,
 		node:            node,
 		dataDir:         dataDir,
 		raftStorageType: raftStorageType,
@@ -79,9 +79,9 @@ func (s *RaftServer) Start() error {
 		return err
 	}
 
-	s.logger.Info("create Raft config", zap.String("node_id", s.nodeId))
+	s.logger.Info("create Raft config", zap.String("node_id", s.node.Id))
 	raftConfig := raft.DefaultConfig()
-	raftConfig.LocalID = raft.ServerID(s.nodeId)
+	raftConfig.LocalID = raft.ServerID(s.node.Id)
 	raftConfig.SnapshotThreshold = 1024
 	raftConfig.LogOutput = ioutil.Discard
 
@@ -207,8 +207,8 @@ func (s *RaftServer) Start() error {
 		}
 
 		// set node config
-		s.logger.Info("register its own node config", zap.String("node_id", s.nodeId), zap.Any("node", s.node))
-		err = s.setNode(s.nodeId, s.node)
+		s.logger.Info("register its own node config", zap.Any("node", s.node))
+		err = s.setNode(s.node)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return err
@@ -292,7 +292,7 @@ func (s *RaftServer) LeaderID(timeout time.Duration) (raft.ServerID, error) {
 }
 
 func (s *RaftServer) NodeID() string {
-	return s.nodeId
+	return s.node.Id
 }
 
 func (s *RaftServer) Stats() map[string]string {
@@ -318,7 +318,7 @@ func (s *RaftServer) WaitForDetectLeader(timeout time.Duration) error {
 }
 
 func (s *RaftServer) getNode(nodeId string) (*management.Node, error) {
-	nodeConfig, err := s.fsm.GetNodeConfig(nodeId)
+	nodeConfig, err := s.fsm.GetNode(nodeId)
 	if err != nil {
 		s.logger.Debug(err.Error(), zap.String("id", nodeId))
 		return nil, err
@@ -327,34 +327,33 @@ func (s *RaftServer) getNode(nodeId string) (*management.Node, error) {
 	return nodeConfig, nil
 }
 
-func (s *RaftServer) setNode(nodeId string, node *management.Node) error {
+func (s *RaftServer) setNode(node *management.Node) error {
 	msg, err := newMessage(
 		setNode,
 		map[string]interface{}{
-			"node_id": nodeId,
-			"node":    node,
+			"node": node,
 		},
 	)
 	if err != nil {
-		s.logger.Error(err.Error(), zap.String("id", nodeId), zap.Any("node", node))
+		s.logger.Error(err.Error(), zap.Any("node", node))
 		return err
 	}
 
 	msgBytes, err := json.Marshal(msg)
 	if err != nil {
-		s.logger.Error(err.Error(), zap.String("id", nodeId), zap.Any("node", node))
+		s.logger.Error(err.Error(), zap.Any("node", node))
 		return err
 	}
 
 	f := s.raft.Apply(msgBytes, 10*time.Second)
 	err = f.Error()
 	if err != nil {
-		s.logger.Error(err.Error(), zap.String("id", nodeId), zap.Any("node", node))
+		s.logger.Error(err.Error(), zap.Any("node", node))
 		return err
 	}
 	err = f.Response().(*fsmResponse).error
 	if err != nil {
-		s.logger.Error(err.Error(), zap.String("id", nodeId), zap.Any("node", node))
+		s.logger.Error(err.Error(), zap.Any("node", node))
 		return err
 	}
 
@@ -365,7 +364,7 @@ func (s *RaftServer) deleteNode(nodeId string) error {
 	msg, err := newMessage(
 		deleteNode,
 		map[string]interface{}{
-			"node_id": nodeId,
+			"id": nodeId,
 		},
 	)
 	if err != nil {
@@ -417,7 +416,7 @@ func (s *RaftServer) GetNode(id string) (*management.Node, error) {
 	return node, nil
 }
 
-func (s *RaftServer) SetNode(nodeId string, node *management.Node) error {
+func (s *RaftServer) SetNode(node *management.Node) error {
 	if !s.IsLeader() {
 		s.logger.Warn(raft.ErrNotLeader.Error(), zap.String("state", s.raft.State().String()))
 		return raft.ErrNotLeader
@@ -431,8 +430,8 @@ func (s *RaftServer) SetNode(nodeId string, node *management.Node) error {
 	}
 
 	for _, server := range cf.Configuration().Servers {
-		if server.ID == raft.ServerID(nodeId) {
-			s.logger.Info("node already joined the cluster", zap.String("id", nodeId))
+		if server.ID == raft.ServerID(node.Id) {
+			s.logger.Info("node already joined the cluster", zap.Any("id", node.Id))
 			return nil
 		}
 	}
@@ -444,18 +443,18 @@ func (s *RaftServer) SetNode(nodeId string, node *management.Node) error {
 	}
 
 	// add node to Raft cluster
-	s.logger.Info("join the node to the raft cluster", zap.String("id", nodeId), zap.Any("bind_address", node.BindAddress))
-	f := s.raft.AddVoter(raft.ServerID(nodeId), raft.ServerAddress(node.BindAddress), 0, 0)
+	s.logger.Info("join the node to the raft cluster", zap.String("id", node.Id), zap.Any("bind_address", node.BindAddress))
+	f := s.raft.AddVoter(raft.ServerID(node.Id), raft.ServerAddress(node.BindAddress), 0, 0)
 	err = f.Error()
 	if err != nil {
-		s.logger.Error(err.Error(), zap.String("id", nodeId), zap.String("bind_address", node.BindAddress))
+		s.logger.Error(err.Error(), zap.String("id", node.Id), zap.String("bind_address", node.BindAddress))
 		return err
 	}
 
 	// set node config
-	err = s.setNode(nodeId, node)
+	err = s.setNode(node)
 	if err != nil {
-		s.logger.Error(err.Error(), zap.String("id", nodeId), zap.Any("node", node))
+		s.logger.Error(err.Error(), zap.Any("node", node))
 		return err
 	}
 

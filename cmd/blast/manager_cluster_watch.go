@@ -46,7 +46,6 @@ func managerClusterWatch(c *cli.Context) error {
 	}
 	resp := &management.ClusterWatchResponse{
 		Event:   0,
-		Id:      "",
 		Node:    nil,
 		Cluster: cluster,
 	}

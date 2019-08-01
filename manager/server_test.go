@@ -45,6 +45,7 @@ func TestServer_Start(t *testing.T) {
 	raftStorageType := "boltdb"
 
 	node := &management.Node{
+		Id:          nodeId,
 		BindAddress: bindAddress,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -59,7 +60,7 @@ func TestServer_Start(t *testing.T) {
 	}
 
 	// create server
-	server, err := NewServer(peerGrpcAddress, nodeId, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(peerGrpcAddress, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server != nil {
 			server.Stop()
@@ -92,6 +93,7 @@ func TestServer_HealthCheck(t *testing.T) {
 	raftStorageType := "boltdb"
 
 	node := &management.Node{
+		Id:          nodeId,
 		BindAddress: bindAddress,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -106,7 +108,7 @@ func TestServer_HealthCheck(t *testing.T) {
 	}
 
 	// create server
-	server, err := NewServer(peerGrpcAddress, nodeId, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(peerGrpcAddress, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server != nil {
 			server.Stop()
@@ -186,6 +188,7 @@ func TestServer_GetNode(t *testing.T) {
 	raftStorageType := "boltdb"
 
 	node := &management.Node{
+		Id:          nodeId,
 		BindAddress: bindAddress,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -200,7 +203,7 @@ func TestServer_GetNode(t *testing.T) {
 	}
 
 	// create server
-	server, err := NewServer(peerGrpcAddress, nodeId, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(peerGrpcAddress, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server != nil {
 			server.Stop()
@@ -236,6 +239,7 @@ func TestServer_GetNode(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 	expNodeInfo := &management.Node{
+		Id:          nodeId,
 		BindAddress: bindAddress,
 		State:       management.Node_LEADER,
 		Metadata: &management.Metadata{
@@ -265,6 +269,7 @@ func TestServer_GetCluster(t *testing.T) {
 	raftStorageType := "boltdb"
 
 	node := &management.Node{
+		Id:          nodeId,
 		BindAddress: bindAddress,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -279,7 +284,7 @@ func TestServer_GetCluster(t *testing.T) {
 	}
 
 	// create server
-	server, err := NewServer(peerGrpcAddress, nodeId, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(peerGrpcAddress, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server != nil {
 			server.Stop()
@@ -317,6 +322,7 @@ func TestServer_GetCluster(t *testing.T) {
 	expCluster := &management.Cluster{
 		Nodes: map[string]*management.Node{
 			nodeId: {
+				Id:          nodeId,
 				BindAddress: bindAddress,
 				State:       management.Node_LEADER,
 				Metadata: &management.Metadata{
@@ -348,6 +354,7 @@ func TestServer_SetState(t *testing.T) {
 	raftStorageType := "boltdb"
 
 	node := &management.Node{
+		Id:          nodeId,
 		BindAddress: bindAddress,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -362,7 +369,7 @@ func TestServer_SetState(t *testing.T) {
 	}
 
 	// create server
-	server, err := NewServer(peerGrpcAddress, nodeId, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(peerGrpcAddress, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server != nil {
 			server.Stop()
@@ -429,6 +436,7 @@ func TestServer_GetState(t *testing.T) {
 	raftStorageType := "boltdb"
 
 	node := &management.Node{
+		Id:          nodeId,
 		BindAddress: bindAddress,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -443,7 +451,7 @@ func TestServer_GetState(t *testing.T) {
 	}
 
 	// create server
-	server, err := NewServer(peerGrpcAddress, nodeId, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(peerGrpcAddress, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server != nil {
 			server.Stop()
@@ -510,6 +518,7 @@ func TestServer_DeleteState(t *testing.T) {
 	raftStorageType := "boltdb"
 
 	node := &management.Node{
+		Id:          nodeId,
 		BindAddress: bindAddress,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -524,7 +533,7 @@ func TestServer_DeleteState(t *testing.T) {
 	}
 
 	// create server
-	server, err := NewServer(peerGrpcAddress, nodeId, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(peerGrpcAddress, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server != nil {
 			server.Stop()
@@ -612,6 +621,7 @@ func TestCluster_Start(t *testing.T) {
 	raftStorageType1 := "boltdb"
 
 	node1 := &management.Node{
+		Id:          nodeId1,
 		BindAddress: bindAddress1,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -626,7 +636,7 @@ func TestCluster_Start(t *testing.T) {
 	}
 
 	// create server
-	server1, err := NewServer(peerGrpcAddress1, nodeId1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
+	server1, err := NewServer(peerGrpcAddress1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -648,6 +658,7 @@ func TestCluster_Start(t *testing.T) {
 	raftStorageType2 := "boltdb"
 
 	node2 := &management.Node{
+		Id:          nodeId2,
 		BindAddress: bindAddress2,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -662,7 +673,7 @@ func TestCluster_Start(t *testing.T) {
 	}
 
 	// create server
-	server2, err := NewServer(peerGrpcAddress2, nodeId2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
+	server2, err := NewServer(peerGrpcAddress2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -684,6 +695,7 @@ func TestCluster_Start(t *testing.T) {
 	raftStorageType3 := "boltdb"
 
 	node3 := &management.Node{
+		Id:          nodeId3,
 		BindAddress: bindAddress3,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -698,7 +710,7 @@ func TestCluster_Start(t *testing.T) {
 	}
 
 	// create server
-	server3, err := NewServer(peerGrpcAddress3, nodeId3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
+	server3, err := NewServer(peerGrpcAddress3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -731,6 +743,7 @@ func TestCluster_HealthCheck(t *testing.T) {
 	raftStorageType1 := "boltdb"
 
 	node1 := &management.Node{
+		Id:          nodeId1,
 		BindAddress: bindAddress1,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -745,7 +758,7 @@ func TestCluster_HealthCheck(t *testing.T) {
 	}
 
 	// create server
-	server1, err := NewServer(peerGrpcAddress1, nodeId1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
+	server1, err := NewServer(peerGrpcAddress1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -767,6 +780,7 @@ func TestCluster_HealthCheck(t *testing.T) {
 	raftStorageType2 := "boltdb"
 
 	node2 := &management.Node{
+		Id:          nodeId2,
 		BindAddress: bindAddress2,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -781,7 +795,7 @@ func TestCluster_HealthCheck(t *testing.T) {
 	}
 
 	// create server
-	server2, err := NewServer(peerGrpcAddress2, nodeId2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
+	server2, err := NewServer(peerGrpcAddress2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -803,6 +817,7 @@ func TestCluster_HealthCheck(t *testing.T) {
 	raftStorageType3 := "boltdb"
 
 	node3 := &management.Node{
+		Id:          nodeId3,
 		BindAddress: bindAddress3,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -817,7 +832,7 @@ func TestCluster_HealthCheck(t *testing.T) {
 	}
 
 	// create server
-	server3, err := NewServer(peerGrpcAddress3, nodeId3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
+	server3, err := NewServer(peerGrpcAddress3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -973,6 +988,7 @@ func TestCluster_GetNode(t *testing.T) {
 	raftStorageType1 := "boltdb"
 
 	node1 := &management.Node{
+		Id:          nodeId1,
 		BindAddress: bindAddress1,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -987,7 +1003,7 @@ func TestCluster_GetNode(t *testing.T) {
 	}
 
 	// create server
-	server1, err := NewServer(peerGrpcAddress1, nodeId1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
+	server1, err := NewServer(peerGrpcAddress1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -1009,6 +1025,7 @@ func TestCluster_GetNode(t *testing.T) {
 	raftStorageType2 := "boltdb"
 
 	node2 := &management.Node{
+		Id:          nodeId2,
 		BindAddress: bindAddress2,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -1023,7 +1040,7 @@ func TestCluster_GetNode(t *testing.T) {
 	}
 
 	// create server
-	server2, err := NewServer(peerGrpcAddress2, nodeId2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
+	server2, err := NewServer(peerGrpcAddress2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -1045,6 +1062,7 @@ func TestCluster_GetNode(t *testing.T) {
 	raftStorageType3 := "boltdb"
 
 	node3 := &management.Node{
+		Id:          nodeId3,
 		BindAddress: bindAddress3,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -1059,7 +1077,7 @@ func TestCluster_GetNode(t *testing.T) {
 	}
 
 	// create server
-	server3, err := NewServer(peerGrpcAddress3, nodeId3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
+	server3, err := NewServer(peerGrpcAddress3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -1104,6 +1122,7 @@ func TestCluster_GetNode(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 	expNode11 := &management.Node{
+		Id:          nodeId1,
 		BindAddress: bindAddress1,
 		State:       management.Node_LEADER,
 		Metadata: &management.Metadata{
@@ -1121,6 +1140,7 @@ func TestCluster_GetNode(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 	expNode21 := &management.Node{
+		Id:          nodeId2,
 		BindAddress: bindAddress2,
 		State:       management.Node_FOLLOWER,
 		Metadata: &management.Metadata{
@@ -1138,6 +1158,7 @@ func TestCluster_GetNode(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 	expNode31 := &management.Node{
+		Id:          nodeId3,
 		BindAddress: bindAddress3,
 		State:       management.Node_FOLLOWER,
 		Metadata: &management.Metadata{
@@ -1167,6 +1188,7 @@ func TestCluster_GetCluster(t *testing.T) {
 	raftStorageType1 := "boltdb"
 
 	node1 := &management.Node{
+		Id:          nodeId1,
 		BindAddress: bindAddress1,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -1181,7 +1203,7 @@ func TestCluster_GetCluster(t *testing.T) {
 	}
 
 	// create server
-	server1, err := NewServer(peerGrpcAddress1, nodeId1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
+	server1, err := NewServer(peerGrpcAddress1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -1203,6 +1225,7 @@ func TestCluster_GetCluster(t *testing.T) {
 	raftStorageType2 := "boltdb"
 
 	node2 := &management.Node{
+		Id:          nodeId2,
 		BindAddress: bindAddress2,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -1217,7 +1240,7 @@ func TestCluster_GetCluster(t *testing.T) {
 	}
 
 	// create server
-	server2, err := NewServer(peerGrpcAddress2, nodeId2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
+	server2, err := NewServer(peerGrpcAddress2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -1239,6 +1262,7 @@ func TestCluster_GetCluster(t *testing.T) {
 	raftStorageType3 := "boltdb"
 
 	node3 := &management.Node{
+		Id:          nodeId3,
 		BindAddress: bindAddress3,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -1253,7 +1277,7 @@ func TestCluster_GetCluster(t *testing.T) {
 	}
 
 	// create server
-	server3, err := NewServer(peerGrpcAddress3, nodeId3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
+	server3, err := NewServer(peerGrpcAddress3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -1300,6 +1324,7 @@ func TestCluster_GetCluster(t *testing.T) {
 	expCluster1 := &management.Cluster{
 		Nodes: map[string]*management.Node{
 			nodeId1: {
+				Id:          nodeId1,
 				BindAddress: bindAddress1,
 				State:       management.Node_LEADER,
 				Metadata: &management.Metadata{
@@ -1308,6 +1333,7 @@ func TestCluster_GetCluster(t *testing.T) {
 				},
 			},
 			nodeId2: {
+				Id:          nodeId2,
 				BindAddress: bindAddress2,
 				State:       management.Node_FOLLOWER,
 				Metadata: &management.Metadata{
@@ -1316,6 +1342,7 @@ func TestCluster_GetCluster(t *testing.T) {
 				},
 			},
 			nodeId3: {
+				Id:          nodeId3,
 				BindAddress: bindAddress3,
 				State:       management.Node_FOLLOWER,
 				Metadata: &management.Metadata{
@@ -1337,6 +1364,7 @@ func TestCluster_GetCluster(t *testing.T) {
 	expCluster2 := &management.Cluster{
 		Nodes: map[string]*management.Node{
 			nodeId1: {
+				Id:          nodeId1,
 				BindAddress: bindAddress1,
 				State:       management.Node_LEADER,
 				Metadata: &management.Metadata{
@@ -1345,6 +1373,7 @@ func TestCluster_GetCluster(t *testing.T) {
 				},
 			},
 			nodeId2: {
+				Id:          nodeId2,
 				BindAddress: bindAddress2,
 				State:       management.Node_FOLLOWER,
 				Metadata: &management.Metadata{
@@ -1353,6 +1382,7 @@ func TestCluster_GetCluster(t *testing.T) {
 				},
 			},
 			nodeId3: {
+				Id:          nodeId3,
 				BindAddress: bindAddress3,
 				State:       management.Node_FOLLOWER,
 				Metadata: &management.Metadata{
@@ -1374,6 +1404,7 @@ func TestCluster_GetCluster(t *testing.T) {
 	expCluster3 := &management.Cluster{
 		Nodes: map[string]*management.Node{
 			nodeId1: {
+				Id:          nodeId1,
 				BindAddress: bindAddress1,
 				State:       management.Node_LEADER,
 				Metadata: &management.Metadata{
@@ -1382,6 +1413,7 @@ func TestCluster_GetCluster(t *testing.T) {
 				},
 			},
 			nodeId2: {
+				Id:          nodeId2,
 				BindAddress: bindAddress2,
 				State:       management.Node_FOLLOWER,
 				Metadata: &management.Metadata{
@@ -1390,6 +1422,7 @@ func TestCluster_GetCluster(t *testing.T) {
 				},
 			},
 			nodeId3: {
+				Id:          nodeId3,
 				BindAddress: bindAddress3,
 				State:       management.Node_FOLLOWER,
 				Metadata: &management.Metadata{
@@ -1421,6 +1454,7 @@ func TestCluster_SetState(t *testing.T) {
 	raftStorageType1 := "boltdb"
 
 	node1 := &management.Node{
+		Id:          nodeId1,
 		BindAddress: bindAddress1,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -1435,7 +1469,7 @@ func TestCluster_SetState(t *testing.T) {
 	}
 
 	// create server
-	server1, err := NewServer(peerGrpcAddress1, nodeId1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
+	server1, err := NewServer(peerGrpcAddress1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -1457,6 +1491,7 @@ func TestCluster_SetState(t *testing.T) {
 	raftStorageType2 := "boltdb"
 
 	node2 := &management.Node{
+		Id:          nodeId2,
 		BindAddress: bindAddress2,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -1471,7 +1506,7 @@ func TestCluster_SetState(t *testing.T) {
 	}
 
 	// create server
-	server2, err := NewServer(peerGrpcAddress2, nodeId2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
+	server2, err := NewServer(peerGrpcAddress2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -1493,6 +1528,7 @@ func TestCluster_SetState(t *testing.T) {
 	raftStorageType3 := "boltdb"
 
 	node3 := &management.Node{
+		Id:          nodeId3,
 		BindAddress: bindAddress3,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -1507,7 +1543,7 @@ func TestCluster_SetState(t *testing.T) {
 	}
 
 	// create server
-	server3, err := NewServer(peerGrpcAddress3, nodeId3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
+	server3, err := NewServer(peerGrpcAddress3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -1668,6 +1704,7 @@ func TestCluster_GetState(t *testing.T) {
 	raftStorageType1 := "boltdb"
 
 	node1 := &management.Node{
+		Id:          nodeId1,
 		BindAddress: bindAddress1,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -1682,7 +1719,7 @@ func TestCluster_GetState(t *testing.T) {
 	}
 
 	// create server
-	server1, err := NewServer(peerGrpcAddress1, nodeId1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
+	server1, err := NewServer(peerGrpcAddress1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -1704,6 +1741,7 @@ func TestCluster_GetState(t *testing.T) {
 	raftStorageType2 := "boltdb"
 
 	node2 := &management.Node{
+		Id:          nodeId2,
 		BindAddress: bindAddress2,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -1718,7 +1756,7 @@ func TestCluster_GetState(t *testing.T) {
 	}
 
 	// create server
-	server2, err := NewServer(peerGrpcAddress2, nodeId2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
+	server2, err := NewServer(peerGrpcAddress2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -1740,6 +1778,7 @@ func TestCluster_GetState(t *testing.T) {
 	raftStorageType3 := "boltdb"
 
 	node3 := &management.Node{
+		Id:          nodeId3,
 		BindAddress: bindAddress3,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -1754,7 +1793,7 @@ func TestCluster_GetState(t *testing.T) {
 	}
 
 	// create server
-	server3, err := NewServer(peerGrpcAddress3, nodeId3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
+	server3, err := NewServer(peerGrpcAddress3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()
@@ -1915,6 +1954,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	raftStorageType1 := "boltdb"
 
 	node1 := &management.Node{
+		Id:          nodeId1,
 		BindAddress: bindAddress1,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -1929,7 +1969,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	}
 
 	// create server
-	server1, err := NewServer(peerGrpcAddress1, nodeId1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
+	server1, err := NewServer(peerGrpcAddress1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server1 != nil {
 			server1.Stop()
@@ -1951,6 +1991,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	raftStorageType2 := "boltdb"
 
 	node2 := &management.Node{
+		Id:          nodeId2,
 		BindAddress: bindAddress2,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -1965,7 +2006,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	}
 
 	// create server
-	server2, err := NewServer(peerGrpcAddress2, nodeId2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
+	server2, err := NewServer(peerGrpcAddress2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server2 != nil {
 			server2.Stop()
@@ -1987,6 +2028,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	raftStorageType3 := "boltdb"
 
 	node3 := &management.Node{
+		Id:          nodeId3,
 		BindAddress: bindAddress3,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -2001,7 +2043,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	}
 
 	// create server
-	server3, err := NewServer(peerGrpcAddress3, nodeId3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
+	server3, err := NewServer(peerGrpcAddress3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if server3 != nil {
 			server3.Stop()

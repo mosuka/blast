@@ -60,7 +60,7 @@ func (f *RaftFSM) Stop() error {
 	return nil
 }
 
-func (f *RaftFSM) GetNodeConfig(nodeId string) (*management.Node, error) {
+func (f *RaftFSM) GetNode(nodeId string) (*management.Node, error) {
 	f.clusterMutex.RLock()
 	defer f.clusterMutex.RUnlock()
 
@@ -72,16 +72,16 @@ func (f *RaftFSM) GetNodeConfig(nodeId string) (*management.Node, error) {
 	return node, nil
 }
 
-func (f *RaftFSM) SetNodeConfig(nodeId string, node *management.Node) error {
+func (f *RaftFSM) SetNode(node *management.Node) error {
 	f.clusterMutex.RLock()
 	defer f.clusterMutex.RUnlock()
 
-	f.cluster.Nodes[nodeId] = node
+	f.cluster.Nodes[node.Id] = node
 
 	return nil
 }
 
-func (f *RaftFSM) DeleteNodeConfig(nodeId string) error {
+func (f *RaftFSM) DeleteNode(nodeId string) error {
 	f.clusterMutex.RLock()
 	defer f.clusterMutex.RUnlock()
 
@@ -183,7 +183,7 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
-		err = f.SetNodeConfig(data["node_id"].(string), node)
+		err = f.SetNode(node)
 		if err != nil {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
@@ -196,7 +196,7 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
-		err = f.DeleteNodeConfig(data["node_id"].(string))
+		err = f.DeleteNode(data["id"].(string))
 		return &fsmResponse{error: err}
 	case setKeyValue:
 		var data map[string]interface{}
