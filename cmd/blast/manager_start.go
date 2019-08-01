@@ -93,7 +93,9 @@ func managerStart(c *cli.Context) error {
 	)
 
 	node := &management.Node{
+		Id:          nodeId,
 		BindAddress: nodeAddr,
+		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
 			GrpcAddress: grpcAddr,
 			HttpAddress: httpAddr,
@@ -120,7 +122,7 @@ func managerStart(c *cli.Context) error {
 		IndexStorageType: indexStorageType,
 	}
 
-	svr, err := manager.NewServer(peerGrpcAddr, nodeId, node, dataDir, raftStorageType, indexConfig, logger.Named(nodeId), grpcLogger.Named(nodeId), httpLogger)
+	svr, err := manager.NewServer(peerGrpcAddr, node, dataDir, raftStorageType, indexConfig, logger.Named(nodeId), grpcLogger.Named(nodeId), httpLogger)
 	if err != nil {
 		return err
 	}

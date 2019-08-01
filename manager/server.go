@@ -23,7 +23,6 @@ import (
 
 type Server struct {
 	peerGrpcAddr    string
-	nodeId          string
 	node            *management.Node
 	dataDir         string
 	raftStorageType string
@@ -39,10 +38,9 @@ type Server struct {
 	httpServer  *HTTPServer
 }
 
-func NewServer(peerGrpcAddr string, nodeId string, node *management.Node, dataDir string, raftStorageType string, indexConfig *config.IndexConfig, logger *zap.Logger, grpcLogger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
+func NewServer(peerGrpcAddr string, node *management.Node, dataDir string, raftStorageType string, indexConfig *config.IndexConfig, logger *zap.Logger, grpcLogger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
 	return &Server{
 		peerGrpcAddr:    peerGrpcAddr,
-		nodeId:          nodeId,
 		node:            node,
 		dataDir:         dataDir,
 		raftStorageType: raftStorageType,
@@ -61,7 +59,7 @@ func (s *Server) Start() {
 	s.logger.Info("bootstrap", zap.Bool("bootstrap", bootstrap))
 
 	// create raft server
-	s.raftServer, err = NewRaftServer(s.nodeId, s.node, s.dataDir, s.raftStorageType, s.indexConfig, bootstrap, s.logger)
+	s.raftServer, err = NewRaftServer(s.node, s.dataDir, s.raftStorageType, s.indexConfig, bootstrap, s.logger)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return
@@ -143,7 +141,7 @@ func (s *Server) Start() {
 			return
 		}
 
-		err = client.ClusterJoin(s.nodeId, s.node)
+		err = client.ClusterJoin(s.node)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return

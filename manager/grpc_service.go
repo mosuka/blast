@@ -214,7 +214,6 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 						// notify the cluster changes
 						clusterResp := &management.ClusterWatchResponse{
 							Event:   management.ClusterWatchResponse_UPDATE,
-							Id:      id,
 							Node:    node,
 							Cluster: snapshotCluster,
 						}
@@ -227,7 +226,6 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 					// notify the cluster changes
 					clusterResp := &management.ClusterWatchResponse{
 						Event:   management.ClusterWatchResponse_JOIN,
-						Id:      id,
 						Node:    node,
 						Cluster: snapshotCluster,
 					}
@@ -244,7 +242,6 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 					// notify the cluster changes
 					clusterResp := &management.ClusterWatchResponse{
 						Event:   management.ClusterWatchResponse_LEAVE,
-						Id:      id,
 						Node:    node,
 						Cluster: snapshotCluster,
 					}
@@ -364,9 +361,9 @@ func (s *GRPCService) NodeInfo(ctx context.Context, req *empty.Empty) (*manageme
 	}, nil
 }
 
-func (s *GRPCService) setNode(id string, node *management.Node) error {
+func (s *GRPCService) setNode(node *management.Node) error {
 	if s.raftServer.IsLeader() {
-		err := s.raftServer.SetNode(id, node)
+		err := s.raftServer.SetNode(node)
 		if err != nil {
 			s.logger.Error(err.Error())
 			return err
@@ -378,7 +375,7 @@ func (s *GRPCService) setNode(id string, node *management.Node) error {
 			s.logger.Error(err.Error())
 			return err
 		}
-		err = client.ClusterJoin(id, node)
+		err = client.ClusterJoin(node)
 		if err != nil {
 			s.logger.Error(err.Error())
 			return err
@@ -391,7 +388,7 @@ func (s *GRPCService) setNode(id string, node *management.Node) error {
 func (s *GRPCService) ClusterJoin(ctx context.Context, req *management.ClusterJoinRequest) (*empty.Empty, error) {
 	resp := &empty.Empty{}
 
-	err := s.setNode(req.Id, req.Node)
+	err := s.setNode(req.Node)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return resp, status.Error(codes.Internal, err.Error())

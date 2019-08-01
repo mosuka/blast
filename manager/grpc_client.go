@@ -120,9 +120,8 @@ func (c *GRPCClient) NodeInfo(opts ...grpc.CallOption) (*management.Node, error)
 	return resp.Node, nil
 }
 
-func (c *GRPCClient) ClusterJoin(id string, node *management.Node, opts ...grpc.CallOption) error {
+func (c *GRPCClient) ClusterJoin(node *management.Node, opts ...grpc.CallOption) error {
 	req := &management.ClusterJoinRequest{
-		Id:   id,
 		Node: node,
 	}
 

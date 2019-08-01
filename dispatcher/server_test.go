@@ -48,6 +48,7 @@ func TestServer_Start(t *testing.T) {
 	managerRaftStorageType1 := "boltdb"
 
 	managerNode1 := &management.Node{
+		Id:          managerNodeId1,
 		BindAddress: managerBindAddress1,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -62,7 +63,7 @@ func TestServer_Start(t *testing.T) {
 	}
 
 	// create server
-	managerServer1, err := manager.NewServer(managerPeerGrpcAddress1, managerNodeId1, managerNode1, managerDataDir1, managerRaftStorageType1, managerIndexConfig1, logger, grpcLogger, httpAccessLogger)
+	managerServer1, err := manager.NewServer(managerPeerGrpcAddress1, managerNode1, managerDataDir1, managerRaftStorageType1, managerIndexConfig1, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if managerServer1 != nil {
 			managerServer1.Stop()
@@ -84,6 +85,7 @@ func TestServer_Start(t *testing.T) {
 	managerRaftStorageType2 := "boltdb"
 
 	managerNode2 := &management.Node{
+		Id:          managerNodeId2,
 		BindAddress: managerBindAddress2,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -98,7 +100,7 @@ func TestServer_Start(t *testing.T) {
 	}
 
 	// create server
-	managerServer2, err := manager.NewServer(managerPeerGrpcAddress2, managerNodeId2, managerNode2, managerDataDir2, managerRaftStorageType2, managerIndexConfig2, logger, grpcLogger, httpAccessLogger)
+	managerServer2, err := manager.NewServer(managerPeerGrpcAddress2, managerNode2, managerDataDir2, managerRaftStorageType2, managerIndexConfig2, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if managerServer2 != nil {
 			managerServer2.Stop()
@@ -120,6 +122,7 @@ func TestServer_Start(t *testing.T) {
 	managerRaftStorageType3 := "boltdb"
 
 	managerNode3 := &management.Node{
+		Id:          managerNodeId3,
 		BindAddress: managerBindAddress3,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
@@ -134,7 +137,7 @@ func TestServer_Start(t *testing.T) {
 	}
 
 	// create server
-	managerServer3, err := manager.NewServer(managerPeerGrpcAddress3, managerNodeId3, managerNode3, managerDataDir3, managerRaftStorageType3, managerIndexConfig3, logger, grpcLogger, httpAccessLogger)
+	managerServer3, err := manager.NewServer(managerPeerGrpcAddress3, managerNode3, managerDataDir3, managerRaftStorageType3, managerIndexConfig3, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if managerServer3 != nil {
 			managerServer3.Stop()
@@ -166,6 +169,7 @@ func TestServer_Start(t *testing.T) {
 	expManagerCluster1 := &management.Cluster{
 		Nodes: map[string]*management.Node{
 			managerNodeId1: {
+				Id:          managerNodeId1,
 				BindAddress: managerBindAddress1,
 				State:       management.Node_LEADER,
 				Metadata: &management.Metadata{
@@ -174,6 +178,7 @@ func TestServer_Start(t *testing.T) {
 				},
 			},
 			managerNodeId2: {
+				Id:          managerNodeId2,
 				BindAddress: managerBindAddress2,
 				State:       management.Node_FOLLOWER,
 				Metadata: &management.Metadata{
@@ -182,6 +187,7 @@ func TestServer_Start(t *testing.T) {
 				},
 			},
 			managerNodeId3: {
+				Id:          managerNodeId3,
 				BindAddress: managerBindAddress3,
 				State:       management.Node_FOLLOWER,
 				Metadata: &management.Metadata{

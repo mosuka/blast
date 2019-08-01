@@ -53,9 +53,9 @@ func TestRaftFSM_GetNode(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	_ = fsm.SetNodeConfig(
-		"node1",
+	_ = fsm.SetNode(
 		&management.Node{
+			Id:          "node1",
 			BindAddress: "2100",
 			State:       management.Node_LEADER,
 			Metadata: &management.Metadata{
@@ -64,9 +64,9 @@ func TestRaftFSM_GetNode(t *testing.T) {
 			},
 		},
 	)
-	_ = fsm.SetNodeConfig(
-		"node2",
+	_ = fsm.SetNode(
 		&management.Node{
+			Id:          "node2",
 			BindAddress: "2110",
 			State:       management.Node_FOLLOWER,
 			Metadata: &management.Metadata{
@@ -75,9 +75,9 @@ func TestRaftFSM_GetNode(t *testing.T) {
 			},
 		},
 	)
-	_ = fsm.SetNodeConfig(
-		"node3",
+	_ = fsm.SetNode(
 		&management.Node{
+			Id:          "node3",
 			BindAddress: "2120",
 			State:       management.Node_FOLLOWER,
 			Metadata: &management.Metadata{
@@ -87,12 +87,13 @@ func TestRaftFSM_GetNode(t *testing.T) {
 		},
 	)
 
-	val1, err := fsm.GetNodeConfig("node2")
+	val1, err := fsm.GetNode("node2")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
 	exp1 := &management.Node{
+		Id:          "node2",
 		BindAddress: "2110",
 		State:       management.Node_FOLLOWER,
 		Metadata: &management.Metadata{
@@ -137,9 +138,9 @@ func TestRaftFSM_SetNode(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	_ = fsm.SetNodeConfig(
-		"node1",
+	_ = fsm.SetNode(
 		&management.Node{
+			Id:          "node1",
 			BindAddress: "2100",
 			State:       management.Node_LEADER,
 			Metadata: &management.Metadata{
@@ -148,9 +149,9 @@ func TestRaftFSM_SetNode(t *testing.T) {
 			},
 		},
 	)
-	_ = fsm.SetNodeConfig(
-		"node2",
+	_ = fsm.SetNode(
 		&management.Node{
+			Id:          "node2",
 			BindAddress: "2110",
 			State:       management.Node_FOLLOWER,
 			Metadata: &management.Metadata{
@@ -159,9 +160,9 @@ func TestRaftFSM_SetNode(t *testing.T) {
 			},
 		},
 	)
-	_ = fsm.SetNodeConfig(
-		"node3",
+	_ = fsm.SetNode(
 		&management.Node{
+			Id:          "node3",
 			BindAddress: "2120",
 			State:       management.Node_FOLLOWER,
 			Metadata: &management.Metadata{
@@ -171,11 +172,12 @@ func TestRaftFSM_SetNode(t *testing.T) {
 		},
 	)
 
-	val1, err := fsm.GetNodeConfig("node2")
+	val1, err := fsm.GetNode("node2")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 	exp1 := &management.Node{
+		Id:          "node2",
 		BindAddress: "2110",
 		State:       management.Node_FOLLOWER,
 		Metadata: &management.Metadata{
@@ -188,9 +190,9 @@ func TestRaftFSM_SetNode(t *testing.T) {
 		t.Fatalf("expected content to see %v, saw %v", exp1, act1)
 	}
 
-	_ = fsm.SetNodeConfig(
-		"node2",
+	_ = fsm.SetNode(
 		&management.Node{
+			Id:          "node2",
 			BindAddress: "2110",
 			State:       management.Node_SHUTDOWN,
 			Metadata: &management.Metadata{
@@ -200,11 +202,12 @@ func TestRaftFSM_SetNode(t *testing.T) {
 		},
 	)
 
-	val2, err := fsm.GetNodeConfig("node2")
+	val2, err := fsm.GetNode("node2")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 	exp2 := &management.Node{
+		Id:          "node2",
 		BindAddress: "2110",
 		State:       management.Node_SHUTDOWN,
 		Metadata: &management.Metadata{
@@ -248,9 +251,9 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	_ = fsm.SetNodeConfig(
-		"node1",
+	_ = fsm.SetNode(
 		&management.Node{
+			Id:          "node1",
 			BindAddress: "2100",
 			State:       management.Node_LEADER,
 			Metadata: &management.Metadata{
@@ -259,9 +262,9 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 			},
 		},
 	)
-	_ = fsm.SetNodeConfig(
-		"node2",
+	_ = fsm.SetNode(
 		&management.Node{
+			Id:          "node2",
 			BindAddress: "2110",
 			State:       management.Node_FOLLOWER,
 			Metadata: &management.Metadata{
@@ -270,9 +273,9 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 			},
 		},
 	)
-	_ = fsm.SetNodeConfig(
-		"node3",
+	_ = fsm.SetNode(
 		&management.Node{
+			Id:          "node3",
 			BindAddress: "2120",
 			State:       management.Node_FOLLOWER,
 			Metadata: &management.Metadata{
@@ -282,11 +285,12 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 		},
 	)
 
-	val1, err := fsm.GetNodeConfig("node2")
+	val1, err := fsm.GetNode("node2")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 	exp1 := &management.Node{
+		Id:          "node2",
 		BindAddress: "2110",
 		State:       management.Node_FOLLOWER,
 		Metadata: &management.Metadata{
@@ -299,12 +303,12 @@ func TestRaftFSM_DeleteNode(t *testing.T) {
 		t.Fatalf("expected content to see %v, saw %v", exp1, act1)
 	}
 
-	err = fsm.DeleteNodeConfig("node2")
+	err = fsm.DeleteNode("node2")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	val2, err := fsm.GetNodeConfig("node2")
+	val2, err := fsm.GetNode("node2")
 	if err == nil {
 		t.Fatalf("expected error: %v", err)
 	}
