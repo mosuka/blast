@@ -557,42 +557,26 @@ func main() {
 							Name:  "info",
 							Usage: "Get node information",
 							Flags: []cli.Flag{
-								//cli.StringFlag{
-								//	Name:  "cluster-grpc-address",
-								//	Value: "",
-								//	Usage: "The gRPC address of the cluster in which the target node for retrieving the information is joining",
-								//},
-								//cli.StringFlag{
-								//	Name:  "shard-id",
-								//	Value: "",
-								//	Usage: "Shard ID registered in which the target node for retrieving the information is joining",
-								//},
-								//cli.StringFlag{
-								//	Name:  "peer-grpc-address",
-								//	Value: "",
-								//	Usage: "The gRPC address of the peer node in which the target node for retrieving the information is joining",
-								//},
-								//cli.StringFlag{
-								//	Name:  "node-id",
-								//	Value: "",
-								//	Usage: "The node ID for which to retrieve the node information",
-								//},
 								cli.StringFlag{
 									Name:  "grpc-address",
-									Value: "",
+									Value: ":5000",
 									Usage: "The gRPC address of the node for which to retrieve the node information",
 								},
 							},
 							Action: indexerNodeInfo,
 						},
 						{
-							Name:  "health",
+							Name:  "healthcheck",
 							Usage: "Health check the node",
 							Flags: []cli.Flag{
 								cli.StringFlag{
 									Name:  "grpc-address",
-									Value: "",
+									Value: ":5000",
 									Usage: "The gRPC listen address",
+								},
+								cli.BoolFlag{
+									Name:  "healthiness",
+									Usage: "healthiness probe",
 								},
 								cli.BoolFlag{
 									Name:  "liveness",
@@ -615,29 +599,9 @@ func main() {
 							Name:  "info",
 							Usage: "Get cluster information",
 							Flags: []cli.Flag{
-								//cli.StringFlag{
-								//	Name:  "cluster-grpc-address",
-								//	Value: "",
-								//	Usage: "The gRPC address of the cluster in which the target node for retrieving the information is joining",
-								//},
-								//cli.StringFlag{
-								//	Name:  "shard-id",
-								//	Value: "",
-								//	Usage: "Shard ID registered in which the target node for retrieving the information is joining",
-								//},
-								//cli.StringFlag{
-								//	Name:  "peer-grpc-address",
-								//	Value: "",
-								//	Usage: "The gRPC address of the peer node in which the target node for retrieving the information is joining",
-								//},
-								//cli.StringFlag{
-								//	Name:  "node-id",
-								//	Value: "",
-								//	Usage: "The node ID for which to retrieve the node information",
-								//},
 								cli.StringFlag{
 									Name:  "grpc-address",
-									Value: "",
+									Value: ":5000",
 									Usage: "The gRPC address of the node for which to retrieve the node information",
 								},
 							},
@@ -647,29 +611,9 @@ func main() {
 							Name:  "watch",
 							Usage: "Watch cluster",
 							Flags: []cli.Flag{
-								//cli.StringFlag{
-								//	Name:  "cluster-grpc-address",
-								//	Value: "",
-								//	Usage: "The gRPC address of the cluster in which the target node for retrieving the information is joining",
-								//},
-								//cli.StringFlag{
-								//	Name:  "shard-id",
-								//	Value: "",
-								//	Usage: "Shard ID registered in which the target node for retrieving the information is joining",
-								//},
-								//cli.StringFlag{
-								//	Name:  "peer-grpc-address",
-								//	Value: "",
-								//	Usage: "The gRPC address of the peer node in which the target node for retrieving the information is joining",
-								//},
-								//cli.StringFlag{
-								//	Name:  "node-id",
-								//	Value: "",
-								//	Usage: "The node ID for which to retrieve the node information",
-								//},
 								cli.StringFlag{
 									Name:  "grpc-address",
-									Value: "",
+									Value: ":5000",
 									Usage: "The gRPC address of the node for which to retrieve the node information",
 								},
 							},
@@ -695,11 +639,6 @@ func main() {
 									Usage: "The gRPC address of the peer node that exists in the cluster to be joined",
 								},
 								cli.StringFlag{
-									Name:  "grpc-address",
-									Value: "",
-									Usage: "The gRPC listen address",
-								},
-								cli.StringFlag{
 									Name:  "node-id",
 									Value: "",
 									Usage: "Node ID to delete",
@@ -715,7 +654,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-address",
-							Value: "",
+							Value: ":5000",
 							Usage: "The gRPC listen address",
 						},
 						cli.StringFlag{
@@ -733,7 +672,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-address",
-							Value: "",
+							Value: ":5000",
 							Usage: "The gRPC listen address",
 						},
 						cli.StringFlag{
@@ -755,7 +694,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-address",
-							Value: "",
+							Value: ":5000",
 							Usage: "The gRPC listen address",
 						},
 						cli.StringFlag{
@@ -773,7 +712,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-address",
-							Value: "",
+							Value: ":5000",
 							Usage: "The gRPC listen address",
 						},
 						cli.StringFlag{
@@ -791,7 +730,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-address",
-							Value: "",
+							Value: ":5000",
 							Usage: "The gRPC listen address",
 						},
 					},
@@ -932,13 +871,17 @@ func main() {
 					Usage: "Command for blast dispatcher node",
 					Subcommands: []cli.Command{
 						{
-							Name:  "health",
+							Name:  "healthcheck",
 							Usage: "Health check the node",
 							Flags: []cli.Flag{
 								cli.StringFlag{
 									Name:  "grpc-address",
-									Value: "",
+									Value: ":5200",
 									Usage: "The gRPC listen address",
+								},
+								cli.BoolFlag{
+									Name:  "healthiness",
+									Usage: "healthiness probe",
 								},
 								cli.BoolFlag{
 									Name:  "liveness",
@@ -959,7 +902,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-address",
-							Value: "",
+							Value: ":5200",
 							Usage: "The gRPC listen address",
 						},
 						cli.StringFlag{
@@ -977,7 +920,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-address",
-							Value: "",
+							Value: ":5200",
 							Usage: "The gRPC listen address",
 						},
 						cli.StringFlag{
@@ -999,7 +942,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-address",
-							Value: "",
+							Value: ":5200",
 							Usage: "The gRPC listen address",
 						},
 						cli.StringFlag{
@@ -1017,7 +960,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:  "grpc-address",
-							Value: "",
+							Value: ":5200",
 							Usage: "The gRPC listen address",
 						},
 						cli.StringFlag{

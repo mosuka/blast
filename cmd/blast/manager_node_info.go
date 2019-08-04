@@ -37,17 +37,17 @@ func managerNodeInfo(c *cli.Context) error {
 		}
 	}()
 
-	metadata, err := client.NodeInfo()
+	node, err := client.NodeInfo()
 	if err != nil {
 		return err
 	}
 
-	metadataBytes, err := json.MarshalIndent(metadata, "", "  ")
+	nodeBytes, err := json.MarshalIndent(node, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(metadataBytes)))
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(nodeBytes)))
 
 	return nil
 }

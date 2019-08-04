@@ -8,7 +8,6 @@ import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	any "github.com/golang/protobuf/ptypes/any"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	math "math"
 )
@@ -24,140 +23,147 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
-type LivenessProbeResponse_State int32
+type NodeHealthCheckRequest_Probe int32
 
 const (
-	LivenessProbeResponse_UNKNOWN LivenessProbeResponse_State = 0
-	LivenessProbeResponse_ALIVE   LivenessProbeResponse_State = 1
-	LivenessProbeResponse_DEAD    LivenessProbeResponse_State = 2
+	NodeHealthCheckRequest_HEALTHINESS NodeHealthCheckRequest_Probe = 0
+	NodeHealthCheckRequest_LIVENESS    NodeHealthCheckRequest_Probe = 1
+	NodeHealthCheckRequest_READINESS   NodeHealthCheckRequest_Probe = 2
 )
 
-var LivenessProbeResponse_State_name = map[int32]string{
-	0: "UNKNOWN",
-	1: "ALIVE",
-	2: "DEAD",
+var NodeHealthCheckRequest_Probe_name = map[int32]string{
+	0: "HEALTHINESS",
+	1: "LIVENESS",
+	2: "READINESS",
 }
 
-var LivenessProbeResponse_State_value = map[string]int32{
-	"UNKNOWN": 0,
-	"ALIVE":   1,
-	"DEAD":    2,
+var NodeHealthCheckRequest_Probe_value = map[string]int32{
+	"HEALTHINESS": 0,
+	"LIVENESS":    1,
+	"READINESS":   2,
 }
 
-func (x LivenessProbeResponse_State) String() string {
-	return proto.EnumName(LivenessProbeResponse_State_name, int32(x))
+func (x NodeHealthCheckRequest_Probe) String() string {
+	return proto.EnumName(NodeHealthCheckRequest_Probe_name, int32(x))
 }
 
-func (LivenessProbeResponse_State) EnumDescriptor() ([]byte, []int) {
+func (NodeHealthCheckRequest_Probe) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_0b1b3e8a99d31c9c, []int{0, 0}
 }
 
-type ReadinessProbeResponse_State int32
+type NodeHealthCheckResponse_State int32
 
 const (
-	ReadinessProbeResponse_UNKNOWN   ReadinessProbeResponse_State = 0
-	ReadinessProbeResponse_READY     ReadinessProbeResponse_State = 1
-	ReadinessProbeResponse_NOT_READY ReadinessProbeResponse_State = 2
+	NodeHealthCheckResponse_HEALTHY   NodeHealthCheckResponse_State = 0
+	NodeHealthCheckResponse_UNHEALTHY NodeHealthCheckResponse_State = 1
+	NodeHealthCheckResponse_ALIVE     NodeHealthCheckResponse_State = 2
+	NodeHealthCheckResponse_DEAD      NodeHealthCheckResponse_State = 3
+	NodeHealthCheckResponse_READY     NodeHealthCheckResponse_State = 4
+	NodeHealthCheckResponse_NOT_READY NodeHealthCheckResponse_State = 5
 )
 
-var ReadinessProbeResponse_State_name = map[int32]string{
-	0: "UNKNOWN",
-	1: "READY",
-	2: "NOT_READY",
+var NodeHealthCheckResponse_State_name = map[int32]string{
+	0: "HEALTHY",
+	1: "UNHEALTHY",
+	2: "ALIVE",
+	3: "DEAD",
+	4: "READY",
+	5: "NOT_READY",
 }
 
-var ReadinessProbeResponse_State_value = map[string]int32{
-	"UNKNOWN":   0,
-	"READY":     1,
-	"NOT_READY": 2,
+var NodeHealthCheckResponse_State_value = map[string]int32{
+	"HEALTHY":   0,
+	"UNHEALTHY": 1,
+	"ALIVE":     2,
+	"DEAD":      3,
+	"READY":     4,
+	"NOT_READY": 5,
 }
 
-func (x ReadinessProbeResponse_State) String() string {
-	return proto.EnumName(ReadinessProbeResponse_State_name, int32(x))
+func (x NodeHealthCheckResponse_State) String() string {
+	return proto.EnumName(NodeHealthCheckResponse_State_name, int32(x))
 }
 
-func (ReadinessProbeResponse_State) EnumDescriptor() ([]byte, []int) {
+func (NodeHealthCheckResponse_State) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_0b1b3e8a99d31c9c, []int{1, 0}
 }
 
-// use for health check
-type LivenessProbeResponse struct {
-	State                LivenessProbeResponse_State `protobuf:"varint,1,opt,name=state,proto3,enum=distribute.LivenessProbeResponse_State" json:"state,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
-	XXX_unrecognized     []byte                      `json:"-"`
-	XXX_sizecache        int32                       `json:"-"`
-}
-
-func (m *LivenessProbeResponse) Reset()         { *m = LivenessProbeResponse{} }
-func (m *LivenessProbeResponse) String() string { return proto.CompactTextString(m) }
-func (*LivenessProbeResponse) ProtoMessage()    {}
-func (*LivenessProbeResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b1b3e8a99d31c9c, []int{0}
-}
-
-func (m *LivenessProbeResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_LivenessProbeResponse.Unmarshal(m, b)
-}
-func (m *LivenessProbeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_LivenessProbeResponse.Marshal(b, m, deterministic)
-}
-func (m *LivenessProbeResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LivenessProbeResponse.Merge(m, src)
-}
-func (m *LivenessProbeResponse) XXX_Size() int {
-	return xxx_messageInfo_LivenessProbeResponse.Size(m)
-}
-func (m *LivenessProbeResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_LivenessProbeResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_LivenessProbeResponse proto.InternalMessageInfo
-
-func (m *LivenessProbeResponse) GetState() LivenessProbeResponse_State {
-	if m != nil {
-		return m.State
-	}
-	return LivenessProbeResponse_UNKNOWN
-}
-
-// use for health check
-type ReadinessProbeResponse struct {
-	State                ReadinessProbeResponse_State `protobuf:"varint,1,opt,name=state,proto3,enum=distribute.ReadinessProbeResponse_State" json:"state,omitempty"`
+type NodeHealthCheckRequest struct {
+	Probe                NodeHealthCheckRequest_Probe `protobuf:"varint,1,opt,name=probe,proto3,enum=distribute.NodeHealthCheckRequest_Probe" json:"probe,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
 	XXX_unrecognized     []byte                       `json:"-"`
 	XXX_sizecache        int32                        `json:"-"`
 }
 
-func (m *ReadinessProbeResponse) Reset()         { *m = ReadinessProbeResponse{} }
-func (m *ReadinessProbeResponse) String() string { return proto.CompactTextString(m) }
-func (*ReadinessProbeResponse) ProtoMessage()    {}
-func (*ReadinessProbeResponse) Descriptor() ([]byte, []int) {
+func (m *NodeHealthCheckRequest) Reset()         { *m = NodeHealthCheckRequest{} }
+func (m *NodeHealthCheckRequest) String() string { return proto.CompactTextString(m) }
+func (*NodeHealthCheckRequest) ProtoMessage()    {}
+func (*NodeHealthCheckRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0b1b3e8a99d31c9c, []int{0}
+}
+
+func (m *NodeHealthCheckRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_NodeHealthCheckRequest.Unmarshal(m, b)
+}
+func (m *NodeHealthCheckRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_NodeHealthCheckRequest.Marshal(b, m, deterministic)
+}
+func (m *NodeHealthCheckRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NodeHealthCheckRequest.Merge(m, src)
+}
+func (m *NodeHealthCheckRequest) XXX_Size() int {
+	return xxx_messageInfo_NodeHealthCheckRequest.Size(m)
+}
+func (m *NodeHealthCheckRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_NodeHealthCheckRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NodeHealthCheckRequest proto.InternalMessageInfo
+
+func (m *NodeHealthCheckRequest) GetProbe() NodeHealthCheckRequest_Probe {
+	if m != nil {
+		return m.Probe
+	}
+	return NodeHealthCheckRequest_HEALTHINESS
+}
+
+type NodeHealthCheckResponse struct {
+	State                NodeHealthCheckResponse_State `protobuf:"varint,1,opt,name=state,proto3,enum=distribute.NodeHealthCheckResponse_State" json:"state,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
+	XXX_unrecognized     []byte                        `json:"-"`
+	XXX_sizecache        int32                         `json:"-"`
+}
+
+func (m *NodeHealthCheckResponse) Reset()         { *m = NodeHealthCheckResponse{} }
+func (m *NodeHealthCheckResponse) String() string { return proto.CompactTextString(m) }
+func (*NodeHealthCheckResponse) ProtoMessage()    {}
+func (*NodeHealthCheckResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0b1b3e8a99d31c9c, []int{1}
 }
 
-func (m *ReadinessProbeResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ReadinessProbeResponse.Unmarshal(m, b)
+func (m *NodeHealthCheckResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_NodeHealthCheckResponse.Unmarshal(m, b)
 }
-func (m *ReadinessProbeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ReadinessProbeResponse.Marshal(b, m, deterministic)
+func (m *NodeHealthCheckResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_NodeHealthCheckResponse.Marshal(b, m, deterministic)
 }
-func (m *ReadinessProbeResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ReadinessProbeResponse.Merge(m, src)
+func (m *NodeHealthCheckResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NodeHealthCheckResponse.Merge(m, src)
 }
-func (m *ReadinessProbeResponse) XXX_Size() int {
-	return xxx_messageInfo_ReadinessProbeResponse.Size(m)
+func (m *NodeHealthCheckResponse) XXX_Size() int {
+	return xxx_messageInfo_NodeHealthCheckResponse.Size(m)
 }
-func (m *ReadinessProbeResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_ReadinessProbeResponse.DiscardUnknown(m)
+func (m *NodeHealthCheckResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_NodeHealthCheckResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ReadinessProbeResponse proto.InternalMessageInfo
+var xxx_messageInfo_NodeHealthCheckResponse proto.InternalMessageInfo
 
-func (m *ReadinessProbeResponse) GetState() ReadinessProbeResponse_State {
+func (m *NodeHealthCheckResponse) GetState() NodeHealthCheckResponse_State {
 	if m != nil {
 		return m.State
 	}
-	return ReadinessProbeResponse_UNKNOWN
+	return NodeHealthCheckResponse_HEALTHY
 }
 
 type GetDocumentRequest struct {
@@ -481,10 +487,10 @@ func (m *SearchResponse) GetSearchResult() *any.Any {
 }
 
 func init() {
-	proto.RegisterEnum("distribute.LivenessProbeResponse_State", LivenessProbeResponse_State_name, LivenessProbeResponse_State_value)
-	proto.RegisterEnum("distribute.ReadinessProbeResponse_State", ReadinessProbeResponse_State_name, ReadinessProbeResponse_State_value)
-	proto.RegisterType((*LivenessProbeResponse)(nil), "distribute.LivenessProbeResponse")
-	proto.RegisterType((*ReadinessProbeResponse)(nil), "distribute.ReadinessProbeResponse")
+	proto.RegisterEnum("distribute.NodeHealthCheckRequest_Probe", NodeHealthCheckRequest_Probe_name, NodeHealthCheckRequest_Probe_value)
+	proto.RegisterEnum("distribute.NodeHealthCheckResponse_State", NodeHealthCheckResponse_State_name, NodeHealthCheckResponse_State_value)
+	proto.RegisterType((*NodeHealthCheckRequest)(nil), "distribute.NodeHealthCheckRequest")
+	proto.RegisterType((*NodeHealthCheckResponse)(nil), "distribute.NodeHealthCheckResponse")
 	proto.RegisterType((*GetDocumentRequest)(nil), "distribute.GetDocumentRequest")
 	proto.RegisterType((*GetDocumentResponse)(nil), "distribute.GetDocumentResponse")
 	proto.RegisterType((*IndexDocumentRequest)(nil), "distribute.IndexDocumentRequest")
@@ -500,40 +506,42 @@ func init() {
 }
 
 var fileDescriptor_0b1b3e8a99d31c9c = []byte{
-	// 528 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x94, 0xdd, 0x8f, 0xd2, 0x4c,
-	0x14, 0xc6, 0x29, 0xef, 0x0b, 0xca, 0xc1, 0x36, 0x64, 0x04, 0xe2, 0xd6, 0x44, 0xd7, 0xc9, 0x26,
-	0x8b, 0xd1, 0x2d, 0x09, 0x5e, 0x19, 0xa3, 0x09, 0x5a, 0x62, 0x36, 0x4b, 0xba, 0x9b, 0xee, 0xfa,
-	0x7d, 0xb1, 0x69, 0xe9, 0x59, 0xb6, 0xb1, 0x74, 0xb0, 0x33, 0x35, 0xee, 0xa5, 0x77, 0xfe, 0xc5,
-	0x5e, 0x1b, 0xfa, 0x81, 0x1d, 0x28, 0xe0, 0x1d, 0x73, 0xce, 0x79, 0x7e, 0xf3, 0xf4, 0xe4, 0x19,
-	0xe0, 0x60, 0x1e, 0x31, 0xc1, 0xdc, 0xf8, 0xaa, 0xef, 0xf9, 0x5c, 0x44, 0xbe, 0x1b, 0x0b, 0x2c,
-	0xfc, 0x34, 0x92, 0x36, 0x81, 0xbf, 0x15, 0x7d, 0x6f, 0xca, 0xd8, 0x34, 0xc0, 0xfe, 0x52, 0xe8,
-	0x84, 0x37, 0xe9, 0x98, 0x7e, 0x7f, 0xb5, 0x85, 0xb3, 0xb9, 0xc8, 0x9a, 0xf4, 0xa7, 0x02, 0x9d,
-	0xb1, 0xff, 0x1d, 0x43, 0xe4, 0xfc, 0x2c, 0x62, 0x2e, 0xda, 0xc8, 0xe7, 0x2c, 0xe4, 0x48, 0x5e,
-	0x42, 0x8d, 0x0b, 0x47, 0xe0, 0x3d, 0x65, 0x5f, 0xe9, 0x69, 0x83, 0x43, 0xa3, 0x70, 0x7f, 0xa9,
-	0xc2, 0x38, 0x5f, 0x8c, 0xdb, 0xa9, 0x8a, 0x3e, 0x86, 0x5a, 0x72, 0x26, 0x4d, 0xb8, 0xf5, 0xce,
-	0x3a, 0xb1, 0x4e, 0x3f, 0x58, 0xad, 0x0a, 0x69, 0x40, 0x6d, 0x38, 0x3e, 0x7e, 0x3f, 0x6a, 0x29,
-	0xe4, 0x36, 0xfc, 0x6f, 0x8e, 0x86, 0x66, 0xab, 0x4a, 0x7f, 0x29, 0xd0, 0xb5, 0xd1, 0xf1, 0xfc,
-	0x75, 0x13, 0xaf, 0x64, 0x13, 0xbd, 0xa2, 0x89, 0x72, 0x89, 0xec, 0xc2, 0xd8, 0xe4, 0xc2, 0x1e,
-	0x0d, 0xcd, 0x4f, 0x2d, 0x85, 0xa8, 0xd0, 0xb0, 0x4e, 0x2f, 0x2e, 0xd3, 0x63, 0x95, 0x1e, 0x00,
-	0x79, 0x8b, 0xc2, 0x64, 0x93, 0x78, 0x86, 0xa1, 0xb0, 0xf1, 0x5b, 0x8c, 0x5c, 0x10, 0x0d, 0xaa,
-	0xbe, 0x97, 0x58, 0x68, 0xd8, 0x55, 0xdf, 0xa3, 0x6f, 0xe0, 0xae, 0x34, 0x95, 0x99, 0x7d, 0x0a,
-	0xf5, 0x2b, 0x1f, 0x03, 0x8f, 0x27, 0xa3, 0xcd, 0x41, 0xdb, 0x48, 0x37, 0x6f, 0xe4, 0x9b, 0x37,
-	0x86, 0xe1, 0x8d, 0x9d, 0xcd, 0xd0, 0x0b, 0x68, 0x1f, 0x87, 0x1e, 0xfe, 0xd8, 0x71, 0x59, 0x81,
-	0x5a, 0xfd, 0x07, 0xea, 0x11, 0x74, 0x56, 0xa8, 0x99, 0xb9, 0x36, 0xd4, 0x26, 0x2c, 0x0e, 0x45,
-	0x42, 0xae, 0xd9, 0xe9, 0x81, 0x1e, 0x42, 0xc7, 0xc4, 0x00, 0x05, 0xee, 0xfa, 0x64, 0x03, 0xba,
-	0xab, 0x83, 0x5b, 0xc1, 0x63, 0x50, 0xcf, 0xd1, 0x89, 0x26, 0xd7, 0x39, 0xf0, 0x05, 0x68, 0x3c,
-	0x29, 0x5c, 0x46, 0x69, 0x65, 0xeb, 0x92, 0x54, 0x5e, 0x14, 0xd3, 0x13, 0xd0, 0x72, 0x5a, 0x76,
-	0xeb, 0x73, 0x50, 0x97, 0x38, 0x1e, 0x07, 0xdb, 0x69, 0x77, 0x72, 0xda, 0x62, 0x72, 0xf0, 0xfb,
-	0x3f, 0x00, 0x73, 0x19, 0x23, 0x32, 0x06, 0x55, 0x8a, 0x33, 0xe9, 0xae, 0x31, 0x46, 0x8b, 0x07,
-	0xa3, 0x3f, 0xda, 0xf9, 0x02, 0x68, 0x85, 0x58, 0xa0, 0xc9, 0xb9, 0xdc, 0x88, 0xa3, 0xbb, 0xb3,
-	0x4c, 0x2b, 0xe4, 0x0c, 0x9a, 0x85, 0xa8, 0x91, 0x07, 0x45, 0xd1, 0x7a, 0x52, 0xf5, 0x87, 0x1b,
-	0xfb, 0x4b, 0xe2, 0x47, 0x50, 0xa5, 0x84, 0x90, 0xfd, 0xa2, 0xa6, 0x2c, 0x92, 0xf2, 0x97, 0x97,
-	0xc6, 0x8b, 0x56, 0x7a, 0x0a, 0xf9, 0x02, 0x9a, 0x9c, 0x11, 0x22, 0x09, 0x4b, 0x83, 0x26, 0xaf,
-	0xa1, 0x3c, 0x62, 0x09, 0x7c, 0x08, 0xf5, 0x34, 0x02, 0x64, 0xaf, 0xa8, 0x90, 0x42, 0xa6, 0xeb,
-	0x65, 0xad, 0x1c, 0xf2, 0xfa, 0xe8, 0xf3, 0x93, 0xa9, 0x2f, 0xae, 0x63, 0xd7, 0x98, 0xb0, 0x59,
-	0x7f, 0xc6, 0x78, 0xfc, 0xd5, 0xe9, 0xbb, 0x81, 0xc3, 0x45, 0xbf, 0xe4, 0xff, 0xd6, 0xad, 0x27,
-	0xc5, 0x67, 0x7f, 0x02, 0x00, 0x00, 0xff, 0xff, 0xf3, 0xf4, 0x4b, 0x0a, 0x8d, 0x05, 0x00, 0x00,
+	// 547 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x54, 0xef, 0x6f, 0xd2, 0x40,
+	0x18, 0xa6, 0x6c, 0xc5, 0xf1, 0x32, 0x18, 0x39, 0xd9, 0x74, 0xfd, 0xa0, 0xf3, 0x5c, 0x22, 0x46,
+	0x57, 0x12, 0x8c, 0x1f, 0x8c, 0x89, 0xa6, 0xae, 0x44, 0x88, 0x04, 0x97, 0x82, 0xc6, 0xa9, 0xc9,
+	0xd2, 0x1f, 0x37, 0x68, 0x56, 0x7a, 0xd8, 0xbb, 0x26, 0xee, 0xaf, 0xf0, 0x3f, 0xf1, 0xa3, 0x7f,
+	0x9f, 0x69, 0x8f, 0x62, 0xcb, 0x6a, 0xd9, 0x37, 0xde, 0xf7, 0x7d, 0x9e, 0xe7, 0x9e, 0xbb, 0xf7,
+	0xa1, 0x70, 0xbc, 0x08, 0x28, 0xa7, 0x56, 0x78, 0xd9, 0x71, 0x5c, 0xc6, 0x03, 0xd7, 0x0a, 0x39,
+	0x49, 0xfd, 0x54, 0xe3, 0x31, 0x82, 0x7f, 0x1d, 0xe5, 0x70, 0x4a, 0xe9, 0xd4, 0x23, 0x9d, 0x15,
+	0xd1, 0xf4, 0xaf, 0x05, 0x0c, 0xff, 0x92, 0xe0, 0x60, 0x44, 0x1d, 0xd2, 0x27, 0xa6, 0xc7, 0x67,
+	0xa7, 0x33, 0x62, 0x5f, 0x19, 0xe4, 0x47, 0x48, 0x18, 0x47, 0x6f, 0x40, 0x5e, 0x04, 0xd4, 0x22,
+	0xf7, 0xa5, 0x23, 0xa9, 0xdd, 0xe8, 0xb6, 0xd5, 0xd4, 0x19, 0xf9, 0x14, 0xf5, 0x2c, 0xc2, 0x1b,
+	0x82, 0x86, 0x5f, 0x82, 0x1c, 0xd7, 0x68, 0x0f, 0x6a, 0xfd, 0x9e, 0x36, 0x9c, 0xf4, 0x07, 0xa3,
+	0xde, 0x78, 0xdc, 0x2c, 0xa1, 0x5d, 0xd8, 0x19, 0x0e, 0x3e, 0xf7, 0xe2, 0x4a, 0x42, 0x75, 0xa8,
+	0x1a, 0x3d, 0x4d, 0x17, 0xc3, 0x32, 0xfe, 0x2d, 0xc1, 0xbd, 0x1b, 0xf2, 0x6c, 0x41, 0x7d, 0x46,
+	0xd0, 0x5b, 0x90, 0x19, 0x37, 0x79, 0x62, 0xe9, 0x69, 0xa1, 0x25, 0xc1, 0x51, 0xc7, 0x11, 0xc1,
+	0x10, 0x3c, 0x6c, 0x80, 0x1c, 0xd7, 0xa8, 0x06, 0x77, 0x84, 0xa7, 0xf3, 0x66, 0x29, 0x72, 0xf0,
+	0x69, 0x94, 0x94, 0x12, 0xaa, 0x82, 0xac, 0x45, 0xfe, 0x9a, 0x65, 0xb4, 0x03, 0xdb, 0x7a, 0x4f,
+	0xd3, 0x9b, 0x5b, 0x51, 0x33, 0x72, 0x79, 0xde, 0xdc, 0x8e, 0xe0, 0xa3, 0x8f, 0x93, 0x0b, 0x51,
+	0xca, 0xf8, 0x18, 0xd0, 0x7b, 0xc2, 0x75, 0x6a, 0x87, 0x73, 0xe2, 0xf3, 0xe4, 0xf5, 0x1a, 0x50,
+	0x76, 0x9d, 0xd8, 0x67, 0xd5, 0x28, 0xbb, 0x0e, 0x3e, 0x85, 0xbb, 0x19, 0xd4, 0xf2, 0x46, 0xcf,
+	0xa1, 0x72, 0xe9, 0x12, 0xcf, 0x61, 0x31, 0xb4, 0xd6, 0x6d, 0xa9, 0x62, 0x57, 0x6a, 0xb2, 0x2b,
+	0x55, 0xf3, 0xaf, 0x8d, 0x25, 0x06, 0x4f, 0xa0, 0x35, 0xf0, 0x1d, 0xf2, 0x73, 0xc3, 0x61, 0x29,
+	0xd5, 0xf2, 0x2d, 0x54, 0x4f, 0x60, 0x7f, 0x4d, 0x75, 0x69, 0xae, 0x05, 0xb2, 0x4d, 0x43, 0x9f,
+	0xc7, 0xca, 0xb2, 0x21, 0x0a, 0xfc, 0x04, 0xf6, 0x75, 0xe2, 0x11, 0x4e, 0x36, 0x5d, 0x59, 0x85,
+	0x83, 0x75, 0x60, 0xa1, 0xf0, 0x10, 0xea, 0x63, 0x62, 0x06, 0xf6, 0x2c, 0x11, 0x7c, 0x0d, 0x0d,
+	0x16, 0x37, 0x2e, 0x02, 0xd1, 0x29, 0x7c, 0xa4, 0x3a, 0x4b, 0x93, 0xf1, 0x07, 0x68, 0x24, 0x6a,
+	0xcb, 0x53, 0x5f, 0x41, 0x7d, 0x25, 0xc7, 0x42, 0xaf, 0x58, 0x6d, 0x37, 0x51, 0x8b, 0x90, 0xdd,
+	0x3f, 0x5b, 0x00, 0xfa, 0x2a, 0x6b, 0xe8, 0x3b, 0xec, 0xad, 0xc5, 0x0d, 0xe1, 0xcd, 0x7f, 0x0f,
+	0xe5, 0xf1, 0x2d, 0xf2, 0x8a, 0x4b, 0xe8, 0x0c, 0x6a, 0xa9, 0xa8, 0xa0, 0x07, 0x69, 0xd6, 0xcd,
+	0xa4, 0x29, 0x0f, 0xff, 0x3b, 0x5f, 0x29, 0x7e, 0x81, 0x7a, 0x66, 0xc3, 0xe8, 0x28, 0xcd, 0xc9,
+	0x8b, 0x94, 0xf2, 0xa8, 0x00, 0x91, 0xe8, 0xb6, 0x25, 0xf4, 0x0d, 0x1a, 0xd9, 0x1d, 0xa3, 0x0c,
+	0x31, 0x37, 0x28, 0x0a, 0x2e, 0x82, 0xa4, 0xc4, 0x35, 0xa8, 0x88, 0x15, 0xa2, 0xc3, 0x34, 0x23,
+	0x13, 0x12, 0x45, 0xc9, 0x1b, 0x25, 0x22, 0xef, 0x4e, 0xbe, 0x3e, 0x9b, 0xba, 0x7c, 0x16, 0x5a,
+	0xaa, 0x4d, 0xe7, 0x9d, 0x39, 0x65, 0xe1, 0x95, 0xd9, 0xb1, 0x3c, 0x93, 0xf1, 0x4e, 0xce, 0x67,
+	0xd4, 0xaa, 0xc4, 0xcd, 0x17, 0x7f, 0x03, 0x00, 0x00, 0xff, 0xff, 0x35, 0xcf, 0xa0, 0x84, 0x64,
+	0x05, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -548,8 +556,7 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type DistributeClient interface {
-	LivenessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*LivenessProbeResponse, error)
-	ReadinessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ReadinessProbeResponse, error)
+	NodeHealthCheck(ctx context.Context, in *NodeHealthCheckRequest, opts ...grpc.CallOption) (*NodeHealthCheckResponse, error)
 	GetDocument(ctx context.Context, in *GetDocumentRequest, opts ...grpc.CallOption) (*GetDocumentResponse, error)
 	IndexDocument(ctx context.Context, opts ...grpc.CallOption) (Distribute_IndexDocumentClient, error)
 	DeleteDocument(ctx context.Context, opts ...grpc.CallOption) (Distribute_DeleteDocumentClient, error)
@@ -564,18 +571,9 @@ func NewDistributeClient(cc *grpc.ClientConn) DistributeClient {
 	return &distributeClient{cc}
 }
 
-func (c *distributeClient) LivenessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*LivenessProbeResponse, error) {
-	out := new(LivenessProbeResponse)
-	err := c.cc.Invoke(ctx, "/distribute.Distribute/LivenessProbe", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *distributeClient) ReadinessProbe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ReadinessProbeResponse, error) {
-	out := new(ReadinessProbeResponse)
-	err := c.cc.Invoke(ctx, "/distribute.Distribute/ReadinessProbe", in, out, opts...)
+func (c *distributeClient) NodeHealthCheck(ctx context.Context, in *NodeHealthCheckRequest, opts ...grpc.CallOption) (*NodeHealthCheckResponse, error) {
+	out := new(NodeHealthCheckResponse)
+	err := c.cc.Invoke(ctx, "/distribute.Distribute/NodeHealthCheck", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -670,8 +668,7 @@ func (c *distributeClient) Search(ctx context.Context, in *SearchRequest, opts .
 
 // DistributeServer is the server API for Distribute service.
 type DistributeServer interface {
-	LivenessProbe(context.Context, *empty.Empty) (*LivenessProbeResponse, error)
-	ReadinessProbe(context.Context, *empty.Empty) (*ReadinessProbeResponse, error)
+	NodeHealthCheck(context.Context, *NodeHealthCheckRequest) (*NodeHealthCheckResponse, error)
 	GetDocument(context.Context, *GetDocumentRequest) (*GetDocumentResponse, error)
 	IndexDocument(Distribute_IndexDocumentServer) error
 	DeleteDocument(Distribute_DeleteDocumentServer) error
@@ -682,38 +679,20 @@ func RegisterDistributeServer(s *grpc.Server, srv DistributeServer) {
 	s.RegisterService(&_Distribute_serviceDesc, srv)
 }
 
-func _Distribute_LivenessProbe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
+func _Distribute_NodeHealthCheck_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeHealthCheckRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DistributeServer).LivenessProbe(ctx, in)
+		return srv.(DistributeServer).NodeHealthCheck(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/distribute.Distribute/LivenessProbe",
+		FullMethod: "/distribute.Distribute/NodeHealthCheck",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DistributeServer).LivenessProbe(ctx, req.(*empty.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Distribute_ReadinessProbe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DistributeServer).ReadinessProbe(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/distribute.Distribute/ReadinessProbe",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DistributeServer).ReadinessProbe(ctx, req.(*empty.Empty))
+		return srv.(DistributeServer).NodeHealthCheck(ctx, req.(*NodeHealthCheckRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -811,12 +790,8 @@ var _Distribute_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*DistributeServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "LivenessProbe",
-			Handler:    _Distribute_LivenessProbe_Handler,
-		},
-		{
-			MethodName: "ReadinessProbe",
-			Handler:    _Distribute_ReadinessProbe_Handler,
+			MethodName: "NodeHealthCheck",
+			Handler:    _Distribute_NodeHealthCheck_Handler,
 		},
 		{
 			MethodName: "GetDocument",

@@ -19,14 +19,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/mosuka/blast/protobuf/index"
-
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/document"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
+	"github.com/mosuka/blast/protobuf/index"
 	"go.uber.org/zap"
 )
 

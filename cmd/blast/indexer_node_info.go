@@ -24,19 +24,7 @@ import (
 )
 
 func indexerNodeInfo(c *cli.Context) error {
-	clusterGrpcAddr := c.String("cluster-grpc-address")
-	shardId := c.String("shard-id")
-	peerGrpcAddr := c.String("peer-grpc-address")
-
-	if clusterGrpcAddr != "" && shardId != "" {
-
-	} else if peerGrpcAddr != "" {
-
-	}
-
 	grpcAddr := c.String("grpc-address")
-
-	nodeId := c.Args().Get(0)
 
 	client, err := indexer.NewGRPCClient(grpcAddr)
 	if err != nil {
@@ -49,17 +37,17 @@ func indexerNodeInfo(c *cli.Context) error {
 		}
 	}()
 
-	metadata, err := client.GetNode(nodeId)
+	node, err := client.NodeInfo()
 	if err != nil {
 		return err
 	}
 
-	metadataBytes, err := json.MarshalIndent(metadata, "", "  ")
+	nodeBytes, err := json.MarshalIndent(node, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(metadataBytes)))
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(nodeBytes)))
 
 	return nil
 }

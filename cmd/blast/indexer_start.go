@@ -24,11 +24,12 @@ import (
 	"github.com/mosuka/blast/indexer"
 	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/logutils"
+	"github.com/mosuka/blast/protobuf/index"
 	"github.com/urfave/cli"
 )
 
 func indexerStart(c *cli.Context) error {
-	clusterGRPCAddr := c.String("manager-grpc-address")
+	managerGRPCAddr := c.String("manager-grpc-address")
 	shardId := c.String("shard-id")
 	peerGRPCAddr := c.String("peer-grpc-address")
 
@@ -93,26 +94,14 @@ func indexerStart(c *cli.Context) error {
 		httpLogCompress,
 	)
 
-	// create cluster config
-	clusterConfig := config.DefaultClusterConfig()
-	if clusterGRPCAddr != "" {
-		clusterConfig.ManagerAddr = clusterGRPCAddr
-	}
-	if shardId != "" {
-		clusterConfig.ClusterId = shardId
-	}
-	if peerGRPCAddr != "" {
-		clusterConfig.PeerAddr = peerGRPCAddr
-	}
-
-	// create node config
-	nodeConfig := &config.NodeConfig{
-		NodeId:          nodeId,
-		BindAddr:        nodeAddr,
-		GRPCAddr:        grpcAddr,
-		HTTPAddr:        httpAddr,
-		DataDir:         dataDir,
-		RaftStorageType: raftStorageType,
+	node := &index.Node{
+		Id:          nodeId,
+		BindAddress: nodeAddr,
+		State:       index.Node_UNKNOWN,
+		Metadata: &index.Metadata{
+			GrpcAddress: grpcAddr,
+			HttpAddress: httpAddr,
+		},
 	}
 
 	var err error
@@ -135,7 +124,7 @@ func indexerStart(c *cli.Context) error {
 		IndexStorageType: indexStorageType,
 	}
 
-	svr, err := indexer.NewServer(clusterConfig, nodeConfig, indexConfig, logger.Named(nodeId), grpcLogger.Named(nodeId), httpAccessLogger)
+	svr, err := indexer.NewServer(managerGRPCAddr, shardId, peerGRPCAddr, node, dataDir, raftStorageType, indexConfig, logger.Named(nodeId), grpcLogger.Named(nodeId), httpAccessLogger)
 	if err != nil {
 		return err
 	}

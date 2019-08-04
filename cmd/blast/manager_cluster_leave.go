@@ -29,10 +29,9 @@ func managerClusterLeave(c *cli.Context) error {
 		// get grpc address of leader node
 	}
 
-	grpcAddr := c.String("grpc-address")
 	nodeId := c.String("node-id")
 
-	client, err := manager.NewGRPCClient(grpcAddr)
+	client, err := manager.NewGRPCClient(peerGrpcAddr)
 	if err != nil {
 		return err
 	}

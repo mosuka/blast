@@ -16,14 +16,13 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
 
 	"github.com/mosuka/blast/indexer"
-	"github.com/mosuka/blast/protobuf"
+	"github.com/mosuka/blast/protobuf/index"
 	"github.com/urfave/cli"
 )
 
@@ -41,12 +40,22 @@ func indexerClusterWatch(c *cli.Context) error {
 		}
 	}()
 
-	err = indexerClusterInfo(c)
+	cluster, err := client.ClusterInfo()
 	if err != nil {
 		return err
 	}
+	resp := &index.ClusterWatchResponse{
+		Event:   0,
+		Node:    nil,
+		Cluster: cluster,
+	}
+	clusterBytes, err := json.MarshalIndent(resp, "", "  ")
+	if err != nil {
+		return err
+	}
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(clusterBytes)))
 
-	watchClient, err := client.WatchCluster()
+	watchClient, err := client.ClusterWatch()
 	if err != nil {
 		return err
 	}
@@ -61,17 +70,7 @@ func indexerClusterWatch(c *cli.Context) error {
 			break
 		}
 
-		cluster, err := protobuf.MarshalAny(resp.Cluster)
-		if err != nil {
-			return err
-		}
-		if cluster == nil {
-			return errors.New("nil")
-		}
-
-		var clusterBytes []byte
-		clusterMap := *cluster.(*map[string]interface{})
-		clusterBytes, err = json.MarshalIndent(clusterMap, "", "  ")
+		clusterBytes, err = json.MarshalIndent(resp, "", "  ")
 		if err != nil {
 			return err
 		}

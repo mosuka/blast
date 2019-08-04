@@ -15,15 +15,13 @@
 syntax = "proto3";
 
 import "google/protobuf/any.proto";
-import "google/protobuf/empty.proto";
 
 package distribute;
 
 option go_package = "github.com/mosuka/blast/protobuf/distribute";
 
 service Distribute {
-    rpc LivenessProbe (google.protobuf.Empty) returns (LivenessProbeResponse) {}
-    rpc ReadinessProbe (google.protobuf.Empty) returns (ReadinessProbeResponse) {}
+    rpc NodeHealthCheck (NodeHealthCheckRequest) returns (NodeHealthCheckResponse) {}
 
     rpc GetDocument (GetDocumentRequest) returns (GetDocumentResponse) {}
     rpc IndexDocument (stream IndexDocumentRequest) returns (IndexDocumentResponse) {}
@@ -31,22 +29,23 @@ service Distribute {
     rpc Search (SearchRequest) returns (SearchResponse) {}
 }
 
-// use for health check
-message LivenessProbeResponse {
-    enum State {
-        UNKNOWN = 0;
-        ALIVE = 1;
-        DEAD = 2;
+message NodeHealthCheckRequest {
+    enum Probe {
+        HEALTHINESS = 0;
+        LIVENESS = 1;
+        READINESS = 2;
     }
-    State state = 1;
+    Probe probe = 1;
 }
 
-// use for health check
-message ReadinessProbeResponse {
+message NodeHealthCheckResponse {
     enum State {
-        UNKNOWN = 0;
-        READY = 1;
-        NOT_READY = 2;
+        HEALTHY = 0;
+        UNHEALTHY = 1;
+        ALIVE = 2;
+        DEAD = 3;
+        READY = 4;
+        NOT_READY = 5;
     }
     State state = 1;
 }

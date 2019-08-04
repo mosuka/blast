@@ -70,7 +70,7 @@ func managerWatch(c *cli.Context) error {
 		switch value.(type) {
 		case *map[string]interface{}:
 			valueMap := *value.(*map[string]interface{})
-			valueBytes, err = json.MarshalIndent(valueMap, "", "  ")
+			valueBytes, err = json.Marshal(valueMap)
 			if err != nil {
 				return err
 			}

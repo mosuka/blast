@@ -16,18 +16,18 @@ package indexer
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"reflect"
 	"sync"
 	"time"
 
 	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/google/go-cmp/cmp"
 	"github.com/hashicorp/raft"
-	"github.com/mosuka/blast/config"
 	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/manager"
@@ -40,16 +40,17 @@ import (
 )
 
 type GRPCService struct {
-	clusterConfig *config.ClusterConfig
-	raftServer    *RaftServer
-	logger        *zap.Logger
+	managerGrpcAddress string
+	shardId            string
+	raftServer         *RaftServer
+	logger             *zap.Logger
 
 	updateClusterStopCh chan struct{}
 	updateClusterDoneCh chan struct{}
-	peers               map[string]interface{}
+	peers               *index.Cluster
 	peerClients         map[string]*GRPCClient
-	cluster             map[string]interface{}
-	clusterChans        map[chan index.GetClusterResponse]struct{}
+	cluster             *index.Cluster
+	clusterChans        map[chan index.ClusterWatchResponse]struct{}
 	clusterMutex        sync.RWMutex
 
 	managers             *management.Cluster
@@ -58,16 +59,17 @@ type GRPCService struct {
 	updateManagersDoneCh chan struct{}
 }
 
-func NewGRPCService(clusterConfig *config.ClusterConfig, raftServer *RaftServer, logger *zap.Logger) (*GRPCService, error) {
+func NewGRPCService(managerGrpcAddress string, shardId string, raftServer *RaftServer, logger *zap.Logger) (*GRPCService, error) {
 	return &GRPCService{
-		clusterConfig: clusterConfig,
-		raftServer:    raftServer,
-		logger:        logger,
+		managerGrpcAddress: managerGrpcAddress,
+		shardId:            shardId,
+		raftServer:         raftServer,
+		logger:             logger,
 
-		peers:        make(map[string]interface{}, 0),
+		peers:        &index.Cluster{Nodes: make(map[string]*index.Node, 0)},
 		peerClients:  make(map[string]*GRPCClient, 0),
-		cluster:      make(map[string]interface{}, 0),
-		clusterChans: make(map[chan index.GetClusterResponse]struct{}),
+		cluster:      &index.Cluster{Nodes: make(map[string]*index.Node, 0)},
+		clusterChans: make(map[chan index.ClusterWatchResponse]struct{}),
 
 		managers:       &management.Cluster{Nodes: make(map[string]*management.Node, 0)},
 		managerClients: make(map[string]*manager.GRPCClient, 0),
@@ -75,13 +77,28 @@ func NewGRPCService(clusterConfig *config.ClusterConfig, raftServer *RaftServer,
 }
 
 func (s *GRPCService) Start() error {
-	s.logger.Info("start to update cluster info")
-	go s.startUpdateCluster(500 * time.Millisecond)
+	if s.managerGrpcAddress != "" {
+		var err error
+		s.managers, err = s.getManagerCluster(s.managerGrpcAddress)
+		if err != nil {
+			s.logger.Fatal(err.Error())
+			return err
+		}
 
-	if s.clusterConfig.ManagerAddr != "" {
+		for id, node := range s.managers.Nodes {
+			client, err := manager.NewGRPCClient(node.Metadata.GrpcAddress)
+			if err != nil {
+				s.logger.Fatal(err.Error(), zap.String("id", id), zap.String("grpc_address", s.managerGrpcAddress))
+			}
+			s.managerClients[node.Id] = client
+		}
+
 		s.logger.Info("start to update manager cluster info")
 		go s.startUpdateManagers(500 * time.Millisecond)
 	}
+
+	s.logger.Info("start to update cluster info")
+	go s.startUpdateCluster(500 * time.Millisecond)
 
 	return nil
 }
@@ -90,7 +107,7 @@ func (s *GRPCService) Stop() error {
 	s.logger.Info("stop to update cluster info")
 	s.stopUpdateCluster()
 
-	if s.clusterConfig.ManagerAddr != "" {
+	if s.managerGrpcAddress != "" {
 		s.logger.Info("stop to update manager cluster info")
 		s.stopUpdateManagers()
 	}
@@ -126,7 +143,7 @@ func (s *GRPCService) getManagerClient() (*manager.GRPCClient, error) {
 	return nil, err
 }
 
-func (s *GRPCService) getInitialManagers(managerAddr string) (*management.Cluster, error) {
+func (s *GRPCService) getManagerCluster(managerAddr string) (*management.Cluster, error) {
 	client, err := manager.NewGRPCClient(managerAddr)
 	defer func() {
 		err := client.Close()
@@ -149,6 +166,21 @@ func (s *GRPCService) getInitialManagers(managerAddr string) (*management.Cluste
 	return managers, nil
 }
 
+func (s *GRPCService) cloneManagerCluster(cluster *management.Cluster) (*management.Cluster, error) {
+	b, err := json.Marshal(cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	var clone *management.Cluster
+	err = json.Unmarshal(b, &clone)
+	if err != nil {
+		return nil, err
+	}
+
+	return clone, nil
+}
+
 func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 	s.updateManagersStopCh = make(chan struct{})
 	s.updateManagersDoneCh = make(chan struct{})
@@ -157,50 +189,20 @@ func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 		close(s.updateManagersDoneCh)
 	}()
 
-	var err error
-
-	// get initial managers
-	s.managers, err = s.getInitialManagers(s.clusterConfig.ManagerAddr)
-	if err != nil {
-		s.logger.Error(err.Error())
-		return
-	}
-	s.logger.Debug("initialize manager list", zap.Any("managers", s.managers))
-
-	// create clients for managers
-	for nodeId, node := range s.managers.Nodes {
-		if node.Metadata == nil {
-			s.logger.Warn("missing metadata", zap.String("id", nodeId))
-			continue
-		}
-
-		if node.Metadata.GrpcAddress == "" {
-			s.logger.Warn("missing gRPC address", zap.String("id", nodeId), zap.String("grpc_addr", node.Metadata.GrpcAddress))
-			continue
-		}
-
-		s.logger.Debug("create gRPC client", zap.String("id", nodeId), zap.String("grpc_addr", node.Metadata.GrpcAddress))
-		client, err := manager.NewGRPCClient(node.Metadata.GrpcAddress)
-		if err != nil {
-			s.logger.Error(err.Error(), zap.String("id", nodeId), zap.String("grpc_addr", node.Metadata.GrpcAddress))
-		}
-		if client != nil {
-			s.managerClients[nodeId] = client
-		}
-	}
-
 	for {
 		select {
 		case <-s.updateManagersStopCh:
 			s.logger.Info("received a request to stop updating a manager cluster")
 			return
 		default:
+			// get client for manager from the list
 			client, err := s.getManagerClient()
 			if err != nil {
 				s.logger.Error(err.Error())
 				continue
 			}
 
+			// create stream for watching cluster changes
 			stream, err := client.ClusterWatch()
 			if err != nil {
 				s.logger.Error(err.Error())
@@ -217,80 +219,77 @@ func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 				s.logger.Error(err.Error())
 				continue
 			}
-			managers := resp.Cluster
+			s.logger.Info("cluster has changed", zap.Any("resp", resp))
+			switch resp.Event {
+			case management.ClusterWatchResponse_JOIN, management.ClusterWatchResponse_UPDATE:
+				// add to cluster nodes
+				s.managers.Nodes[resp.Node.Id] = resp.Node
 
-			if !reflect.DeepEqual(s.managers, managers) {
-				// open clients
-				for nodeId, nodeConfig := range managers.Nodes {
-					if nodeConfig.Metadata == nil {
-						s.logger.Warn("missing metadata", zap.String("node_id", nodeId))
-						continue
-					}
-
-					if nodeConfig.Metadata.GrpcAddress == "" {
-						s.logger.Warn("missing metadata", zap.String("node_id", nodeId), zap.String("grpc_addr", nodeConfig.Metadata.GrpcAddress))
-						continue
-					}
-
-					client, exist := s.managerClients[nodeId]
-					if exist {
-						s.logger.Debug("client has already exist in manager list", zap.String("id", nodeId))
-
-						if client.GetAddress() != nodeConfig.Metadata.GrpcAddress {
-							s.logger.Debug("gRPC address has been changed", zap.String("node_id", nodeId), zap.String("client_grpc_addr", client.GetAddress()), zap.String("grpc_addr", nodeConfig.Metadata.GrpcAddress))
-							s.logger.Debug("recreate gRPC client", zap.String("node_id", nodeId), zap.String("grpc_addr", nodeConfig.Metadata.GrpcAddress))
-
-							delete(s.managerClients, nodeId)
-
-							err = client.Close()
-							if err != nil {
-								s.logger.Error(err.Error(), zap.String("node_id", nodeId))
-							}
-
-							newClient, err := manager.NewGRPCClient(nodeConfig.Metadata.GrpcAddress)
-							if err != nil {
-								s.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", nodeConfig.Metadata.GrpcAddress))
-							}
-
-							if newClient != nil {
-								s.managerClients[nodeId] = newClient
-							}
-						} else {
-							s.logger.Debug("gRPC address has not changed", zap.String("node_id", nodeId), zap.String("client_grpc_addr", client.GetAddress()), zap.String("grpc_addr", nodeConfig.Metadata.GrpcAddress))
-						}
-					} else {
-						s.logger.Debug("client does not exist in peer list", zap.String("node_id", nodeId))
-
-						s.logger.Debug("create gRPC client", zap.String("node_id", nodeId), zap.String("grpc_addr", nodeConfig.Metadata.GrpcAddress))
-						newClient, err := manager.NewGRPCClient(nodeConfig.Metadata.GrpcAddress)
-						if err != nil {
-							s.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", nodeConfig.Metadata.GrpcAddress))
-						}
-						if newClient != nil {
-							s.managerClients[nodeId] = newClient
-						}
-					}
-				}
-
-				// close nonexistent clients
-				for nodeId, client := range s.managerClients {
-					if nodeConfig, exist := managers.Nodes[nodeId]; !exist {
-						s.logger.Info("this client is no longer in use", zap.String("node_id", nodeId), zap.Any("node_config", nodeConfig))
-
-						s.logger.Debug("close client", zap.String("node_id", nodeId), zap.String("address", client.GetAddress()))
+				// check node state
+				switch resp.Node.State {
+				case management.Node_UNKNOWN, management.Node_SHUTDOWN:
+					// close client
+					if client, exist := s.managerClients[resp.Node.Id]; exist {
+						s.logger.Info("close gRPC client", zap.String("id", resp.Node.Id), zap.String("grpc_addr", client.GetAddress()))
 						err = client.Close()
 						if err != nil {
-							s.logger.Error(err.Error(), zap.String("node_id", nodeId), zap.String("address", client.GetAddress()))
+							s.logger.Warn(err.Error(), zap.String("id", resp.Node.Id))
 						}
+						delete(s.managerClients, resp.Node.Id)
+					}
+				default: // management.Node_FOLLOWER, management.Node_CANDIDATE, management.Node_LEADER
+					if resp.Node.Metadata.GrpcAddress == "" {
+						s.logger.Warn("missing gRPC address", zap.String("id", resp.Node.Id), zap.String("grpc_addr", resp.Node.Metadata.GrpcAddress))
+						continue
+					}
 
-						s.logger.Debug("delete client", zap.String("node_id", nodeId))
-						delete(s.managerClients, nodeId)
+					// check client that already exist in the client list
+					if client, exist := s.managerClients[resp.Node.Id]; !exist {
+						// create new client
+						s.logger.Info("create gRPC client", zap.String("id", resp.Node.Id), zap.String("grpc_addr", resp.Node.Metadata.GrpcAddress))
+						newClient, err := manager.NewGRPCClient(resp.Node.Metadata.GrpcAddress)
+						if err != nil {
+							s.logger.Warn(err.Error(), zap.String("id", resp.Node.Id), zap.String("grpc_addr", resp.Node.Metadata.GrpcAddress))
+							continue
+						}
+						s.managerClients[resp.Node.Id] = newClient
+					} else {
+						if client.GetAddress() != resp.Node.Metadata.GrpcAddress {
+							// close client
+							s.logger.Info("close gRPC client", zap.String("id", resp.Node.Id), zap.String("grpc_addr", client.GetAddress()))
+							err = client.Close()
+							if err != nil {
+								s.logger.Warn(err.Error(), zap.String("id", resp.Node.Id))
+							}
+							delete(s.managerClients, resp.Node.Id)
+
+							// re-create new client
+							s.logger.Info("re-create gRPC client", zap.String("id", resp.Node.Id), zap.String("grpc_addr", resp.Node.Metadata.GrpcAddress))
+							newClient, err := manager.NewGRPCClient(resp.Node.Metadata.GrpcAddress)
+							if err != nil {
+								s.logger.Warn(err.Error(), zap.String("id", resp.Node.Id), zap.String("grpc_addr", resp.Node.Metadata.GrpcAddress))
+								continue
+							}
+							s.managerClients[resp.Node.Id] = newClient
+						}
 					}
 				}
+			case management.ClusterWatchResponse_LEAVE:
+				if client, exist := s.managerClients[resp.Node.Id]; exist {
+					s.logger.Info("close gRPC client", zap.String("id", resp.Node.Id), zap.String("grpc_addr", client.GetAddress()))
+					err = client.Close()
+					if err != nil {
+						s.logger.Warn(err.Error(), zap.String("id", resp.Node.Id), zap.String("grpc_addr", client.GetAddress()))
+					}
+					delete(s.managerClients, resp.Node.Id)
+				}
 
-				// keep current manager cluster
-				s.managers = managers
-				s.logger.Debug("managers", zap.Any("managers", s.managers))
+				if _, exist := s.managers.Nodes[resp.Node.Id]; exist {
+					delete(s.managers.Nodes, resp.Node.Id)
+				}
+			default:
+				s.logger.Debug("unknown event", zap.Any("event", resp.Event))
+				continue
 			}
 		}
 	}
@@ -317,34 +316,33 @@ func (s *GRPCService) stopUpdateManagers() {
 }
 
 func (s *GRPCService) getLeaderClient() (*GRPCClient, error) {
-	var client *GRPCClient
-
-	for id, node := range s.cluster {
-		state, ok := node.(map[string]interface{})["state"].(string)
-		if !ok {
-			s.logger.Warn("missing state", zap.String("id", id), zap.String("state", state))
-			continue
-		}
-
-		if state == raft.Leader.String() {
-			client, ok = s.peerClients[id]
-			if ok {
-				break
-			} else {
-				s.logger.Error("node does not exist", zap.String("id", id))
+	for id, node := range s.cluster.Nodes {
+		switch node.State {
+		case index.Node_LEADER:
+			if client, exist := s.peerClients[id]; exist {
+				return client, nil
 			}
-		} else {
-			s.logger.Debug("not a leader", zap.String("id", id))
 		}
 	}
 
-	if client == nil {
-		err := errors.New("there is no leader")
-		s.logger.Error(err.Error())
+	err := errors.New("there is no leader")
+	s.logger.Error(err.Error())
+	return nil, err
+}
+
+func (s *GRPCService) cloneCluster(cluster *index.Cluster) (*index.Cluster, error) {
+	b, err := json.Marshal(cluster)
+	if err != nil {
 		return nil, err
 	}
 
-	return client, nil
+	var clone *index.Cluster
+	err = json.Unmarshal(b, &clone)
+	if err != nil {
+		return nil, err
+	}
+
+	return clone, nil
 }
 
 func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
@@ -358,138 +356,168 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 	ticker := time.NewTicker(checkInterval)
 	defer ticker.Stop()
 
+	savedCluster, err := s.cloneCluster(s.cluster)
+	if err != nil {
+		s.logger.Error(err.Error())
+		return
+	}
+
 	for {
 		select {
 		case <-s.updateClusterStopCh:
 			s.logger.Info("received a request to stop updating a cluster")
 			return
 		case <-ticker.C:
-			cluster, err := s.getCluster()
+			s.cluster, err = s.getCluster()
+			if err != nil {
+				s.logger.Error(err.Error())
+				return
+			}
+
+			snapshotCluster, err := s.cloneCluster(s.cluster)
 			if err != nil {
 				s.logger.Error(err.Error())
 				return
 			}
 
 			// create peer node list with out self node
-			peers := make(map[string]interface{}, 0)
-			for nodeId, node := range cluster {
-				if nodeId != s.NodeID() {
-					peers[nodeId] = node
+			for id, node := range snapshotCluster.Nodes {
+				if id != s.NodeID() {
+					s.peers.Nodes[id] = node
 				}
 			}
 
-			if !reflect.DeepEqual(s.peers, peers) {
-				// open clients
-				for nodeId, nodeInfo := range peers {
-					nodeConfig, ok := nodeInfo.(map[string]interface{})["node_config"].(map[string]interface{})
-					if !ok {
-						s.logger.Warn("assertion failed", zap.String("node_id", nodeId), zap.Any("node_info", nodeInfo))
-						continue
-					}
-					grpcAddr, ok := nodeConfig["grpc_addr"].(string)
-					if !ok {
-						s.logger.Warn("missing metadata", zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
-						continue
-					}
-
-					client, exist := s.peerClients[nodeId]
-					if exist {
-						s.logger.Debug("client has already exist in peer list", zap.String("node_id", nodeId))
-
-						if client.GetAddress() != grpcAddr {
-							s.logger.Debug("gRPC address has been changed", zap.String("node_id", nodeId), zap.String("client_grpc_addr", client.GetAddress()), zap.String("grpc_addr", grpcAddr))
-							s.logger.Debug("recreate gRPC client", zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
-
-							delete(s.peerClients, nodeId)
-
-							err = client.Close()
-							if err != nil {
-								s.logger.Warn(err.Error(), zap.String("node_id", nodeId))
-							}
-
-							newClient, err := NewGRPCClient(grpcAddr)
-							if err != nil {
-								s.logger.Warn(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
-							}
-
-							if newClient != nil {
-								s.peerClients[nodeId] = newClient
-							}
-						} else {
-							s.logger.Debug("gRPC address has not changed", zap.String("node_id", nodeId), zap.String("client_grpc_addr", client.GetAddress()), zap.String("grpc_addr", grpcAddr))
-						}
-					} else {
-						s.logger.Debug("client does not exist in peer list", zap.String("node_id", nodeId))
-
-						s.logger.Debug("create gRPC client", zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
-						peerClient, err := NewGRPCClient(grpcAddr)
-						if err != nil {
-							s.logger.Warn(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", grpcAddr))
-						}
-						if peerClient != nil {
-							s.logger.Debug("append peer client to peer client list", zap.String("grpc_addr", peerClient.GetAddress()))
-							s.peerClients[nodeId] = peerClient
-						}
-					}
+			// open clients for peer nodes
+			for id, node := range s.peers.Nodes {
+				if node.Metadata.GrpcAddress == "" {
+					s.logger.Debug("missing gRPC address", zap.String("id", id), zap.String("grpc_addr", node.Metadata.GrpcAddress))
+					continue
 				}
 
-				// close nonexistent clients
-				for nodeId, client := range s.peerClients {
-					if nodeConfig, exist := peers[nodeId]; !exist {
-						s.logger.Info("this client is no longer in use", zap.String("node_id", nodeId), zap.Any("node_config", nodeConfig))
-
-						s.logger.Debug("close client", zap.String("node_id", nodeId), zap.String("grpc_addr", client.GetAddress()))
+				client, exist := s.peerClients[id]
+				if exist {
+					if client.GetAddress() != node.Metadata.GrpcAddress {
+						s.logger.Info("recreate gRPC client", zap.String("id", id), zap.String("grpc_addr", node.Metadata.GrpcAddress))
+						delete(s.peerClients, id)
 						err = client.Close()
 						if err != nil {
-							s.logger.Warn(err.Error(), zap.String("node_id", nodeId), zap.String("grpc_addr", client.GetAddress()))
+							s.logger.Warn(err.Error(), zap.String("id", id))
 						}
-
-						s.logger.Debug("delete client", zap.String("node_id", nodeId))
-						delete(s.peerClients, nodeId)
+						newClient, err := NewGRPCClient(node.Metadata.GrpcAddress)
+						if err != nil {
+							s.logger.Error(err.Error(), zap.String("id", id), zap.String("grpc_addr", node.Metadata.GrpcAddress))
+							continue
+						}
+						s.peerClients[id] = newClient
 					}
+				} else {
+					s.logger.Info("create gRPC client", zap.String("id", id), zap.String("grpc_addr", node.Metadata.GrpcAddress))
+					newClient, err := NewGRPCClient(node.Metadata.GrpcAddress)
+					if err != nil {
+						s.logger.Warn(err.Error(), zap.String("id", id), zap.String("grpc_addr", node.Metadata.GrpcAddress))
+						continue
+					}
+					s.peerClients[id] = newClient
 				}
-
-				// keep current peer nodes
-				s.logger.Debug("current peers", zap.Any("peers", peers))
-				s.peers = peers
-			} else {
-				s.logger.Debug("there is no change in peers", zap.Any("peers", peers))
 			}
 
-			// notify current cluster
-			if !reflect.DeepEqual(s.cluster, cluster) {
-				// convert to GetClusterResponse for channel output
-				clusterResp := &index.GetClusterResponse{}
-				clusterAny := &any.Any{}
-				err = protobuf.UnmarshalAny(cluster, clusterAny)
+			// close clients for non-existent peer nodes
+			for id, client := range s.peerClients {
+				if _, exist := s.peers.Nodes[id]; !exist {
+					s.logger.Info("close gRPC client", zap.String("id", id), zap.String("grpc_addr", client.GetAddress()))
+					err = client.Close()
+					if err != nil {
+						s.logger.Warn(err.Error(), zap.String("id", id), zap.String("grpc_addr", client.GetAddress()))
+					}
+					delete(s.peerClients, id)
+				}
+			}
+
+			// check joined and updated nodes
+			for id, node := range snapshotCluster.Nodes {
+				nodeSnapshot, exist := savedCluster.Nodes[id]
+				if exist {
+					// node exists in the cluster
+					n1, err := json.Marshal(node)
+					if err != nil {
+						s.logger.Warn(err.Error(), zap.String("id", id), zap.Any("node", node))
+						continue
+					}
+					n2, err := json.Marshal(nodeSnapshot)
+					if err != nil {
+						s.logger.Warn(err.Error(), zap.String("id", id), zap.Any("node", nodeSnapshot))
+						continue
+					}
+					if !cmp.Equal(n1, n2) {
+						// node updated
+						// notify the cluster changes
+						clusterResp := &index.ClusterWatchResponse{
+							Event:   index.ClusterWatchResponse_UPDATE,
+							Node:    node,
+							Cluster: snapshotCluster,
+						}
+						for c := range s.clusterChans {
+							c <- *clusterResp
+						}
+					}
+				} else {
+					// node joined
+					// notify the cluster changes
+					clusterResp := &index.ClusterWatchResponse{
+						Event:   index.ClusterWatchResponse_JOIN,
+						Node:    node,
+						Cluster: snapshotCluster,
+					}
+					for c := range s.clusterChans {
+						c <- *clusterResp
+					}
+				}
+			}
+
+			// check left nodes
+			for id, node := range savedCluster.Nodes {
+				if _, exist := snapshotCluster.Nodes[id]; !exist {
+					// node left
+					// notify the cluster changes
+					clusterResp := &index.ClusterWatchResponse{
+						Event:   index.ClusterWatchResponse_LEAVE,
+						Node:    node,
+						Cluster: snapshotCluster,
+					}
+					for c := range s.clusterChans {
+						c <- *clusterResp
+					}
+				}
+			}
+
+			// set cluster state to manager
+			if !cmp.Equal(savedCluster, snapshotCluster) && s.managerGrpcAddress != "" && s.raftServer.IsLeader() {
+				snapshotClusterBytes, err := json.Marshal(snapshotCluster)
 				if err != nil {
-					s.logger.Warn(err.Error())
+					s.logger.Error(err.Error())
+					continue
 				}
-				clusterResp.Cluster = clusterAny
-
-				// output to channel
-				for c := range s.clusterChans {
-					c <- *clusterResp
-				}
-
-				// notify cluster config to manager
-				if s.clusterConfig.ManagerAddr != "" && s.raftServer.IsLeader() {
-					client, err := s.getManagerClient()
-					if err != nil {
-						s.logger.Error(err.Error())
-					}
-					err = client.Set(fmt.Sprintf("cluster_config/clusters/%s/nodes", s.clusterConfig.ClusterId), cluster)
-					if err != nil {
-						s.logger.Error(err.Error())
-					}
+				var snapshotClusterMap map[string]interface{}
+				err = json.Unmarshal(snapshotClusterBytes, &snapshotClusterMap)
+				if err != nil {
+					s.logger.Error(err.Error())
+					continue
 				}
 
-				// keep current cluster
-				s.logger.Debug("current cluster", zap.Any("cluster", cluster))
-				s.cluster = cluster
-			} else {
-				s.logger.Debug("there is no change in cluster", zap.Any("cluster", cluster))
+				client, err := s.getManagerClient()
+				if err != nil {
+					s.logger.Error(err.Error())
+					continue
+				}
+				s.logger.Info("update shards", zap.Any("shards", snapshotClusterMap))
+				err = client.Set(fmt.Sprintf("cluster/shards/%s", s.shardId), snapshotClusterMap)
+				if err != nil {
+					s.logger.Error(err.Error())
+					continue
+				}
 			}
+
+			savedCluster = snapshotCluster
 		default:
 			time.Sleep(100 * time.Millisecond)
 		}
@@ -516,17 +544,16 @@ func (s *GRPCService) stopUpdateCluster() {
 	s.logger.Info("the cluster update has been stopped")
 }
 
-func (s *GRPCService) LivenessProbe(ctx context.Context, req *empty.Empty) (*index.LivenessProbeResponse, error) {
-	resp := &index.LivenessProbeResponse{
-		State: index.LivenessProbeResponse_ALIVE,
-	}
+func (s *GRPCService) NodeHealthCheck(ctx context.Context, req *index.NodeHealthCheckRequest) (*index.NodeHealthCheckResponse, error) {
+	resp := &index.NodeHealthCheckResponse{}
 
-	return resp, nil
-}
-
-func (s *GRPCService) ReadinessProbe(ctx context.Context, req *empty.Empty) (*index.ReadinessProbeResponse, error) {
-	resp := &index.ReadinessProbeResponse{
-		State: index.ReadinessProbeResponse_READY,
+	switch req.Probe {
+	case index.NodeHealthCheckRequest_HEALTHINESS:
+		resp.State = index.NodeHealthCheckResponse_HEALTHY
+	case index.NodeHealthCheckRequest_LIVENESS:
+		resp.State = index.NodeHealthCheckResponse_ALIVE
+	case index.NodeHealthCheckRequest_READINESS:
+		resp.State = index.NodeHealthCheckResponse_READY
 	}
 
 	return resp, nil
@@ -536,90 +563,73 @@ func (s *GRPCService) NodeID() string {
 	return s.raftServer.NodeID()
 }
 
-func (s *GRPCService) getSelfNode() (map[string]interface{}, error) {
-	return map[string]interface{}{
-		"node_config": s.raftServer.nodeConfig.ToMap(),
-		"state":       s.raftServer.State().String(),
-	}, nil
-}
+func (s *GRPCService) getSelfNode() *index.Node {
+	node := s.raftServer.node
 
-func (s *GRPCService) getPeerNode(id string) (map[string]interface{}, error) {
-	var nodeInfo map[string]interface{}
-	var err error
-
-	if peerClient, exist := s.peerClients[id]; exist {
-		nodeInfo, err = peerClient.GetNode(id)
-		if err != nil {
-			s.logger.Warn(err.Error())
-			nodeInfo = map[string]interface{}{
-				"node_config": map[string]interface{}{},
-				"state":       raft.Shutdown.String(),
-			}
-		}
-	} else {
-		s.logger.Warn("node does not exist in peer list", zap.String("id", id))
-		nodeInfo = map[string]interface{}{
-			"node_config": map[string]interface{}{},
-			"state":       raft.Shutdown.String(),
-		}
+	switch s.raftServer.State() {
+	case raft.Follower:
+		node.State = index.Node_FOLLOWER
+	case raft.Candidate:
+		node.State = index.Node_CANDIDATE
+	case raft.Leader:
+		node.State = index.Node_LEADER
+	case raft.Shutdown:
+		node.State = index.Node_SHUTDOWN
+	default:
+		node.State = index.Node_UNKNOWN
 	}
 
-	return nodeInfo, nil
+	return node
 }
 
-func (s *GRPCService) getNode(id string) (map[string]interface{}, error) {
-	var nodeInfo map[string]interface{}
-	var err error
-
-	if id == "" || id == s.NodeID() {
-		nodeInfo, err = s.getSelfNode()
-	} else {
-		nodeInfo, err = s.getPeerNode(id)
-	}
-
-	if err != nil {
-		s.logger.Error(err.Error())
+func (s *GRPCService) getPeerNode(id string) (*index.Node, error) {
+	if _, exist := s.peerClients[id]; !exist {
+		err := errors.New("node does not exist in peers")
+		s.logger.Debug(err.Error(), zap.String("id", id))
 		return nil, err
 	}
 
-	return nodeInfo, nil
+	node, err := s.peerClients[id].NodeInfo()
+	if err != nil {
+		s.logger.Debug(err.Error(), zap.String("id", id))
+		return &index.Node{
+			BindAddress: "",
+			State:       index.Node_UNKNOWN,
+			Metadata: &index.Metadata{
+				GrpcAddress: "",
+				HttpAddress: "",
+			},
+		}, nil
+	}
+
+	return node, nil
 }
 
-func (s *GRPCService) GetNode(ctx context.Context, req *index.GetNodeRequest) (*index.GetNodeResponse, error) {
-	resp := &index.GetNodeResponse{}
+func (s *GRPCService) getNode(id string) (*index.Node, error) {
+	if id == "" || id == s.NodeID() {
+		return s.getSelfNode(), nil
+	} else {
+		return s.getPeerNode(id)
+	}
+}
 
-	nodeInfo, err := s.getNode(req.Id)
+func (s *GRPCService) NodeInfo(ctx context.Context, req *empty.Empty) (*index.NodeInfoResponse, error) {
+	resp := &index.NodeInfoResponse{}
+
+	node, err := s.getNode(s.NodeID())
 	if err != nil {
 		s.logger.Error(err.Error())
 		return resp, status.Error(codes.Internal, err.Error())
 	}
 
-	nodeConfigAny := &any.Any{}
-	if nodeConfig, exist := nodeInfo["node_config"]; exist {
-		err = protobuf.UnmarshalAny(nodeConfig.(map[string]interface{}), nodeConfigAny)
-		if err != nil {
-			s.logger.Error(err.Error())
-			return resp, status.Error(codes.Internal, err.Error())
-		}
-	} else {
-		s.logger.Error("missing node_config", zap.Any("node_config", nodeConfig))
-	}
-
-	state, exist := nodeInfo["state"].(string)
-	if !exist {
-		s.logger.Error("missing node state", zap.String("state", state))
-		state = raft.Shutdown.String()
-	}
-
-	resp.NodeConfig = nodeConfigAny
-	resp.State = state
-
-	return resp, nil
+	return &index.NodeInfoResponse{
+		Node: node,
+	}, nil
 }
 
-func (s *GRPCService) setNode(id string, nodeConfig map[string]interface{}) error {
+func (s *GRPCService) setNode(node *index.Node) error {
 	if s.raftServer.IsLeader() {
-		err := s.raftServer.SetNode(id, nodeConfig)
+		err := s.raftServer.SetNode(node)
 		if err != nil {
 			s.logger.Error(err.Error())
 			return err
@@ -631,7 +641,7 @@ func (s *GRPCService) setNode(id string, nodeConfig map[string]interface{}) erro
 			s.logger.Error(err.Error())
 			return err
 		}
-		err = client.SetNode(id, nodeConfig)
+		err = client.ClusterJoin(node)
 		if err != nil {
 			s.logger.Error(err.Error())
 			return err
@@ -641,18 +651,10 @@ func (s *GRPCService) setNode(id string, nodeConfig map[string]interface{}) erro
 	return nil
 }
 
-func (s *GRPCService) SetNode(ctx context.Context, req *index.SetNodeRequest) (*empty.Empty, error) {
+func (s *GRPCService) ClusterJoin(ctx context.Context, req *index.ClusterJoinRequest) (*empty.Empty, error) {
 	resp := &empty.Empty{}
 
-	ins, err := protobuf.MarshalAny(req.NodeConfig)
-	if err != nil {
-		s.logger.Error(err.Error())
-		return resp, status.Error(codes.Internal, err.Error())
-	}
-
-	nodeConfig := *ins.(*map[string]interface{})
-
-	err = s.setNode(req.Id, nodeConfig)
+	err := s.setNode(req.Node)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return resp, status.Error(codes.Internal, err.Error())
@@ -675,7 +677,7 @@ func (s *GRPCService) deleteNode(id string) error {
 			s.logger.Error(err.Error())
 			return err
 		}
-		err = client.DeleteNode(id)
+		err = client.ClusterLeave(id)
 		if err != nil {
 			s.logger.Error(err.Error())
 			return err
@@ -685,7 +687,7 @@ func (s *GRPCService) deleteNode(id string) error {
 	return nil
 }
 
-func (s *GRPCService) DeleteNode(ctx context.Context, req *index.DeleteNodeRequest) (*empty.Empty, error) {
+func (s *GRPCService) ClusterLeave(ctx context.Context, req *index.ClusterLeaveRequest) (*empty.Empty, error) {
 	resp := &empty.Empty{}
 
 	err := s.deleteNode(req.Id)
@@ -697,33 +699,28 @@ func (s *GRPCService) DeleteNode(ctx context.Context, req *index.DeleteNodeReque
 	return resp, nil
 }
 
-func (s *GRPCService) getCluster() (map[string]interface{}, error) {
+func (s *GRPCService) getCluster() (*index.Cluster, error) {
 	cluster, err := s.raftServer.GetCluster()
 	if err != nil {
 		s.logger.Error(err.Error())
 		return nil, err
 	}
 
-	// update node state
-	for nodeId := range cluster {
-		node, err := s.getNode(nodeId)
+	// update latest node state
+	for id := range cluster.Nodes {
+		node, err := s.getNode(id)
 		if err != nil {
-			s.logger.Error(err.Error())
+			s.logger.Debug(err.Error())
+			continue
 		}
-		state := node["state"].(string)
-
-		if _, ok := cluster[nodeId]; !ok {
-			cluster[nodeId] = map[string]interface{}{}
-		}
-		nodeInfo := cluster[nodeId].(map[string]interface{})
-		nodeInfo["state"] = state
+		cluster.Nodes[id] = node
 	}
 
 	return cluster, nil
 }
 
-func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*index.GetClusterResponse, error) {
-	resp := &index.GetClusterResponse{}
+func (s *GRPCService) ClusterInfo(ctx context.Context, req *empty.Empty) (*index.ClusterInfoResponse, error) {
+	resp := &index.ClusterInfoResponse{}
 
 	cluster, err := s.getCluster()
 	if err != nil {
@@ -731,20 +728,13 @@ func (s *GRPCService) GetCluster(ctx context.Context, req *empty.Empty) (*index.
 		return resp, status.Error(codes.Internal, err.Error())
 	}
 
-	clusterAny := &any.Any{}
-	err = protobuf.UnmarshalAny(cluster, clusterAny)
-	if err != nil {
-		s.logger.Error(err.Error())
-		return resp, status.Error(codes.Internal, err.Error())
-	}
-
-	resp.Cluster = clusterAny
+	resp.Cluster = cluster
 
 	return resp, nil
 }
 
-func (s *GRPCService) WatchCluster(req *empty.Empty, server index.Index_WatchClusterServer) error {
-	chans := make(chan index.GetClusterResponse)
+func (s *GRPCService) ClusterWatch(req *empty.Empty, server index.Index_ClusterWatchServer) error {
+	chans := make(chan index.ClusterWatchResponse)
 
 	s.clusterMutex.Lock()
 	s.clusterChans[chans] = struct{}{}

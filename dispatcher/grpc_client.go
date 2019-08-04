@@ -21,7 +21,6 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/ptypes/any"
-	"github.com/golang/protobuf/ptypes/empty"
 	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/protobuf"
@@ -97,23 +96,25 @@ func (c *GRPCClient) GetAddress() string {
 	return c.conn.Target()
 }
 
-func (c *GRPCClient) LivenessProbe(opts ...grpc.CallOption) (string, error) {
-	resp, err := c.client.LivenessProbe(c.ctx, &empty.Empty{})
-	if err != nil {
-		st, _ := status.FromError(err)
+func (c *GRPCClient) NodeHealthCheck(probe string, opts ...grpc.CallOption) (string, error) {
+	req := &distribute.NodeHealthCheckRequest{}
 
-		return distribute.LivenessProbeResponse_UNKNOWN.String(), errors.New(st.Message())
+	switch probe {
+	case distribute.NodeHealthCheckRequest_HEALTHINESS.String():
+		req.Probe = distribute.NodeHealthCheckRequest_HEALTHINESS
+	case distribute.NodeHealthCheckRequest_LIVENESS.String():
+		req.Probe = distribute.NodeHealthCheckRequest_LIVENESS
+	case distribute.NodeHealthCheckRequest_READINESS.String():
+		req.Probe = distribute.NodeHealthCheckRequest_READINESS
+	default:
+		req.Probe = distribute.NodeHealthCheckRequest_HEALTHINESS
 	}
 
-	return resp.State.String(), nil
-}
-
-func (c *GRPCClient) ReadinessProbe(opts ...grpc.CallOption) (string, error) {
-	resp, err := c.client.ReadinessProbe(c.ctx, &empty.Empty{})
+	resp, err := c.client.NodeHealthCheck(c.ctx, req, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 
-		return distribute.ReadinessProbeResponse_UNKNOWN.String(), errors.New(st.Message())
+		return distribute.NodeHealthCheckResponse_UNHEALTHY.String(), errors.New(st.Message())
 	}
 
 	return resp.State.String(), nil

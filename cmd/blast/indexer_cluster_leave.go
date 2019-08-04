@@ -33,10 +33,9 @@ func indexerClusterLeave(c *cli.Context) error {
 		// get grpc address of leader node
 	}
 
-	grpcAddr := c.String("grpc-address")
 	nodeId := c.String("node-id")
 
-	client, err := indexer.NewGRPCClient(grpcAddr)
+	client, err := indexer.NewGRPCClient(peerGrpcAddr)
 	if err != nil {
 		return err
 	}
@@ -47,7 +46,7 @@ func indexerClusterLeave(c *cli.Context) error {
 		}
 	}()
 
-	err = client.DeleteNode(nodeId)
+	err = client.ClusterLeave(nodeId)
 	if err != nil {
 		return err
 	}

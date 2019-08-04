@@ -204,10 +204,12 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 					n1, err := json.Marshal(node)
 					if err != nil {
 						s.logger.Warn(err.Error(), zap.String("id", id), zap.Any("node", node))
+						continue
 					}
 					n2, err := json.Marshal(nodeSnapshot)
 					if err != nil {
 						s.logger.Warn(err.Error(), zap.String("id", id), zap.Any("node", nodeSnapshot))
+						continue
 					}
 					if !cmp.Equal(n1, n2) {
 						// node updated
@@ -632,8 +634,19 @@ func (s *GRPCService) Watch(req *management.WatchRequest, server management.Mana
 		close(chans)
 	}()
 
+	// normalize key
+	key := func(key string) string {
+		keys := make([]string, 0)
+		for _, k := range strings.Split(key, "/") {
+			if k != "" {
+				keys = append(keys, k)
+			}
+		}
+		return strings.Join(keys, "/")
+	}(req.Key)
+
 	for resp := range chans {
-		if !strings.HasPrefix(resp.Key, req.Key) {
+		if !strings.HasPrefix(resp.Key, key) {
 			continue
 		}
 		err := server.Send(&resp)
