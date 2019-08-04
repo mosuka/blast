@@ -36,7 +36,6 @@ import (
 )
 
 type RaftServer struct {
-	//nodeId          string
 	node            *management.Node
 	dataDir         string
 	raftStorageType string
@@ -51,7 +50,6 @@ type RaftServer struct {
 
 func NewRaftServer(node *management.Node, dataDir string, raftStorageType string, indexConfig *config.IndexConfig, bootstrap bool, logger *zap.Logger) (*RaftServer, error) {
 	return &RaftServer{
-		//nodeId:          nodeId,
 		node:            node,
 		dataDir:         dataDir,
 		raftStorageType: raftStorageType,
@@ -79,11 +77,14 @@ func (s *RaftServer) Start() error {
 		return err
 	}
 
-	s.logger.Info("create Raft config", zap.String("node_id", s.node.Id))
+	s.logger.Info("create Raft config", zap.String("id", s.node.Id))
 	raftConfig := raft.DefaultConfig()
 	raftConfig.LocalID = raft.ServerID(s.node.Id)
 	raftConfig.SnapshotThreshold = 1024
 	raftConfig.LogOutput = ioutil.Discard
+	//if s.bootstrap {
+	//	raftConfig.StartAsLeader = true
+	//}
 
 	s.logger.Info("resolve TCP address", zap.String("bind_addr", s.node.BindAddress))
 	addr, err := net.ResolveTCPAddr("tcp", s.node.BindAddress)

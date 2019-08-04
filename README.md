@@ -273,15 +273,13 @@ You can see the result in JSON format. The result of the above command is:
 
 ```json
 {
-  "node_config": {
-    "bind_addr": ":2000",
-    "data_dir": "/tmp/blast/indexer1",
-    "grpc_addr": ":5000",
-    "http_addr": ":8000",
-    "node_id": "indexer1",
-    "raft_storage_type": "boltdb"
-  },
-  "state": "Leader"
+  "id": "indexer1",
+  "bind_address": ":2000",
+  "state": 3,
+  "metadata": {
+    "grpc_address": ":5000",
+    "http_address": ":8000"
+  }
 }
 ```
 
@@ -684,38 +682,34 @@ You can see the result in JSON format. The result of the above command is:
 
 ```json
 {
-  "indexer1": {
-    "node_config": {
-      "bind_addr": ":2000",
-      "data_dir": "/tmp/blast/indexer1",
-      "grpc_addr": ":5000",
-      "http_addr": ":8000",
-      "node_id": "indexer1",
-      "raft_storage_type": "boltdb"
+  "nodes": {
+    "indexer1": {
+      "id": "indexer1",
+      "bind_address": ":2000",
+      "state": 3,
+      "metadata": {
+        "grpc_address": ":5000",
+        "http_address": ":8000"
+      }
     },
-    "state": "Leader"
-  },
-  "indexer2": {
-    "node_config": {
-      "bind_addr": ":2010",
-      "data_dir": "/tmp/blast/indexer2",
-      "grpc_addr": ":5010",
-      "http_addr": ":8010",
-      "node_id": "indexer2",
-      "raft_storage_type": "boltdb"
+    "indexer2": {
+      "id": "indexer2",
+      "bind_address": ":2010",
+      "state": 1,
+      "metadata": {
+        "grpc_address": ":5010",
+        "http_address": ":8010"
+      }
     },
-    "state": "Follower"
-  },
-  "indexer3": {
-    "node_config": {
-      "bind_addr": ":2020",
-      "data_dir": "/tmp/blast/indexer3",
-      "grpc_addr": ":5020",
-      "http_addr": ":8020",
-      "node_id": "indexer3",
-      "raft_storage_type": "boltdb"
-    },
-    "state": "Follower"
+    "indexer3": {
+      "id": "indexer3",
+      "bind_address": ":2020",
+      "state": 1,
+      "metadata": {
+        "grpc_address": ":5020",
+        "http_address": ":8020"
+      }
+    }
   }
 }
 ```
@@ -786,9 +780,9 @@ Manager can also bring up a cluster like an indexer. Specify a common index mapp
 $ ./bin/blast manager start \
     --grpc-address=:5100 \
     --http-address=:8100 \
-    --node-id=cluster1 \
+    --node-id=manager1 \
     --node-address=:2100 \
-    --data-dir=/tmp/blast/cluster1 \
+    --data-dir=/tmp/blast/manager1 \
     --raft-storage-type=boltdb \
     --index-mapping-file=./example/wiki_index_mapping.json \
     --index-type=upside_down \
@@ -798,18 +792,18 @@ $ ./bin/blast manager start \
     --peer-grpc-address=:5100 \
     --grpc-address=:5110 \
     --http-address=:8110 \
-    --node-id=cluster2 \
+    --node-id=manager2 \
     --node-address=:2110 \
-    --data-dir=/tmp/blast/cluster2 \
+    --data-dir=/tmp/blast/manager2 \
     --raft-storage-type=boltdb
 
 $ ./bin/blast manager start \
     --peer-grpc-address=:5100 \
     --grpc-address=:5120 \
     --http-address=:8120 \
-    --node-id=cluster3 \
+    --node-id=manager3 \
     --node-address=:2120 \
-    --data-dir=/tmp/blast/cluster3 \
+    --data-dir=/tmp/blast/manager3 \
     --raft-storage-type=boltdb
 ```
 

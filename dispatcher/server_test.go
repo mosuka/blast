@@ -22,11 +22,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/raft"
 	"github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/indexer"
 	"github.com/mosuka/blast/logutils"
 	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/protobuf/index"
 	"github.com/mosuka/blast/protobuf/management"
 	"github.com/mosuka/blast/strutils"
 	"github.com/mosuka/blast/testutils"
@@ -205,69 +205,122 @@ func TestServer_Start(t *testing.T) {
 	//
 	// indexer cluster1
 	//
-	// create cluster config
-	indexerClusterConfig1 := config.DefaultClusterConfig()
-	indexerClusterConfig1.ManagerAddr = managerGrpcAddress1
-	indexerClusterConfig1.ClusterId = "cluster1"
-	// create node config
-	indexerNodeConfig1 := testutils.TmpNodeConfig()
+	indexerManagerGrpcAddress1 := managerGrpcAddress1
+	indexerShardId1 := "shard-1"
+	indexerPeerGrpcAddress1 := ""
+	indexerGrpcAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerHttpAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerNodeId1 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	indexerBindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerDataDir1 := testutils.TmpDir()
 	defer func() {
-		_ = os.RemoveAll(indexerNodeConfig1.DataDir)
+		_ = os.RemoveAll(indexerDataDir1)
 	}()
-	indexer1, err := indexer.NewServer(indexerClusterConfig1, indexerNodeConfig1, config.DefaultIndexConfig(), logger.Named("indexer1"), grpcLogger.Named("indexer1"), httpAccessLogger)
+	indexerRaftStorageType1 := "boltdb"
+
+	indexerNode1 := &index.Node{
+		Id:          indexerNodeId1,
+		BindAddress: indexerBindAddress1,
+		State:       index.Node_UNKNOWN,
+		Metadata: &index.Metadata{
+			GrpcAddress: indexerGrpcAddress1,
+			HttpAddress: indexerHttpAddress1,
+		},
+	}
+	indexConfig1, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	indexerServer1, err := indexer.NewServer(indexerManagerGrpcAddress1, indexerShardId1, indexerPeerGrpcAddress1, indexerNode1, indexerDataDir1, indexerRaftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
 	defer func() {
-		if indexer1 != nil {
-			indexer1.Stop()
-		}
+		indexerServer1.Stop()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server
-	indexer1.Start()
+	indexerServer1.Start()
+
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	// create node config
-	indexerNodeConfig2 := testutils.TmpNodeConfig()
+	indexerManagerGrpcAddress2 := managerGrpcAddress1
+	indexerShardId2 := "shard-1"
+	indexerPeerGrpcAddress2 := ""
+	indexerGrpcAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerHttpAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerNodeId2 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	indexerBindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerDataDir2 := testutils.TmpDir()
 	defer func() {
-		_ = os.RemoveAll(indexerNodeConfig2.DataDir)
+		_ = os.RemoveAll(indexerDataDir2)
 	}()
-	indexer2, err := indexer.NewServer(indexerClusterConfig1, indexerNodeConfig2, config.DefaultIndexConfig(), logger.Named("indexer2"), grpcLogger.Named("indexer2"), httpAccessLogger)
+	indexerRaftStorageType2 := "boltdb"
+
+	indexerNode2 := &index.Node{
+		Id:          indexerNodeId2,
+		BindAddress: indexerBindAddress2,
+		State:       index.Node_UNKNOWN,
+		Metadata: &index.Metadata{
+			GrpcAddress: indexerGrpcAddress2,
+			HttpAddress: indexerHttpAddress2,
+		},
+	}
+	indexConfig2, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	indexerServer2, err := indexer.NewServer(indexerManagerGrpcAddress2, indexerShardId2, indexerPeerGrpcAddress2, indexerNode2, indexerDataDir2, indexerRaftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
 	defer func() {
-		if indexer2 != nil {
-			indexer2.Stop()
-		}
+		indexerServer2.Stop()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server
-	indexer2.Start()
+	indexerServer2.Start()
+
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	// create node config
-	indexerNodeConfig3 := testutils.TmpNodeConfig()
+	indexerManagerGrpcAddress3 := managerGrpcAddress1
+	indexerShardId3 := "shard-1"
+	indexerPeerGrpcAddress3 := ""
+	indexerGrpcAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerHttpAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerNodeId3 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	indexerBindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerDataDir3 := testutils.TmpDir()
 	defer func() {
-		_ = os.RemoveAll(indexerNodeConfig3.DataDir)
+		_ = os.RemoveAll(indexerDataDir3)
 	}()
-	indexer3, err := indexer.NewServer(indexerClusterConfig1, indexerNodeConfig3, config.DefaultIndexConfig(), logger.Named("indexer3"), grpcLogger.Named("indexer3"), httpAccessLogger)
+	indexerRaftStorageType3 := "boltdb"
+
+	indexerNode3 := &index.Node{
+		Id:          indexerNodeId3,
+		BindAddress: indexerBindAddress3,
+		State:       index.Node_UNKNOWN,
+		Metadata: &index.Metadata{
+			GrpcAddress: indexerGrpcAddress3,
+			HttpAddress: indexerHttpAddress3,
+		},
+	}
+	indexConfig3, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	indexerServer3, err := indexer.NewServer(indexerManagerGrpcAddress3, indexerShardId3, indexerPeerGrpcAddress3, indexerNode3, indexerDataDir3, indexerRaftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
 	defer func() {
-		if indexer3 != nil {
-			indexer3.Stop()
-		}
+		indexerServer3.Stop()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server
-	indexer3.Start()
+	indexerServer3.Start()
+
 	// sleep
 	time.Sleep(5 * time.Second)
 
 	// gRPC client for manager1
-	indexerClient1, err := indexer.NewGRPCClient(indexerNodeConfig1.GRPCAddr)
+	indexerClient1, err := indexer.NewGRPCClient(indexerNode1.Metadata.GrpcAddress)
 	defer func() {
 		_ = indexerClient1.Close()
 	}()
@@ -275,119 +328,165 @@ func TestServer_Start(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 	// get cluster info from manager1
-	indexerCluster1, err := indexerClient1.GetCluster()
+	indexerCluster1, err := indexerClient1.ClusterInfo()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expIndexerCluster1 := map[string]interface{}{
-		indexerNodeConfig1.NodeId: map[string]interface{}{
-			"node_config": indexerNodeConfig1.ToMap(),
-			"state":       raft.Leader.String(),
-		},
-		indexerNodeConfig2.NodeId: map[string]interface{}{
-			"node_config": indexerNodeConfig2.ToMap(),
-			"state":       raft.Follower.String(),
-		},
-		indexerNodeConfig3.NodeId: map[string]interface{}{
-			"node_config": indexerNodeConfig3.ToMap(),
-			"state":       raft.Follower.String(),
+	expIndexerCluster1 := &index.Cluster{
+		Nodes: map[string]*index.Node{
+			indexerNodeId1: {
+				Id:          indexerNodeId1,
+				BindAddress: indexerBindAddress1,
+				State:       index.Node_LEADER,
+				Metadata: &index.Metadata{
+					GrpcAddress: indexerGrpcAddress1,
+					HttpAddress: indexerHttpAddress1,
+				},
+			},
+			indexerNodeId2: {
+				Id:          indexerNodeId2,
+				BindAddress: indexerBindAddress2,
+				State:       index.Node_FOLLOWER,
+				Metadata: &index.Metadata{
+					GrpcAddress: indexerGrpcAddress2,
+					HttpAddress: indexerHttpAddress2,
+				},
+			},
+			indexerNodeId3: {
+				Id:          indexerNodeId3,
+				BindAddress: indexerBindAddress3,
+				State:       index.Node_FOLLOWER,
+				Metadata: &index.Metadata{
+					GrpcAddress: indexerGrpcAddress3,
+					HttpAddress: indexerHttpAddress3,
+				},
+			},
 		},
 	}
 	actIndexerCluster1 := indexerCluster1
-	expIndexerNodeConfig1 := expIndexerCluster1[indexerNodeConfig1.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
-	actIndexerNodeConfig1 := actIndexerCluster1[indexerNodeConfig1.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
-	if !reflect.DeepEqual(expIndexerNodeConfig1, actIndexerNodeConfig1) {
-		t.Fatalf("expected content to see %v, saw %v", expIndexerNodeConfig1, actIndexerNodeConfig1)
-	}
-	actIndexerState1 := actIndexerCluster1[indexerNodeConfig1.NodeId].(map[string]interface{})["state"].(string)
-	if raft.Leader.String() != actIndexerState1 && raft.Follower.String() != actIndexerState1 {
-		t.Fatalf("expected content to see %v or %v, saw %v", raft.Leader.String(), raft.Follower.String(), actIndexerState1)
-	}
-	expIndexerNodeConfig2 := expIndexerCluster1[indexerNodeConfig2.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
-	actIndexerNodeConfig2 := actIndexerCluster1[indexerNodeConfig2.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
-	if !reflect.DeepEqual(expIndexerNodeConfig2, actIndexerNodeConfig2) {
-		t.Fatalf("expected content to see %v, saw %v", expIndexerNodeConfig2, actIndexerNodeConfig2)
-	}
-	actIndexerState2 := actIndexerCluster1[indexerNodeConfig2.NodeId].(map[string]interface{})["state"].(string)
-	if raft.Leader.String() != actIndexerState2 && raft.Follower.String() != actIndexerState2 {
-		t.Fatalf("expected content to see %v or %v, saw %v", raft.Leader.String(), raft.Follower.String(), actIndexerState2)
-	}
-	expIndexerNodeConfig3 := expIndexerCluster1[indexerNodeConfig3.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
-	actIndexerNodeConfig3 := actIndexerCluster1[indexerNodeConfig3.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
-	if !reflect.DeepEqual(expIndexerNodeConfig3, actIndexerNodeConfig3) {
-		t.Fatalf("expected content to see %v, saw %v", expIndexerNodeConfig3, actIndexerNodeConfig3)
-	}
-	actIndexerState3 := actIndexerCluster1[indexerNodeConfig3.NodeId].(map[string]interface{})["state"].(string)
-	if raft.Leader.String() != actIndexerState3 && raft.Follower.String() != actIndexerState3 {
-		t.Fatalf("expected content to see %v or %v, saw %v", raft.Leader.String(), raft.Follower.String(), actIndexerState3)
+	if !reflect.DeepEqual(expIndexerCluster1, actIndexerCluster1) {
+		t.Fatalf("expected content to see %v, saw %v", expIndexerCluster1, actIndexerCluster1)
 	}
 
 	//
 	// indexer cluster2
 	//
-	// create cluster config
-	indexerClusterConfig2 := config.DefaultClusterConfig()
-	indexerClusterConfig2.ManagerAddr = managerGrpcAddress1
-	indexerClusterConfig2.ClusterId = "cluster2"
-	// create node config
-	indexerNodeConfig4 := testutils.TmpNodeConfig()
+	indexerManagerGrpcAddress4 := managerGrpcAddress1
+	indexerShardId4 := "shard-2"
+	indexerPeerGrpcAddress4 := ""
+	indexerGrpcAddress4 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerHttpAddress4 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerNodeId4 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	indexerBindAddress4 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerDataDir4 := testutils.TmpDir()
 	defer func() {
-		_ = os.RemoveAll(indexerNodeConfig4.DataDir)
+		_ = os.RemoveAll(indexerDataDir4)
 	}()
-	indexer4, err := indexer.NewServer(indexerClusterConfig2, indexerNodeConfig4, config.DefaultIndexConfig(), logger.Named("indexer4"), grpcLogger.Named("indexer4"), httpAccessLogger)
+	indexerRaftStorageType4 := "boltdb"
+
+	indexerNode4 := &index.Node{
+		Id:          indexerNodeId4,
+		BindAddress: indexerBindAddress4,
+		State:       index.Node_UNKNOWN,
+		Metadata: &index.Metadata{
+			GrpcAddress: indexerGrpcAddress4,
+			HttpAddress: indexerHttpAddress4,
+		},
+	}
+	indexConfig4, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	indexerServer4, err := indexer.NewServer(indexerManagerGrpcAddress4, indexerShardId4, indexerPeerGrpcAddress4, indexerNode4, indexerDataDir4, indexerRaftStorageType4, indexConfig4, logger, grpcLogger, httpAccessLogger)
 	defer func() {
-		if indexer4 != nil {
-			indexer4.Stop()
-		}
+		indexerServer4.Stop()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server
-	indexer4.Start()
+	indexerServer4.Start()
+
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	// create node config
-	indexerNodeConfig5 := testutils.TmpNodeConfig()
+	indexerManagerGrpcAddress5 := managerGrpcAddress1
+	indexerShardId5 := "shard-2"
+	indexerPeerGrpcAddress5 := ""
+	indexerGrpcAddress5 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerHttpAddress5 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerNodeId5 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	indexerBindAddress5 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerDataDir5 := testutils.TmpDir()
 	defer func() {
-		_ = os.RemoveAll(indexerNodeConfig5.DataDir)
+		_ = os.RemoveAll(indexerDataDir5)
 	}()
-	indexer5, err := indexer.NewServer(indexerClusterConfig2, indexerNodeConfig5, config.DefaultIndexConfig(), logger.Named("indexer5"), grpcLogger.Named("indexer5"), httpAccessLogger)
+	indexerRaftStorageType5 := "boltdb"
+
+	indexerNode5 := &index.Node{
+		Id:          indexerNodeId5,
+		BindAddress: indexerBindAddress5,
+		State:       index.Node_UNKNOWN,
+		Metadata: &index.Metadata{
+			GrpcAddress: indexerGrpcAddress5,
+			HttpAddress: indexerHttpAddress5,
+		},
+	}
+	indexConfig5, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	indexerServer5, err := indexer.NewServer(indexerManagerGrpcAddress5, indexerShardId5, indexerPeerGrpcAddress5, indexerNode5, indexerDataDir5, indexerRaftStorageType5, indexConfig5, logger, grpcLogger, httpAccessLogger)
 	defer func() {
-		if indexer5 != nil {
-			indexer5.Stop()
-		}
+		indexerServer5.Stop()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server
-	indexer5.Start()
+	indexerServer5.Start()
+
 	// sleep
 	time.Sleep(5 * time.Second)
 
-	// create node config
-	indexerNodeConfig6 := testutils.TmpNodeConfig()
+	indexerManagerGrpcAddress6 := managerGrpcAddress1
+	indexerShardId6 := "shard-2"
+	indexerPeerGrpcAddress6 := ""
+	indexerGrpcAddress6 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerHttpAddress6 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerNodeId6 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	indexerBindAddress6 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerDataDir6 := testutils.TmpDir()
 	defer func() {
-		_ = os.RemoveAll(indexerNodeConfig6.DataDir)
+		_ = os.RemoveAll(indexerDataDir6)
 	}()
-	indexer6, err := indexer.NewServer(indexerClusterConfig2, indexerNodeConfig6, config.DefaultIndexConfig(), logger.Named("indexer6"), grpcLogger.Named("indexer6"), httpAccessLogger)
+	indexerRaftStorageType6 := "boltdb"
+
+	indexerNode6 := &index.Node{
+		Id:          indexerNodeId6,
+		BindAddress: indexerBindAddress6,
+		State:       index.Node_UNKNOWN,
+		Metadata: &index.Metadata{
+			GrpcAddress: indexerGrpcAddress6,
+			HttpAddress: indexerHttpAddress6,
+		},
+	}
+	indexConfig6, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	indexerServer6, err := indexer.NewServer(indexerManagerGrpcAddress6, indexerShardId6, indexerPeerGrpcAddress6, indexerNode6, indexerDataDir6, indexerRaftStorageType6, indexConfig6, logger, grpcLogger, httpAccessLogger)
 	defer func() {
-		if indexer6 != nil {
-			indexer6.Stop()
-		}
+		indexerServer6.Stop()
 	}()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	// start server
-	indexer6.Start()
+	indexerServer6.Start()
+
 	// sleep
 	time.Sleep(5 * time.Second)
 
 	// gRPC client for manager1
-	indexerClient2, err := indexer.NewGRPCClient(indexerNodeConfig4.GRPCAddr)
+	indexerClient2, err := indexer.NewGRPCClient(indexerNode4.Metadata.GrpcAddress)
 	defer func() {
 		_ = indexerClient1.Close()
 	}()
@@ -395,51 +494,44 @@ func TestServer_Start(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 	// get cluster info from manager1
-	indexerCluster2, err := indexerClient2.GetCluster()
+	indexerCluster2, err := indexerClient2.ClusterInfo()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expIndexerCluster2 := map[string]interface{}{
-		indexerNodeConfig4.NodeId: map[string]interface{}{
-			"node_config": indexerNodeConfig4.ToMap(),
-			"state":       raft.Leader.String(),
-		},
-		indexerNodeConfig5.NodeId: map[string]interface{}{
-			"node_config": indexerNodeConfig5.ToMap(),
-			"state":       raft.Follower.String(),
-		},
-		indexerNodeConfig6.NodeId: map[string]interface{}{
-			"node_config": indexerNodeConfig6.ToMap(),
-			"state":       raft.Follower.String(),
+	expIndexerCluster2 := &index.Cluster{
+		Nodes: map[string]*index.Node{
+			indexerNodeId4: {
+				Id:          indexerNodeId4,
+				BindAddress: indexerBindAddress4,
+				State:       index.Node_LEADER,
+				Metadata: &index.Metadata{
+					GrpcAddress: indexerGrpcAddress4,
+					HttpAddress: indexerHttpAddress4,
+				},
+			},
+			indexerNodeId5: {
+				Id:          indexerNodeId5,
+				BindAddress: indexerBindAddress5,
+				State:       index.Node_FOLLOWER,
+				Metadata: &index.Metadata{
+					GrpcAddress: indexerGrpcAddress5,
+					HttpAddress: indexerHttpAddress5,
+				},
+			},
+			indexerNodeId6: {
+				Id:          indexerNodeId6,
+				BindAddress: indexerBindAddress6,
+				State:       index.Node_FOLLOWER,
+				Metadata: &index.Metadata{
+					GrpcAddress: indexerGrpcAddress6,
+					HttpAddress: indexerHttpAddress6,
+				},
+			},
 		},
 	}
 	actIndexerCluster2 := indexerCluster2
-	expIndexerNodeConfig4 := expIndexerCluster2[indexerNodeConfig4.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
-	actIndexerNodeConfig4 := actIndexerCluster2[indexerNodeConfig4.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
-	if !reflect.DeepEqual(expIndexerNodeConfig4, actIndexerNodeConfig4) {
-		t.Fatalf("expected content to see %v, saw %v", expIndexerNodeConfig4, actIndexerNodeConfig4)
-	}
-	actIndexerState4 := actIndexerCluster2[indexerNodeConfig4.NodeId].(map[string]interface{})["state"].(string)
-	if raft.Leader.String() != actIndexerState4 && raft.Follower.String() != actIndexerState4 {
-		t.Fatalf("expected content to see %v or %v, saw %v", raft.Leader.String(), raft.Follower.String(), actIndexerState4)
-	}
-	expIndexerNodeConfig5 := expIndexerCluster2[indexerNodeConfig5.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
-	actIndexerNodeConfig5 := actIndexerCluster2[indexerNodeConfig5.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
-	if !reflect.DeepEqual(expIndexerNodeConfig5, actIndexerNodeConfig5) {
-		t.Fatalf("expected content to see %v, saw %v", expIndexerNodeConfig5, actIndexerNodeConfig5)
-	}
-	actIndexerState5 := actIndexerCluster2[indexerNodeConfig5.NodeId].(map[string]interface{})["state"].(string)
-	if raft.Leader.String() != actIndexerState5 && raft.Follower.String() != actIndexerState5 {
-		t.Fatalf("expected content to see %v or %v, saw %v", raft.Leader.String(), raft.Follower.String(), actIndexerState5)
-	}
-	expIndexerNodeConfig6 := expIndexerCluster2[indexerNodeConfig6.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
-	actIndexerNodeConfig6 := actIndexerCluster2[indexerNodeConfig6.NodeId].(map[string]interface{})["node_config"].(map[string]interface{})
-	if !reflect.DeepEqual(expIndexerNodeConfig6, actIndexerNodeConfig6) {
-		t.Fatalf("expected content to see %v, saw %v", expIndexerNodeConfig6, actIndexerNodeConfig6)
-	}
-	actIndexerState6 := actIndexerCluster2[indexerNodeConfig6.NodeId].(map[string]interface{})["state"].(string)
-	if raft.Leader.String() != actIndexerState6 && raft.Follower.String() != actIndexerState6 {
-		t.Fatalf("expected content to see %v or %v, saw %v", raft.Leader.String(), raft.Follower.String(), actIndexerState6)
+	if !reflect.DeepEqual(expIndexerCluster2, actIndexerCluster2) {
+		t.Fatalf("expected content to see %v, saw %v", expIndexerCluster2, actIndexerCluster2)
 	}
 
 	//

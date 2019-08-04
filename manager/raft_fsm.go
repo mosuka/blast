@@ -47,7 +47,7 @@ func NewRaftFSM(path string, logger *zap.Logger) (*RaftFSM, error) {
 }
 
 func (f *RaftFSM) Start() error {
-	f.logger.Info("initialize metadata")
+	f.logger.Info("initialize cluster")
 	f.cluster = &management.Cluster{Nodes: make(map[string]*management.Node, 0)}
 
 	f.logger.Info("initialize store data")
@@ -205,7 +205,7 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
-		err = f.SetValue(data["key"].(string), data["value"], true)
+		err = f.SetValue(data["key"].(string), data["value"], false)
 		return &fsmResponse{error: err}
 	case deleteKeyValue:
 		var data map[string]interface{}

@@ -45,6 +45,16 @@ func NewGRPCContext() (context.Context, context.CancelFunc) {
 func NewGRPCClient(address string) (*GRPCClient, error) {
 	ctx, cancel := NewGRPCContext()
 
+	//streamRetryOpts := []grpc_retry.CallOption{
+	//	grpc_retry.Disable(),
+	//}
+
+	//unaryRetryOpts := []grpc_retry.CallOption{
+	//	grpc_retry.WithBackoff(grpc_retry.BackoffLinear(100 * time.Millisecond)),
+	//	grpc_retry.WithCodes(codes.Unavailable),
+	//	grpc_retry.WithMax(100),
+	//}
+
 	dialOpts := []grpc.DialOption{
 		grpc.WithInsecure(),
 		grpc.WithDefaultCallOptions(

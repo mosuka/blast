@@ -42,6 +42,9 @@ func TestServer_Start(t *testing.T) {
 	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir)
+	}()
 	raftStorageType := "boltdb"
 
 	node := &management.Node{
@@ -90,6 +93,9 @@ func TestServer_HealthCheck(t *testing.T) {
 	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir)
+	}()
 	raftStorageType := "boltdb"
 
 	node := &management.Node{
@@ -185,6 +191,9 @@ func TestServer_GetNode(t *testing.T) {
 	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir)
+	}()
 	raftStorageType := "boltdb"
 
 	node := &management.Node{
@@ -266,6 +275,9 @@ func TestServer_GetCluster(t *testing.T) {
 	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir)
+	}()
 	raftStorageType := "boltdb"
 
 	node := &management.Node{
@@ -351,6 +363,9 @@ func TestServer_SetState(t *testing.T) {
 	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir)
+	}()
 	raftStorageType := "boltdb"
 
 	node := &management.Node{
@@ -433,6 +448,9 @@ func TestServer_GetState(t *testing.T) {
 	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir)
+	}()
 	raftStorageType := "boltdb"
 
 	node := &management.Node{
@@ -515,6 +533,9 @@ func TestServer_DeleteState(t *testing.T) {
 	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir)
+	}()
 	raftStorageType := "boltdb"
 
 	node := &management.Node{
@@ -618,6 +639,9 @@ func TestCluster_Start(t *testing.T) {
 	nodeId1 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir1 := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir1)
+	}()
 	raftStorageType1 := "boltdb"
 
 	node1 := &management.Node{
@@ -655,6 +679,9 @@ func TestCluster_Start(t *testing.T) {
 	nodeId2 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir2 := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir2)
+	}()
 	raftStorageType2 := "boltdb"
 
 	node2 := &management.Node{
@@ -692,6 +719,9 @@ func TestCluster_Start(t *testing.T) {
 	nodeId3 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir3 := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir3)
+	}()
 	raftStorageType3 := "boltdb"
 
 	node3 := &management.Node{
@@ -740,6 +770,9 @@ func TestCluster_HealthCheck(t *testing.T) {
 	nodeId1 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir1 := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir1)
+	}()
 	raftStorageType1 := "boltdb"
 
 	node1 := &management.Node{
@@ -777,6 +810,9 @@ func TestCluster_HealthCheck(t *testing.T) {
 	nodeId2 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir2 := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir2)
+	}()
 	raftStorageType2 := "boltdb"
 
 	node2 := &management.Node{
@@ -814,6 +850,9 @@ func TestCluster_HealthCheck(t *testing.T) {
 	nodeId3 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir3 := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir3)
+	}()
 	raftStorageType3 := "boltdb"
 
 	node3 := &management.Node{
@@ -969,7 +1008,6 @@ func TestCluster_HealthCheck(t *testing.T) {
 	if expReadiness3 != actReadiness3 {
 		t.Fatalf("expected content to see %v, saw %v", expReadiness3, actReadiness3)
 	}
-
 }
 
 func TestCluster_GetNode(t *testing.T) {
@@ -985,6 +1023,9 @@ func TestCluster_GetNode(t *testing.T) {
 	nodeId1 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir1 := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir1)
+	}()
 	raftStorageType1 := "boltdb"
 
 	node1 := &management.Node{
@@ -1022,6 +1063,9 @@ func TestCluster_GetNode(t *testing.T) {
 	nodeId2 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir2 := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir2)
+	}()
 	raftStorageType2 := "boltdb"
 
 	node2 := &management.Node{
@@ -1059,6 +1103,9 @@ func TestCluster_GetNode(t *testing.T) {
 	nodeId3 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir3 := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir3)
+	}()
 	raftStorageType3 := "boltdb"
 
 	node3 := &management.Node{
@@ -1185,6 +1232,9 @@ func TestCluster_GetCluster(t *testing.T) {
 	nodeId1 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir1 := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir1)
+	}()
 	raftStorageType1 := "boltdb"
 
 	node1 := &management.Node{
@@ -1222,6 +1272,9 @@ func TestCluster_GetCluster(t *testing.T) {
 	nodeId2 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir2 := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir2)
+	}()
 	raftStorageType2 := "boltdb"
 
 	node2 := &management.Node{
@@ -1259,6 +1312,9 @@ func TestCluster_GetCluster(t *testing.T) {
 	nodeId3 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir3 := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir3)
+	}()
 	raftStorageType3 := "boltdb"
 
 	node3 := &management.Node{
@@ -1451,6 +1507,9 @@ func TestCluster_SetState(t *testing.T) {
 	nodeId1 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir1 := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir1)
+	}()
 	raftStorageType1 := "boltdb"
 
 	node1 := &management.Node{
@@ -1488,6 +1547,9 @@ func TestCluster_SetState(t *testing.T) {
 	nodeId2 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir2 := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir2)
+	}()
 	raftStorageType2 := "boltdb"
 
 	node2 := &management.Node{
@@ -1525,6 +1587,9 @@ func TestCluster_SetState(t *testing.T) {
 	nodeId3 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir3 := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir3)
+	}()
 	raftStorageType3 := "boltdb"
 
 	node3 := &management.Node{
@@ -1701,6 +1766,9 @@ func TestCluster_GetState(t *testing.T) {
 	nodeId1 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir1 := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir1)
+	}()
 	raftStorageType1 := "boltdb"
 
 	node1 := &management.Node{
@@ -1738,6 +1806,9 @@ func TestCluster_GetState(t *testing.T) {
 	nodeId2 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir2 := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir2)
+	}()
 	raftStorageType2 := "boltdb"
 
 	node2 := &management.Node{
@@ -1775,6 +1846,9 @@ func TestCluster_GetState(t *testing.T) {
 	nodeId3 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir3 := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir3)
+	}()
 	raftStorageType3 := "boltdb"
 
 	node3 := &management.Node{
@@ -1951,6 +2025,9 @@ func TestCluster_DeleteState(t *testing.T) {
 	nodeId1 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir1 := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir1)
+	}()
 	raftStorageType1 := "boltdb"
 
 	node1 := &management.Node{
@@ -1988,6 +2065,9 @@ func TestCluster_DeleteState(t *testing.T) {
 	nodeId2 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir2 := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir2)
+	}()
 	raftStorageType2 := "boltdb"
 
 	node2 := &management.Node{
@@ -2025,6 +2105,9 @@ func TestCluster_DeleteState(t *testing.T) {
 	nodeId3 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir3 := testutils.TmpDir()
+	defer func() {
+		_ = os.RemoveAll(dataDir3)
+	}()
 	raftStorageType3 := "boltdb"
 
 	node3 := &management.Node{

@@ -22,14 +22,13 @@ package index;
 option go_package = "github.com/mosuka/blast/protobuf/index";
 
 service Index {
-    rpc LivenessProbe (google.protobuf.Empty) returns (LivenessProbeResponse) {}
-    rpc ReadinessProbe (google.protobuf.Empty) returns (ReadinessProbeResponse) {}
+    rpc NodeHealthCheck (NodeHealthCheckRequest) returns (NodeHealthCheckResponse) {}
+    rpc NodeInfo (google.protobuf.Empty) returns (NodeInfoResponse) {}
 
-    rpc GetNode (GetNodeRequest) returns (GetNodeResponse) {}
-    rpc SetNode (SetNodeRequest) returns (google.protobuf.Empty) {}
-    rpc DeleteNode (DeleteNodeRequest) returns (google.protobuf.Empty) {}
-    rpc GetCluster (google.protobuf.Empty) returns (GetClusterResponse) {}
-    rpc WatchCluster (google.protobuf.Empty) returns (stream GetClusterResponse) {}
+    rpc ClusterJoin (ClusterJoinRequest) returns (google.protobuf.Empty) {}
+    rpc ClusterLeave (ClusterLeaveRequest) returns (google.protobuf.Empty) {}
+    rpc ClusterInfo (google.protobuf.Empty) returns (ClusterInfoResponse) {}
+    rpc ClusterWatch (google.protobuf.Empty) returns (stream ClusterWatchResponse) {}
 
     rpc GetDocument (GetDocumentRequest) returns (GetDocumentResponse) {}
     rpc IndexDocument (stream IndexDocumentRequest) returns (IndexDocumentResponse) {}
@@ -40,51 +39,76 @@ service Index {
     rpc Snapshot (google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }
 
-// use for health check
-message LivenessProbeResponse {
+message NodeHealthCheckRequest {
+    enum Probe {
+        HEALTHINESS = 0;
+        LIVENESS = 1;
+        READINESS = 2;
+    }
+    Probe probe = 1;
+}
+
+message NodeHealthCheckResponse {
     enum State {
-        UNKNOWN = 0;
-        ALIVE = 1;
-        DEAD = 2;
+        HEALTHY = 0;
+        UNHEALTHY = 1;
+        ALIVE = 2;
+        DEAD = 3;
+        READY = 4;
+        NOT_READY = 5;
     }
     State state = 1;
 }
 
-// use for health check
-message ReadinessProbeResponse {
+message Metadata {
+    string grpc_address = 1;
+    string http_address = 2;
+}
+
+message Node {
     enum State {
         UNKNOWN = 0;
-        READY = 1;
-        NOT_READY = 2;
+        FOLLOWER = 1;
+        CANDIDATE = 2;
+        LEADER = 3;
+        SHUTDOWN = 4;
     }
-    State state = 1;
+    string id = 1;
+    string bind_address = 2;
+    State state = 3;
+    Metadata metadata = 4;
 }
 
-// use for raft cluster status
-message GetNodeRequest {
+message Cluster {
+    map<string, Node> nodes = 1;
+}
+
+message NodeInfoResponse {
+    Node node = 1;
+}
+
+message ClusterJoinRequest {
+    Node node = 1;
+}
+
+message ClusterLeaveRequest {
     string id = 1;
 }
 
-// use for raft cluster status
-message GetNodeResponse {
-    google.protobuf.Any nodeConfig = 1;
-    string state = 2;
+message ClusterInfoResponse {
+    Cluster cluster = 1;
 }
 
-// use for raft cluster status
-message SetNodeRequest {
-    string id = 1;
-    google.protobuf.Any nodeConfig = 2;
-}
-
-// use for raft cluster status
-message DeleteNodeRequest {
-    string id = 1;
-}
-
-// use for raft cluster status
-message GetClusterResponse {
-    google.protobuf.Any cluster = 1;
+message ClusterWatchResponse {
+    enum Event {
+        UNKNOWN = 0;
+        JOIN = 1;
+        LEAVE = 2;
+        UPDATE = 3;
+    }
+    Event event = 1;
+    Node node = 2;
+    Cluster cluster = 3;
 }
 
 message GetDocumentRequest {
