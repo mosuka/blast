@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Change node state to enum from string #93
 - Change node info structure #94
 - Change protobuf for indexer and dispatcher #95
+- Change server arguments #96
 
 ## [v0.7.1] - 2019-07-18
 
