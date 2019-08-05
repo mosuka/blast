@@ -526,7 +526,12 @@ func (s *RaftServer) Snapshot() error {
 func (s *RaftServer) GetDocument(id string) (map[string]interface{}, error) {
 	fields, err := s.fsm.GetDocument(id)
 	if err != nil {
-		s.logger.Error(err.Error())
+		switch err {
+		case blasterrors.ErrNotFound:
+			s.logger.Debug(err.Error(), zap.String("id", id))
+		default:
+			s.logger.Error(err.Error(), zap.String("id", id))
+		}
 		return nil, err
 	}
 

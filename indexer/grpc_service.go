@@ -763,11 +763,12 @@ func (s *GRPCService) GetDocument(ctx context.Context, req *index.GetDocumentReq
 
 	fields, err := s.raftServer.GetDocument(req.Id)
 	if err != nil {
-		s.logger.Error(err.Error())
 		switch err {
 		case blasterrors.ErrNotFound:
+			s.logger.Debug(err.Error(), zap.String("id", req.Id))
 			return resp, status.Error(codes.NotFound, err.Error())
 		default:
+			s.logger.Error(err.Error(), zap.String("id", req.Id))
 			return resp, status.Error(codes.Internal, err.Error())
 		}
 	}

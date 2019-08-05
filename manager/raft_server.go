@@ -534,7 +534,12 @@ func (s *RaftServer) Snapshot() error {
 func (s *RaftServer) GetValue(key string) (interface{}, error) {
 	value, err := s.fsm.GetValue(key)
 	if err != nil {
-		s.logger.Error(err.Error())
+		switch err {
+		case blasterrors.ErrNotFound:
+			s.logger.Debug(err.Error(), zap.String("key", key))
+		default:
+			s.logger.Error(err.Error(), zap.String("key", key))
+		}
 		return nil, err
 	}
 
@@ -611,7 +616,12 @@ func (s *RaftServer) DeleteValue(key string) error {
 	}
 	err = f.Response().(*fsmResponse).error
 	if err != nil {
-		s.logger.Error(err.Error())
+		switch err {
+		case blasterrors.ErrNotFound:
+			s.logger.Debug(err.Error(), zap.String("key", key))
+		default:
+			s.logger.Error(err.Error(), zap.String("key", key))
+		}
 		return err
 	}
 

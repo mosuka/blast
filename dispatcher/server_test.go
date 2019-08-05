@@ -22,7 +22,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/indexer"
 	"github.com/mosuka/blast/logutils"
 	"github.com/mosuka/blast/manager"
@@ -534,27 +533,23 @@ func TestServer_Start(t *testing.T) {
 		t.Fatalf("expected content to see %v, saw %v", expIndexerCluster2, actIndexerCluster2)
 	}
 
+	////
+	//// dispatcher
+	////
+	//dispatcherManagerGrpcAddress := managerGrpcAddress1
+	//dispatcherGrpcAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	//dispatcherHttpAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	//
-	// dispatcher
+	//dispatcher1, err := NewServer(dispatcherManagerGrpcAddress, dispatcherGrpcAddress, dispatcherHttpAddress, logger.Named("dispatcher1"), grpcLogger.Named("dispatcher1"), httpAccessLogger)
+	//defer func() {
+	//	dispatcher1.Stop()
+	//}()
+	//if err != nil {
+	//	t.Fatalf("%v", err)
+	//}
+	//// start server
+	//dispatcher1.Start()
 	//
-	// create cluster config
-	dispatcherClusterConfig1 := config.DefaultClusterConfig()
-	dispatcherClusterConfig1.ManagerAddr = managerGrpcAddress1
-	// create node config
-	dispatcherNodeConfig := testutils.TmpNodeConfig()
-	defer func() {
-		_ = os.RemoveAll(dispatcherNodeConfig.DataDir)
-	}()
-	dispatcher1, err := NewServer(dispatcherClusterConfig1, dispatcherNodeConfig, logger.Named("dispatcher1"), grpcLogger.Named("dispatcher1"), httpAccessLogger)
-	defer func() {
-		dispatcher1.Stop()
-	}()
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	// start server
-	dispatcher1.Start()
-
-	// sleep
-	time.Sleep(5 * time.Second)
+	//// sleep
+	//time.Sleep(5 * time.Second)
 }

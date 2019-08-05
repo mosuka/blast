@@ -19,7 +19,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/dispatcher"
 	"github.com/mosuka/blast/logutils"
 	"github.com/urfave/cli"
@@ -80,19 +79,7 @@ func dispatcherStart(c *cli.Context) error {
 		httpLogCompress,
 	)
 
-	// create cluster config
-	clusterConfig := config.DefaultClusterConfig()
-	if managerAddr != "" {
-		clusterConfig.ManagerAddr = managerAddr
-	}
-
-	// create node config
-	nodeConfig := &config.NodeConfig{
-		GRPCAddr: grpcAddr,
-		HTTPAddr: httpAddr,
-	}
-
-	svr, err := dispatcher.NewServer(clusterConfig, nodeConfig, logger, grpcLogger, httpAccessLogger)
+	svr, err := dispatcher.NewServer(managerAddr, grpcAddr, httpAddr, logger, grpcLogger, httpAccessLogger)
 	if err != nil {
 		return err
 	}
