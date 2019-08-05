@@ -15,7 +15,6 @@
 package testutils
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net"
 
@@ -46,16 +45,16 @@ func TmpPort() int {
 	return l.Addr().(*net.TCPAddr).Port
 }
 
-func TmpNodeConfig() *config.NodeConfig {
-	c := config.DefaultNodeConfig()
-
-	c.BindAddr = fmt.Sprintf(":%d", TmpPort())
-	c.GRPCAddr = fmt.Sprintf(":%d", TmpPort())
-	c.HTTPAddr = fmt.Sprintf(":%d", TmpPort())
-	c.DataDir = TmpDir()
-
-	return c
-}
+//func TmpNodeConfig() *config.NodeConfig {
+//	c := config.DefaultNodeConfig()
+//
+//	c.BindAddr = fmt.Sprintf(":%d", TmpPort())
+//	c.GRPCAddr = fmt.Sprintf(":%d", TmpPort())
+//	c.HTTPAddr = fmt.Sprintf(":%d", TmpPort())
+//	c.DataDir = TmpDir()
+//
+//	return c
+//}
 
 func TmpIndexConfig(indexMappingFile string, indexType string, indexStorageType string) (*config.IndexConfig, error) {
 	indexMapping, err := indexutils.NewIndexMappingFromFile(indexMappingFile)

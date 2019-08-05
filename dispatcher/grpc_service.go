@@ -51,7 +51,6 @@ type GRPCService struct {
 	updateManagersStopCh chan struct{}
 	updateManagersDoneCh chan struct{}
 
-	//indexers             map[string]interface{}
 	indexers             map[string]*index.Cluster
 	indexerClients       map[string]map[string]*indexer.GRPCClient
 	updateIndexersStopCh chan struct{}
@@ -66,7 +65,6 @@ func NewGRPCService(managerGrpcAddress string, logger *zap.Logger) (*GRPCService
 		managers:       &management.Cluster{Nodes: make(map[string]*management.Node, 0)},
 		managerClients: make(map[string]*manager.GRPCClient, 0),
 
-		//indexers:       make(map[string]interface{}, 0),
 		indexers:       make(map[string]*index.Cluster, 0),
 		indexerClients: make(map[string]map[string]*indexer.GRPCClient, 0),
 	}, nil

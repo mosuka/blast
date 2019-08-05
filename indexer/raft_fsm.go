@@ -113,7 +113,12 @@ func (f *RaftFSM) DeleteNode(nodeId string) error {
 func (f *RaftFSM) GetDocument(id string) (map[string]interface{}, error) {
 	fields, err := f.index.Get(id)
 	if err != nil {
-		f.logger.Error(err.Error())
+		switch err {
+		case blasterrors.ErrNotFound:
+			f.logger.Debug(err.Error(), zap.String("id", id))
+		default:
+			f.logger.Error(err.Error(), zap.String("id", id))
+		}
 		return nil, err
 	}
 

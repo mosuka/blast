@@ -504,11 +504,12 @@ func (s *GRPCService) Get(ctx context.Context, req *management.GetRequest) (*man
 
 	value, err := s.raftServer.GetValue(req.Key)
 	if err != nil {
-		s.logger.Error(err.Error())
 		switch err {
 		case blasterrors.ErrNotFound:
+			s.logger.Debug(err.Error(), zap.String("key", req.Key))
 			return resp, status.Error(codes.NotFound, err.Error())
 		default:
+			s.logger.Error(err.Error(), zap.String("key", req.Key))
 			return resp, status.Error(codes.Internal, err.Error())
 		}
 	}
@@ -587,11 +588,12 @@ func (s *GRPCService) Delete(ctx context.Context, req *management.DeleteRequest)
 	if s.raftServer.IsLeader() {
 		err := s.raftServer.DeleteValue(req.Key)
 		if err != nil {
-			s.logger.Error(err.Error())
 			switch err {
 			case blasterrors.ErrNotFound:
+				s.logger.Debug(err.Error(), zap.String("key", req.Key))
 				return resp, status.Error(codes.NotFound, err.Error())
 			default:
+				s.logger.Error(err.Error(), zap.String("key", req.Key))
 				return resp, status.Error(codes.Internal, err.Error())
 			}
 		}
@@ -604,8 +606,14 @@ func (s *GRPCService) Delete(ctx context.Context, req *management.DeleteRequest)
 		}
 		err = client.Delete(req.Key)
 		if err != nil {
-			s.logger.Error(err.Error())
-			return resp, status.Error(codes.Internal, err.Error())
+			switch err {
+			case blasterrors.ErrNotFound:
+				s.logger.Debug(err.Error(), zap.String("key", req.Key))
+				return resp, status.Error(codes.NotFound, err.Error())
+			default:
+				s.logger.Error(err.Error(), zap.String("key", req.Key))
+				return resp, status.Error(codes.Internal, err.Error())
+			}
 		}
 	}
 
