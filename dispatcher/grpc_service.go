@@ -94,11 +94,11 @@ func (s *GRPCService) Start() error {
 }
 
 func (s *GRPCService) Stop() error {
-	s.logger.Info("stop to update indexer cluster info")
-	s.stopUpdateIndexers()
-
 	s.logger.Info("stop to update manager cluster info")
 	s.stopUpdateManagers()
+
+	s.logger.Info("stop to update indexer cluster info")
+	s.stopUpdateIndexers()
 
 	return nil
 }
