@@ -22,6 +22,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mosuka/blast/indexutils"
+
 	"github.com/mosuka/blast/indexer"
 	"github.com/mosuka/blast/logutils"
 	"github.com/mosuka/blast/manager"
@@ -56,13 +58,15 @@ func TestServer_Start(t *testing.T) {
 		},
 	}
 
-	managerIndexConfig1, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	managerIndexMapping1, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	managerIndexType1 := "upside_down"
+	managerIndexStorageType1 := "boltdb"
 
 	// create server
-	managerServer1, err := manager.NewServer(managerPeerGrpcAddress1, managerNode1, managerDataDir1, managerRaftStorageType1, managerIndexConfig1, logger, grpcLogger, httpAccessLogger)
+	managerServer1, err := manager.NewServer(managerPeerGrpcAddress1, managerNode1, managerDataDir1, managerRaftStorageType1, managerIndexMapping1, managerIndexType1, managerIndexStorageType1, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if managerServer1 != nil {
 			managerServer1.Stop()
@@ -93,13 +97,15 @@ func TestServer_Start(t *testing.T) {
 		},
 	}
 
-	managerIndexConfig2, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	managerIndexMapping2, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	managerIndexType2 := "upside_down"
+	managerIndexStorageType2 := "boltdb"
 
 	// create server
-	managerServer2, err := manager.NewServer(managerPeerGrpcAddress2, managerNode2, managerDataDir2, managerRaftStorageType2, managerIndexConfig2, logger, grpcLogger, httpAccessLogger)
+	managerServer2, err := manager.NewServer(managerPeerGrpcAddress2, managerNode2, managerDataDir2, managerRaftStorageType2, managerIndexMapping2, managerIndexType2, managerIndexStorageType2, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if managerServer2 != nil {
 			managerServer2.Stop()
@@ -130,13 +136,15 @@ func TestServer_Start(t *testing.T) {
 		},
 	}
 
-	managerIndexConfig3, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	managerIndexMapping3, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	managerIndexType3 := "upside_down"
+	managerIndexStorageType3 := "boltdb"
 
 	// create server
-	managerServer3, err := manager.NewServer(managerPeerGrpcAddress3, managerNode3, managerDataDir3, managerRaftStorageType3, managerIndexConfig3, logger, grpcLogger, httpAccessLogger)
+	managerServer3, err := manager.NewServer(managerPeerGrpcAddress3, managerNode3, managerDataDir3, managerRaftStorageType3, managerIndexMapping3, managerIndexType3, managerIndexStorageType3, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		if managerServer3 != nil {
 			managerServer3.Stop()
@@ -226,11 +234,13 @@ func TestServer_Start(t *testing.T) {
 			HttpAddress: indexerHttpAddress1,
 		},
 	}
-	indexConfig1, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexerIndexMapping1, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	indexerServer1, err := indexer.NewServer(indexerManagerGrpcAddress1, indexerShardId1, indexerPeerGrpcAddress1, indexerNode1, indexerDataDir1, indexerRaftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
+	indexerIndexType1 := "upside_down"
+	indexerIndexStorageType1 := "boltdb"
+	indexerServer1, err := indexer.NewServer(indexerManagerGrpcAddress1, indexerShardId1, indexerPeerGrpcAddress1, indexerNode1, indexerDataDir1, indexerRaftStorageType1, indexerIndexMapping1, indexerIndexType1, indexerIndexStorageType1, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		indexerServer1.Stop()
 	}()
@@ -264,11 +274,13 @@ func TestServer_Start(t *testing.T) {
 			HttpAddress: indexerHttpAddress2,
 		},
 	}
-	indexConfig2, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexerIndexMapping2, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	indexerServer2, err := indexer.NewServer(indexerManagerGrpcAddress2, indexerShardId2, indexerPeerGrpcAddress2, indexerNode2, indexerDataDir2, indexerRaftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
+	indexerIndexType2 := "upside_down"
+	indexerIndexStorageType2 := "boltdb"
+	indexerServer2, err := indexer.NewServer(indexerManagerGrpcAddress2, indexerShardId2, indexerPeerGrpcAddress2, indexerNode2, indexerDataDir2, indexerRaftStorageType2, indexerIndexMapping2, indexerIndexType2, indexerIndexStorageType2, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		indexerServer2.Stop()
 	}()
@@ -302,11 +314,13 @@ func TestServer_Start(t *testing.T) {
 			HttpAddress: indexerHttpAddress3,
 		},
 	}
-	indexConfig3, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexerIndexMapping3, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	indexerServer3, err := indexer.NewServer(indexerManagerGrpcAddress3, indexerShardId3, indexerPeerGrpcAddress3, indexerNode3, indexerDataDir3, indexerRaftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
+	indexerIndexType3 := "upside_down"
+	indexerIndexStorageType3 := "boltdb"
+	indexerServer3, err := indexer.NewServer(indexerManagerGrpcAddress3, indexerShardId3, indexerPeerGrpcAddress3, indexerNode3, indexerDataDir3, indexerRaftStorageType3, indexerIndexMapping3, indexerIndexType3, indexerIndexStorageType3, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		indexerServer3.Stop()
 	}()
@@ -392,11 +406,13 @@ func TestServer_Start(t *testing.T) {
 			HttpAddress: indexerHttpAddress4,
 		},
 	}
-	indexConfig4, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexerIndexMapping4, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	indexerServer4, err := indexer.NewServer(indexerManagerGrpcAddress4, indexerShardId4, indexerPeerGrpcAddress4, indexerNode4, indexerDataDir4, indexerRaftStorageType4, indexConfig4, logger, grpcLogger, httpAccessLogger)
+	indexerIndexType4 := "upside_down"
+	indexerIndexStorageType4 := "boltdb"
+	indexerServer4, err := indexer.NewServer(indexerManagerGrpcAddress4, indexerShardId4, indexerPeerGrpcAddress4, indexerNode4, indexerDataDir4, indexerRaftStorageType4, indexerIndexMapping4, indexerIndexType4, indexerIndexStorageType4, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		indexerServer4.Stop()
 	}()
@@ -430,11 +446,13 @@ func TestServer_Start(t *testing.T) {
 			HttpAddress: indexerHttpAddress5,
 		},
 	}
-	indexConfig5, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexerIndexMapping5, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	indexerServer5, err := indexer.NewServer(indexerManagerGrpcAddress5, indexerShardId5, indexerPeerGrpcAddress5, indexerNode5, indexerDataDir5, indexerRaftStorageType5, indexConfig5, logger, grpcLogger, httpAccessLogger)
+	indexerIndexType5 := "upside_down"
+	indexerIndexStorageType5 := "boltdb"
+	indexerServer5, err := indexer.NewServer(indexerManagerGrpcAddress5, indexerShardId5, indexerPeerGrpcAddress5, indexerNode5, indexerDataDir5, indexerRaftStorageType5, indexerIndexMapping5, indexerIndexType5, indexerIndexStorageType5, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		indexerServer5.Stop()
 	}()
@@ -468,11 +486,13 @@ func TestServer_Start(t *testing.T) {
 			HttpAddress: indexerHttpAddress6,
 		},
 	}
-	indexConfig6, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexerIndexMapping6, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	indexerServer6, err := indexer.NewServer(indexerManagerGrpcAddress6, indexerShardId6, indexerPeerGrpcAddress6, indexerNode6, indexerDataDir6, indexerRaftStorageType6, indexConfig6, logger, grpcLogger, httpAccessLogger)
+	indexerIndexType6 := "upside_down"
+	indexerIndexStorageType6 := "boltdb"
+	indexerServer6, err := indexer.NewServer(indexerManagerGrpcAddress6, indexerShardId6, indexerPeerGrpcAddress6, indexerNode6, indexerDataDir6, indexerRaftStorageType6, indexerIndexMapping6, indexerIndexType6, indexerIndexStorageType6, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		indexerServer6.Stop()
 	}()

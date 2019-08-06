@@ -21,8 +21,8 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/document"
+	"github.com/blevesearch/bleve/mapping"
 	"github.com/golang/protobuf/ptypes/any"
-	"github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/index"
@@ -30,20 +30,22 @@ import (
 )
 
 type Index struct {
-	indexConfig *config.IndexConfig
-	logger      *zap.Logger
+	indexMapping     *mapping.IndexMappingImpl
+	indexType        string
+	indexStorageType string
+	logger           *zap.Logger
 
 	index bleve.Index
 }
 
-func NewIndex(dir string, indexConfig *config.IndexConfig, logger *zap.Logger) (*Index, error) {
+func NewIndex(dir string, indexMapping *mapping.IndexMappingImpl, indexType string, indexStorageType string, logger *zap.Logger) (*Index, error) {
 	//bleve.SetLog(logger)
 
 	var index bleve.Index
 	_, err := os.Stat(dir)
 	if os.IsNotExist(err) {
 		// create new index
-		index, err = bleve.NewUsing(dir, indexConfig.IndexMapping, indexConfig.IndexType, indexConfig.IndexStorageType, nil)
+		index, err = bleve.NewUsing(dir, indexMapping, indexType, indexStorageType, nil)
 		if err != nil {
 			logger.Error(err.Error())
 			return nil, err
@@ -61,9 +63,11 @@ func NewIndex(dir string, indexConfig *config.IndexConfig, logger *zap.Logger) (
 	}
 
 	return &Index{
-		index:       index,
-		indexConfig: indexConfig,
-		logger:      logger,
+		index:            index,
+		indexMapping:     indexMapping,
+		indexType:        indexType,
+		indexStorageType: indexStorageType,
+		logger:           logger,
 	}, nil
 }
 
@@ -210,7 +214,11 @@ func (i *Index) BulkDelete(ids []string) (int, error) {
 }
 
 func (i *Index) Config() (map[string]interface{}, error) {
-	return i.indexConfig.ToMap(), nil
+	return map[string]interface{}{
+		"index_mapping":      i.indexMapping,
+		"index_type":         i.indexType,
+		"index_storage_type": i.indexStorageType,
+	}, nil
 }
 
 func (i *Index) Stats() (map[string]interface{}, error) {

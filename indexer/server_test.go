@@ -24,13 +24,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mosuka/blast/strutils"
-
 	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/mapping"
 	"github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/logutils"
 	"github.com/mosuka/blast/protobuf/index"
+	"github.com/mosuka/blast/strutils"
 	"github.com/mosuka/blast/testutils"
 )
 
@@ -64,12 +64,14 @@ func TestServer_Start(t *testing.T) {
 		},
 	}
 
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType := "upside_down"
+	indexStorageType := "boltdb"
 
-	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexMapping, indexType, indexStorageType, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server.Stop()
 	}()
@@ -114,12 +116,14 @@ func TestServer_LivenessProbe(t *testing.T) {
 		},
 	}
 
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType := "upside_down"
+	indexStorageType := "boltdb"
 
-	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexMapping, indexType, indexStorageType, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server.Stop()
 	}()
@@ -211,12 +215,14 @@ func TestServer_GetNode(t *testing.T) {
 		},
 	}
 
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType := "upside_down"
+	indexStorageType := "boltdb"
 
-	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexMapping, indexType, indexStorageType, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server.Stop()
 	}()
@@ -294,12 +300,14 @@ func TestServer_GetCluster(t *testing.T) {
 		},
 	}
 
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType := "upside_down"
+	indexStorageType := "boltdb"
 
-	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexMapping, indexType, indexStorageType, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server.Stop()
 	}()
@@ -381,12 +389,14 @@ func TestServer_GetIndexMapping(t *testing.T) {
 		},
 	}
 
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType := "upside_down"
+	indexStorageType := "boltdb"
 
-	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexMapping, indexType, indexStorageType, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server.Stop()
 	}()
@@ -414,23 +424,29 @@ func TestServer_GetIndexMapping(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	expIndexMapping := indexConfig.IndexMapping
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	expIndexMapping := indexMapping
 
 	actIndexConfigMap, err := client.GetIndexConfig()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	actIndexMapping, err := indexutils.NewIndexMappingFromMap(actIndexConfigMap["index_mapping"].(map[string]interface{}))
+	actIndexMapping := actIndexConfigMap["index_mapping"].(*mapping.IndexMappingImpl)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	if !reflect.DeepEqual(expIndexMapping, actIndexMapping) {
-		t.Fatalf("expected content to see %v, saw %v", expIndexMapping, actIndexMapping)
+	exp, err := json.Marshal(expIndexMapping)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	act, err := json.Marshal(actIndexMapping)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	if !reflect.DeepEqual(exp, act) {
+		t.Fatalf("expected content to see %v, saw %v", exp, act)
 	}
 }
 
@@ -464,12 +480,14 @@ func TestServer_GetIndexType(t *testing.T) {
 		},
 	}
 
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType := "upside_down"
+	indexStorageType := "boltdb"
 
-	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexMapping, indexType, indexStorageType, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server.Stop()
 	}()
@@ -497,10 +515,7 @@ func TestServer_GetIndexType(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	expIndexType := indexConfig.IndexType
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	expIndexType := indexType
 
 	actIndexConfigMap, err := client.GetIndexConfig()
 	if err != nil {
@@ -544,12 +559,14 @@ func TestServer_GetIndexStorageType(t *testing.T) {
 		},
 	}
 
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType := "upside_down"
+	indexStorageType := "boltdb"
 
-	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexMapping, indexType, indexStorageType, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server.Stop()
 	}()
@@ -577,10 +594,7 @@ func TestServer_GetIndexStorageType(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	expIndexStorageType := indexConfig.IndexStorageType
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	expIndexStorageType := indexStorageType
 
 	actIndexConfigMap, err := client.GetIndexConfig()
 	if err != nil {
@@ -624,12 +638,14 @@ func TestServer_GetIndexStats(t *testing.T) {
 		},
 	}
 
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType := "upside_down"
+	indexStorageType := "boltdb"
 
-	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexMapping, indexType, indexStorageType, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server.Stop()
 	}()
@@ -713,12 +729,14 @@ func TestServer_PutDocument(t *testing.T) {
 		},
 	}
 
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType := "upside_down"
+	indexStorageType := "boltdb"
 
-	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexMapping, indexType, indexStorageType, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server.Stop()
 	}()
@@ -814,12 +832,14 @@ func TestServer_GetDocument(t *testing.T) {
 		},
 	}
 
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType := "upside_down"
+	indexStorageType := "boltdb"
 
-	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexMapping, indexType, indexStorageType, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server.Stop()
 	}()
@@ -930,12 +950,14 @@ func TestServer_DeleteDocument(t *testing.T) {
 		},
 	}
 
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType := "upside_down"
+	indexStorageType := "boltdb"
 
-	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexMapping, indexType, indexStorageType, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server.Stop()
 	}()
@@ -1075,12 +1097,14 @@ func TestServer_Search(t *testing.T) {
 		},
 	}
 
-	indexConfig, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType := "upside_down"
+	indexStorageType := "boltdb"
 
-	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexConfig, logger, grpcLogger, httpAccessLogger)
+	server, err := NewServer(managerGrpcAddress, shardId, peerGrpcAddress, node, dataDir, raftStorageType, indexMapping, indexType, indexStorageType, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server.Stop()
 	}()
@@ -1208,12 +1232,14 @@ func TestCluster_Start(t *testing.T) {
 		},
 	}
 
-	indexConfig1, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping1, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType1 := "upside_down"
+	indexStorageType1 := "boltdb"
 
-	server1, err := NewServer(managerGrpcAddress1, shardId1, peerGrpcAddress1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
+	server1, err := NewServer(managerGrpcAddress1, shardId1, peerGrpcAddress1, node1, dataDir1, raftStorageType1, indexMapping1, indexType1, indexStorageType1, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server1.Stop()
 	}()
@@ -1247,12 +1273,14 @@ func TestCluster_Start(t *testing.T) {
 		},
 	}
 
-	indexConfig2, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping2, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType2 := "upside_down"
+	indexStorageType2 := "boltdb"
 
-	server2, err := NewServer(managerGrpcAddress2, shardId2, peerGrpcAddress2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
+	server2, err := NewServer(managerGrpcAddress2, shardId2, peerGrpcAddress2, node2, dataDir2, raftStorageType2, indexMapping2, indexType2, indexStorageType2, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server2.Stop()
 	}()
@@ -1286,12 +1314,14 @@ func TestCluster_Start(t *testing.T) {
 		},
 	}
 
-	indexConfig3, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping3, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType3 := "upside_down"
+	indexStorageType3 := "boltdb"
 
-	server3, err := NewServer(managerGrpcAddress3, shardId3, peerGrpcAddress3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
+	server3, err := NewServer(managerGrpcAddress3, shardId3, peerGrpcAddress3, node3, dataDir3, raftStorageType3, indexMapping3, indexType3, indexStorageType3, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server3.Stop()
 	}()
@@ -1336,12 +1366,14 @@ func TestCluster_LivenessProbe(t *testing.T) {
 		},
 	}
 
-	indexConfig1, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping1, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType1 := "upside_down"
+	indexStorageType1 := "boltdb"
 
-	server1, err := NewServer(managerGrpcAddress1, shardId1, peerGrpcAddress1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
+	server1, err := NewServer(managerGrpcAddress1, shardId1, peerGrpcAddress1, node1, dataDir1, raftStorageType1, indexMapping1, indexType1, indexStorageType1, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server1.Stop()
 	}()
@@ -1375,12 +1407,14 @@ func TestCluster_LivenessProbe(t *testing.T) {
 		},
 	}
 
-	indexConfig2, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping2, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType2 := "upside_down"
+	indexStorageType2 := "boltdb"
 
-	server2, err := NewServer(managerGrpcAddress2, shardId2, peerGrpcAddress2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
+	server2, err := NewServer(managerGrpcAddress2, shardId2, peerGrpcAddress2, node2, dataDir2, raftStorageType2, indexMapping2, indexType2, indexStorageType2, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server2.Stop()
 	}()
@@ -1414,12 +1448,14 @@ func TestCluster_LivenessProbe(t *testing.T) {
 		},
 	}
 
-	indexConfig3, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping3, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType3 := "upside_down"
+	indexStorageType3 := "boltdb"
 
-	server3, err := NewServer(managerGrpcAddress3, shardId3, peerGrpcAddress3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
+	server3, err := NewServer(managerGrpcAddress3, shardId3, peerGrpcAddress3, node3, dataDir3, raftStorageType3, indexMapping3, indexType3, indexStorageType3, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server3.Stop()
 	}()
@@ -1586,12 +1622,14 @@ func TestCluster_GetNode(t *testing.T) {
 		},
 	}
 
-	indexConfig1, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping1, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType1 := "upside_down"
+	indexStorageType1 := "boltdb"
 
-	server1, err := NewServer(managerGrpcAddress1, shardId1, peerGrpcAddress1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
+	server1, err := NewServer(managerGrpcAddress1, shardId1, peerGrpcAddress1, node1, dataDir1, raftStorageType1, indexMapping1, indexType1, indexStorageType1, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server1.Stop()
 	}()
@@ -1625,12 +1663,14 @@ func TestCluster_GetNode(t *testing.T) {
 		},
 	}
 
-	indexConfig2, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping2, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType2 := "upside_down"
+	indexStorageType2 := "boltdb"
 
-	server2, err := NewServer(managerGrpcAddress2, shardId2, peerGrpcAddress2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
+	server2, err := NewServer(managerGrpcAddress2, shardId2, peerGrpcAddress2, node2, dataDir2, raftStorageType2, indexMapping2, indexType2, indexStorageType2, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server2.Stop()
 	}()
@@ -1664,12 +1704,14 @@ func TestCluster_GetNode(t *testing.T) {
 		},
 	}
 
-	indexConfig3, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping3, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType3 := "upside_down"
+	indexStorageType3 := "boltdb"
 
-	server3, err := NewServer(managerGrpcAddress3, shardId3, peerGrpcAddress3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
+	server3, err := NewServer(managerGrpcAddress3, shardId3, peerGrpcAddress3, node3, dataDir3, raftStorageType3, indexMapping3, indexType3, indexStorageType3, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server3.Stop()
 	}()
@@ -1792,12 +1834,14 @@ func TestCluster_GetCluster(t *testing.T) {
 		},
 	}
 
-	indexConfig1, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping1, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType1 := "upside_down"
+	indexStorageType1 := "boltdb"
 
-	server1, err := NewServer(managerGrpcAddress1, shardId1, peerGrpcAddress1, node1, dataDir1, raftStorageType1, indexConfig1, logger, grpcLogger, httpAccessLogger)
+	server1, err := NewServer(managerGrpcAddress1, shardId1, peerGrpcAddress1, node1, dataDir1, raftStorageType1, indexMapping1, indexType1, indexStorageType1, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server1.Stop()
 	}()
@@ -1831,12 +1875,14 @@ func TestCluster_GetCluster(t *testing.T) {
 		},
 	}
 
-	indexConfig2, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping2, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType2 := "upside_down"
+	indexStorageType2 := "boltdb"
 
-	server2, err := NewServer(managerGrpcAddress2, shardId2, peerGrpcAddress2, node2, dataDir2, raftStorageType2, indexConfig2, logger, grpcLogger, httpAccessLogger)
+	server2, err := NewServer(managerGrpcAddress2, shardId2, peerGrpcAddress2, node2, dataDir2, raftStorageType2, indexMapping2, indexType2, indexStorageType2, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server2.Stop()
 	}()
@@ -1870,12 +1916,14 @@ func TestCluster_GetCluster(t *testing.T) {
 		},
 	}
 
-	indexConfig3, err := testutils.TmpIndexConfig(filepath.Join(curDir, "../example/wiki_index_mapping.json"), "upside_down", "boltdb")
+	indexMapping3, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	indexType3 := "upside_down"
+	indexStorageType3 := "boltdb"
 
-	server3, err := NewServer(managerGrpcAddress3, shardId3, peerGrpcAddress3, node3, dataDir3, raftStorageType3, indexConfig3, logger, grpcLogger, httpAccessLogger)
+	server3, err := NewServer(managerGrpcAddress3, shardId3, peerGrpcAddress3, node3, dataDir3, raftStorageType3, indexMapping3, indexType3, indexStorageType3, logger, grpcLogger, httpAccessLogger)
 	defer func() {
 		server3.Stop()
 	}()

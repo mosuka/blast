@@ -144,8 +144,14 @@ message SearchResponse {
     google.protobuf.Any search_result = 1;
 }
 
+message IndexConfig {
+    google.protobuf.Any index_mapping = 1;
+    string index_type = 2;
+    string index_storage_type = 3;
+}
+
 message GetIndexConfigResponse {
-    google.protobuf.Any index_config = 1;
+    IndexConfig index_config = 1;
 }
 
 message GetIndexStatsResponse {

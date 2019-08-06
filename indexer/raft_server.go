@@ -24,11 +24,11 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/mapping"
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
 	raftbadgerdb "github.com/markthethomas/raft-badger"
 	_ "github.com/mosuka/blast/builtins"
-	"github.com/mosuka/blast/config"
 	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/protobuf/index"
@@ -37,25 +37,29 @@ import (
 )
 
 type RaftServer struct {
-	node            *index.Node
-	dataDir         string
-	raftStorageType string
-	indexConfig     *config.IndexConfig
-	bootstrap       bool
-	logger          *zap.Logger
+	node             *index.Node
+	dataDir          string
+	raftStorageType  string
+	indexMapping     *mapping.IndexMappingImpl
+	indexType        string
+	indexStorageType string
+	bootstrap        bool
+	logger           *zap.Logger
 
 	raft *raft.Raft
 	fsm  *RaftFSM
 }
 
-func NewRaftServer(node *index.Node, dataDir string, raftStorageType string, indexConfig *config.IndexConfig, bootstrap bool, logger *zap.Logger) (*RaftServer, error) {
+func NewRaftServer(node *index.Node, dataDir string, raftStorageType string, indexMapping *mapping.IndexMappingImpl, indexType string, indexStorageType string, bootstrap bool, logger *zap.Logger) (*RaftServer, error) {
 	return &RaftServer{
-		node:            node,
-		dataDir:         dataDir,
-		raftStorageType: raftStorageType,
-		indexConfig:     indexConfig,
-		bootstrap:       bootstrap,
-		logger:          logger,
+		node:             node,
+		dataDir:          dataDir,
+		raftStorageType:  raftStorageType,
+		indexMapping:     indexMapping,
+		indexType:        indexType,
+		indexStorageType: indexStorageType,
+		bootstrap:        bootstrap,
+		logger:           logger,
 	}, nil
 }
 
@@ -64,7 +68,7 @@ func (s *RaftServer) Start() error {
 
 	fsmPath := filepath.Join(s.dataDir, "index")
 	s.logger.Info("create finite state machine", zap.String("path", fsmPath))
-	s.fsm, err = NewRaftFSM(fsmPath, s.indexConfig, s.logger)
+	s.fsm, err = NewRaftFSM(fsmPath, s.indexMapping, s.indexType, s.indexStorageType, s.logger)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return err
