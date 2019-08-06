@@ -23,15 +23,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/blevesearch/bleve/mapping"
-
 	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/mapping"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/google/go-cmp/cmp"
 	"github.com/hashicorp/raft"
 	blasterrors "github.com/mosuka/blast/errors"
-	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/manager"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/index"
@@ -775,14 +773,25 @@ func (s *GRPCService) GetDocument(ctx context.Context, req *index.GetDocumentReq
 		}
 	}
 
-	fieldsAny := &any.Any{}
-	err = protobuf.UnmarshalAny(fields, fieldsAny)
+	docMap := map[string]interface{}{
+		"id":     req.Id,
+		"fields": fields,
+	}
+
+	docBytes, err := json.Marshal(docMap)
 	if err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Error(err.Error(), zap.String("id", req.Id))
 		return resp, status.Error(codes.Internal, err.Error())
 	}
 
-	resp.Fields = fieldsAny
+	doc := &index.Document{}
+	err = index.UnmarshalDocument(docBytes, doc)
+	if err != nil {
+		s.logger.Error(err.Error(), zap.String("id", req.Id))
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+
+	resp.Document = doc
 
 	return resp, nil
 }
@@ -815,7 +824,7 @@ func (s *GRPCService) Search(ctx context.Context, req *index.SearchRequest) (*in
 }
 
 func (s *GRPCService) IndexDocument(stream index.Index_IndexDocumentServer) error {
-	docs := make([]*indexutils.Document, 0)
+	docs := make([]*index.Document, 0)
 
 	for {
 		req, err := stream.Recv()
@@ -828,22 +837,7 @@ func (s *GRPCService) IndexDocument(stream index.Index_IndexDocumentServer) erro
 			return status.Error(codes.Internal, err.Error())
 		}
 
-		// fields
-		ins, err := protobuf.MarshalAny(req.Fields)
-		if err != nil {
-			s.logger.Error(err.Error())
-			return status.Error(codes.Internal, err.Error())
-		}
-		fields := *ins.(*map[string]interface{})
-
-		// document
-		doc, err := indexutils.NewDocument(req.Id, fields)
-		if err != nil {
-			s.logger.Error(err.Error())
-			return status.Error(codes.Internal, err.Error())
-		}
-
-		docs = append(docs, doc)
+		docs = append(docs, req.Document)
 	}
 
 	// index

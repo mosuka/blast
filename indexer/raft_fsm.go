@@ -21,13 +21,11 @@ import (
 	"io/ioutil"
 	"sync"
 
-	"github.com/blevesearch/bleve/mapping"
-
 	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/mapping"
 	"github.com/golang/protobuf/proto"
 	"github.com/hashicorp/raft"
 	blasterrors "github.com/mosuka/blast/errors"
-	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/index"
 	"go.uber.org/zap"
 )
@@ -130,8 +128,8 @@ func (f *RaftFSM) GetDocument(id string) (map[string]interface{}, error) {
 	return fields, nil
 }
 
-func (f *RaftFSM) IndexDocument(id string, fields map[string]interface{}) error {
-	err := f.index.Index(id, fields)
+func (f *RaftFSM) IndexDocument(doc *index.Document) error {
+	err := f.index.Index(doc)
 	if err != nil {
 		f.logger.Error(err.Error())
 		return err
@@ -140,7 +138,7 @@ func (f *RaftFSM) IndexDocument(id string, fields map[string]interface{}) error 
 	return nil
 }
 
-func (f *RaftFSM) IndexDocuments(docs []map[string]interface{}) (int, error) {
+func (f *RaftFSM) IndexDocuments(docs []*index.Document) (int, error) {
 	count, err := f.index.BulkIndex(docs)
 	if err != nil {
 		f.logger.Error(err.Error())
@@ -244,7 +242,7 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 		err = f.DeleteNode(data["id"].(string))
 		return &fsmResponse{error: err}
 	case indexDocument:
-		var data []map[string]interface{}
+		var data []*index.Document
 		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
 			f.logger.Error(err.Error())
@@ -307,18 +305,7 @@ func (f *RaftFSM) Restore(rc io.ReadCloser) error {
 			continue
 		}
 
-		fields, err := protobuf.MarshalAny(doc.Fields)
-		if err != nil {
-			f.logger.Error(err.Error())
-			continue
-		}
-		if fields == nil {
-			f.logger.Error("value is nil")
-			continue
-		}
-		fieldsMap := *fields.(*map[string]interface{})
-
-		err = f.index.Index(doc.Id, fieldsMap)
+		err = f.index.Index(doc)
 		if err != nil {
 			f.logger.Error(err.Error())
 			continue

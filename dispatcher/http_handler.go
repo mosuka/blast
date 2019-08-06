@@ -24,10 +24,11 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
+	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/mux"
 	"github.com/mosuka/blast/errors"
 	blasthttp "github.com/mosuka/blast/http"
-	"github.com/mosuka/blast/indexutils"
+	"github.com/mosuka/blast/protobuf/index"
 	"github.com/mosuka/blast/version"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
@@ -127,7 +128,7 @@ func (h *GetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 
-	fields, err := h.client.GetDocument(vars["id"])
+	doc, err := h.client.GetDocument(vars["id"])
 	if err != nil {
 		switch err {
 		case errors.ErrNotFound:
@@ -150,8 +151,7 @@ func (h *GetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// map[string]interface{} -> bytes
-	content, err = json.MarshalIndent(fields, "", "  ")
+	content, err = index.MarshalDocument(doc)
 	if err != nil {
 		status = http.StatusInternalServerError
 
@@ -192,7 +192,7 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer blasthttp.RecordMetrics(start, status, w, r)
 
 	// create documents
-	docs := make([]*indexutils.Document, 0)
+	docs := make([]*index.Document, 0)
 
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -233,7 +233,9 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					if err == io.EOF || err == io.ErrClosedPipe {
 						if len(docBytes) > 0 {
-							doc, err := indexutils.NewDocumentFromBytes(docBytes)
+							var doc *index.Document
+							err = proto.Unmarshal(bodyBytes, doc)
+							//doc, err := indexutils.NewDocumentFromBytes(docBytes)
 							if err != nil {
 								status = http.StatusBadRequest
 
@@ -271,7 +273,8 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 
 				if len(docBytes) > 0 {
-					doc, err := indexutils.NewDocumentFromBytes(docBytes)
+					doc := &index.Document{}
+					err = index.UnmarshalDocument(docBytes, doc)
 					if err != nil {
 						status = http.StatusBadRequest
 
@@ -292,7 +295,8 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		} else {
-			doc, err := indexutils.NewDocumentFromBytes(bodyBytes)
+			doc := &index.Document{}
+			err = index.UnmarshalDocument(bodyBytes, doc)
 			if err != nil {
 				status = http.StatusBadRequest
 
@@ -312,8 +316,8 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			docs = append(docs, doc)
 		}
 	} else {
-		var fields map[string]interface{}
-		err = json.Unmarshal(bodyBytes, &fields)
+		var fieldsMap map[string]interface{}
+		err := json.Unmarshal([]byte(bodyBytes), &fieldsMap)
 		if err != nil {
 			status = http.StatusBadRequest
 
@@ -330,8 +334,11 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			blasthttp.WriteResponse(w, content, status, h.logger)
 			return
 		}
-
-		doc, err := indexutils.NewDocument(id, fields)
+		docMap := map[string]interface{}{
+			"id":     id,
+			"fields": fieldsMap,
+		}
+		docBytes, err := json.Marshal(docMap)
 		if err != nil {
 			status = http.StatusBadRequest
 
@@ -348,7 +355,24 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			blasthttp.WriteResponse(w, content, status, h.logger)
 			return
 		}
+		doc := &index.Document{}
+		err = index.UnmarshalDocument(docBytes, doc)
+		if err != nil {
+			status = http.StatusBadRequest
 
+			msgMap := map[string]interface{}{
+				"message": err.Error(),
+				"status":  status,
+			}
+
+			content, err = blasthttp.NewJSONMessage(msgMap)
+			if err != nil {
+				h.logger.Error(err.Error())
+			}
+
+			blasthttp.WriteResponse(w, content, status, h.logger)
+			return
+		}
 		docs = append(docs, doc)
 	}
 

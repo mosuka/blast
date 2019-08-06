@@ -30,7 +30,6 @@ import (
 	raftbadgerdb "github.com/markthethomas/raft-badger"
 	_ "github.com/mosuka/blast/builtins"
 	blasterrors "github.com/mosuka/blast/errors"
-	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/protobuf/index"
 	"go.uber.org/zap"
 	//raftmdb "github.com/hashicorp/raft-mdb"
@@ -552,7 +551,7 @@ func (s *RaftServer) Search(request *bleve.SearchRequest) (*bleve.SearchResult, 
 	return result, nil
 }
 
-func (s *RaftServer) IndexDocument(docs []*indexutils.Document) (int, error) {
+func (s *RaftServer) IndexDocument(docs []*index.Document) (int, error) {
 	if !s.IsLeader() {
 		s.logger.Error(raft.ErrNotLeader.Error(), zap.String("state", s.raft.State().String()))
 		return -1, raft.ErrNotLeader

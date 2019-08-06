@@ -23,7 +23,6 @@ import (
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
 	blasterrors "github.com/mosuka/blast/errors"
-	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/index"
 	"google.golang.org/grpc"
@@ -181,7 +180,7 @@ func (c *GRPCClient) ClusterWatch(opts ...grpc.CallOption) (index.Index_ClusterW
 	return watchClient, nil
 }
 
-func (c *GRPCClient) GetDocument(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
+func (c *GRPCClient) GetDocument(id string, opts ...grpc.CallOption) (*index.Document, error) {
 	req := &index.GetDocumentRequest{
 		Id: id,
 	}
@@ -198,10 +197,7 @@ func (c *GRPCClient) GetDocument(id string, opts ...grpc.CallOption) (map[string
 		}
 	}
 
-	ins, err := protobuf.MarshalAny(resp.Fields)
-	fields := *ins.(*map[string]interface{})
-
-	return fields, nil
+	return resp.Document, nil
 }
 
 func (c *GRPCClient) Search(searchRequest *bleve.SearchRequest, opts ...grpc.CallOption) (*bleve.SearchResult, error) {
@@ -238,7 +234,7 @@ func (c *GRPCClient) Search(searchRequest *bleve.SearchRequest, opts ...grpc.Cal
 	return searchResult, nil
 }
 
-func (c *GRPCClient) IndexDocument(docs []*indexutils.Document, opts ...grpc.CallOption) (int, error) {
+func (c *GRPCClient) IndexDocument(docs []*index.Document, opts ...grpc.CallOption) (int, error) {
 	stream, err := c.client.IndexDocument(c.ctx, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
@@ -247,18 +243,10 @@ func (c *GRPCClient) IndexDocument(docs []*indexutils.Document, opts ...grpc.Cal
 	}
 
 	for _, doc := range docs {
-		id := doc.Id
-		fields := doc.Fields
-
-		fieldsAny := &any.Any{}
-		err := protobuf.UnmarshalAny(&fields, fieldsAny)
-		if err != nil {
-			return -1, err
-		}
-
 		req := &index.IndexDocumentRequest{
-			Id:     id,
-			Fields: fieldsAny,
+			Document: doc,
+			//Id:     id,
+			//Fields: fieldsAny,
 		}
 
 		err = stream.Send(req)

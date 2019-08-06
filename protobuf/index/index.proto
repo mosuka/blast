@@ -111,17 +111,21 @@ message ClusterWatchResponse {
     Cluster cluster = 3;
 }
 
+message Document {
+    string id = 1;
+    google.protobuf.Any fields = 2;
+}
+
 message GetDocumentRequest {
     string id = 1;
 }
 
 message GetDocumentResponse {
-    google.protobuf.Any fields = 1;
+    Document document = 1;
 }
 
 message IndexDocumentRequest {
-    string id = 1;
-    google.protobuf.Any fields = 2;
+    Document document = 1;
 }
 
 message IndexDocumentResponse {
@@ -158,8 +162,3 @@ message GetIndexStatsResponse {
     google.protobuf.Any index_stats = 1;
 }
 
-// use for creating snapshot
-message Document {
-    string id = 1;
-    google.protobuf.Any fields = 2;
-}

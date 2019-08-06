@@ -17,9 +17,6 @@ package testutils
 import (
 	"io/ioutil"
 	"net"
-
-	"github.com/mosuka/blast/config"
-	"github.com/mosuka/blast/indexutils"
 )
 
 func TmpDir() string {
@@ -43,30 +40,4 @@ func TmpPort() int {
 	}()
 
 	return l.Addr().(*net.TCPAddr).Port
-}
-
-//func TmpNodeConfig() *config.NodeConfig {
-//	c := config.DefaultNodeConfig()
-//
-//	c.BindAddr = fmt.Sprintf(":%d", TmpPort())
-//	c.GRPCAddr = fmt.Sprintf(":%d", TmpPort())
-//	c.HTTPAddr = fmt.Sprintf(":%d", TmpPort())
-//	c.DataDir = TmpDir()
-//
-//	return c
-//}
-
-func TmpIndexConfig(indexMappingFile string, indexType string, indexStorageType string) (*config.IndexConfig, error) {
-	indexMapping, err := indexutils.NewIndexMappingFromFile(indexMappingFile)
-	if err != nil {
-		return config.DefaultIndexConfig(), err
-	}
-
-	indexConfig := &config.IndexConfig{
-		IndexMapping:     indexMapping,
-		IndexType:        indexType,
-		IndexStorageType: indexStorageType,
-	}
-
-	return indexConfig, nil
 }

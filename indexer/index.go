@@ -137,12 +137,8 @@ func (i *Index) Search(request *bleve.SearchRequest) (*bleve.SearchResult, error
 	return result, nil
 }
 
-func (i *Index) Index(id string, fields map[string]interface{}) error {
-	doc := map[string]interface{}{
-		"id":     id,
-		"fields": fields,
-	}
-	_, err := i.BulkIndex([]map[string]interface{}{doc})
+func (i *Index) Index(doc *index.Document) error {
+	_, err := i.BulkIndex([]*index.Document{doc})
 	if err != nil {
 		i.logger.Error(err.Error())
 		return err
@@ -151,23 +147,18 @@ func (i *Index) Index(id string, fields map[string]interface{}) error {
 	return nil
 }
 
-func (i *Index) BulkIndex(docs []map[string]interface{}) (int, error) {
+func (i *Index) BulkIndex(docs []*index.Document) (int, error) {
 	batch := i.index.NewBatch()
 
 	count := 0
 
 	for _, doc := range docs {
-		id, ok := doc["id"].(string)
-		if !ok {
-			i.logger.Error("missing document id")
+		fieldsIntr, err := protobuf.MarshalAny(doc.Fields)
+		if err != nil {
+			i.logger.Error(err.Error(), zap.Any("doc", doc))
 			continue
 		}
-		fields, ok := doc["fields"].(map[string]interface{})
-		if !ok {
-			i.logger.Error("missing document fields")
-			continue
-		}
-		err := batch.Index(id, fields)
+		err = batch.Index(doc.Id, *fieldsIntr.(*map[string]interface{}))
 		if err != nil {
 			i.logger.Error(err.Error())
 			continue

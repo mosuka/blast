@@ -25,16 +25,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mosuka/blast/protobuf/index"
-
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/mosuka/blast/indexer"
-	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/manager"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/distribute"
+	"github.com/mosuka/blast/protobuf/index"
 	"github.com/mosuka/blast/protobuf/management"
 	"github.com/mosuka/blast/sortutils"
 	"go.uber.org/zap"
@@ -201,10 +199,10 @@ func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 
 			s.logger.Info("wait for receive a manager cluster updates from stream")
 			resp, err := stream.Recv()
-			if err == io.EOF {
-				s.logger.Info(err.Error())
-				continue
-			}
+			//if err == io.EOF {
+			//	s.logger.Info(err.Error())
+			//	continue
+			//}
 			if err != nil {
 				s.logger.Error(err.Error())
 				continue
@@ -539,7 +537,7 @@ func (s *GRPCService) GetDocument(ctx context.Context, req *distribute.GetDocume
 
 	type respVal struct {
 		clusterId string
-		fields    map[string]interface{}
+		doc       *index.Document
 		err       error
 	}
 
@@ -551,11 +549,11 @@ func (s *GRPCService) GetDocument(ctx context.Context, req *distribute.GetDocume
 		wg.Add(1)
 		go func(clusterId string, client *indexer.GRPCClient, id string, respChan chan respVal) {
 			// index documents
-			fields, err := client.GetDocument(id)
+			doc, err := client.GetDocument(id)
 			wg.Done()
 			respChan <- respVal{
 				clusterId: clusterId,
-				fields:    fields,
+				doc:       doc,
 				err:       err,
 			}
 		}(clusterId, client, req.Id, respChan)
@@ -566,10 +564,10 @@ func (s *GRPCService) GetDocument(ctx context.Context, req *distribute.GetDocume
 	close(respChan)
 
 	// summarize responses
-	var fields map[string]interface{}
+	var doc *index.Document
 	for r := range respChan {
-		if r.fields != nil {
-			fields = r.fields
+		if r.doc != nil {
+			doc = r.doc
 		}
 		if r.err != nil {
 			s.logger.Error(r.err.Error(), zap.String("cluster_id", r.clusterId))
@@ -578,15 +576,8 @@ func (s *GRPCService) GetDocument(ctx context.Context, req *distribute.GetDocume
 
 	resp := &distribute.GetDocumentResponse{}
 
-	fieldsAny := &any.Any{}
-	err := protobuf.UnmarshalAny(fields, fieldsAny)
-	if err != nil {
-		s.logger.Error(err.Error())
-		return resp, err
-	}
-
 	// response
-	resp.Fields = fieldsAny
+	resp.Document = doc
 
 	return resp, nil
 }
@@ -736,9 +727,9 @@ func (s *GRPCService) IndexDocument(stream distribute.Distribute_IndexDocumentSe
 	}
 
 	// initialize document list for each cluster
-	docSet := make(map[string][]*indexutils.Document, 0)
+	docSet := make(map[string][]*index.Document, 0)
 	for _, clusterId := range clusterIds {
-		docSet[clusterId] = make([]*indexutils.Document, 0)
+		docSet[clusterId] = make([]*index.Document, 0)
 	}
 
 	for {
@@ -752,26 +743,11 @@ func (s *GRPCService) IndexDocument(stream distribute.Distribute_IndexDocumentSe
 			return status.Error(codes.Internal, err.Error())
 		}
 
-		// fields
-		ins, err := protobuf.MarshalAny(req.Fields)
-		if err != nil {
-			s.logger.Error(err.Error())
-			return status.Error(codes.Internal, err.Error())
-		}
-		fields := *ins.(*map[string]interface{})
-
-		// document
-		doc, err := indexutils.NewDocument(req.Id, fields)
-		if err != nil {
-			s.logger.Error(err.Error())
-			return status.Error(codes.Internal, err.Error())
-		}
-
 		// distribute documents to each cluster based on document id
-		docIdHash := s.docIdHash(req.Id)
+		docIdHash := s.docIdHash(req.Document.Id)
 		clusterNum := uint64(len(indexerClients))
 		clusterId := clusterIds[int(docIdHash%clusterNum)]
-		docSet[clusterId] = append(docSet[clusterId], doc)
+		docSet[clusterId] = append(docSet[clusterId], req.Document)
 	}
 
 	type respVal struct {
@@ -786,7 +762,7 @@ func (s *GRPCService) IndexDocument(stream distribute.Distribute_IndexDocumentSe
 	wg := &sync.WaitGroup{}
 	for clusterId, docs := range docSet {
 		wg.Add(1)
-		go func(clusterId string, docs []*indexutils.Document, respChan chan respVal) {
+		go func(clusterId string, docs []*index.Document, respChan chan respVal) {
 			count, err := indexerClients[clusterId].IndexDocument(docs)
 			wg.Done()
 			respChan <- respVal{
