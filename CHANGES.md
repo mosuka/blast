@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Change protobuf for indexer and dispatcher #95
 - Change server arguments #96
 - Change index protobuf #97
+- Use protobuf document #98
 
 ## [v0.7.1] - 2019-07-18
 
