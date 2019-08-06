@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Change index protobuf #97
 - Use protobuf document #98
 - Change node state to Node_SHUTDOWN in a error #99
+- Fix a bug for waiting to receive an indexer cluster updates from the stream #100
 
 ## [v0.7.1] - 2019-07-18
 
