@@ -765,7 +765,7 @@ func TestServer_PutDocument(t *testing.T) {
 	}
 
 	// put document
-	docs := make([]*indexutils.Document, 0)
+	docs := make([]*index.Document, 0)
 	docPath1 := filepath.Join(curDir, "../example/wiki_doc_enwiki_1.json")
 	// read index mapping file
 	docFile1, err := os.Open(docPath1)
@@ -779,12 +779,8 @@ func TestServer_PutDocument(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	var docFields1 map[string]interface{}
-	err = json.Unmarshal(docBytes1, &docFields1)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	doc1, err := indexutils.NewDocument("doc1", docFields1)
+	doc1 := &index.Document{}
+	err = index.UnmarshalDocument(docBytes1, doc1)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -868,7 +864,7 @@ func TestServer_GetDocument(t *testing.T) {
 	}
 
 	// put document
-	putDocs := make([]*indexutils.Document, 0)
+	putDocs := make([]*index.Document, 0)
 	putDocPath1 := filepath.Join(curDir, "../example/wiki_doc_enwiki_1.json")
 	// read index mapping file
 	putDocFile1, err := os.Open(putDocPath1)
@@ -882,7 +878,8 @@ func TestServer_GetDocument(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	putDoc1, err := indexutils.NewDocumentFromBytes(putDocBytes1)
+	putDoc1 := &index.Document{}
+	err = index.UnmarshalDocument(putDocBytes1, putDoc1)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -900,14 +897,14 @@ func TestServer_GetDocument(t *testing.T) {
 	}
 
 	// get document
-	getDocFields1, err := client.GetDocument("enwiki_1")
+	getDoc1, err := client.GetDocument("enwiki_1")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expGetDocFields1 := putDoc1.Fields
-	actGetDocFields1 := getDocFields1
-	if !reflect.DeepEqual(expGetDocFields1, actGetDocFields1) {
-		t.Fatalf("expected content to see %v, saw %v", expGetDocFields1, actGetDocFields1)
+	expGetDoc1, _ := index.MarshalDocument(putDoc1)
+	actGetDoc1, _ := index.MarshalDocument(getDoc1)
+	if !reflect.DeepEqual(expGetDoc1, actGetDoc1) {
+		t.Fatalf("expected content to see %v, saw %v", expGetDoc1, actGetDoc1)
 	}
 
 	// get non-existing document
@@ -986,7 +983,7 @@ func TestServer_DeleteDocument(t *testing.T) {
 	}
 
 	// put document
-	putDocs := make([]*indexutils.Document, 0)
+	putDocs := make([]*index.Document, 0)
 	putDocPath1 := filepath.Join(curDir, "../example/wiki_doc_enwiki_1.json")
 	// read index mapping file
 	putDocFile1, err := os.Open(putDocPath1)
@@ -1000,7 +997,8 @@ func TestServer_DeleteDocument(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	putDoc1, err := indexutils.NewDocumentFromBytes(putDocBytes1)
+	putDoc1 := &index.Document{}
+	err = index.UnmarshalDocument(putDocBytes1, putDoc1)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1018,23 +1016,23 @@ func TestServer_DeleteDocument(t *testing.T) {
 	}
 
 	// get document
-	getDocFields1, err := client.GetDocument("enwiki_1")
+	getDoc1, err := client.GetDocument("enwiki_1")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expGetDocFields1 := putDoc1.Fields
-	actGetDocFields1 := getDocFields1
-	if !reflect.DeepEqual(expGetDocFields1, actGetDocFields1) {
-		t.Fatalf("expected content to see %v, saw %v", expGetDocFields1, actGetDocFields1)
+	expGetDoc1, _ := index.MarshalDocument(putDoc1)
+	actGetDoc1, _ := index.MarshalDocument(getDoc1)
+	if !reflect.DeepEqual(expGetDoc1, actGetDoc1) {
+		t.Fatalf("expected content to see %v, saw %v", expGetDoc1, actGetDoc1)
 	}
 
 	// get non-existing document
-	getDocFields2, err := client.GetDocument("non-existing")
+	getDoc2, err := client.GetDocument("non-existing")
 	if err != errors.ErrNotFound {
 		t.Fatalf("%v", err)
 	}
-	if getDocFields2 != nil {
-		t.Fatalf("expected content to see nil, saw %v", getDocFields2)
+	if getDoc2 != nil {
+		t.Fatalf("expected content to see nil, saw %v", getDoc2)
 	}
 
 	// delete document
@@ -1049,21 +1047,21 @@ func TestServer_DeleteDocument(t *testing.T) {
 	}
 
 	// get document
-	getDocFields1, err = client.GetDocument("enwiki_1")
+	getDoc1, err = client.GetDocument("enwiki_1")
 	if err != errors.ErrNotFound {
 		t.Fatalf("%v", err)
 	}
-	if getDocFields1 != nil {
-		t.Fatalf("expected content to see nil, saw %v", getDocFields1)
+	if getDoc1 != nil {
+		t.Fatalf("expected content to see nil, saw %v", getDoc1)
 	}
 
 	// delete non-existing document
-	getDocFields1, err = client.GetDocument("non-existing")
+	getDoc1, err = client.GetDocument("non-existing")
 	if err != errors.ErrNotFound {
 		t.Fatalf("%v", err)
 	}
-	if getDocFields1 != nil {
-		t.Fatalf("expected content to see nil, saw %v", getDocFields1)
+	if getDoc1 != nil {
+		t.Fatalf("expected content to see nil, saw %v", getDoc1)
 	}
 }
 
@@ -1133,7 +1131,7 @@ func TestServer_Search(t *testing.T) {
 	}
 
 	// put document
-	putDocs := make([]*indexutils.Document, 0)
+	putDocs := make([]*index.Document, 0)
 	putDocPath1 := filepath.Join(curDir, "../example/wiki_doc_enwiki_1.json")
 	// read index mapping file
 	putDocFile1, err := os.Open(putDocPath1)
@@ -1147,12 +1145,8 @@ func TestServer_Search(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	var putDocFields1 map[string]interface{}
-	err = json.Unmarshal(putDocBytes1, &putDocFields1)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-	putDoc1, err := indexutils.NewDocument("doc1", putDocFields1)
+	putDoc1 := &index.Document{}
+	err = index.UnmarshalDocument(putDocBytes1, putDoc1)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

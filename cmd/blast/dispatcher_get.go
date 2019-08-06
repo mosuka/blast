@@ -15,12 +15,12 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 
 	"github.com/mosuka/blast/dispatcher"
+	"github.com/mosuka/blast/protobuf/index"
 	"github.com/urfave/cli"
 )
 
@@ -43,17 +43,17 @@ func dispatcherGet(c *cli.Context) error {
 		}
 	}()
 
-	fields, err := client.GetDocument(id)
+	doc, err := client.GetDocument(id)
 	if err != nil {
 		return err
 	}
 
-	fieldsBytes, err := json.MarshalIndent(fields, "", "  ")
+	docBytes, err := index.MarshalDocument(doc)
 	if err != nil {
 		return err
 	}
 
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(fieldsBytes)))
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(docBytes)))
 
 	return nil
 }

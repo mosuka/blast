@@ -22,8 +22,9 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/mosuka/blast/protobuf/index"
+
 	"github.com/mosuka/blast/indexer"
-	"github.com/mosuka/blast/indexutils"
 	"github.com/urfave/cli"
 )
 
@@ -34,22 +35,24 @@ func indexerIndex(c *cli.Context) error {
 	id := c.Args().Get(0)
 	fieldsSrc := c.Args().Get(1)
 
-	docs := make([]*indexutils.Document, 0)
+	docs := make([]*index.Document, 0)
 
 	if id != "" && fieldsSrc != "" {
-		// create fields
-		var fields map[string]interface{}
-		err := json.Unmarshal([]byte(fieldsSrc), &fields)
+		var fieldsMap map[string]interface{}
+		err := json.Unmarshal([]byte(fieldsSrc), &fieldsMap)
 		if err != nil {
 			return err
 		}
-
-		// create document
-		doc, err := indexutils.NewDocument(id, fields)
+		docMap := map[string]interface{}{
+			"id":     id,
+			"fields": fieldsMap,
+		}
+		docBytes, err := json.Marshal(docMap)
 		if err != nil {
 			return err
 		}
-
+		doc := &index.Document{}
+		err = index.UnmarshalDocument(docBytes, doc)
 		docs = append(docs, doc)
 	}
 
@@ -80,7 +83,8 @@ func indexerIndex(c *cli.Context) error {
 				if err != nil {
 					if err == io.EOF || err == io.ErrClosedPipe {
 						if len(docBytes) > 0 {
-							doc, err := indexutils.NewDocumentFromBytes(docBytes)
+							doc := &index.Document{}
+							err = index.UnmarshalDocument(docBytes, doc)
 							if err != nil {
 								return err
 							}
@@ -91,7 +95,8 @@ func indexerIndex(c *cli.Context) error {
 				}
 
 				if len(docBytes) > 0 {
-					doc, err := indexutils.NewDocumentFromBytes(docBytes)
+					doc := &index.Document{}
+					err = index.UnmarshalDocument(docBytes, doc)
 					if err != nil {
 						return err
 					}
@@ -103,8 +108,8 @@ func indexerIndex(c *cli.Context) error {
 			if err != nil {
 				return err
 			}
-
-			doc, err := indexutils.NewDocumentFromBytes(docBytes)
+			doc := &index.Document{}
+			err = index.UnmarshalDocument(docBytes, doc)
 			if err != nil {
 				return err
 			}

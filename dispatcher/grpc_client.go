@@ -22,9 +22,9 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/ptypes/any"
 	blasterrors "github.com/mosuka/blast/errors"
-	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/distribute"
+	"github.com/mosuka/blast/protobuf/index"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -120,7 +120,7 @@ func (c *GRPCClient) NodeHealthCheck(probe string, opts ...grpc.CallOption) (str
 	return resp.State.String(), nil
 }
 
-func (c *GRPCClient) GetDocument(id string, opts ...grpc.CallOption) (map[string]interface{}, error) {
+func (c *GRPCClient) GetDocument(id string, opts ...grpc.CallOption) (*index.Document, error) {
 	req := &distribute.GetDocumentRequest{
 		Id: id,
 	}
@@ -137,10 +137,7 @@ func (c *GRPCClient) GetDocument(id string, opts ...grpc.CallOption) (map[string
 		}
 	}
 
-	ins, err := protobuf.MarshalAny(resp.Fields)
-	fields := *ins.(*map[string]interface{})
-
-	return fields, nil
+	return resp.Document, nil
 }
 
 func (c *GRPCClient) Search(searchRequest *bleve.SearchRequest, opts ...grpc.CallOption) (*bleve.SearchResult, error) {
@@ -177,7 +174,7 @@ func (c *GRPCClient) Search(searchRequest *bleve.SearchRequest, opts ...grpc.Cal
 	return searchResult, nil
 }
 
-func (c *GRPCClient) IndexDocument(docs []*indexutils.Document, opts ...grpc.CallOption) (int, error) {
+func (c *GRPCClient) IndexDocument(docs []*index.Document, opts ...grpc.CallOption) (int, error) {
 	stream, err := c.client.IndexDocument(c.ctx, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
@@ -186,18 +183,8 @@ func (c *GRPCClient) IndexDocument(docs []*indexutils.Document, opts ...grpc.Cal
 	}
 
 	for _, doc := range docs {
-		id := doc.Id
-		fields := doc.Fields
-
-		fieldsAny := &any.Any{}
-		err := protobuf.UnmarshalAny(&fields, fieldsAny)
-		if err != nil {
-			return -1, err
-		}
-
 		req := &distribute.IndexDocumentRequest{
-			Id:     id,
-			Fields: fieldsAny,
+			Document: doc,
 		}
 
 		err = stream.Send(req)
