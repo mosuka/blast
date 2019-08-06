@@ -330,7 +330,7 @@ func (s *GRPCService) getPeerNode(id string) (*management.Node, error) {
 		s.logger.Debug(err.Error(), zap.String("id", id))
 		return &management.Node{
 			BindAddress: "",
-			State:       management.Node_UNKNOWN,
+			State:       management.Node_SHUTDOWN,
 			Metadata: &management.Metadata{
 				GrpcAddress: "",
 				HttpAddress: "",
