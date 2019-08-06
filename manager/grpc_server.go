@@ -15,6 +15,7 @@
 package manager
 
 import (
+	"fmt"
 	"net"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -91,4 +92,19 @@ func (s *GRPCServer) Stop() error {
 	//s.server.GracefulStop()
 
 	return nil
+}
+
+func (s *GRPCServer) GetAddress() (string, error) {
+	tcpAddr, err := net.ResolveTCPAddr("tcp", s.listener.Addr().String())
+	if err != nil {
+		return "", err
+	}
+
+	v4Addr := ""
+	if tcpAddr.IP.To4() != nil {
+		v4Addr = tcpAddr.IP.To4().String()
+	}
+	port := tcpAddr.Port
+
+	return fmt.Sprintf("%s:%d", v4Addr, port), nil
 }

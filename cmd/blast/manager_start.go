@@ -20,7 +20,6 @@ import (
 	"syscall"
 
 	"github.com/blevesearch/bleve/mapping"
-	"github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/logutils"
 	"github.com/mosuka/blast/manager"
@@ -115,14 +114,7 @@ func managerStart(c *cli.Context) error {
 		indexMapping = mapping.NewIndexMapping()
 	}
 
-	// create index config
-	indexConfig := &config.IndexConfig{
-		IndexMapping:     indexMapping,
-		IndexType:        indexType,
-		IndexStorageType: indexStorageType,
-	}
-
-	svr, err := manager.NewServer(peerGrpcAddr, node, dataDir, raftStorageType, indexConfig, logger.Named(nodeId), grpcLogger.Named(nodeId), httpLogger)
+	svr, err := manager.NewServer(peerGrpcAddr, node, dataDir, raftStorageType, indexMapping, indexType, indexStorageType, logger.Named(nodeId), grpcLogger.Named(nodeId), httpLogger)
 	if err != nil {
 		return err
 	}

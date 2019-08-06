@@ -23,6 +23,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/blevesearch/bleve/mapping"
+
 	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -922,7 +924,9 @@ func (s *GRPCService) DeleteDocument(stream index.Index_DeleteDocumentServer) er
 }
 
 func (s *GRPCService) GetIndexConfig(ctx context.Context, req *empty.Empty) (*index.GetIndexConfigResponse, error) {
-	resp := &index.GetIndexConfigResponse{}
+	resp := &index.GetIndexConfigResponse{
+		IndexConfig: &index.IndexConfig{},
+	}
 
 	indexConfig, err := s.raftServer.GetIndexConfig()
 	if err != nil {
@@ -930,14 +934,23 @@ func (s *GRPCService) GetIndexConfig(ctx context.Context, req *empty.Empty) (*in
 		return resp, status.Error(codes.Internal, err.Error())
 	}
 
-	indexConfigAny := &any.Any{}
-	err = protobuf.UnmarshalAny(indexConfig, indexConfigAny)
-	if err != nil {
-		s.logger.Error(err.Error())
-		return resp, status.Error(codes.Internal, err.Error())
+	if indexMapping, ok := indexConfig["index_mapping"]; ok {
+		indexMappingAny := &any.Any{}
+		err = protobuf.UnmarshalAny(indexMapping.(*mapping.IndexMappingImpl), indexMappingAny)
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+		resp.IndexConfig.IndexMapping = indexMappingAny
 	}
 
-	resp.IndexConfig = indexConfigAny
+	if indexType, ok := indexConfig["index_type"]; ok {
+		resp.IndexConfig.IndexType = indexType.(string)
+	}
+
+	if indexStorageType, ok := indexConfig["index_storage_type"]; ok {
+		resp.IndexConfig.IndexStorageType = indexStorageType.(string)
+	}
 
 	return resp, nil
 }

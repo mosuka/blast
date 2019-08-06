@@ -15,6 +15,7 @@
 package manager
 
 import (
+	"fmt"
 	"net"
 	"net/http"
 
@@ -66,4 +67,19 @@ func (s *HTTPServer) Stop() error {
 	}
 
 	return nil
+}
+
+func (s *HTTPServer) GetAddress() (string, error) {
+	tcpAddr, err := net.ResolveTCPAddr("tcp", s.listener.Addr().String())
+	if err != nil {
+		return "", err
+	}
+
+	v4Addr := ""
+	if tcpAddr.IP.To4() != nil {
+		v4Addr = tcpAddr.IP.To4().String()
+	}
+	port := tcpAddr.Port
+
+	return fmt.Sprintf("%s:%d", v4Addr, port), nil
 }

@@ -21,10 +21,11 @@ import (
 	"io/ioutil"
 	"sync"
 
+	"github.com/blevesearch/bleve/mapping"
+
 	"github.com/blevesearch/bleve"
 	"github.com/golang/protobuf/proto"
 	"github.com/hashicorp/raft"
-	"github.com/mosuka/blast/config"
 	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/index"
@@ -32,9 +33,11 @@ import (
 )
 
 type RaftFSM struct {
-	path        string
-	indexConfig *config.IndexConfig
-	logger      *zap.Logger
+	path             string
+	indexMapping     *mapping.IndexMappingImpl
+	indexType        string
+	indexStorageType string
+	logger           *zap.Logger
 
 	cluster      *index.Cluster
 	clusterMutex sync.RWMutex
@@ -42,11 +45,13 @@ type RaftFSM struct {
 	index *Index
 }
 
-func NewRaftFSM(path string, indexConfig *config.IndexConfig, logger *zap.Logger) (*RaftFSM, error) {
+func NewRaftFSM(path string, indexMapping *mapping.IndexMappingImpl, indexType string, indexStorageType string, logger *zap.Logger) (*RaftFSM, error) {
 	return &RaftFSM{
-		path:        path,
-		indexConfig: indexConfig,
-		logger:      logger,
+		path:             path,
+		indexMapping:     indexMapping,
+		indexType:        indexType,
+		indexStorageType: indexStorageType,
+		logger:           logger,
 	}, nil
 }
 
@@ -56,7 +61,7 @@ func (f *RaftFSM) Start() error {
 
 	f.logger.Info("initialize index")
 	var err error
-	f.index, err = NewIndex(f.path, f.indexConfig, f.logger)
+	f.index, err = NewIndex(f.path, f.indexMapping, f.indexType, f.indexStorageType, f.logger)
 	if err != nil {
 		f.logger.Error(err.Error())
 		return err

@@ -24,11 +24,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/blevesearch/bleve/mapping"
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
 	raftbadgerdb "github.com/markthethomas/raft-badger"
 	_ "github.com/mosuka/blast/builtins"
-	"github.com/mosuka/blast/config"
 	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf/management"
 	"go.uber.org/zap"
@@ -36,26 +36,31 @@ import (
 )
 
 type RaftServer struct {
-	node            *management.Node
-	dataDir         string
-	raftStorageType string
-	indexConfig     *config.IndexConfig
-	bootstrap       bool
-	logger          *zap.Logger
+	node             *management.Node
+	dataDir          string
+	raftStorageType  string
+	indexMapping     *mapping.IndexMappingImpl
+	indexType        string
+	indexStorageType string
+	bootstrap        bool
+	logger           *zap.Logger
 
-	raft *raft.Raft
-	fsm  *RaftFSM
-	mu   sync.RWMutex
+	transport *raft.NetworkTransport
+	raft      *raft.Raft
+	fsm       *RaftFSM
+	mu        sync.RWMutex
 }
 
-func NewRaftServer(node *management.Node, dataDir string, raftStorageType string, indexConfig *config.IndexConfig, bootstrap bool, logger *zap.Logger) (*RaftServer, error) {
+func NewRaftServer(node *management.Node, dataDir string, raftStorageType string, indexMapping *mapping.IndexMappingImpl, indexType string, indexStorageType string, bootstrap bool, logger *zap.Logger) (*RaftServer, error) {
 	return &RaftServer{
-		node:            node,
-		dataDir:         dataDir,
-		raftStorageType: raftStorageType,
-		indexConfig:     indexConfig,
-		bootstrap:       bootstrap,
-		logger:          logger,
+		node:             node,
+		dataDir:          dataDir,
+		raftStorageType:  raftStorageType,
+		indexMapping:     indexMapping,
+		indexType:        indexType,
+		indexStorageType: indexStorageType,
+		bootstrap:        bootstrap,
+		logger:           logger,
 	}, nil
 }
 
@@ -94,7 +99,7 @@ func (s *RaftServer) Start() error {
 	}
 
 	s.logger.Info("create TCP transport", zap.String("bind_addr", s.node.BindAddress))
-	transport, err := raft.NewTCPTransport(s.node.BindAddress, addr, 3, 10*time.Second, ioutil.Discard)
+	s.transport, err = raft.NewTCPTransport(s.node.BindAddress, addr, 3, 10*time.Second, ioutil.Discard)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return err
@@ -182,7 +187,7 @@ func (s *RaftServer) Start() error {
 	}
 
 	s.logger.Info("create Raft machine")
-	s.raft, err = raft.NewRaft(raftConfig, s.fsm, logStore, stableStore, snapshotStore, transport)
+	s.raft, err = raft.NewRaft(raftConfig, s.fsm, logStore, stableStore, snapshotStore, s.transport)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return err
@@ -194,7 +199,7 @@ func (s *RaftServer) Start() error {
 			Servers: []raft.Server{
 				{
 					ID:      raftConfig.LocalID,
-					Address: transport.LocalAddr(),
+					Address: s.transport.LocalAddr(),
 				},
 			},
 		}
@@ -217,9 +222,25 @@ func (s *RaftServer) Start() error {
 
 		// set index config
 		s.logger.Info("register index config")
-		err := s.SetValue("index_config", s.indexConfig.ToMap())
+		b, err := json.Marshal(s.indexMapping)
 		if err != nil {
 			s.logger.Error(err.Error())
+			return err
+		}
+		var indexMappingMap map[string]interface{}
+		err = json.Unmarshal(b, &indexMappingMap)
+		if err != nil {
+			s.logger.Error(err.Error())
+			return err
+		}
+		indexConfig := map[string]interface{}{
+			"index_mapping":      indexMappingMap,
+			"index_type":         s.indexType,
+			"index_storage_type": s.indexStorageType,
+		}
+		err = s.SetValue("index_config", indexConfig)
+		if err != nil {
+			s.logger.Error(err.Error(), zap.String("key", "index_config"))
 			return err
 		}
 	}
@@ -290,6 +311,10 @@ func (s *RaftServer) LeaderID(timeout time.Duration) (raft.ServerID, error) {
 
 	s.logger.Error(blasterrors.ErrNotFoundLeader.Error())
 	return "", blasterrors.ErrNotFoundLeader
+}
+
+func (s *RaftServer) NodeAddress() string {
+	return string(s.transport.LocalAddr())
 }
 
 func (s *RaftServer) NodeID() string {

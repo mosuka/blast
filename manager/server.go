@@ -15,21 +15,23 @@
 package manager
 
 import (
+	"github.com/blevesearch/bleve/mapping"
 	accesslog "github.com/mash/go-accesslog"
-	"github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/protobuf/management"
 	"go.uber.org/zap"
 )
 
 type Server struct {
-	peerGrpcAddr    string
-	node            *management.Node
-	dataDir         string
-	raftStorageType string
-	indexConfig     *config.IndexConfig
-	logger          *zap.Logger
-	grpcLogger      *zap.Logger
-	httpLogger      accesslog.Logger
+	peerGrpcAddr     string
+	node             *management.Node
+	dataDir          string
+	raftStorageType  string
+	indexMapping     *mapping.IndexMappingImpl
+	indexType        string
+	indexStorageType string
+	logger           *zap.Logger
+	grpcLogger       *zap.Logger
+	httpLogger       accesslog.Logger
 
 	raftServer  *RaftServer
 	grpcService *GRPCService
@@ -38,16 +40,18 @@ type Server struct {
 	httpServer  *HTTPServer
 }
 
-func NewServer(peerGrpcAddr string, node *management.Node, dataDir string, raftStorageType string, indexConfig *config.IndexConfig, logger *zap.Logger, grpcLogger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
+func NewServer(peerGrpcAddr string, node *management.Node, dataDir string, raftStorageType string, indexMapping *mapping.IndexMappingImpl, indexType string, indexStorageType string, logger *zap.Logger, grpcLogger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
 	return &Server{
-		peerGrpcAddr:    peerGrpcAddr,
-		node:            node,
-		dataDir:         dataDir,
-		raftStorageType: raftStorageType,
-		indexConfig:     indexConfig,
-		logger:          logger,
-		grpcLogger:      grpcLogger,
-		httpLogger:      httpLogger,
+		peerGrpcAddr:     peerGrpcAddr,
+		node:             node,
+		dataDir:          dataDir,
+		raftStorageType:  raftStorageType,
+		indexMapping:     indexMapping,
+		indexType:        indexType,
+		indexStorageType: indexStorageType,
+		logger:           logger,
+		grpcLogger:       grpcLogger,
+		httpLogger:       httpLogger,
 	}, nil
 }
 
@@ -59,7 +63,7 @@ func (s *Server) Start() {
 	s.logger.Info("bootstrap", zap.Bool("bootstrap", bootstrap))
 
 	// create raft server
-	s.raftServer, err = NewRaftServer(s.node, s.dataDir, s.raftStorageType, s.indexConfig, bootstrap, s.logger)
+	s.raftServer, err = NewRaftServer(s.node, s.dataDir, s.raftStorageType, s.indexMapping, s.indexType, s.indexStorageType, bootstrap, s.logger)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return
@@ -178,4 +182,26 @@ func (s *Server) Stop() {
 	if err != nil {
 		s.logger.Error(err.Error())
 	}
+}
+
+func (s *Server) BindAddress() string {
+	return s.raftServer.NodeAddress()
+}
+
+func (s *Server) GrpcAddress() string {
+	address, err := s.grpcServer.GetAddress()
+	if err != nil {
+		return ""
+	}
+
+	return address
+}
+
+func (s *Server) HttpAddress() string {
+	address, err := s.httpServer.GetAddress()
+	if err != nil {
+		return ""
+	}
+
+	return address
 }

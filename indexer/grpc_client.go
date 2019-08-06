@@ -306,17 +306,20 @@ func (c *GRPCClient) GetIndexConfig(opts ...grpc.CallOption) (map[string]interfa
 	resp, err := c.client.GetIndexConfig(c.ctx, &empty.Empty{}, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
-
 		return nil, errors.New(st.Message())
 	}
 
-	indexConfigIntr, err := protobuf.MarshalAny(resp.IndexConfig)
+	indexMapping, err := protobuf.MarshalAny(resp.IndexConfig.IndexMapping)
 	if err != nil {
 		st, _ := status.FromError(err)
-
 		return nil, errors.New(st.Message())
 	}
-	indexConfig := *indexConfigIntr.(*map[string]interface{})
+
+	indexConfig := map[string]interface{}{
+		"index_mapping":      indexMapping,
+		"index_type":         resp.IndexConfig.IndexType,
+		"index_storage_type": resp.IndexConfig.IndexStorageType,
+	}
 
 	return indexConfig, nil
 }
@@ -325,14 +328,12 @@ func (c *GRPCClient) GetIndexStats(opts ...grpc.CallOption) (map[string]interfac
 	resp, err := c.client.GetIndexStats(c.ctx, &empty.Empty{}, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
-
 		return nil, errors.New(st.Message())
 	}
 
 	indexStatsIntr, err := protobuf.MarshalAny(resp.IndexStats)
 	if err != nil {
 		st, _ := status.FromError(err)
-
 		return nil, errors.New(st.Message())
 	}
 	indexStats := *indexStatsIntr.(*map[string]interface{})

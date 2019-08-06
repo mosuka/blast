@@ -18,8 +18,11 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/mosuka/blast/indexutils"
+
+	"github.com/blevesearch/bleve/mapping"
+
 	accesslog "github.com/mash/go-accesslog"
-	"github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/manager"
 	"github.com/mosuka/blast/protobuf/index"
@@ -33,7 +36,9 @@ type Server struct {
 	node               *index.Node
 	dataDir            string
 	raftStorageType    string
-	indexConfig        *config.IndexConfig
+	indexMapping       *mapping.IndexMappingImpl
+	indexType          string
+	indexStorageType   string
 	logger             *zap.Logger
 	grpcLogger         *zap.Logger
 	httpLogger         accesslog.Logger
@@ -45,7 +50,7 @@ type Server struct {
 	httpServer  *HTTPServer
 }
 
-func NewServer(managerGrpcAddress string, shardId string, peerGrpcAddress string, node *index.Node, dataDir string, raftStorageType string, indexConfig *config.IndexConfig, logger *zap.Logger, grpcLogger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
+func NewServer(managerGrpcAddress string, shardId string, peerGrpcAddress string, node *index.Node, dataDir string, raftStorageType string, indexMapping *mapping.IndexMappingImpl, indexType string, indexStorageType string, logger *zap.Logger, grpcLogger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
 	return &Server{
 		managerGrpcAddress: managerGrpcAddress,
 		shardId:            shardId,
@@ -53,7 +58,9 @@ func NewServer(managerGrpcAddress string, shardId string, peerGrpcAddress string
 		node:               node,
 		dataDir:            dataDir,
 		raftStorageType:    raftStorageType,
-		indexConfig:        indexConfig,
+		indexMapping:       indexMapping,
+		indexType:          indexType,
+		indexStorageType:   indexStorageType,
 		logger:             logger,
 		grpcLogger:         grpcLogger,
 		httpLogger:         httpLogger,
@@ -126,16 +133,32 @@ func (s *Server) Start() {
 			s.logger.Fatal(err.Error())
 			return
 		}
-
 		s.logger.Debug("pull index config from manager", zap.String("address", mc.GetAddress()))
 		value, err := mc.Get("/index_config")
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return
 		}
-
-		if value != nil {
-			s.indexConfig = config.NewIndexConfigFromMap(*value.(*map[string]interface{}))
+		indexMappingSrc, ok := (*value.(*map[string]interface{}))["index_mapping"]
+		if ok {
+			b, err := json.Marshal(indexMappingSrc)
+			if err != nil {
+				s.logger.Fatal(err.Error())
+				return
+			}
+			s.indexMapping, err = indexutils.NewIndexMappingFromBytes(b)
+			if err != nil {
+				s.logger.Fatal(err.Error())
+				return
+			}
+		}
+		indexTypeSrc, ok := (*value.(*map[string]interface{}))["index_type"]
+		if ok {
+			s.indexType = indexTypeSrc.(string)
+		}
+		indexStorageTypeSrc, ok := (*value.(*map[string]interface{}))["index_storage_type"]
+		if ok {
+			s.indexStorageType = indexStorageTypeSrc.(string)
 		}
 	} else if s.peerGrpcAddress != "" {
 		pc, err := NewGRPCClient(s.peerGrpcAddress)
@@ -159,9 +182,9 @@ func (s *Server) Start() {
 			return
 		}
 
-		if value != nil {
-			s.indexConfig = config.NewIndexConfigFromMap(value)
-		}
+		s.indexMapping = value["index_mapping"].(*mapping.IndexMappingImpl)
+		s.indexType = value["index_type"].(string)
+		s.indexStorageType = value["index_storage_type"].(string)
 	}
 
 	// bootstrap node?
@@ -171,7 +194,7 @@ func (s *Server) Start() {
 	var err error
 
 	// create raft server
-	s.raftServer, err = NewRaftServer(s.node, s.dataDir, s.raftStorageType, s.indexConfig, bootstrap, s.logger)
+	s.raftServer, err = NewRaftServer(s.node, s.dataDir, s.raftStorageType, s.indexMapping, s.indexType, s.indexStorageType, bootstrap, s.logger)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return

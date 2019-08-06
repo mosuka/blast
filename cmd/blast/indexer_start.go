@@ -20,7 +20,6 @@ import (
 	"syscall"
 
 	"github.com/blevesearch/bleve/mapping"
-	"github.com/mosuka/blast/config"
 	"github.com/mosuka/blast/indexer"
 	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/logutils"
@@ -117,14 +116,7 @@ func indexerStart(c *cli.Context) error {
 		indexMapping = mapping.NewIndexMapping()
 	}
 
-	// create index config
-	indexConfig := &config.IndexConfig{
-		IndexMapping:     indexMapping,
-		IndexType:        indexType,
-		IndexStorageType: indexStorageType,
-	}
-
-	svr, err := indexer.NewServer(managerGRPCAddr, shardId, peerGRPCAddr, node, dataDir, raftStorageType, indexConfig, logger.Named(nodeId), grpcLogger.Named(nodeId), httpAccessLogger)
+	svr, err := indexer.NewServer(managerGRPCAddr, shardId, peerGRPCAddr, node, dataDir, raftStorageType, indexMapping, indexType, indexStorageType, logger.Named(nodeId), grpcLogger.Named(nodeId), httpAccessLogger)
 	if err != nil {
 		return err
 	}
