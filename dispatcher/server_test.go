@@ -22,28 +22,28 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mosuka/blast/indexer"
+	"github.com/mosuka/blast/protobuf/index"
+
 	"github.com/mosuka/blast/indexutils"
 
-	"github.com/mosuka/blast/indexer"
 	"github.com/mosuka/blast/logutils"
 	"github.com/mosuka/blast/manager"
-	"github.com/mosuka/blast/protobuf/index"
 	"github.com/mosuka/blast/protobuf/management"
-	"github.com/mosuka/blast/strutils"
 	"github.com/mosuka/blast/testutils"
 )
 
 func TestServer_Start(t *testing.T) {
 	curDir, _ := os.Getwd()
 
-	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
+	logger := logutils.NewLogger("INFO", "", 500, 3, 30, false)
 	grpcLogger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
 	httpAccessLogger := logutils.NewApacheCombinedLogger("", 500, 3, 30, false)
 
 	managerPeerGrpcAddress1 := ""
 	managerGrpcAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	managerHttpAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
-	managerNodeId1 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	managerNodeId1 := "manager1"
 	managerBindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	managerDataDir1 := testutils.TmpDir()
 	managerRaftStorageType1 := "boltdb"
@@ -66,7 +66,7 @@ func TestServer_Start(t *testing.T) {
 	managerIndexStorageType1 := "boltdb"
 
 	// create server
-	managerServer1, err := manager.NewServer(managerPeerGrpcAddress1, managerNode1, managerDataDir1, managerRaftStorageType1, managerIndexMapping1, managerIndexType1, managerIndexStorageType1, logger, grpcLogger, httpAccessLogger)
+	managerServer1, err := manager.NewServer(managerPeerGrpcAddress1, managerNode1, managerDataDir1, managerRaftStorageType1, managerIndexMapping1, managerIndexType1, managerIndexStorageType1, logger.Named(managerNodeId1), grpcLogger.Named(managerNodeId1), httpAccessLogger)
 	defer func() {
 		if managerServer1 != nil {
 			managerServer1.Stop()
@@ -79,10 +79,13 @@ func TestServer_Start(t *testing.T) {
 	// start server
 	managerServer1.Start()
 
+	// sleep
+	time.Sleep(5 * time.Second)
+
 	managerPeerGrpcAddress2 := managerGrpcAddress1
 	managerGrpcAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	managerHttpAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
-	managerNodeId2 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	managerNodeId2 := "manager2"
 	managerBindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	managerDataDir2 := testutils.TmpDir()
 	managerRaftStorageType2 := "boltdb"
@@ -105,7 +108,7 @@ func TestServer_Start(t *testing.T) {
 	managerIndexStorageType2 := "boltdb"
 
 	// create server
-	managerServer2, err := manager.NewServer(managerPeerGrpcAddress2, managerNode2, managerDataDir2, managerRaftStorageType2, managerIndexMapping2, managerIndexType2, managerIndexStorageType2, logger, grpcLogger, httpAccessLogger)
+	managerServer2, err := manager.NewServer(managerPeerGrpcAddress2, managerNode2, managerDataDir2, managerRaftStorageType2, managerIndexMapping2, managerIndexType2, managerIndexStorageType2, logger.Named(managerNodeId2), grpcLogger.Named(managerNodeId2), httpAccessLogger)
 	defer func() {
 		if managerServer2 != nil {
 			managerServer2.Stop()
@@ -118,10 +121,13 @@ func TestServer_Start(t *testing.T) {
 	// start server
 	managerServer2.Start()
 
+	// sleep
+	time.Sleep(5 * time.Second)
+
 	managerPeerGrpcAddress3 := managerGrpcAddress1
 	managerGrpcAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	managerHttpAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
-	managerNodeId3 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	managerNodeId3 := "manager3"
 	managerBindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	managerDataDir3 := testutils.TmpDir()
 	managerRaftStorageType3 := "boltdb"
@@ -144,7 +150,7 @@ func TestServer_Start(t *testing.T) {
 	managerIndexStorageType3 := "boltdb"
 
 	// create server
-	managerServer3, err := manager.NewServer(managerPeerGrpcAddress3, managerNode3, managerDataDir3, managerRaftStorageType3, managerIndexMapping3, managerIndexType3, managerIndexStorageType3, logger, grpcLogger, httpAccessLogger)
+	managerServer3, err := manager.NewServer(managerPeerGrpcAddress3, managerNode3, managerDataDir3, managerRaftStorageType3, managerIndexMapping3, managerIndexType3, managerIndexStorageType3, logger.Named(managerNodeId3), grpcLogger.Named(managerNodeId3), httpAccessLogger)
 	defer func() {
 		if managerServer3 != nil {
 			managerServer3.Stop()
@@ -217,7 +223,7 @@ func TestServer_Start(t *testing.T) {
 	indexerPeerGrpcAddress1 := ""
 	indexerGrpcAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerHttpAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
-	indexerNodeId1 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	indexerNodeId1 := "indexer1"
 	indexerBindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerDataDir1 := testutils.TmpDir()
 	defer func() {
@@ -240,7 +246,7 @@ func TestServer_Start(t *testing.T) {
 	}
 	indexerIndexType1 := "upside_down"
 	indexerIndexStorageType1 := "boltdb"
-	indexerServer1, err := indexer.NewServer(indexerManagerGrpcAddress1, indexerShardId1, indexerPeerGrpcAddress1, indexerNode1, indexerDataDir1, indexerRaftStorageType1, indexerIndexMapping1, indexerIndexType1, indexerIndexStorageType1, logger, grpcLogger, httpAccessLogger)
+	indexerServer1, err := indexer.NewServer(indexerManagerGrpcAddress1, indexerShardId1, indexerPeerGrpcAddress1, indexerNode1, indexerDataDir1, indexerRaftStorageType1, indexerIndexMapping1, indexerIndexType1, indexerIndexStorageType1, logger.Named(indexerNodeId1), grpcLogger.Named(indexerNodeId1), httpAccessLogger)
 	defer func() {
 		indexerServer1.Stop()
 	}()
@@ -257,7 +263,7 @@ func TestServer_Start(t *testing.T) {
 	indexerPeerGrpcAddress2 := ""
 	indexerGrpcAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerHttpAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
-	indexerNodeId2 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	indexerNodeId2 := "indexer2"
 	indexerBindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerDataDir2 := testutils.TmpDir()
 	defer func() {
@@ -280,7 +286,7 @@ func TestServer_Start(t *testing.T) {
 	}
 	indexerIndexType2 := "upside_down"
 	indexerIndexStorageType2 := "boltdb"
-	indexerServer2, err := indexer.NewServer(indexerManagerGrpcAddress2, indexerShardId2, indexerPeerGrpcAddress2, indexerNode2, indexerDataDir2, indexerRaftStorageType2, indexerIndexMapping2, indexerIndexType2, indexerIndexStorageType2, logger, grpcLogger, httpAccessLogger)
+	indexerServer2, err := indexer.NewServer(indexerManagerGrpcAddress2, indexerShardId2, indexerPeerGrpcAddress2, indexerNode2, indexerDataDir2, indexerRaftStorageType2, indexerIndexMapping2, indexerIndexType2, indexerIndexStorageType2, logger.Named(indexerNodeId2), grpcLogger.Named(indexerNodeId2), httpAccessLogger)
 	defer func() {
 		indexerServer2.Stop()
 	}()
@@ -297,7 +303,7 @@ func TestServer_Start(t *testing.T) {
 	indexerPeerGrpcAddress3 := ""
 	indexerGrpcAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerHttpAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
-	indexerNodeId3 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	indexerNodeId3 := "indexer3"
 	indexerBindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerDataDir3 := testutils.TmpDir()
 	defer func() {
@@ -320,7 +326,7 @@ func TestServer_Start(t *testing.T) {
 	}
 	indexerIndexType3 := "upside_down"
 	indexerIndexStorageType3 := "boltdb"
-	indexerServer3, err := indexer.NewServer(indexerManagerGrpcAddress3, indexerShardId3, indexerPeerGrpcAddress3, indexerNode3, indexerDataDir3, indexerRaftStorageType3, indexerIndexMapping3, indexerIndexType3, indexerIndexStorageType3, logger, grpcLogger, httpAccessLogger)
+	indexerServer3, err := indexer.NewServer(indexerManagerGrpcAddress3, indexerShardId3, indexerPeerGrpcAddress3, indexerNode3, indexerDataDir3, indexerRaftStorageType3, indexerIndexMapping3, indexerIndexType3, indexerIndexStorageType3, logger.Named(indexerNodeId3), grpcLogger.Named(indexerNodeId3), httpAccessLogger)
 	defer func() {
 		indexerServer3.Stop()
 	}()
@@ -389,7 +395,7 @@ func TestServer_Start(t *testing.T) {
 	indexerPeerGrpcAddress4 := ""
 	indexerGrpcAddress4 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerHttpAddress4 := fmt.Sprintf(":%d", testutils.TmpPort())
-	indexerNodeId4 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	indexerNodeId4 := "indexer4"
 	indexerBindAddress4 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerDataDir4 := testutils.TmpDir()
 	defer func() {
@@ -412,7 +418,7 @@ func TestServer_Start(t *testing.T) {
 	}
 	indexerIndexType4 := "upside_down"
 	indexerIndexStorageType4 := "boltdb"
-	indexerServer4, err := indexer.NewServer(indexerManagerGrpcAddress4, indexerShardId4, indexerPeerGrpcAddress4, indexerNode4, indexerDataDir4, indexerRaftStorageType4, indexerIndexMapping4, indexerIndexType4, indexerIndexStorageType4, logger, grpcLogger, httpAccessLogger)
+	indexerServer4, err := indexer.NewServer(indexerManagerGrpcAddress4, indexerShardId4, indexerPeerGrpcAddress4, indexerNode4, indexerDataDir4, indexerRaftStorageType4, indexerIndexMapping4, indexerIndexType4, indexerIndexStorageType4, logger.Named(indexerNodeId4), grpcLogger.Named(indexerNodeId4), httpAccessLogger)
 	defer func() {
 		indexerServer4.Stop()
 	}()
@@ -429,7 +435,7 @@ func TestServer_Start(t *testing.T) {
 	indexerPeerGrpcAddress5 := ""
 	indexerGrpcAddress5 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerHttpAddress5 := fmt.Sprintf(":%d", testutils.TmpPort())
-	indexerNodeId5 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	indexerNodeId5 := "indexer5"
 	indexerBindAddress5 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerDataDir5 := testutils.TmpDir()
 	defer func() {
@@ -452,7 +458,7 @@ func TestServer_Start(t *testing.T) {
 	}
 	indexerIndexType5 := "upside_down"
 	indexerIndexStorageType5 := "boltdb"
-	indexerServer5, err := indexer.NewServer(indexerManagerGrpcAddress5, indexerShardId5, indexerPeerGrpcAddress5, indexerNode5, indexerDataDir5, indexerRaftStorageType5, indexerIndexMapping5, indexerIndexType5, indexerIndexStorageType5, logger, grpcLogger, httpAccessLogger)
+	indexerServer5, err := indexer.NewServer(indexerManagerGrpcAddress5, indexerShardId5, indexerPeerGrpcAddress5, indexerNode5, indexerDataDir5, indexerRaftStorageType5, indexerIndexMapping5, indexerIndexType5, indexerIndexStorageType5, logger.Named(indexerNodeId5), grpcLogger.Named(indexerNodeId5), httpAccessLogger)
 	defer func() {
 		indexerServer5.Stop()
 	}()
@@ -469,7 +475,7 @@ func TestServer_Start(t *testing.T) {
 	indexerPeerGrpcAddress6 := ""
 	indexerGrpcAddress6 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerHttpAddress6 := fmt.Sprintf(":%d", testutils.TmpPort())
-	indexerNodeId6 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	indexerNodeId6 := "indexer6"
 	indexerBindAddress6 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerDataDir6 := testutils.TmpDir()
 	defer func() {
@@ -492,7 +498,7 @@ func TestServer_Start(t *testing.T) {
 	}
 	indexerIndexType6 := "upside_down"
 	indexerIndexStorageType6 := "boltdb"
-	indexerServer6, err := indexer.NewServer(indexerManagerGrpcAddress6, indexerShardId6, indexerPeerGrpcAddress6, indexerNode6, indexerDataDir6, indexerRaftStorageType6, indexerIndexMapping6, indexerIndexType6, indexerIndexStorageType6, logger, grpcLogger, httpAccessLogger)
+	indexerServer6, err := indexer.NewServer(indexerManagerGrpcAddress6, indexerShardId6, indexerPeerGrpcAddress6, indexerNode6, indexerDataDir6, indexerRaftStorageType6, indexerIndexMapping6, indexerIndexType6, indexerIndexStorageType6, logger.Named(indexerNodeId6), grpcLogger.Named(indexerNodeId6), httpAccessLogger)
 	defer func() {
 		indexerServer6.Stop()
 	}()
@@ -553,23 +559,24 @@ func TestServer_Start(t *testing.T) {
 		t.Fatalf("expected content to see %v, saw %v", expIndexerCluster2, actIndexerCluster2)
 	}
 
-	////
-	//// dispatcher
-	////
-	//dispatcherManagerGrpcAddress := managerGrpcAddress1
-	//dispatcherGrpcAddress := fmt.Sprintf(":%d", testutils.TmpPort())
-	//dispatcherHttpAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	//
-	//dispatcher1, err := NewServer(dispatcherManagerGrpcAddress, dispatcherGrpcAddress, dispatcherHttpAddress, logger.Named("dispatcher1"), grpcLogger.Named("dispatcher1"), httpAccessLogger)
-	//defer func() {
-	//	dispatcher1.Stop()
-	//}()
-	//if err != nil {
-	//	t.Fatalf("%v", err)
-	//}
-	//// start server
-	//dispatcher1.Start()
+	// dispatcher
 	//
-	//// sleep
-	//time.Sleep(5 * time.Second)
+	dispatcherManagerGrpcAddress := managerGrpcAddress1
+	dispatcherGrpcAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	dispatcherHttpAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+
+	dispatcher1, err := NewServer(dispatcherManagerGrpcAddress, dispatcherGrpcAddress, dispatcherHttpAddress, logger.Named("dispatcher1"), grpcLogger.Named("dispatcher1"), httpAccessLogger)
+	defer func() {
+		dispatcher1.Stop()
+	}()
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// start server
+	dispatcher1.Start()
+
+	// sleep
+	time.Sleep(5 * time.Second)
 }
