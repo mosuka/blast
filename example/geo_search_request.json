@@ -22,34 +22,5 @@
         "lat": 37.399285
       }
     }
-  ],
-  "facets": {
-    "State count": {
-      "size": 10,
-      "field": "state"
-    },
-    "Updated range": {
-      "size": 10,
-      "field": "updated",
-      "date_ranges": [
-        {
-          "name": "2001 - 2010",
-          "start": "2001-01-01T00:00:00Z",
-          "end": "2010-12-31T23:59:59Z"
-        },
-        {
-          "name": "2011 - 2020",
-          "start": "2011-01-01T00:00:00Z",
-          "end": "2020-12-31T23:59:59Z"
-        }
-      ]
-    }
-  },
-  "highlight": {
-    "style": "html",
-    "fields": [
-      "title",
-      "text"
-    ]
-  }
+  ]
 }
