@@ -102,20 +102,20 @@ func (j *ResponseMarshaler) Delimiter() []byte {
 }
 
 type GRPCGateway struct {
-	httpAddr string
-	grpcAddr string
-	logger   *zap.Logger
+	grpcGatewayAddr string
+	grpcAddr        string
+	logger          *zap.Logger
 
 	ctx      context.Context
 	cancel   context.CancelFunc
 	listener net.Listener
 }
 
-func NewGRPCGateway(httpAddr string, grpcAddr string, logger *zap.Logger) (*GRPCGateway, error) {
+func NewGRPCGateway(grpcGatewayAddr string, grpcAddr string, logger *zap.Logger) (*GRPCGateway, error) {
 	return &GRPCGateway{
-		httpAddr: httpAddr,
-		grpcAddr: grpcAddr,
-		logger:   logger,
+		grpcGatewayAddr: grpcGatewayAddr,
+		grpcAddr:        grpcAddr,
+		logger:          logger,
 	}, nil
 }
 
@@ -132,7 +132,7 @@ func (s *GRPCGateway) Start() error {
 		return err
 	}
 
-	s.listener, err = net.Listen("tcp", s.httpAddr)
+	s.listener, err = net.Listen("tcp", s.grpcGatewayAddr)
 	if err != nil {
 		return err
 	}

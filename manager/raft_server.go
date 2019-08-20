@@ -24,17 +24,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/any"
-	"github.com/mosuka/blast/protobuf"
-
-	"github.com/gogo/protobuf/proto"
-
 	"github.com/blevesearch/bleve/mapping"
+	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
 	raftbadgerdb "github.com/markthethomas/raft-badger"
 	_ "github.com/mosuka/blast/builtins"
 	blasterrors "github.com/mosuka/blast/errors"
+	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/management"
 	"go.uber.org/zap"
 	//raftmdb "github.com/hashicorp/raft-mdb"

@@ -40,22 +40,26 @@ type GRPCServer struct {
 
 func NewGRPCServer(grpcAddr string, service management.ManagementServer, logger *zap.Logger) (*GRPCServer, error) {
 	server := grpc.NewServer(
-		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
-			//grpc_ctxtags.StreamServerInterceptor(),
-			//grpc_opentracing.StreamServerInterceptor(),
-			grpc_prometheus.StreamServerInterceptor,
-			grpc_zap.StreamServerInterceptor(logger),
-			//grpc_auth.StreamServerInterceptor(myAuthFunction),
-			//grpc_recovery.StreamServerInterceptor(),
-		)),
-		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			//grpc_ctxtags.UnaryServerInterceptor(),
-			//grpc_opentracing.UnaryServerInterceptor(),
-			grpc_prometheus.UnaryServerInterceptor,
-			grpc_zap.UnaryServerInterceptor(logger),
-			//grpc_auth.UnaryServerInterceptor(myAuthFunction),
-			//grpc_recovery.UnaryServerInterceptor(),
-		)),
+		grpc.StreamInterceptor(
+			grpc_middleware.ChainStreamServer(
+				//grpc_ctxtags.StreamServerInterceptor(),
+				//grpc_opentracing.StreamServerInterceptor(),
+				grpc_prometheus.StreamServerInterceptor,
+				grpc_zap.StreamServerInterceptor(logger),
+				//grpc_auth.StreamServerInterceptor(myAuthFunction),
+				//grpc_recovery.StreamServerInterceptor(),
+			),
+		),
+		grpc.UnaryInterceptor(
+			grpc_middleware.ChainUnaryServer(
+				//grpc_ctxtags.UnaryServerInterceptor(),
+				//grpc_opentracing.UnaryServerInterceptor(),
+				grpc_prometheus.UnaryServerInterceptor,
+				grpc_zap.UnaryServerInterceptor(logger),
+				//grpc_auth.UnaryServerInterceptor(myAuthFunction),
+				//grpc_recovery.UnaryServerInterceptor(),
+			),
+		),
 	)
 
 	management.RegisterManagementServer(server, service)

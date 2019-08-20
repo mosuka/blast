@@ -92,7 +92,8 @@ message NodeHealthCheckResponse {
 
 message Metadata {
     string grpc_address = 1;
-    string http_address = 2;
+    string grpc_gateway_address = 2;
+    string http_address = 3;
 }
 
 message Node {

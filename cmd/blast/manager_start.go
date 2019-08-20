@@ -31,6 +31,7 @@ func managerStart(c *cli.Context) error {
 	peerGrpcAddr := c.String("peer-grpc-address")
 
 	grpcAddr := c.String("grpc-address")
+	grpcGatewayAddr := c.String("grpc-gateway-address")
 	httpAddr := c.String("http-address")
 
 	nodeId := c.String("node-id")
@@ -96,8 +97,9 @@ func managerStart(c *cli.Context) error {
 		BindAddress: nodeAddr,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
-			GrpcAddress: grpcAddr,
-			HttpAddress: httpAddr,
+			GrpcAddress:        grpcAddr,
+			GrpcGatewayAddress: grpcGatewayAddr,
+			HttpAddress:        httpAddr,
 		},
 	}
 
