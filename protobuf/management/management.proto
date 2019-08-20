@@ -25,7 +25,7 @@ option go_package = "github.com/mosuka/blast/protobuf/management";
 service Management {
     rpc NodeHealthCheck (NodeHealthCheckRequest) returns (NodeHealthCheckResponse) {
         option (google.api.http) = {
-            get: "/v1/node/healthcheck/{probe}"
+            get: "/v1/node/healthcheck"
         };
     }
     rpc NodeInfo (google.protobuf.Empty) returns (NodeInfoResponse) {

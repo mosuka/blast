@@ -29,30 +29,20 @@ var _ status.Status
 var _ = runtime.String
 var _ = utilities.NewDoubleArray
 
+var (
+	filter_Management_NodeHealthCheck_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+)
+
 func request_Management_NodeHealthCheck_0(ctx context.Context, marshaler runtime.Marshaler, client ManagementClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq NodeHealthCheckRequest
 	var metadata runtime.ServerMetadata
 
-	var (
-		val string
-		e   int32
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["probe"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "probe")
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	e, err = runtime.Enum(val, NodeHealthCheckRequest_Probe_value)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "probe", err)
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Management_NodeHealthCheck_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	protoReq.Probe = NodeHealthCheckRequest_Probe(e)
 
 	msg, err := client.NodeHealthCheck(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -357,7 +347,7 @@ func RegisterManagementHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 }
 
 var (
-	pattern_Management_NodeHealthCheck_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "node", "healthcheck", "probe"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Management_NodeHealthCheck_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "node", "healthcheck"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_Management_NodeInfo_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "node", "status"}, "", runtime.AssumeColonVerbOpt(true)))
 

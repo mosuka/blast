@@ -284,12 +284,18 @@ func (s *GRPCService) NodeHealthCheck(ctx context.Context, req *management.NodeH
 	resp := &management.NodeHealthCheckResponse{}
 
 	switch req.Probe {
+	case management.NodeHealthCheckRequest_UNKNOWN:
+		fallthrough
 	case management.NodeHealthCheckRequest_HEALTHINESS:
 		resp.State = management.NodeHealthCheckResponse_HEALTHY
 	case management.NodeHealthCheckRequest_LIVENESS:
 		resp.State = management.NodeHealthCheckResponse_ALIVE
 	case management.NodeHealthCheckRequest_READINESS:
 		resp.State = management.NodeHealthCheckResponse_READY
+	default:
+		err := errors.New("unknown probe")
+		s.logger.Error(err.Error())
+		return resp, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	return resp, nil
