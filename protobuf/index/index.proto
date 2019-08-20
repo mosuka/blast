@@ -16,21 +16,38 @@ syntax = "proto3";
 
 import "google/protobuf/any.proto";
 import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
 
 package index;
 
 option go_package = "github.com/mosuka/blast/protobuf/index";
 
 service Index {
-    rpc NodeHealthCheck (NodeHealthCheckRequest) returns (NodeHealthCheckResponse) {}
-    rpc NodeInfo (google.protobuf.Empty) returns (NodeInfoResponse) {}
+    rpc NodeHealthCheck (NodeHealthCheckRequest) returns (NodeHealthCheckResponse) {
+        option (google.api.http) = {
+            get: "/v1/node/healthcheck"
+        };
+    }
+    rpc NodeInfo (google.protobuf.Empty) returns (NodeInfoResponse) {
+        option (google.api.http) = {
+            get: "/v1/node/status"
+        };
+    }
 
     rpc ClusterJoin (ClusterJoinRequest) returns (google.protobuf.Empty) {}
     rpc ClusterLeave (ClusterLeaveRequest) returns (google.protobuf.Empty) {}
-    rpc ClusterInfo (google.protobuf.Empty) returns (ClusterInfoResponse) {}
+    rpc ClusterInfo (google.protobuf.Empty) returns (ClusterInfoResponse) {
+        option (google.api.http) = {
+            get: "/v1/cluster/status"
+        };
+    }
     rpc ClusterWatch (google.protobuf.Empty) returns (stream ClusterWatchResponse) {}
 
-    rpc GetDocument (GetDocumentRequest) returns (GetDocumentResponse) {}
+    rpc GetDocument (GetDocumentRequest) returns (GetDocumentResponse) {
+        option (google.api.http) = {
+            get: "/v1/index/{id=**}"
+        };
+    }
     rpc IndexDocument (stream IndexDocumentRequest) returns (IndexDocumentResponse) {}
     rpc DeleteDocument (stream DeleteDocumentRequest) returns (DeleteDocumentResponse) {}
     rpc Search (SearchRequest) returns (SearchResponse) {}
@@ -41,28 +58,31 @@ service Index {
 
 message NodeHealthCheckRequest {
     enum Probe {
-        HEALTHINESS = 0;
-        LIVENESS = 1;
-        READINESS = 2;
+        UNKNOWN = 0;
+        HEALTHINESS = 1;
+        LIVENESS = 2;
+        READINESS = 3;
     }
     Probe probe = 1;
 }
 
 message NodeHealthCheckResponse {
     enum State {
-        HEALTHY = 0;
-        UNHEALTHY = 1;
-        ALIVE = 2;
-        DEAD = 3;
-        READY = 4;
-        NOT_READY = 5;
+        UNKNOWN = 0;
+        HEALTHY = 1;
+        UNHEALTHY = 2;
+        ALIVE = 3;
+        DEAD = 4;
+        READY = 5;
+        NOT_READY = 6;
     }
     State state = 1;
 }
 
 message Metadata {
     string grpc_address = 1;
-    string http_address = 2;
+    string grpc_gateway_address = 2;
+    string http_address = 3;
 }
 
 message Node {
