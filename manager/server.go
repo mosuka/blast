@@ -36,8 +36,7 @@ type Server struct {
 	raftServer  *RaftServer
 	grpcService *GRPCService
 	grpcServer  *GRPCServer
-	httpRouter  *Router
-	httpServer  *HTTPServer
+	grpcGateway *GRPCGateway
 }
 
 func NewServer(peerGrpcAddr string, node *management.Node, dataDir string, raftStorageType string, indexMapping *mapping.IndexMappingImpl, indexType string, indexStorageType string, logger *zap.Logger, grpcLogger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
@@ -83,15 +82,8 @@ func (s *Server) Start() {
 		return
 	}
 
-	// create HTTP router
-	s.httpRouter, err = NewRouter(s.node.Metadata.GrpcAddress, s.logger)
-	if err != nil {
-		s.logger.Fatal(err.Error())
-		return
-	}
-
 	// create HTTP server
-	s.httpServer, err = NewHTTPServer(s.node.Metadata.HttpAddress, s.httpRouter, s.logger, s.httpLogger)
+	s.grpcGateway, err = NewGRPCGateway(s.node.Metadata.HttpAddress, s.node.Metadata.GrpcAddress, s.logger)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return
@@ -125,10 +117,10 @@ func (s *Server) Start() {
 		}
 	}()
 
-	// start HTTP server
-	s.logger.Info("start HTTP server")
+	// start gRPC gateway
+	s.logger.Info("start gRPC gateway")
 	go func() {
-		_ = s.httpServer.Start()
+		_ = s.grpcGateway.Start()
 	}()
 
 	// join to the existing cluster
@@ -154,13 +146,8 @@ func (s *Server) Start() {
 }
 
 func (s *Server) Stop() {
-	s.logger.Info("stop HTTP server")
-	err := s.httpServer.Stop()
-	if err != nil {
-		s.logger.Error(err.Error())
-	}
-
-	err = s.httpRouter.Close()
+	s.logger.Info("stop gRPC gateway")
+	err := s.grpcGateway.Stop()
 	if err != nil {
 		s.logger.Error(err.Error())
 	}
@@ -198,7 +185,7 @@ func (s *Server) GrpcAddress() string {
 }
 
 func (s *Server) HttpAddress() string {
-	address, err := s.httpServer.GetAddress()
+	address, err := s.grpcGateway.GetAddress()
 	if err != nil {
 		return ""
 	}

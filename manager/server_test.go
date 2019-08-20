@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/logutils"
@@ -441,7 +442,7 @@ func TestServer_SetState(t *testing.T) {
 
 	actVal1 := *val1.(*string)
 
-	if expVal1 != actVal1 {
+	if !cmp.Equal(expVal1, actVal1) {
 		t.Fatalf("expected content to see %v, saw %v", expVal1, actVal1)
 	}
 }
@@ -528,7 +529,7 @@ func TestServer_GetState(t *testing.T) {
 
 	actVal1 := *val1.(*string)
 
-	if expVal1 != actVal1 {
+	if !cmp.Equal(expVal1, actVal1) {
 		t.Fatalf("expected content to see %v, saw %v", expVal1, actVal1)
 	}
 }
@@ -615,7 +616,7 @@ func TestServer_DeleteState(t *testing.T) {
 
 	actVal1 := *val1.(*string)
 
-	if expVal1 != actVal1 {
+	if !cmp.Equal(expVal1, actVal1) {
 		t.Fatalf("expected content to see %v, saw %v", expVal1, actVal1)
 	}
 
@@ -1543,7 +1544,7 @@ func TestCluster_SetState(t *testing.T) {
 	peerGrpcAddress1 := ""
 	grpcAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
-	nodeId1 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	nodeId1 := "node-1"
 	bindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir1 := testutils.TmpDir()
 	defer func() {
@@ -1582,10 +1583,13 @@ func TestCluster_SetState(t *testing.T) {
 	// start server
 	server1.Start()
 
+	// sleep
+	time.Sleep(5 * time.Second)
+
 	peerGrpcAddress2 := grpcAddress1
 	grpcAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
-	nodeId2 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	nodeId2 := "node-2"
 	bindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir2 := testutils.TmpDir()
 	defer func() {
@@ -1624,10 +1628,13 @@ func TestCluster_SetState(t *testing.T) {
 	// start server
 	server2.Start()
 
+	// sleep
+	time.Sleep(5 * time.Second)
+
 	peerGrpcAddress3 := grpcAddress1
 	grpcAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
-	nodeId3 := fmt.Sprintf("node-%s", strutils.RandStr(5))
+	nodeId3 := "node-3"
 	bindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	dataDir3 := testutils.TmpDir()
 	defer func() {
@@ -1705,7 +1712,7 @@ func TestCluster_SetState(t *testing.T) {
 	}
 	expVal11 := "val1"
 	actVal11 := *val11.(*string)
-	if expVal11 != actVal11 {
+	if !cmp.Equal(expVal11, actVal11) {
 		t.Fatalf("expected content to see %v, saw %v", expVal11, actVal11)
 	}
 	val21, err := client2.Get("test/key1")
@@ -1714,7 +1721,7 @@ func TestCluster_SetState(t *testing.T) {
 	}
 	expVal21 := "val1"
 	actVal21 := *val21.(*string)
-	if expVal21 != actVal21 {
+	if !cmp.Equal(expVal21, actVal21) {
 		t.Fatalf("expected content to see %v, saw %v", expVal21, actVal21)
 	}
 	val31, err := client3.Get("test/key1")
@@ -1723,7 +1730,7 @@ func TestCluster_SetState(t *testing.T) {
 	}
 	expVal31 := "val1"
 	actVal31 := *val31.(*string)
-	if expVal31 != actVal31 {
+	if !cmp.Equal(expVal31, actVal31) {
 		t.Fatalf("expected content to see %v, saw %v", expVal31, actVal31)
 	}
 
@@ -1740,7 +1747,7 @@ func TestCluster_SetState(t *testing.T) {
 	}
 	expVal12 := "val2"
 	actVal12 := *val12.(*string)
-	if expVal12 != actVal12 {
+	if !cmp.Equal(expVal12, actVal12) {
 		t.Fatalf("expected content to see %v, saw %v", expVal12, actVal12)
 	}
 	val22, err := client2.Get("test/key2")
@@ -1749,7 +1756,7 @@ func TestCluster_SetState(t *testing.T) {
 	}
 	expVal22 := "val2"
 	actVal22 := *val22.(*string)
-	if expVal22 != actVal22 {
+	if !cmp.Equal(expVal22, actVal22) {
 		t.Fatalf("expected content to see %v, saw %v", expVal22, actVal22)
 	}
 	val32, err := client3.Get("test/key2")
@@ -1758,7 +1765,7 @@ func TestCluster_SetState(t *testing.T) {
 	}
 	expVal32 := "val2"
 	actVal32 := *val32.(*string)
-	if expVal32 != actVal32 {
+	if !cmp.Equal(expVal32, actVal32) {
 		t.Fatalf("expected content to see %v, saw %v", expVal32, actVal32)
 	}
 
@@ -1775,7 +1782,7 @@ func TestCluster_SetState(t *testing.T) {
 	}
 	expVal13 := "val3"
 	actVal13 := *val13.(*string)
-	if expVal13 != actVal13 {
+	if !cmp.Equal(expVal13, actVal13) {
 		t.Fatalf("expected content to see %v, saw %v", expVal13, actVal13)
 	}
 	val23, err := client2.Get("test/key3")
@@ -1784,7 +1791,7 @@ func TestCluster_SetState(t *testing.T) {
 	}
 	expVal23 := "val3"
 	actVal23 := *val23.(*string)
-	if expVal23 != actVal23 {
+	if !cmp.Equal(expVal23, actVal23) {
 		t.Fatalf("expected content to see %v, saw %v", expVal23, actVal23)
 	}
 	val33, err := client3.Get("test/key3")
@@ -1793,7 +1800,7 @@ func TestCluster_SetState(t *testing.T) {
 	}
 	expVal33 := "val3"
 	actVal33 := *val33.(*string)
-	if expVal33 != actVal33 {
+	if !cmp.Equal(expVal33, actVal33) {
 		t.Fatalf("expected content to see %v, saw %v", expVal33, actVal33)
 	}
 }
@@ -1970,7 +1977,7 @@ func TestCluster_GetState(t *testing.T) {
 	}
 	expVal11 := "val1"
 	actVal11 := *val11.(*string)
-	if expVal11 != actVal11 {
+	if !cmp.Equal(expVal11, actVal11) {
 		t.Fatalf("expected content to see %v, saw %v", expVal11, actVal11)
 	}
 	val21, err := client2.Get("test/key1")
@@ -1979,7 +1986,7 @@ func TestCluster_GetState(t *testing.T) {
 	}
 	expVal21 := "val1"
 	actVal21 := *val21.(*string)
-	if expVal21 != actVal21 {
+	if !cmp.Equal(expVal21, actVal21) {
 		t.Fatalf("expected content to see %v, saw %v", expVal21, actVal21)
 	}
 	val31, err := client3.Get("test/key1")
@@ -1988,7 +1995,7 @@ func TestCluster_GetState(t *testing.T) {
 	}
 	expVal31 := "val1"
 	actVal31 := *val31.(*string)
-	if expVal31 != actVal31 {
+	if !cmp.Equal(expVal31, actVal31) {
 		t.Fatalf("expected content to see %v, saw %v", expVal31, actVal31)
 	}
 
@@ -2005,7 +2012,7 @@ func TestCluster_GetState(t *testing.T) {
 	}
 	expVal12 := "val2"
 	actVal12 := *val12.(*string)
-	if expVal12 != actVal12 {
+	if !cmp.Equal(expVal12, actVal12) {
 		t.Fatalf("expected content to see %v, saw %v", expVal12, actVal12)
 	}
 	val22, err := client2.Get("test/key2")
@@ -2014,7 +2021,7 @@ func TestCluster_GetState(t *testing.T) {
 	}
 	expVal22 := "val2"
 	actVal22 := *val22.(*string)
-	if expVal22 != actVal22 {
+	if !cmp.Equal(expVal22, actVal22) {
 		t.Fatalf("expected content to see %v, saw %v", expVal22, actVal22)
 	}
 	val32, err := client3.Get("test/key2")
@@ -2023,7 +2030,7 @@ func TestCluster_GetState(t *testing.T) {
 	}
 	expVal32 := "val2"
 	actVal32 := *val32.(*string)
-	if expVal32 != actVal32 {
+	if !cmp.Equal(expVal32, actVal32) {
 		t.Fatalf("expected content to see %v, saw %v", expVal32, actVal32)
 	}
 
@@ -2040,7 +2047,7 @@ func TestCluster_GetState(t *testing.T) {
 	}
 	expVal13 := "val3"
 	actVal13 := *val13.(*string)
-	if expVal13 != actVal13 {
+	if !cmp.Equal(expVal13, actVal13) {
 		t.Fatalf("expected content to see %v, saw %v", expVal13, actVal13)
 	}
 	val23, err := client2.Get("test/key3")
@@ -2049,7 +2056,7 @@ func TestCluster_GetState(t *testing.T) {
 	}
 	expVal23 := "val3"
 	actVal23 := *val23.(*string)
-	if expVal23 != actVal23 {
+	if !cmp.Equal(expVal23, actVal23) {
 		t.Fatalf("expected content to see %v, saw %v", expVal23, actVal23)
 	}
 	val33, err := client3.Get("test/key3")
@@ -2058,7 +2065,7 @@ func TestCluster_GetState(t *testing.T) {
 	}
 	expVal33 := "val3"
 	actVal33 := *val33.(*string)
-	if expVal33 != actVal33 {
+	if !cmp.Equal(expVal33, actVal33) {
 		t.Fatalf("expected content to see %v, saw %v", expVal33, actVal33)
 	}
 }
@@ -2236,7 +2243,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	}
 	expVal11 := "val1"
 	actVal11 := *val11.(*string)
-	if expVal11 != actVal11 {
+	if !cmp.Equal(expVal11, actVal11) {
 		t.Fatalf("expected content to see %v, saw %v", expVal11, actVal11)
 	}
 	val21, err := client2.Get("test/key1")
@@ -2245,7 +2252,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	}
 	expVal21 := "val1"
 	actVal21 := *val21.(*string)
-	if expVal21 != actVal21 {
+	if !cmp.Equal(expVal21, actVal21) {
 		t.Fatalf("expected content to see %v, saw %v", expVal21, actVal21)
 	}
 	val31, err := client3.Get("test/key1")
@@ -2254,7 +2261,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	}
 	expVal31 := "val1"
 	actVal31 := *val31.(*string)
-	if expVal31 != actVal31 {
+	if !cmp.Equal(expVal31, actVal31) {
 		t.Fatalf("expected content to see %v, saw %v", expVal31, actVal31)
 	}
 
@@ -2271,7 +2278,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	}
 	expVal12 := "val2"
 	actVal12 := *val12.(*string)
-	if expVal12 != actVal12 {
+	if !cmp.Equal(expVal12, actVal12) {
 		t.Fatalf("expected content to see %v, saw %v", expVal12, actVal12)
 	}
 	val22, err := client2.Get("test/key2")
@@ -2280,7 +2287,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	}
 	expVal22 := "val2"
 	actVal22 := *val22.(*string)
-	if expVal22 != actVal22 {
+	if !cmp.Equal(expVal22, actVal22) {
 		t.Fatalf("expected content to see %v, saw %v", expVal22, actVal22)
 	}
 	val32, err := client3.Get("test/key2")
@@ -2289,7 +2296,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	}
 	expVal32 := "val2"
 	actVal32 := *val32.(*string)
-	if expVal32 != actVal32 {
+	if !cmp.Equal(expVal32, actVal32) {
 		t.Fatalf("expected content to see %v, saw %v", expVal32, actVal32)
 	}
 
@@ -2306,7 +2313,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	}
 	expVal13 := "val3"
 	actVal13 := *val13.(*string)
-	if expVal13 != actVal13 {
+	if !cmp.Equal(expVal13, actVal13) {
 		t.Fatalf("expected content to see %v, saw %v", expVal13, actVal13)
 	}
 	val23, err := client2.Get("test/key3")
@@ -2315,7 +2322,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	}
 	expVal23 := "val3"
 	actVal23 := *val23.(*string)
-	if expVal23 != actVal23 {
+	if !cmp.Equal(expVal23, actVal23) {
 		t.Fatalf("expected content to see %v, saw %v", expVal23, actVal23)
 	}
 	val33, err := client3.Get("test/key3")
@@ -2324,7 +2331,7 @@ func TestCluster_DeleteState(t *testing.T) {
 	}
 	expVal33 := "val3"
 	actVal33 := *val33.(*string)
-	if expVal33 != actVal33 {
+	if !cmp.Equal(expVal33, actVal33) {
 		t.Fatalf("expected content to see %v, saw %v", expVal33, actVal33)
 	}
 

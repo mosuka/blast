@@ -326,23 +326,24 @@ func (s *GRPCService) startUpdateIndexers(checkInterval time.Duration) {
 	if shards == nil {
 		s.logger.Error("/cluster/shards is nil")
 	}
-	for shardId, shardIntr := range *shards.(*map[string]interface{}) {
-		shardBytes, err := json.Marshal(shardIntr)
+
+	for shardId, shard := range *shards.(*map[string]interface{}) {
+		shardBytes, err := json.Marshal(shard)
 		if err != nil {
 			s.logger.Error(err.Error())
 			continue
 		}
 
-		var shard *index.Cluster
-		err = json.Unmarshal(shardBytes, &shard)
+		var cluster *index.Cluster
+		err = json.Unmarshal(shardBytes, &cluster)
 		if err != nil {
 			s.logger.Error(err.Error())
 			continue
 		}
 
-		s.indexers[shardId] = shard
+		s.indexers[shardId] = cluster
 
-		for nodeId, node := range shard.Nodes {
+		for nodeId, node := range cluster.Nodes {
 			if node.Metadata.GrpcAddress == "" {
 				s.logger.Warn("missing gRPC address", zap.String("id", node.Id), zap.String("grpc_addr", node.Metadata.GrpcAddress))
 				continue
@@ -388,37 +389,38 @@ func (s *GRPCService) startUpdateIndexers(checkInterval time.Duration) {
 			}
 			s.logger.Debug("data has changed", zap.Any("command", resp.Command), zap.String("key", resp.Key), zap.Any("value", resp.Value))
 
-			shardsIntr, err := client.Get("/cluster/shards/")
+			shards, err := client.Get("/cluster/shards/")
 			if err != nil {
 				s.logger.Error(err.Error())
 				continue
 			}
-			if shardsIntr == nil {
+			if shards == nil {
 				s.logger.Error("/cluster/shards is nil")
 				continue
 			}
-			for shardId, shardIntr := range *shards.(*map[string]interface{}) {
-				shardBytes, err := json.Marshal(shardIntr)
+
+			for shardId, shard := range *shards.(*map[string]interface{}) {
+				shardBytes, err := json.Marshal(shard)
 				if err != nil {
 					s.logger.Error(err.Error())
 					continue
 				}
 
-				var shard *index.Cluster
-				err = json.Unmarshal(shardBytes, &shard)
+				var cluster *index.Cluster
+				err = json.Unmarshal(shardBytes, &cluster)
 				if err != nil {
 					s.logger.Error(err.Error())
 					continue
 				}
 
-				s.indexers[shardId] = shard
+				s.indexers[shardId] = cluster
 
 				if _, exist := s.indexerClients[shardId]; !exist {
 					s.indexerClients[shardId] = make(map[string]*indexer.GRPCClient)
 				}
 
 				// open clients for indexer nodes
-				for nodeId, node := range shard.Nodes {
+				for nodeId, node := range cluster.Nodes {
 					if node.Metadata.GrpcAddress == "" {
 						s.logger.Warn("missing gRPC address", zap.String("id", node.Id), zap.String("grpc_addr", node.Metadata.GrpcAddress))
 						continue

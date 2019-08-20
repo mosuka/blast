@@ -509,7 +509,6 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 					s.logger.Error(err.Error())
 					continue
 				}
-				s.logger.Info("update shards", zap.Any("shards", snapshotClusterMap))
 				err = client.Set(fmt.Sprintf("cluster/shards/%s", s.shardId), snapshotClusterMap)
 				if err != nil {
 					s.logger.Error(err.Error())

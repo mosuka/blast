@@ -139,24 +139,25 @@ func (s *Server) Start() {
 			s.logger.Fatal(err.Error())
 			return
 		}
-		indexMappingSrc, ok := (*value.(*map[string]interface{}))["index_mapping"]
+		indexConfigMap := *value.(*map[string]interface{})
+		indexMappingSrc, ok := indexConfigMap["index_mapping"].(map[string]interface{})
 		if ok {
-			b, err := json.Marshal(indexMappingSrc)
+			indexMappingBytes, err := json.Marshal(indexMappingSrc)
 			if err != nil {
 				s.logger.Fatal(err.Error())
 				return
 			}
-			s.indexMapping, err = indexutils.NewIndexMappingFromBytes(b)
+			s.indexMapping, err = indexutils.NewIndexMappingFromBytes(indexMappingBytes)
 			if err != nil {
 				s.logger.Fatal(err.Error())
 				return
 			}
 		}
-		indexTypeSrc, ok := (*value.(*map[string]interface{}))["index_type"]
+		indexTypeSrc, ok := indexConfigMap["index_type"]
 		if ok {
 			s.indexType = indexTypeSrc.(string)
 		}
-		indexStorageTypeSrc, ok := (*value.(*map[string]interface{}))["index_storage_type"]
+		indexStorageTypeSrc, ok := indexConfigMap["index_storage_type"]
 		if ok {
 			s.indexStorageType = indexStorageTypeSrc.(string)
 		}

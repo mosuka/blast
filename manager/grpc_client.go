@@ -197,6 +197,10 @@ func (c *GRPCClient) Get(key string, opts ...grpc.CallOption) (interface{}, erro
 	}
 
 	value, err := protobuf.MarshalAny(resp.Value)
+	if err != nil {
+		st, _ := status.FromError(err)
+		return nil, errors.New(st.Message())
+	}
 
 	return value, nil
 }

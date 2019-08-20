@@ -10,6 +10,8 @@ import (
 	any "github.com/golang/protobuf/ptypes/any"
 	index "github.com/mosuka/blast/protobuf/index"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -22,7 +24,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type NodeHealthCheckRequest_Probe int32
 
@@ -666,6 +668,26 @@ type DistributeServer interface {
 	IndexDocument(Distribute_IndexDocumentServer) error
 	DeleteDocument(Distribute_DeleteDocumentServer) error
 	Search(context.Context, *SearchRequest) (*SearchResponse, error)
+}
+
+// UnimplementedDistributeServer can be embedded to have forward compatible implementations.
+type UnimplementedDistributeServer struct {
+}
+
+func (*UnimplementedDistributeServer) NodeHealthCheck(ctx context.Context, req *NodeHealthCheckRequest) (*NodeHealthCheckResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NodeHealthCheck not implemented")
+}
+func (*UnimplementedDistributeServer) GetDocument(ctx context.Context, req *GetDocumentRequest) (*GetDocumentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDocument not implemented")
+}
+func (*UnimplementedDistributeServer) IndexDocument(srv Distribute_IndexDocumentServer) error {
+	return status.Errorf(codes.Unimplemented, "method IndexDocument not implemented")
+}
+func (*UnimplementedDistributeServer) DeleteDocument(srv Distribute_DeleteDocumentServer) error {
+	return status.Errorf(codes.Unimplemented, "method DeleteDocument not implemented")
+}
+func (*UnimplementedDistributeServer) Search(ctx context.Context, req *SearchRequest) (*SearchResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Search not implemented")
 }
 
 func RegisterDistributeServer(s *grpc.Server, srv DistributeServer) {

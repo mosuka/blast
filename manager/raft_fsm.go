@@ -21,6 +21,10 @@ import (
 	"io/ioutil"
 	"sync"
 
+	"github.com/mosuka/blast/protobuf"
+
+	"github.com/gogo/protobuf/proto"
+
 	"github.com/hashicorp/raft"
 	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/maputils"
@@ -95,6 +99,7 @@ func (f *RaftFSM) DeleteNode(nodeId string) error {
 }
 
 func (f *RaftFSM) GetValue(key string) (interface{}, error) {
+	// get raw data
 	value, err := f.data.Get(key)
 	if err != nil {
 		switch err {
@@ -107,18 +112,37 @@ func (f *RaftFSM) GetValue(key string) (interface{}, error) {
 		}
 	}
 
-	var ret interface{}
-	switch value.(type) {
-	case maputils.Map:
-		ret = value.(maputils.Map).ToMap()
-	default:
-		ret = value
-	}
+	//// convert to JSON string
+	//var value []byte
+	//switch rawData.(type) {
+	//case maputils.Map:
+	//	value, err = json.Marshal(rawData.(maputils.Map).ToMap())
+	//default:
+	//	value, err = json.Marshal(rawData)
+	//}
+	//if err != nil {
+	//	f.logger.Error(err.Error(), zap.String("key", key))
+	//	return nil, err
+	//}
 
-	return ret, nil
+	//switch value.(type) {
+	//case maputils.Map:
+	//	return value.(maputils.Map).ToMap(), nil
+	//default:
+	//	return value, nil
+	//}
+
+	return value, nil
 }
 
 func (f *RaftFSM) SetValue(key string, value interface{}, merge bool) error {
+	//var data map[string]interface{}
+	//err := json.Unmarshal(value, &data)
+	//if err != nil {
+	//	f.logger.Error(err.Error(), zap.String("key", key), zap.Any("value", value), zap.Bool("merge", merge))
+	//	return err
+	//}
+
 	if merge {
 		err := f.data.Merge(key, value)
 		if err != nil {
@@ -157,64 +181,101 @@ type fsmResponse struct {
 }
 
 func (f *RaftFSM) Apply(l *raft.Log) interface{} {
-	var msg message
-	err := json.Unmarshal(l.Data, &msg)
+	//var msg message
+	//err := json.Unmarshal(l.Data, &msg)
+	//if err != nil {
+	//	f.logger.Error(err.Error())
+	//	return err
+	//}
+
+	proposal := &management.Proposal{}
+	err := proto.Unmarshal(l.Data, proposal)
 	if err != nil {
 		f.logger.Error(err.Error())
 		return err
 	}
 
-	switch msg.Command {
-	case setNode:
-		var data map[string]interface{}
-		err := json.Unmarshal(msg.Data, &data)
-		if err != nil {
-			f.logger.Error(err.Error())
-			return &fsmResponse{error: err}
-		}
-		b, err := json.Marshal(data["node"])
-		if err != nil {
-			f.logger.Error(err.Error())
-			return &fsmResponse{error: err}
-		}
-		var node *management.Node
-		err = json.Unmarshal(b, &node)
-		if err != nil {
-			f.logger.Error(err.Error())
-			return &fsmResponse{error: err}
-		}
-		err = f.SetNode(node)
+	switch proposal.Event {
+	case management.Proposal_SET_NODE:
+		//var data map[string]interface{}
+		//err := json.Unmarshal(proposal.Data, &data)
+		//if err != nil {
+		//	f.logger.Error(err.Error())
+		//	return &fsmResponse{error: err}
+		//}
+		//b, err := json.Marshal(data["node"])
+		//if err != nil {
+		//	f.logger.Error(err.Error())
+		//	return &fsmResponse{error: err}
+		//}
+		//var node *management.Node
+		//err = json.Unmarshal(b, &node)
+		//if err != nil {
+		//	f.logger.Error(err.Error())
+		//	return &fsmResponse{error: err}
+		//}
+		err = f.SetNode(proposal.Node)
 		if err != nil {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
 		return &fsmResponse{error: err}
-	case deleteNode:
-		var data map[string]interface{}
-		err := json.Unmarshal(msg.Data, &data)
-		if err != nil {
-			f.logger.Error(err.Error())
-			return &fsmResponse{error: err}
-		}
-		err = f.DeleteNode(data["id"].(string))
+	case management.Proposal_DELETE_NODE:
+		//var data map[string]interface{}
+		//err := json.Unmarshal(proposal.Data, &data)
+		//if err != nil {
+		//	f.logger.Error(err.Error())
+		//	return &fsmResponse{error: err}
+		//}
+		err = f.DeleteNode(proposal.Node.Id)
 		return &fsmResponse{error: err}
-	case setKeyValue:
-		var data map[string]interface{}
-		err := json.Unmarshal(msg.Data, &data)
+	case management.Proposal_SET_VALUE:
+		//var data map[string]interface{}
+		//err := json.Unmarshal(msg.Data, &data)
+		//if err != nil {
+		//	f.logger.Error(err.Error())
+		//	return &fsmResponse{error: err}
+		//}
+		//b, err := json.Marshal(data["value"])
+		//if err != nil {
+		//	f.logger.Error(err.Error())
+		//	return &fsmResponse{error: err}
+		//}
+		//var m map[string]interface{}
+		//err = json.Unmarshal(b, &m)
+		//if err != nil {
+		//	f.logger.Error(err.Error())
+		//	return &fsmResponse{error: err}
+		//}
+		//value, err := json.Marshal(m)
+		//if err != nil {
+		//	f.logger.Error(err.Error())
+		//	return &fsmResponse{error: err}
+		//}
+
+		//var data map[string]interface{}
+		//err := json.Unmarshal(proposal.Data, &data)
+		//if err != nil {
+		//	f.logger.Error(err.Error())
+		//	return &fsmResponse{error: err}
+		//}
+
+		value, err := protobuf.MarshalAny(proposal.KeyValue.Value)
 		if err != nil {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
-		err = f.SetValue(data["key"].(string), data["value"], false)
+
+		err = f.SetValue(proposal.KeyValue.Key, value, false)
 		return &fsmResponse{error: err}
-	case deleteKeyValue:
-		var data map[string]interface{}
-		err := json.Unmarshal(msg.Data, &data)
-		if err != nil {
-			f.logger.Error(err.Error())
-			return &fsmResponse{error: err}
-		}
-		err = f.DeleteValue(data["key"].(string))
+	case management.Proposal_DELETE_VALUE:
+		//var data map[string]interface{}
+		//err := json.Unmarshal(proposal.Data, &data)
+		//if err != nil {
+		//	f.logger.Error(err.Error())
+		//	return &fsmResponse{error: err}
+		//}
+		err = f.DeleteValue(proposal.KeyValue.Key)
 		return &fsmResponse{error: err}
 	default:
 		err = errors.New("unsupported command")

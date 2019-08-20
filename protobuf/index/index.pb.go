@@ -10,6 +10,8 @@ import (
 	any "github.com/golang/protobuf/ptypes/any"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -22,7 +24,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type NodeHealthCheckRequest_Probe int32
 
@@ -1432,6 +1434,50 @@ type IndexServer interface {
 	GetIndexConfig(context.Context, *empty.Empty) (*GetIndexConfigResponse, error)
 	GetIndexStats(context.Context, *empty.Empty) (*GetIndexStatsResponse, error)
 	Snapshot(context.Context, *empty.Empty) (*empty.Empty, error)
+}
+
+// UnimplementedIndexServer can be embedded to have forward compatible implementations.
+type UnimplementedIndexServer struct {
+}
+
+func (*UnimplementedIndexServer) NodeHealthCheck(ctx context.Context, req *NodeHealthCheckRequest) (*NodeHealthCheckResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NodeHealthCheck not implemented")
+}
+func (*UnimplementedIndexServer) NodeInfo(ctx context.Context, req *empty.Empty) (*NodeInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NodeInfo not implemented")
+}
+func (*UnimplementedIndexServer) ClusterJoin(ctx context.Context, req *ClusterJoinRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClusterJoin not implemented")
+}
+func (*UnimplementedIndexServer) ClusterLeave(ctx context.Context, req *ClusterLeaveRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClusterLeave not implemented")
+}
+func (*UnimplementedIndexServer) ClusterInfo(ctx context.Context, req *empty.Empty) (*ClusterInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClusterInfo not implemented")
+}
+func (*UnimplementedIndexServer) ClusterWatch(req *empty.Empty, srv Index_ClusterWatchServer) error {
+	return status.Errorf(codes.Unimplemented, "method ClusterWatch not implemented")
+}
+func (*UnimplementedIndexServer) GetDocument(ctx context.Context, req *GetDocumentRequest) (*GetDocumentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDocument not implemented")
+}
+func (*UnimplementedIndexServer) IndexDocument(srv Index_IndexDocumentServer) error {
+	return status.Errorf(codes.Unimplemented, "method IndexDocument not implemented")
+}
+func (*UnimplementedIndexServer) DeleteDocument(srv Index_DeleteDocumentServer) error {
+	return status.Errorf(codes.Unimplemented, "method DeleteDocument not implemented")
+}
+func (*UnimplementedIndexServer) Search(ctx context.Context, req *SearchRequest) (*SearchResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Search not implemented")
+}
+func (*UnimplementedIndexServer) GetIndexConfig(ctx context.Context, req *empty.Empty) (*GetIndexConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetIndexConfig not implemented")
+}
+func (*UnimplementedIndexServer) GetIndexStats(ctx context.Context, req *empty.Empty) (*GetIndexStatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetIndexStats not implemented")
+}
+func (*UnimplementedIndexServer) Snapshot(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Snapshot not implemented")
 }
 
 func RegisterIndexServer(s *grpc.Server, srv IndexServer) {

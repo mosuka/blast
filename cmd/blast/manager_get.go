@@ -21,10 +21,12 @@ import (
 
 	"github.com/mosuka/blast/manager"
 	"github.com/urfave/cli"
+	yaml "gopkg.in/yaml.v2"
 )
 
 func managerGet(c *cli.Context) error {
 	grpcAddr := c.String("grpc-address")
+	format := c.String("format")
 
 	key := c.Args().Get(0)
 
@@ -44,11 +46,22 @@ func managerGet(c *cli.Context) error {
 		return err
 	}
 
-	valueBytes, err := json.MarshalIndent(value, "", "  ")
-	if err != nil {
-		return err
+	switch format {
+	case "json":
+		valueBytes, err := json.MarshalIndent(value, "", "  ")
+		if err != nil {
+			return err
+		}
+		_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(valueBytes)))
+	case "yaml":
+		valueBytes, err := yaml.Marshal(value)
+		if err != nil {
+			return err
+		}
+		_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(valueBytes)))
+	default:
+		_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", value))
 	}
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(valueBytes)))
 
 	return nil
 }

@@ -173,7 +173,12 @@ func (m Map) Get(key string) (interface{}, error) {
 		}
 	}
 
-	return value, nil
+	switch value.(type) {
+	case Map:
+		return value.(Map).ToMap(), nil
+	default:
+		return value, nil
+	}
 }
 
 func (m Map) Delete(key string) error {
