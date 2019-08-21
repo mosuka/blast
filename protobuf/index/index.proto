@@ -45,7 +45,7 @@ service Index {
 
     rpc GetDocument (GetDocumentRequest) returns (GetDocumentResponse) {
         option (google.api.http) = {
-            get: "/v1/index/{id=**}"
+            get: "/v1/documents/{id=**}"
         };
     }
     rpc IndexDocument (stream IndexDocumentRequest) returns (IndexDocumentResponse) {}

@@ -565,7 +565,7 @@ Also you can do above commands via HTTP REST API that listened port 5002.
 Indexing a document via HTTP is as following:
 
 ```bash
-$ curl -X PUT 'http://127.0.0.1:6000/v1/index/enwiki_1' -H 'Content-Type: application/json' --data-binary '
+$ curl -X PUT 'http://127.0.0.1:6000/v1/documents/enwiki_1' -H 'Content-Type: application/json' --data-binary '
 {
   "title_en": "Search engine (computing)",
   "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
@@ -578,7 +578,7 @@ $ curl -X PUT 'http://127.0.0.1:6000/v1/index/enwiki_1' -H 'Content-Type: applic
 or
 
 ```bash
-$ curl -X PUT 'http://127.0.0.1:6000/v1/index' -H 'Content-Type: application/json' --data-binary @./example/wiki_doc_enwiki_1.json
+$ curl -X PUT 'http://127.0.0.1:6000/v1/documents' -H 'Content-Type: application/json' --data-binary @./example/wiki_doc_enwiki_1.json
 ```
 
 ### Getting a document via HTTP REST API
@@ -586,7 +586,7 @@ $ curl -X PUT 'http://127.0.0.1:6000/v1/index' -H 'Content-Type: application/jso
 Getting a document via HTTP is as following:
 
 ```bash
-$ curl -X GET 'http://127.0.0.1:6000/v1/index/enwiki_1' -H 'Content-Type: application/json'
+$ curl -X GET 'http://127.0.0.1:6000/v1/documents/enwiki_1' -H 'Content-Type: application/json'
 ```
 
 
@@ -595,7 +595,7 @@ $ curl -X GET 'http://127.0.0.1:6000/v1/index/enwiki_1' -H 'Content-Type: applic
 Searching documents via HTTP is as following:
 
 ```bash
-$ curl -X POST 'http://127.0.0.1:6000/v1/index/search' -H 'Content-Type: application/json' --data-binary @./example/wiki_search_request.json
+$ curl -X POST 'http://127.0.0.1:6000/v1/documents/search' -H 'Content-Type: application/json' --data-binary @./example/wiki_search_request.json
 ```
 
 
@@ -604,7 +604,7 @@ $ curl -X POST 'http://127.0.0.1:6000/v1/index/search' -H 'Content-Type: applica
 Deleting a document via HTTP is as following:
 
 ```bash
-$ curl -X DELETE 'http://127.0.0.1:6000/v1/index/enwiki_1' -H 'Content-Type: application/json'
+$ curl -X DELETE 'http://127.0.0.1:6000/v1/documents/enwiki_1' -H 'Content-Type: application/json'
 ```
 
 
@@ -613,7 +613,7 @@ $ curl -X DELETE 'http://127.0.0.1:6000/v1/index/enwiki_1' -H 'Content-Type: app
 Indexing documents in bulk via HTTP is as following:
 
 ```bash
-$ curl -X PUT 'http://127.0.0.1:6000/v1/index?bulk=true' -H 'Content-Type: application/x-ndjson' --data-binary @./example/wiki_bulk_index.jsonl
+$ curl -X PUT 'http://127.0.0.1:6000/v1/documents?bulk=true' -H 'Content-Type: application/x-ndjson' --data-binary @./example/wiki_bulk_index.jsonl
 ```
 
 
@@ -622,7 +622,7 @@ $ curl -X PUT 'http://127.0.0.1:6000/v1/index?bulk=true' -H 'Content-Type: appli
 Deleting documents in bulk via HTTP is as following:
 
 ```bash
-$ curl -X DELETE 'http://127.0.0.1:6000/v1/index' -H 'Content-Type: text/plain' --data-binary @./example/wiki_bulk_delete.txt
+$ curl -X DELETE 'http://127.0.0.1:6000/v1/documents' -H 'Content-Type: text/plain' --data-binary @./example/wiki_bulk_delete.txt
 ```
 
 
@@ -1016,7 +1016,7 @@ $ for FILE in $(find ~/tmp/enwiki -type f -name '*' | sort)
     echo "Indexing ${FILE}"
     TIMESTAMP=$(date -u "+%Y-%m-%dT%H:%M:%SZ")
     DOCS=$(cat ${FILE} | jq -r '. + {fields: {url: .url, title_en: .title, text_en: .text, timestamp: "'${TIMESTAMP}'", _type: "enwiki"}} | del(.url) | del(.title) | del(.text) | del(.fields.id)' | jq -c)
-    curl -s -X PUT -H 'Content-Type: application/json' "http://127.0.0.1:8000/documents?bulk=true" --data-binary "${DOCS}"
+    curl -s -X PUT -H 'Content-Type: application/json' "http://127.0.0.1:6000/v1/documents?bulk=true" --data-binary "${DOCS}"
   done
 ```
 

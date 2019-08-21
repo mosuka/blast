@@ -222,7 +222,7 @@ var (
 
 	pattern_Index_ClusterInfo_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "cluster", "status"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_Index_GetDocument_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 3, 0, 4, 1, 5, 2}, []string{"v1", "index", "id"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Index_GetDocument_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 3, 0, 4, 1, 5, 2}, []string{"v1", "documents", "id"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
