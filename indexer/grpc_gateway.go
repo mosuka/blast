@@ -15,6 +15,8 @@
 package indexer
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -25,7 +27,6 @@ import (
 	"net/http"
 
 	"github.com/golang/protobuf/ptypes/any"
-
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/index"
@@ -33,15 +34,15 @@ import (
 	"google.golang.org/grpc"
 )
 
-type ResponseMarshaler struct{}
+type JsonMarshaler struct{}
 
 // ContentType always Returns "application/json".
-func (*ResponseMarshaler) ContentType() string {
+func (*JsonMarshaler) ContentType() string {
 	return "application/json"
 }
 
 // Marshal marshals "v" into JSON
-func (j *ResponseMarshaler) Marshal(v interface{}) ([]byte, error) {
+func (j *JsonMarshaler) Marshal(v interface{}) ([]byte, error) {
 	switch v.(type) {
 	case *index.GetResponse:
 		value, err := protobuf.MarshalAny(v.(*index.GetResponse).Document.Fields)
@@ -62,12 +63,12 @@ func (j *ResponseMarshaler) Marshal(v interface{}) ([]byte, error) {
 }
 
 // Unmarshal unmarshals JSON data into "v".
-func (j *ResponseMarshaler) Unmarshal(data []byte, v interface{}) error {
+func (j *JsonMarshaler) Unmarshal(data []byte, v interface{}) error {
 	return json.Unmarshal(data, v)
 }
 
 // NewDecoder returns a Decoder which reads JSON stream from "r".
-func (j *ResponseMarshaler) NewDecoder(r io.Reader) runtime.Decoder {
+func (j *JsonMarshaler) NewDecoder(r io.Reader) runtime.Decoder {
 	return runtime.DecoderFunc(
 		func(v interface{}) error {
 			buffer, err := ioutil.ReadAll(r)
@@ -82,25 +83,16 @@ func (j *ResponseMarshaler) NewDecoder(r io.Reader) runtime.Decoder {
 				if err != nil {
 					return err
 				}
-				value, ok := tmpValue["fields"]
+				//id, ok := tmpValue["id"].(string)
+				//if ok {
+				//	v.(*index.IndexRequest).Id = id
+				//}
+				fields, ok := tmpValue["fields"]
 				if !ok {
 					return errors.New("value does not exist")
 				}
 				v.(*index.IndexRequest).Fields = &any.Any{}
-				return protobuf.UnmarshalAny(value, v.(*index.IndexRequest).Fields)
-
-			//case *management.SetRequest:
-			//	var tmpValue map[string]interface{}
-			//	err = json.Unmarshal(buffer, &tmpValue)
-			//	if err != nil {
-			//		return err
-			//	}
-			//	value, ok := tmpValue["value"]
-			//	if !ok {
-			//		return errors.New("value does not exist")
-			//	}
-			//	v.(*management.SetRequest).Value = &any.Any{}
-			//	return protobuf.UnmarshalAny(value, v.(*management.SetRequest).Value)
+				return protobuf.UnmarshalAny(fields, v.(*index.IndexRequest).Fields)
 			default:
 				return json.Unmarshal(buffer, v)
 			}
@@ -109,12 +101,151 @@ func (j *ResponseMarshaler) NewDecoder(r io.Reader) runtime.Decoder {
 }
 
 // NewEncoder returns an Encoder which writes JSON stream into "w".
-func (j *ResponseMarshaler) NewEncoder(w io.Writer) runtime.Encoder {
+func (j *JsonMarshaler) NewEncoder(w io.Writer) runtime.Encoder {
 	return json.NewEncoder(w)
 }
 
 // Delimiter for newline encoded JSON streams.
-func (j *ResponseMarshaler) Delimiter() []byte {
+func (j *JsonMarshaler) Delimiter() []byte {
+	return []byte("\n")
+}
+
+type JsonlMarshaler struct{}
+
+// ContentType always Returns "application/json".
+func (*JsonlMarshaler) ContentType() string {
+	return "application/json"
+}
+
+// Marshal marshals "v" into JSON
+func (j *JsonlMarshaler) Marshal(v interface{}) ([]byte, error) {
+	return json.Marshal(v)
+}
+
+// Unmarshal unmarshals JSON data into "v".
+func (j *JsonlMarshaler) Unmarshal(data []byte, v interface{}) error {
+	return json.Unmarshal(data, v)
+}
+
+// NewDecoder returns a Decoder which reads JSON-LINE stream from "r".
+func (j *JsonlMarshaler) NewDecoder(r io.Reader) runtime.Decoder {
+	return runtime.DecoderFunc(
+		func(v interface{}) error {
+			buffer, err := ioutil.ReadAll(r)
+			if err != nil {
+				return err
+			}
+
+			switch v.(type) {
+			case *index.BulkIndexRequest:
+				docs := make([]*index.Document, 0)
+				reader := bufio.NewReader(bytes.NewReader(buffer))
+				for {
+					docBytes, err := reader.ReadBytes('\n')
+					if err != nil {
+						if err == io.EOF || err == io.ErrClosedPipe {
+							if len(docBytes) > 0 {
+								doc := &index.Document{}
+								err = index.UnmarshalDocument(docBytes, doc)
+								if err != nil {
+									return err
+								}
+								docs = append(docs, doc)
+							}
+							break
+						}
+					}
+
+					if len(docBytes) > 0 {
+						doc := &index.Document{}
+						err = index.UnmarshalDocument(docBytes, doc)
+						if err != nil {
+							return err
+						}
+						docs = append(docs, doc)
+					}
+				}
+				v.(*index.BulkIndexRequest).Documents = docs
+				return nil
+			default:
+				return json.Unmarshal(buffer, v)
+			}
+		},
+	)
+}
+
+// NewEncoder returns an Encoder which writes JSON stream into "w".
+func (j *JsonlMarshaler) NewEncoder(w io.Writer) runtime.Encoder {
+	return json.NewEncoder(w)
+}
+
+// Delimiter for newline encoded JSON streams.
+func (j *JsonlMarshaler) Delimiter() []byte {
+	return []byte("\n")
+}
+
+type TextMarshaler struct{}
+
+// ContentType always Returns "application/json".
+func (*TextMarshaler) ContentType() string {
+	return "application/json"
+}
+
+// Marshal marshals "v" into JSON
+func (j *TextMarshaler) Marshal(v interface{}) ([]byte, error) {
+	return json.Marshal(v)
+}
+
+// Unmarshal unmarshals JSON data into "v".
+func (j *TextMarshaler) Unmarshal(data []byte, v interface{}) error {
+	return json.Unmarshal(data, v)
+}
+
+// NewDecoder returns a Decoder which reads text stream from "r".
+func (j *TextMarshaler) NewDecoder(r io.Reader) runtime.Decoder {
+	return runtime.DecoderFunc(
+		func(v interface{}) error {
+			buffer, err := ioutil.ReadAll(r)
+			if err != nil {
+				return err
+			}
+
+			switch v.(type) {
+			case *index.BulkDeleteRequest:
+				ids := make([]string, 0)
+				reader := bufio.NewReader(bytes.NewReader(buffer))
+				for {
+					//idBytes, err := reader.ReadBytes('\n')
+					idBytes, _, err := reader.ReadLine()
+					if err != nil {
+						if err == io.EOF || err == io.ErrClosedPipe {
+							if len(idBytes) > 0 {
+								ids = append(ids, string(idBytes))
+							}
+							break
+						}
+					}
+
+					if len(idBytes) > 0 {
+						ids = append(ids, string(idBytes))
+					}
+				}
+				v.(*index.BulkDeleteRequest).Ids = ids
+				return nil
+			default:
+				return json.Unmarshal(buffer, v)
+			}
+		},
+	)
+}
+
+// NewEncoder returns an Encoder which writes JSON stream into "w".
+func (j *TextMarshaler) NewEncoder(w io.Writer) runtime.Encoder {
+	return json.NewEncoder(w)
+}
+
+// Delimiter for newline encoded JSON streams.
+func (j *TextMarshaler) Delimiter() []byte {
 	return []byte("\n")
 }
 
@@ -140,7 +271,9 @@ func (s *GRPCGateway) Start() error {
 	s.ctx, s.cancel = NewGRPCContext()
 
 	mux := runtime.NewServeMux(
-		runtime.WithMarshalerOption("application/json", new(ResponseMarshaler)),
+		runtime.WithMarshalerOption("application/json", new(JsonMarshaler)),
+		runtime.WithMarshalerOption("application/x-ndjson", new(JsonlMarshaler)),
+		runtime.WithMarshalerOption("text/plain", new(TextMarshaler)),
 	)
 	opts := []grpc.DialOption{grpc.WithInsecure()}
 

@@ -48,7 +48,7 @@ protoc:
 	@echo ">> generating proto3 code"
 	@echo "   GRPC_GATEWAY_PATH = $(GRPC_GATEWAY_PATH)"
 	@for proto_dir in $(PROTOBUFS); do echo $$proto_dir; protoc --proto_path=. --proto_path=${GRPC_GATEWAY_PATH}/third_party/googleapis --proto_path=$$proto_dir --go_out=plugins=grpc:$(GOPATH)/src $$proto_dir/*.proto || exit 1; done
-	@for proto_dir in $(PROTOBUFS); do echo $$proto_dir; protoc --proto_path=. --proto_path=${GRPC_GATEWAY_PATH}/third_party/googleapis --proto_path=$$proto_dir --grpc-gateway_out=logtostderr=true:$(GOPATH)/src $$proto_dir/*.proto || exit 1; done
+	@for proto_dir in $(PROTOBUFS); do echo $$proto_dir; protoc --proto_path=. --proto_path=${GRPC_GATEWAY_PATH}/third_party/googleapis --proto_path=$$proto_dir --grpc-gateway_out=logtostderr=true,allow_delete_body=true:$(GOPATH)/src $$proto_dir/*.proto || exit 1; done
 
 
 .PHONY: format

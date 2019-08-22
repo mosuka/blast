@@ -59,8 +59,18 @@ service Index {
             delete: "/v1/documents/{id=**}"
         };
     }
-    rpc BulkIndex (BulkIndexRequest) returns (BulkIndexResponse) {}
-    rpc BulkDelete (BulkDeleteRequest) returns (BulkDeleteResponse) {}
+    rpc BulkIndex (BulkIndexRequest) returns (BulkIndexResponse) {
+        option (google.api.http) = {
+            put: "/v1/bulk"
+            body: "*"
+        };
+    }
+    rpc BulkDelete (BulkDeleteRequest) returns (BulkDeleteResponse) {
+        option (google.api.http) = {
+            delete: "/v1/bulk"
+            body: "*"
+        };
+    }
     rpc Search (SearchRequest) returns (SearchResponse) {}
     rpc GetIndexConfig (google.protobuf.Empty) returns (GetIndexConfigResponse) {}
     rpc GetIndexStats (google.protobuf.Empty) returns (GetIndexStatsResponse) {}

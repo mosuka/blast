@@ -613,7 +613,7 @@ $ curl -X DELETE 'http://127.0.0.1:6000/v1/documents/enwiki_1' -H 'Content-Type:
 Indexing documents in bulk via HTTP is as following:
 
 ```bash
-$ curl -X PUT 'http://127.0.0.1:6000/v1/documents?bulk=true' -H 'Content-Type: application/x-ndjson' --data-binary @./example/wiki_bulk_index.jsonl
+$ curl -X PUT 'http://127.0.0.1:6000/v1/bulk' -H 'Content-Type: application/x-ndjson' --data-binary @./example/wiki_bulk_index.jsonl
 ```
 
 
@@ -622,7 +622,7 @@ $ curl -X PUT 'http://127.0.0.1:6000/v1/documents?bulk=true' -H 'Content-Type: a
 Deleting documents in bulk via HTTP is as following:
 
 ```bash
-$ curl -X DELETE 'http://127.0.0.1:6000/v1/documents' -H 'Content-Type: text/plain' --data-binary @./example/wiki_bulk_delete.txt
+$ curl -X DELETE 'http://127.0.0.1:6000/v1/bulk' -H 'Content-Type: text/plain' --data-binary @./example/wiki_bulk_delete.txt
 ```
 
 
