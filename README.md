@@ -581,12 +581,6 @@ $ curl -X PUT 'http://127.0.0.1:6000/v1/documents/enwiki_1' -H 'Content-Type: ap
 '
 ```
 
-or
-
-```bash
-$ curl -X PUT 'http://127.0.0.1:6000/v1/documents' -H 'Content-Type: application/json' --data-binary @./example/wiki_doc_enwiki_1.json
-```
-
 ### Getting a document via HTTP REST API
 
 Getting a document via HTTP is as following:
