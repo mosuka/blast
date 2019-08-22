@@ -43,7 +43,7 @@ func indexerGet(c *cli.Context) error {
 		}
 	}()
 
-	doc, err := client.GetDocument(id)
+	doc, err := client.Get(id)
 	if err != nil {
 		return err
 	}

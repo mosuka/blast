@@ -43,13 +43,15 @@ service Index {
     }
     rpc ClusterWatch (google.protobuf.Empty) returns (stream ClusterWatchResponse) {}
 
-    rpc GetDocument (GetDocumentRequest) returns (GetDocumentResponse) {
+    rpc Get (GetRequest) returns (GetResponse) {
         option (google.api.http) = {
             get: "/v1/documents/{id=**}"
         };
     }
-    rpc IndexDocument (stream IndexDocumentRequest) returns (IndexDocumentResponse) {}
-    rpc DeleteDocument (stream DeleteDocumentRequest) returns (DeleteDocumentResponse) {}
+    rpc Index (IndexRequest) returns (google.protobuf.Empty) {}
+    rpc Delete (DeleteRequest) returns (google.protobuf.Empty) {}
+    rpc BulkIndex (BulkIndexRequest) returns (BulkIndexResponse) {}
+    rpc BulkDelete (BulkDeleteRequest) returns (BulkDeleteResponse) {}
     rpc Search (SearchRequest) returns (SearchResponse) {}
     rpc GetIndexConfig (google.protobuf.Empty) returns (GetIndexConfigResponse) {}
     rpc GetIndexStats (google.protobuf.Empty) returns (GetIndexStatsResponse) {}
@@ -136,27 +138,35 @@ message Document {
     google.protobuf.Any fields = 2;
 }
 
-message GetDocumentRequest {
+message GetRequest {
     string id = 1;
 }
 
-message GetDocumentResponse {
+message GetResponse {
     Document document = 1;
 }
 
-message IndexDocumentRequest {
+message IndexRequest {
     Document document = 1;
 }
 
-message IndexDocumentResponse {
+message DeleteRequest {
+    string id = 1;
+}
+
+message BulkIndexRequest {
+    repeated Document documents = 1;
+}
+
+message BulkIndexResponse {
     int32 count = 1;
 }
 
-message DeleteDocumentRequest {
-    string id = 1;
+message BulkDeleteRequest {
+    repeated string ids = 1;
 }
 
-message DeleteDocumentResponse {
+message BulkDeleteResponse {
     int32 count = 1;
 }
 
@@ -182,3 +192,20 @@ message GetIndexStatsResponse {
     google.protobuf.Any index_stats = 1;
 }
 
+message Proposal {
+    enum Event {
+        UNKNOWN = 0;
+        SET_NODE = 1;
+        DELETE_NODE = 2;
+        INDEX = 3;
+        DELETE = 4;
+        BULK_INDEX = 5;
+        BULK_DELETE = 6;
+    }
+    Event event = 1;
+    Node node = 2;
+    Document document = 3;
+    string id = 4;
+    repeated Document documents = 5;
+    repeated string ids = 6;
+}

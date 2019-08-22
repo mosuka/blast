@@ -163,6 +163,46 @@ func (ClusterWatchResponse_Event) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_7b2daf652facb3ae, []int{9, 0}
 }
 
+type Proposal_Event int32
+
+const (
+	Proposal_UNKNOWN     Proposal_Event = 0
+	Proposal_SET_NODE    Proposal_Event = 1
+	Proposal_DELETE_NODE Proposal_Event = 2
+	Proposal_INDEX       Proposal_Event = 3
+	Proposal_DELETE      Proposal_Event = 4
+	Proposal_BULK_INDEX  Proposal_Event = 5
+	Proposal_BULK_DELETE Proposal_Event = 6
+)
+
+var Proposal_Event_name = map[int32]string{
+	0: "UNKNOWN",
+	1: "SET_NODE",
+	2: "DELETE_NODE",
+	3: "INDEX",
+	4: "DELETE",
+	5: "BULK_INDEX",
+	6: "BULK_DELETE",
+}
+
+var Proposal_Event_value = map[string]int32{
+	"UNKNOWN":     0,
+	"SET_NODE":    1,
+	"DELETE_NODE": 2,
+	"INDEX":       3,
+	"DELETE":      4,
+	"BULK_INDEX":  5,
+	"BULK_DELETE": 6,
+}
+
+func (x Proposal_Event) String() string {
+	return proto.EnumName(Proposal_Event_name, int32(x))
+}
+
+func (Proposal_Event) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_7b2daf652facb3ae, []int{24, 0}
+}
+
 type NodeHealthCheckRequest struct {
 	Probe                NodeHealthCheckRequest_Probe `protobuf:"varint,1,opt,name=probe,proto3,enum=index.NodeHealthCheckRequest_Probe" json:"probe,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
@@ -656,234 +696,312 @@ func (m *Document) GetFields() *any.Any {
 	return nil
 }
 
-type GetDocumentRequest struct {
+type GetRequest struct {
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetDocumentRequest) Reset()         { *m = GetDocumentRequest{} }
-func (m *GetDocumentRequest) String() string { return proto.CompactTextString(m) }
-func (*GetDocumentRequest) ProtoMessage()    {}
-func (*GetDocumentRequest) Descriptor() ([]byte, []int) {
+func (m *GetRequest) Reset()         { *m = GetRequest{} }
+func (m *GetRequest) String() string { return proto.CompactTextString(m) }
+func (*GetRequest) ProtoMessage()    {}
+func (*GetRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7b2daf652facb3ae, []int{11}
 }
 
-func (m *GetDocumentRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetDocumentRequest.Unmarshal(m, b)
+func (m *GetRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetRequest.Unmarshal(m, b)
 }
-func (m *GetDocumentRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetDocumentRequest.Marshal(b, m, deterministic)
+func (m *GetRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetRequest.Marshal(b, m, deterministic)
 }
-func (m *GetDocumentRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetDocumentRequest.Merge(m, src)
+func (m *GetRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetRequest.Merge(m, src)
 }
-func (m *GetDocumentRequest) XXX_Size() int {
-	return xxx_messageInfo_GetDocumentRequest.Size(m)
+func (m *GetRequest) XXX_Size() int {
+	return xxx_messageInfo_GetRequest.Size(m)
 }
-func (m *GetDocumentRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetDocumentRequest.DiscardUnknown(m)
+func (m *GetRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetDocumentRequest proto.InternalMessageInfo
+var xxx_messageInfo_GetRequest proto.InternalMessageInfo
 
-func (m *GetDocumentRequest) GetId() string {
+func (m *GetRequest) GetId() string {
 	if m != nil {
 		return m.Id
 	}
 	return ""
 }
 
-type GetDocumentResponse struct {
+type GetResponse struct {
 	Document             *Document `protobuf:"bytes,1,opt,name=document,proto3" json:"document,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
 	XXX_unrecognized     []byte    `json:"-"`
 	XXX_sizecache        int32     `json:"-"`
 }
 
-func (m *GetDocumentResponse) Reset()         { *m = GetDocumentResponse{} }
-func (m *GetDocumentResponse) String() string { return proto.CompactTextString(m) }
-func (*GetDocumentResponse) ProtoMessage()    {}
-func (*GetDocumentResponse) Descriptor() ([]byte, []int) {
+func (m *GetResponse) Reset()         { *m = GetResponse{} }
+func (m *GetResponse) String() string { return proto.CompactTextString(m) }
+func (*GetResponse) ProtoMessage()    {}
+func (*GetResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7b2daf652facb3ae, []int{12}
 }
 
-func (m *GetDocumentResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetDocumentResponse.Unmarshal(m, b)
+func (m *GetResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetResponse.Unmarshal(m, b)
 }
-func (m *GetDocumentResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetDocumentResponse.Marshal(b, m, deterministic)
+func (m *GetResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetResponse.Marshal(b, m, deterministic)
 }
-func (m *GetDocumentResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetDocumentResponse.Merge(m, src)
+func (m *GetResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetResponse.Merge(m, src)
 }
-func (m *GetDocumentResponse) XXX_Size() int {
-	return xxx_messageInfo_GetDocumentResponse.Size(m)
+func (m *GetResponse) XXX_Size() int {
+	return xxx_messageInfo_GetResponse.Size(m)
 }
-func (m *GetDocumentResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetDocumentResponse.DiscardUnknown(m)
+func (m *GetResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetDocumentResponse proto.InternalMessageInfo
+var xxx_messageInfo_GetResponse proto.InternalMessageInfo
 
-func (m *GetDocumentResponse) GetDocument() *Document {
+func (m *GetResponse) GetDocument() *Document {
 	if m != nil {
 		return m.Document
 	}
 	return nil
 }
 
-type IndexDocumentRequest struct {
+type IndexRequest struct {
 	Document             *Document `protobuf:"bytes,1,opt,name=document,proto3" json:"document,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
 	XXX_unrecognized     []byte    `json:"-"`
 	XXX_sizecache        int32     `json:"-"`
 }
 
-func (m *IndexDocumentRequest) Reset()         { *m = IndexDocumentRequest{} }
-func (m *IndexDocumentRequest) String() string { return proto.CompactTextString(m) }
-func (*IndexDocumentRequest) ProtoMessage()    {}
-func (*IndexDocumentRequest) Descriptor() ([]byte, []int) {
+func (m *IndexRequest) Reset()         { *m = IndexRequest{} }
+func (m *IndexRequest) String() string { return proto.CompactTextString(m) }
+func (*IndexRequest) ProtoMessage()    {}
+func (*IndexRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7b2daf652facb3ae, []int{13}
 }
 
-func (m *IndexDocumentRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_IndexDocumentRequest.Unmarshal(m, b)
+func (m *IndexRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_IndexRequest.Unmarshal(m, b)
 }
-func (m *IndexDocumentRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_IndexDocumentRequest.Marshal(b, m, deterministic)
+func (m *IndexRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_IndexRequest.Marshal(b, m, deterministic)
 }
-func (m *IndexDocumentRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_IndexDocumentRequest.Merge(m, src)
+func (m *IndexRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_IndexRequest.Merge(m, src)
 }
-func (m *IndexDocumentRequest) XXX_Size() int {
-	return xxx_messageInfo_IndexDocumentRequest.Size(m)
+func (m *IndexRequest) XXX_Size() int {
+	return xxx_messageInfo_IndexRequest.Size(m)
 }
-func (m *IndexDocumentRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_IndexDocumentRequest.DiscardUnknown(m)
+func (m *IndexRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_IndexRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_IndexDocumentRequest proto.InternalMessageInfo
+var xxx_messageInfo_IndexRequest proto.InternalMessageInfo
 
-func (m *IndexDocumentRequest) GetDocument() *Document {
+func (m *IndexRequest) GetDocument() *Document {
 	if m != nil {
 		return m.Document
 	}
 	return nil
 }
 
-type IndexDocumentResponse struct {
+type DeleteRequest struct {
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DeleteRequest) Reset()         { *m = DeleteRequest{} }
+func (m *DeleteRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteRequest) ProtoMessage()    {}
+func (*DeleteRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7b2daf652facb3ae, []int{14}
+}
+
+func (m *DeleteRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteRequest.Unmarshal(m, b)
+}
+func (m *DeleteRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteRequest.Marshal(b, m, deterministic)
+}
+func (m *DeleteRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteRequest.Merge(m, src)
+}
+func (m *DeleteRequest) XXX_Size() int {
+	return xxx_messageInfo_DeleteRequest.Size(m)
+}
+func (m *DeleteRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteRequest proto.InternalMessageInfo
+
+func (m *DeleteRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+type BulkIndexRequest struct {
+	Documents            []*Document `protobuf:"bytes,1,rep,name=documents,proto3" json:"documents,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
+	XXX_unrecognized     []byte      `json:"-"`
+	XXX_sizecache        int32       `json:"-"`
+}
+
+func (m *BulkIndexRequest) Reset()         { *m = BulkIndexRequest{} }
+func (m *BulkIndexRequest) String() string { return proto.CompactTextString(m) }
+func (*BulkIndexRequest) ProtoMessage()    {}
+func (*BulkIndexRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7b2daf652facb3ae, []int{15}
+}
+
+func (m *BulkIndexRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_BulkIndexRequest.Unmarshal(m, b)
+}
+func (m *BulkIndexRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_BulkIndexRequest.Marshal(b, m, deterministic)
+}
+func (m *BulkIndexRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BulkIndexRequest.Merge(m, src)
+}
+func (m *BulkIndexRequest) XXX_Size() int {
+	return xxx_messageInfo_BulkIndexRequest.Size(m)
+}
+func (m *BulkIndexRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_BulkIndexRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BulkIndexRequest proto.InternalMessageInfo
+
+func (m *BulkIndexRequest) GetDocuments() []*Document {
+	if m != nil {
+		return m.Documents
+	}
+	return nil
+}
+
+type BulkIndexResponse struct {
 	Count                int32    `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *IndexDocumentResponse) Reset()         { *m = IndexDocumentResponse{} }
-func (m *IndexDocumentResponse) String() string { return proto.CompactTextString(m) }
-func (*IndexDocumentResponse) ProtoMessage()    {}
-func (*IndexDocumentResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7b2daf652facb3ae, []int{14}
+func (m *BulkIndexResponse) Reset()         { *m = BulkIndexResponse{} }
+func (m *BulkIndexResponse) String() string { return proto.CompactTextString(m) }
+func (*BulkIndexResponse) ProtoMessage()    {}
+func (*BulkIndexResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7b2daf652facb3ae, []int{16}
 }
 
-func (m *IndexDocumentResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_IndexDocumentResponse.Unmarshal(m, b)
+func (m *BulkIndexResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_BulkIndexResponse.Unmarshal(m, b)
 }
-func (m *IndexDocumentResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_IndexDocumentResponse.Marshal(b, m, deterministic)
+func (m *BulkIndexResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_BulkIndexResponse.Marshal(b, m, deterministic)
 }
-func (m *IndexDocumentResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_IndexDocumentResponse.Merge(m, src)
+func (m *BulkIndexResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BulkIndexResponse.Merge(m, src)
 }
-func (m *IndexDocumentResponse) XXX_Size() int {
-	return xxx_messageInfo_IndexDocumentResponse.Size(m)
+func (m *BulkIndexResponse) XXX_Size() int {
+	return xxx_messageInfo_BulkIndexResponse.Size(m)
 }
-func (m *IndexDocumentResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_IndexDocumentResponse.DiscardUnknown(m)
+func (m *BulkIndexResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_BulkIndexResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_IndexDocumentResponse proto.InternalMessageInfo
+var xxx_messageInfo_BulkIndexResponse proto.InternalMessageInfo
 
-func (m *IndexDocumentResponse) GetCount() int32 {
+func (m *BulkIndexResponse) GetCount() int32 {
 	if m != nil {
 		return m.Count
 	}
 	return 0
 }
 
-type DeleteDocumentRequest struct {
-	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+type BulkDeleteRequest struct {
+	Ids                  []string `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteDocumentRequest) Reset()         { *m = DeleteDocumentRequest{} }
-func (m *DeleteDocumentRequest) String() string { return proto.CompactTextString(m) }
-func (*DeleteDocumentRequest) ProtoMessage()    {}
-func (*DeleteDocumentRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7b2daf652facb3ae, []int{15}
+func (m *BulkDeleteRequest) Reset()         { *m = BulkDeleteRequest{} }
+func (m *BulkDeleteRequest) String() string { return proto.CompactTextString(m) }
+func (*BulkDeleteRequest) ProtoMessage()    {}
+func (*BulkDeleteRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7b2daf652facb3ae, []int{17}
 }
 
-func (m *DeleteDocumentRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DeleteDocumentRequest.Unmarshal(m, b)
+func (m *BulkDeleteRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_BulkDeleteRequest.Unmarshal(m, b)
 }
-func (m *DeleteDocumentRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DeleteDocumentRequest.Marshal(b, m, deterministic)
+func (m *BulkDeleteRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_BulkDeleteRequest.Marshal(b, m, deterministic)
 }
-func (m *DeleteDocumentRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeleteDocumentRequest.Merge(m, src)
+func (m *BulkDeleteRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BulkDeleteRequest.Merge(m, src)
 }
-func (m *DeleteDocumentRequest) XXX_Size() int {
-	return xxx_messageInfo_DeleteDocumentRequest.Size(m)
+func (m *BulkDeleteRequest) XXX_Size() int {
+	return xxx_messageInfo_BulkDeleteRequest.Size(m)
 }
-func (m *DeleteDocumentRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeleteDocumentRequest.DiscardUnknown(m)
+func (m *BulkDeleteRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_BulkDeleteRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_DeleteDocumentRequest proto.InternalMessageInfo
+var xxx_messageInfo_BulkDeleteRequest proto.InternalMessageInfo
 
-func (m *DeleteDocumentRequest) GetId() string {
+func (m *BulkDeleteRequest) GetIds() []string {
 	if m != nil {
-		return m.Id
+		return m.Ids
 	}
-	return ""
+	return nil
 }
 
-type DeleteDocumentResponse struct {
+type BulkDeleteResponse struct {
 	Count                int32    `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteDocumentResponse) Reset()         { *m = DeleteDocumentResponse{} }
-func (m *DeleteDocumentResponse) String() string { return proto.CompactTextString(m) }
-func (*DeleteDocumentResponse) ProtoMessage()    {}
-func (*DeleteDocumentResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7b2daf652facb3ae, []int{16}
+func (m *BulkDeleteResponse) Reset()         { *m = BulkDeleteResponse{} }
+func (m *BulkDeleteResponse) String() string { return proto.CompactTextString(m) }
+func (*BulkDeleteResponse) ProtoMessage()    {}
+func (*BulkDeleteResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7b2daf652facb3ae, []int{18}
 }
 
-func (m *DeleteDocumentResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DeleteDocumentResponse.Unmarshal(m, b)
+func (m *BulkDeleteResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_BulkDeleteResponse.Unmarshal(m, b)
 }
-func (m *DeleteDocumentResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DeleteDocumentResponse.Marshal(b, m, deterministic)
+func (m *BulkDeleteResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_BulkDeleteResponse.Marshal(b, m, deterministic)
 }
-func (m *DeleteDocumentResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeleteDocumentResponse.Merge(m, src)
+func (m *BulkDeleteResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BulkDeleteResponse.Merge(m, src)
 }
-func (m *DeleteDocumentResponse) XXX_Size() int {
-	return xxx_messageInfo_DeleteDocumentResponse.Size(m)
+func (m *BulkDeleteResponse) XXX_Size() int {
+	return xxx_messageInfo_BulkDeleteResponse.Size(m)
 }
-func (m *DeleteDocumentResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeleteDocumentResponse.DiscardUnknown(m)
+func (m *BulkDeleteResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_BulkDeleteResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_DeleteDocumentResponse proto.InternalMessageInfo
+var xxx_messageInfo_BulkDeleteResponse proto.InternalMessageInfo
 
-func (m *DeleteDocumentResponse) GetCount() int32 {
+func (m *BulkDeleteResponse) GetCount() int32 {
 	if m != nil {
 		return m.Count
 	}
@@ -901,7 +1019,7 @@ func (m *SearchRequest) Reset()         { *m = SearchRequest{} }
 func (m *SearchRequest) String() string { return proto.CompactTextString(m) }
 func (*SearchRequest) ProtoMessage()    {}
 func (*SearchRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7b2daf652facb3ae, []int{17}
+	return fileDescriptor_7b2daf652facb3ae, []int{19}
 }
 
 func (m *SearchRequest) XXX_Unmarshal(b []byte) error {
@@ -940,7 +1058,7 @@ func (m *SearchResponse) Reset()         { *m = SearchResponse{} }
 func (m *SearchResponse) String() string { return proto.CompactTextString(m) }
 func (*SearchResponse) ProtoMessage()    {}
 func (*SearchResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7b2daf652facb3ae, []int{18}
+	return fileDescriptor_7b2daf652facb3ae, []int{20}
 }
 
 func (m *SearchResponse) XXX_Unmarshal(b []byte) error {
@@ -981,7 +1099,7 @@ func (m *IndexConfig) Reset()         { *m = IndexConfig{} }
 func (m *IndexConfig) String() string { return proto.CompactTextString(m) }
 func (*IndexConfig) ProtoMessage()    {}
 func (*IndexConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7b2daf652facb3ae, []int{19}
+	return fileDescriptor_7b2daf652facb3ae, []int{21}
 }
 
 func (m *IndexConfig) XXX_Unmarshal(b []byte) error {
@@ -1034,7 +1152,7 @@ func (m *GetIndexConfigResponse) Reset()         { *m = GetIndexConfigResponse{}
 func (m *GetIndexConfigResponse) String() string { return proto.CompactTextString(m) }
 func (*GetIndexConfigResponse) ProtoMessage()    {}
 func (*GetIndexConfigResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7b2daf652facb3ae, []int{20}
+	return fileDescriptor_7b2daf652facb3ae, []int{22}
 }
 
 func (m *GetIndexConfigResponse) XXX_Unmarshal(b []byte) error {
@@ -1073,7 +1191,7 @@ func (m *GetIndexStatsResponse) Reset()         { *m = GetIndexStatsResponse{} }
 func (m *GetIndexStatsResponse) String() string { return proto.CompactTextString(m) }
 func (*GetIndexStatsResponse) ProtoMessage()    {}
 func (*GetIndexStatsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7b2daf652facb3ae, []int{21}
+	return fileDescriptor_7b2daf652facb3ae, []int{23}
 }
 
 func (m *GetIndexStatsResponse) XXX_Unmarshal(b []byte) error {
@@ -1101,11 +1219,91 @@ func (m *GetIndexStatsResponse) GetIndexStats() *any.Any {
 	return nil
 }
 
+type Proposal struct {
+	Event                Proposal_Event `protobuf:"varint,1,opt,name=event,proto3,enum=index.Proposal_Event" json:"event,omitempty"`
+	Node                 *Node          `protobuf:"bytes,2,opt,name=node,proto3" json:"node,omitempty"`
+	Document             *Document      `protobuf:"bytes,3,opt,name=document,proto3" json:"document,omitempty"`
+	Id                   string         `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty"`
+	Documents            []*Document    `protobuf:"bytes,5,rep,name=documents,proto3" json:"documents,omitempty"`
+	Ids                  []string       `protobuf:"bytes,6,rep,name=ids,proto3" json:"ids,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
+	XXX_unrecognized     []byte         `json:"-"`
+	XXX_sizecache        int32          `json:"-"`
+}
+
+func (m *Proposal) Reset()         { *m = Proposal{} }
+func (m *Proposal) String() string { return proto.CompactTextString(m) }
+func (*Proposal) ProtoMessage()    {}
+func (*Proposal) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7b2daf652facb3ae, []int{24}
+}
+
+func (m *Proposal) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Proposal.Unmarshal(m, b)
+}
+func (m *Proposal) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Proposal.Marshal(b, m, deterministic)
+}
+func (m *Proposal) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Proposal.Merge(m, src)
+}
+func (m *Proposal) XXX_Size() int {
+	return xxx_messageInfo_Proposal.Size(m)
+}
+func (m *Proposal) XXX_DiscardUnknown() {
+	xxx_messageInfo_Proposal.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Proposal proto.InternalMessageInfo
+
+func (m *Proposal) GetEvent() Proposal_Event {
+	if m != nil {
+		return m.Event
+	}
+	return Proposal_UNKNOWN
+}
+
+func (m *Proposal) GetNode() *Node {
+	if m != nil {
+		return m.Node
+	}
+	return nil
+}
+
+func (m *Proposal) GetDocument() *Document {
+	if m != nil {
+		return m.Document
+	}
+	return nil
+}
+
+func (m *Proposal) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *Proposal) GetDocuments() []*Document {
+	if m != nil {
+		return m.Documents
+	}
+	return nil
+}
+
+func (m *Proposal) GetIds() []string {
+	if m != nil {
+		return m.Ids
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterEnum("index.NodeHealthCheckRequest_Probe", NodeHealthCheckRequest_Probe_name, NodeHealthCheckRequest_Probe_value)
 	proto.RegisterEnum("index.NodeHealthCheckResponse_State", NodeHealthCheckResponse_State_name, NodeHealthCheckResponse_State_value)
 	proto.RegisterEnum("index.Node_State", Node_State_name, Node_State_value)
 	proto.RegisterEnum("index.ClusterWatchResponse_Event", ClusterWatchResponse_Event_name, ClusterWatchResponse_Event_value)
+	proto.RegisterEnum("index.Proposal_Event", Proposal_Event_name, Proposal_Event_value)
 	proto.RegisterType((*NodeHealthCheckRequest)(nil), "index.NodeHealthCheckRequest")
 	proto.RegisterType((*NodeHealthCheckResponse)(nil), "index.NodeHealthCheckResponse")
 	proto.RegisterType((*Metadata)(nil), "index.Metadata")
@@ -1118,102 +1316,114 @@ func init() {
 	proto.RegisterType((*ClusterInfoResponse)(nil), "index.ClusterInfoResponse")
 	proto.RegisterType((*ClusterWatchResponse)(nil), "index.ClusterWatchResponse")
 	proto.RegisterType((*Document)(nil), "index.Document")
-	proto.RegisterType((*GetDocumentRequest)(nil), "index.GetDocumentRequest")
-	proto.RegisterType((*GetDocumentResponse)(nil), "index.GetDocumentResponse")
-	proto.RegisterType((*IndexDocumentRequest)(nil), "index.IndexDocumentRequest")
-	proto.RegisterType((*IndexDocumentResponse)(nil), "index.IndexDocumentResponse")
-	proto.RegisterType((*DeleteDocumentRequest)(nil), "index.DeleteDocumentRequest")
-	proto.RegisterType((*DeleteDocumentResponse)(nil), "index.DeleteDocumentResponse")
+	proto.RegisterType((*GetRequest)(nil), "index.GetRequest")
+	proto.RegisterType((*GetResponse)(nil), "index.GetResponse")
+	proto.RegisterType((*IndexRequest)(nil), "index.IndexRequest")
+	proto.RegisterType((*DeleteRequest)(nil), "index.DeleteRequest")
+	proto.RegisterType((*BulkIndexRequest)(nil), "index.BulkIndexRequest")
+	proto.RegisterType((*BulkIndexResponse)(nil), "index.BulkIndexResponse")
+	proto.RegisterType((*BulkDeleteRequest)(nil), "index.BulkDeleteRequest")
+	proto.RegisterType((*BulkDeleteResponse)(nil), "index.BulkDeleteResponse")
 	proto.RegisterType((*SearchRequest)(nil), "index.SearchRequest")
 	proto.RegisterType((*SearchResponse)(nil), "index.SearchResponse")
 	proto.RegisterType((*IndexConfig)(nil), "index.IndexConfig")
 	proto.RegisterType((*GetIndexConfigResponse)(nil), "index.GetIndexConfigResponse")
 	proto.RegisterType((*GetIndexStatsResponse)(nil), "index.GetIndexStatsResponse")
+	proto.RegisterType((*Proposal)(nil), "index.Proposal")
 }
 
 func init() { proto.RegisterFile("protobuf/index/index.proto", fileDescriptor_7b2daf652facb3ae) }
 
 var fileDescriptor_7b2daf652facb3ae = []byte{
-	// 1256 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x57, 0x6f, 0x6f, 0xdb, 0xd4,
-	0x17, 0xae, 0x93, 0xb8, 0x4d, 0x8f, 0xdb, 0xd4, 0xbb, 0x4b, 0xdb, 0x2d, 0x6b, 0x7f, 0xbf, 0xf5,
-	0x32, 0x58, 0xb5, 0x8d, 0x64, 0x74, 0x9a, 0xc6, 0x06, 0x08, 0xa5, 0x8d, 0x69, 0xb3, 0x65, 0xe9,
-	0x70, 0xd2, 0x4d, 0x43, 0x42, 0x91, 0x13, 0xdf, 0x26, 0xd6, 0x12, 0xdb, 0xc4, 0x37, 0x85, 0x08,
-	0xf1, 0x82, 0x7d, 0x04, 0x10, 0xe2, 0x9b, 0xf0, 0x3d, 0x10, 0x6f, 0x79, 0xc9, 0x07, 0x41, 0xf7,
-	0x8f, 0x3d, 0xdb, 0x4d, 0x32, 0xf1, 0xa6, 0xea, 0x3d, 0xe7, 0x39, 0xcf, 0x7d, 0xce, 0xf1, 0xbd,
-	0x8f, 0x1d, 0x28, 0xf9, 0x63, 0x8f, 0x7a, 0xdd, 0xc9, 0x79, 0xc5, 0x71, 0x6d, 0xf2, 0x83, 0xf8,
-	0x5b, 0xe6, 0x41, 0xa4, 0xf2, 0x45, 0xe9, 0x7a, 0xdf, 0xf3, 0xfa, 0x43, 0x52, 0x89, 0x90, 0x96,
-	0x3b, 0x15, 0x88, 0xd2, 0x8d, 0x74, 0x8a, 0x8c, 0x7c, 0x1a, 0x26, 0x77, 0x64, 0xd2, 0xf2, 0x9d,
-	0x8a, 0xe5, 0xba, 0x1e, 0xb5, 0xa8, 0xe3, 0xb9, 0x81, 0xc8, 0xe2, 0xdf, 0x15, 0xd8, 0x6a, 0x7a,
-	0x36, 0x39, 0x21, 0xd6, 0x90, 0x0e, 0x8e, 0x06, 0xa4, 0xf7, 0xc6, 0x24, 0xdf, 0x4d, 0x48, 0x40,
-	0xd1, 0x63, 0x50, 0xfd, 0xb1, 0xd7, 0x25, 0xd7, 0x94, 0x9b, 0xca, 0x7e, 0xe1, 0xe0, 0x83, 0xb2,
-	0x10, 0x35, 0x1b, 0x5d, 0x7e, 0xc1, 0xa0, 0xa6, 0xa8, 0xc0, 0x87, 0xa0, 0xf2, 0x35, 0xd2, 0x60,
-	0xe5, 0xac, 0xf9, 0xac, 0x79, 0xfa, 0xaa, 0xa9, 0x2f, 0xa1, 0x0d, 0xd0, 0x4e, 0x8c, 0x6a, 0xa3,
-	0x7d, 0x52, 0x6f, 0x1a, 0xad, 0x96, 0xae, 0xa0, 0x35, 0xc8, 0x37, 0xea, 0x2f, 0x0d, 0xbe, 0xca,
-	0xa0, 0x75, 0x58, 0x35, 0x8d, 0x6a, 0x4d, 0x24, 0xb3, 0xf8, 0x0f, 0x05, 0xb6, 0x2f, 0xed, 0x15,
-	0xf8, 0x9e, 0x1b, 0x10, 0xf4, 0x04, 0xd4, 0x80, 0x5a, 0x34, 0x94, 0x76, 0x6b, 0x9e, 0x34, 0x01,
-	0x2f, 0xb7, 0x18, 0xd6, 0x14, 0x25, 0xb8, 0x03, 0x2a, 0x5f, 0x27, 0xb5, 0x69, 0xb0, 0x22, 0xb4,
-	0xbd, 0xd6, 0x15, 0xa6, 0xe4, 0xac, 0x19, 0x2e, 0x33, 0x68, 0x15, 0xd4, 0x2a, 0xd3, 0xa9, 0x67,
-	0x51, 0x1e, 0x72, 0x35, 0xa3, 0x5a, 0xd3, 0x73, 0x2c, 0xc8, 0xd4, 0xbe, 0xd6, 0x55, 0x06, 0x6f,
-	0x9e, 0xb6, 0x3b, 0x62, 0xb9, 0x8c, 0xdf, 0x2a, 0x90, 0x7f, 0x4e, 0xa8, 0x65, 0x5b, 0xd4, 0x42,
-	0x7b, 0xb0, 0xd6, 0x1f, 0xfb, 0xbd, 0x8e, 0x65, 0xdb, 0x63, 0x12, 0x04, 0x5c, 0xf0, 0xaa, 0xa9,
-	0xb1, 0x58, 0x55, 0x84, 0xd0, 0x7d, 0x28, 0x72, 0x48, 0xdf, 0xa2, 0xe4, 0x7b, 0x6b, 0x1a, 0x41,
-	0x33, 0x1c, 0x8a, 0x58, 0xee, 0x58, 0xa4, 0xc2, 0x8a, 0x3d, 0x58, 0x1b, 0x50, 0xea, 0x47, 0xc8,
-	0xac, 0x20, 0x65, 0x31, 0x09, 0xc1, 0x7f, 0x2b, 0x90, 0x63, 0xe3, 0x40, 0x05, 0xc8, 0x38, 0xb6,
-	0xdc, 0x36, 0xe3, 0xd8, 0xac, 0xb6, 0xeb, 0xb8, 0x76, 0x6a, 0x17, 0x8d, 0xc5, 0x42, 0xfa, 0xdb,
-	0xe1, 0x74, 0xb3, 0x7c, 0xba, 0x57, 0x62, 0xd3, 0x4d, 0x8c, 0x12, 0xdd, 0x85, 0xfc, 0x48, 0x36,
-	0x7a, 0x2d, 0x77, 0x53, 0xd9, 0xd7, 0x0e, 0x36, 0x24, 0x36, 0xec, 0xdf, 0x8c, 0x00, 0xf8, 0xd9,
-	0xcc, 0xb9, 0xaf, 0x41, 0xfe, 0xab, 0xd3, 0x46, 0xe3, 0xf4, 0x95, 0x61, 0x8a, 0xc1, 0x1f, 0x55,
-	0x9b, 0xb5, 0x7a, 0xad, 0xda, 0x36, 0xf4, 0x0c, 0x02, 0x58, 0x6e, 0x18, 0xd5, 0x9a, 0x61, 0xea,
-	0x59, 0x06, 0x6c, 0x9d, 0x9c, 0xb5, 0x6b, 0xac, 0x2c, 0x87, 0x7f, 0x56, 0x60, 0xe5, 0x68, 0x38,
-	0x09, 0x28, 0x19, 0xa3, 0x0a, 0xa8, 0xae, 0x67, 0x13, 0x36, 0xdb, 0xec, 0xbe, 0x76, 0x70, 0x5d,
-	0x4a, 0x90, 0x69, 0x2e, 0x3b, 0x30, 0x5c, 0x3a, 0x9e, 0x9a, 0x02, 0x57, 0x32, 0x00, 0xde, 0x05,
-	0x91, 0x0e, 0xd9, 0x37, 0x64, 0x2a, 0x27, 0xc4, 0xfe, 0x45, 0x7b, 0xa0, 0x5e, 0x58, 0xc3, 0x09,
-	0xe1, 0xb3, 0xd1, 0x0e, 0xb4, 0x58, 0xff, 0xa6, 0xc8, 0x3c, 0xc9, 0x7c, 0xaa, 0xe0, 0x07, 0xa0,
-	0xb3, 0x50, 0xdd, 0x3d, 0xf7, 0xa2, 0x83, 0xf9, 0x7f, 0xc8, 0xb1, 0x3d, 0x38, 0x5b, 0xaa, 0x92,
-	0x27, 0xf0, 0x43, 0x40, 0x52, 0xd8, 0x53, 0xcf, 0x71, 0xc3, 0xab, 0xf6, 0xde, 0xb2, 0x0f, 0xe1,
-	0xaa, 0x2c, 0x6b, 0x10, 0xeb, 0x82, 0x84, 0x75, 0xa9, 0x87, 0x8b, 0xbf, 0x8c, 0x60, 0x09, 0x55,
-	0xfb, 0xb0, 0xd2, 0x13, 0x61, 0xb9, 0x43, 0x21, 0x39, 0x23, 0x33, 0x4c, 0xe3, 0x3f, 0x15, 0x28,
-	0xca, 0xe0, 0x2b, 0x8b, 0xf6, 0x06, 0x11, 0xc5, 0x23, 0x50, 0xc9, 0x05, 0x71, 0xa9, 0xbc, 0x71,
-	0x7b, 0x49, 0x82, 0x04, 0xb6, 0x6c, 0x30, 0xa0, 0x29, 0xf0, 0x51, 0x6b, 0x99, 0x39, 0xad, 0xc5,
-	0xc5, 0x65, 0x17, 0x8b, 0x7b, 0x08, 0x2a, 0xa7, 0x4e, 0x9e, 0xa0, 0x3c, 0xe4, 0x9e, 0x9e, 0xd6,
-	0x9b, 0xba, 0xc2, 0xae, 0x64, 0xc3, 0xa8, 0xbe, 0x94, 0x27, 0xe7, 0xec, 0x05, 0x3f, 0x45, 0x59,
-	0x7c, 0x02, 0xf9, 0x9a, 0xd7, 0x9b, 0x8c, 0x58, 0x65, 0xfa, 0x36, 0xdc, 0x83, 0xe5, 0x73, 0x87,
-	0x0c, 0xed, 0x40, 0xea, 0x2b, 0x96, 0x85, 0x5b, 0x96, 0x43, 0x2b, 0x2d, 0x57, 0xdd, 0xa9, 0x29,
-	0x31, 0xf8, 0x16, 0xa0, 0x63, 0x42, 0x43, 0xb2, 0x79, 0x0f, 0xe1, 0x10, 0xae, 0x26, 0x50, 0x72,
-	0x82, 0x77, 0x21, 0x6f, 0xcb, 0x98, 0x7c, 0x0a, 0xe1, 0x65, 0x89, 0xa0, 0x11, 0x00, 0x1f, 0x41,
-	0xb1, 0xce, 0x72, 0xe9, 0xbd, 0xfe, 0x13, 0xc9, 0xc7, 0xb0, 0x99, 0x22, 0x91, 0x52, 0x8a, 0xa0,
-	0xf6, 0xbc, 0x89, 0xa4, 0x50, 0x4d, 0xb1, 0xc0, 0xb7, 0x61, 0xb3, 0x46, 0x86, 0x84, 0x92, 0xf7,
-	0x35, 0x58, 0x86, 0xad, 0x34, 0x70, 0x21, 0x71, 0x03, 0xd6, 0x5b, 0xc4, 0x1a, 0xb3, 0x13, 0x22,
-	0x08, 0x3f, 0x83, 0x42, 0xc0, 0x03, 0x9d, 0xb1, 0x88, 0xc8, 0x5e, 0x66, 0x4f, 0x7f, 0x3d, 0x88,
-	0x17, 0xe3, 0x67, 0x50, 0x08, 0xd9, 0xe4, 0xae, 0x8f, 0x61, 0x3d, 0xa2, 0x0b, 0x26, 0xc3, 0xc5,
-	0x6c, 0x6b, 0x21, 0x1b, 0x43, 0xe2, 0xdf, 0x14, 0xd0, 0xf8, 0x8c, 0x8e, 0x3c, 0xf7, 0xdc, 0xe9,
-	0x33, 0x2a, 0x3e, 0xce, 0xce, 0xc8, 0xf2, 0x7d, 0xc7, 0xed, 0x2f, 0xa6, 0xe2, 0xd0, 0xe7, 0x02,
-	0x89, 0x76, 0x01, 0x44, 0x29, 0x9d, 0xfa, 0x44, 0xda, 0xea, 0x2a, 0x8f, 0xb4, 0xa7, 0x3e, 0x41,
-	0xf7, 0x00, 0x89, 0x74, 0x40, 0xbd, 0xb1, 0xd5, 0x27, 0x02, 0x26, 0x9c, 0x5b, 0xe7, 0x99, 0x96,
-	0x48, 0x30, 0x34, 0x3e, 0x85, 0xad, 0x63, 0x42, 0x63, 0xca, 0xa2, 0x66, 0x1f, 0x82, 0xd8, 0xb6,
-	0xd3, 0xe3, 0x71, 0x29, 0x10, 0xc9, 0x53, 0x10, 0xaf, 0xd0, 0x9c, 0x77, 0x0b, 0xdc, 0x84, 0xcd,
-	0x90, 0x90, 0xb9, 0x70, 0x10, 0xe3, 0xd3, 0x42, 0x5d, 0x16, 0x0d, 0x16, 0xf6, 0x0b, 0x4e, 0x54,
-	0x7e, 0xf0, 0x4b, 0x1e, 0x54, 0xce, 0x86, 0x5c, 0xd8, 0x48, 0xbd, 0x77, 0xd1, 0xee, 0xc2, 0x4f,
-	0x85, 0xd2, 0xff, 0x16, 0xbf, 0xae, 0xf1, 0xce, 0xdb, 0xbf, 0xfe, 0xf9, 0x35, 0xb3, 0x85, 0x8a,
-	0x95, 0x8b, 0x4f, 0x2a, 0xcc, 0x23, 0x2a, 0x03, 0x8e, 0xea, 0x71, 0xf2, 0x36, 0xe4, 0x43, 0xdb,
-	0x45, 0x5b, 0x97, 0x74, 0x1a, 0xec, 0xcb, 0xa7, 0xb4, 0x1d, 0xdb, 0x21, 0xee, 0x84, 0x78, 0x9b,
-	0x53, 0x5f, 0x41, 0x1b, 0x11, 0x35, 0x6b, 0x7b, 0x12, 0xa0, 0x43, 0xd0, 0x62, 0xbe, 0x8c, 0x52,
-	0x2f, 0x91, 0x98, 0x57, 0x97, 0xe6, 0xec, 0x89, 0x97, 0x50, 0x0d, 0xd6, 0xe2, 0x26, 0x8d, 0x4a,
-	0x49, 0x92, 0xb8, 0x73, 0x2f, 0x60, 0xf9, 0x36, 0x52, 0xb2, 0xb0, 0xc5, 0x14, 0x79, 0xa2, 0xcb,
-	0x12, 0xef, 0xb2, 0x88, 0x10, 0xeb, 0x52, 0xba, 0x67, 0xd8, 0xe8, 0x71, 0x24, 0x92, 0x9b, 0xf6,
-	0x5c, 0xfe, 0x1b, 0x0b, 0x1c, 0x1e, 0x2f, 0xdd, 0x57, 0x50, 0x0f, 0xb4, 0x98, 0xcd, 0x45, 0x13,
-	0xbb, 0x6c, 0x90, 0x91, 0xd4, 0x19, 0xae, 0x88, 0x77, 0xb9, 0xd4, 0x6d, 0xb4, 0xc9, 0xa4, 0x86,
-	0xce, 0x15, 0x54, 0x7e, 0x74, 0xec, 0x2f, 0xee, 0xdc, 0xf9, 0x09, 0x35, 0x61, 0x3d, 0x61, 0x61,
-	0xe8, 0x46, 0xfc, 0xa0, 0xa7, 0x37, 0xda, 0x99, 0x9d, 0x0c, 0x45, 0xef, 0x2b, 0xe8, 0x6b, 0x28,
-	0x24, 0xad, 0x0b, 0x85, 0x35, 0x33, 0xad, 0xaf, 0xb4, 0x3b, 0x27, 0x1b, 0xa3, 0x7c, 0x04, 0xcb,
-	0xc2, 0x8f, 0x50, 0x51, 0x82, 0x13, 0x66, 0x57, 0xda, 0x4c, 0x45, 0xc3, 0x52, 0x54, 0x87, 0x42,
-	0xf2, 0x8e, 0xcf, 0x7d, 0x16, 0xbb, 0xef, 0x06, 0x38, 0xc3, 0x12, 0xf0, 0x12, 0x3a, 0x86, 0xf5,
-	0xc4, 0xed, 0x9e, 0xcb, 0xb4, 0x93, 0x62, 0x4a, 0x78, 0x01, 0x5e, 0x42, 0x9f, 0x43, 0xbe, 0xe5,
-	0x5a, 0x7e, 0x30, 0xf0, 0xe8, 0x5c, 0x8e, 0xb9, 0x47, 0xf7, 0x70, 0xff, 0x9b, 0x8f, 0xfa, 0x0e,
-	0x1d, 0x4c, 0xba, 0xe5, 0x9e, 0x37, 0xaa, 0x8c, 0xbc, 0x60, 0xf2, 0xc6, 0xaa, 0x74, 0x87, 0x56,
-	0x40, 0x2b, 0xc9, 0xdf, 0x37, 0xdd, 0x65, 0xbe, 0x7e, 0xf0, 0x6f, 0x00, 0x00, 0x00, 0xff, 0xff,
-	0xfe, 0x4a, 0xb3, 0x13, 0xf8, 0x0c, 0x00, 0x00,
+	// 1408 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x57, 0xef, 0x72, 0x1a, 0x55,
+	0x14, 0xcf, 0x02, 0x4b, 0xe0, 0x2c, 0x21, 0xdb, 0x5b, 0x92, 0xb4, 0x34, 0xb1, 0xcd, 0xd5, 0x6a,
+	0x6c, 0x2b, 0xd4, 0x74, 0x6a, 0xff, 0xe9, 0x28, 0x09, 0x6b, 0x42, 0x43, 0xa1, 0xb3, 0x90, 0xd6,
+	0x3a, 0xe3, 0x30, 0x1b, 0xb8, 0x81, 0x9d, 0x90, 0x5d, 0x64, 0x97, 0x28, 0xe3, 0xf8, 0xc1, 0xbe,
+	0x82, 0xe3, 0xf8, 0x26, 0xbe, 0x80, 0x2f, 0xa0, 0xe3, 0x57, 0x3f, 0xfa, 0x20, 0xce, 0xfd, 0xb7,
+	0xec, 0x92, 0x40, 0xa6, 0x5f, 0x32, 0xdc, 0x73, 0x7e, 0xe7, 0x77, 0x7f, 0xe7, 0xdc, 0x7b, 0xcf,
+	0xd9, 0x40, 0x7e, 0x30, 0x74, 0x7d, 0xf7, 0x68, 0x74, 0x5c, 0xb4, 0x9d, 0x0e, 0xf9, 0x91, 0xff,
+	0x2d, 0x30, 0x23, 0x52, 0xd9, 0x22, 0x7f, 0xbd, 0xeb, 0xba, 0xdd, 0x3e, 0x29, 0x06, 0x48, 0xcb,
+	0x19, 0x73, 0x44, 0xfe, 0xc6, 0xb4, 0x8b, 0x9c, 0x0e, 0x7c, 0xe9, 0x5c, 0x17, 0x4e, 0x6b, 0x60,
+	0x17, 0x2d, 0xc7, 0x71, 0x7d, 0xcb, 0xb7, 0x5d, 0xc7, 0xe3, 0x5e, 0xfc, 0xbb, 0x02, 0xab, 0x35,
+	0xb7, 0x43, 0xf6, 0x89, 0xd5, 0xf7, 0x7b, 0xbb, 0x3d, 0xd2, 0x3e, 0x31, 0xc9, 0xf7, 0x23, 0xe2,
+	0xf9, 0xe8, 0x09, 0xa8, 0x83, 0xa1, 0x7b, 0x44, 0xae, 0x29, 0xb7, 0x94, 0xad, 0xec, 0xf6, 0xfb,
+	0x05, 0x2e, 0xea, 0x62, 0x74, 0xe1, 0x25, 0x85, 0x9a, 0x3c, 0x02, 0xef, 0x80, 0xca, 0xd6, 0x48,
+	0x83, 0xc5, 0xc3, 0xda, 0x41, 0xad, 0xfe, 0xba, 0xa6, 0x2f, 0xa0, 0x65, 0xd0, 0xf6, 0x8d, 0x52,
+	0xb5, 0xb9, 0x5f, 0xa9, 0x19, 0x8d, 0x86, 0xae, 0xa0, 0x0c, 0xa4, 0xaa, 0x95, 0x57, 0x06, 0x5b,
+	0xc5, 0xd0, 0x12, 0xa4, 0x4d, 0xa3, 0x54, 0xe6, 0xce, 0x38, 0xfe, 0x43, 0x81, 0xb5, 0x73, 0x7b,
+	0x79, 0x03, 0xd7, 0xf1, 0x08, 0x7a, 0x0a, 0xaa, 0xe7, 0x5b, 0xbe, 0x94, 0xf6, 0xc1, 0x2c, 0x69,
+	0x1c, 0x5e, 0x68, 0x50, 0xac, 0xc9, 0x43, 0x70, 0x0b, 0x54, 0xb6, 0x8e, 0x6a, 0xd3, 0x60, 0x91,
+	0x6b, 0x7b, 0xa3, 0x2b, 0x54, 0xc9, 0x61, 0x4d, 0x2e, 0x63, 0x28, 0x0d, 0x6a, 0x89, 0xea, 0xd4,
+	0xe3, 0x28, 0x05, 0x89, 0xb2, 0x51, 0x2a, 0xeb, 0x09, 0x6a, 0xa4, 0x6a, 0xdf, 0xe8, 0x2a, 0x85,
+	0xd7, 0xea, 0xcd, 0x16, 0x5f, 0x26, 0xf1, 0x5b, 0x05, 0x52, 0x2f, 0x88, 0x6f, 0x75, 0x2c, 0xdf,
+	0x42, 0x9b, 0x90, 0xe9, 0x0e, 0x07, 0xed, 0x96, 0xd5, 0xe9, 0x0c, 0x89, 0xe7, 0x31, 0xc1, 0x69,
+	0x53, 0xa3, 0xb6, 0x12, 0x37, 0xa1, 0xfb, 0x90, 0x63, 0x90, 0xae, 0xe5, 0x93, 0x1f, 0xac, 0x71,
+	0x00, 0x8d, 0x31, 0x28, 0xa2, 0xbe, 0x3d, 0xee, 0x92, 0x11, 0x9b, 0x90, 0xe9, 0xf9, 0xfe, 0x20,
+	0x40, 0xc6, 0x39, 0x29, 0xb5, 0x09, 0x08, 0xfe, 0x57, 0x81, 0x04, 0x2d, 0x07, 0xca, 0x42, 0xcc,
+	0xee, 0x88, 0x6d, 0x63, 0x76, 0x87, 0xc6, 0x1e, 0xd9, 0x4e, 0x67, 0x6a, 0x17, 0x8d, 0xda, 0x24,
+	0xfd, 0x47, 0xb2, 0xba, 0x71, 0x56, 0xdd, 0x2b, 0xa1, 0xea, 0x46, 0x4a, 0x89, 0xee, 0x42, 0xea,
+	0x54, 0x24, 0x7a, 0x2d, 0x71, 0x4b, 0xd9, 0xd2, 0xb6, 0x97, 0x05, 0x56, 0xe6, 0x6f, 0x06, 0x00,
+	0x7c, 0x70, 0x61, 0xdd, 0x33, 0x90, 0xfa, 0xba, 0x5e, 0xad, 0xd6, 0x5f, 0x1b, 0x26, 0x2f, 0xfc,
+	0x6e, 0xa9, 0x56, 0xae, 0x94, 0x4b, 0x4d, 0x43, 0x8f, 0x21, 0x80, 0x64, 0xd5, 0x28, 0x95, 0x0d,
+	0x53, 0x8f, 0x53, 0x60, 0x63, 0xff, 0xb0, 0x59, 0xa6, 0x61, 0x09, 0xfc, 0x8b, 0x02, 0x8b, 0xbb,
+	0xfd, 0x91, 0xe7, 0x93, 0x21, 0x2a, 0x82, 0xea, 0xb8, 0x1d, 0x42, 0x6b, 0x1b, 0xdf, 0xd2, 0xb6,
+	0xaf, 0x0b, 0x09, 0xc2, 0xcd, 0x64, 0x7b, 0x86, 0xe3, 0x0f, 0xc7, 0x26, 0xc7, 0xe5, 0x0d, 0x80,
+	0x89, 0x11, 0xe9, 0x10, 0x3f, 0x21, 0x63, 0x51, 0x21, 0xfa, 0x13, 0x6d, 0x82, 0x7a, 0x66, 0xf5,
+	0x47, 0x84, 0xd5, 0x46, 0xdb, 0xd6, 0x42, 0xf9, 0x9b, 0xdc, 0xf3, 0x34, 0xf6, 0x58, 0xc1, 0x0f,
+	0x40, 0xa7, 0xa6, 0x8a, 0x73, 0xec, 0x06, 0x17, 0xf3, 0x26, 0x24, 0xe8, 0x1e, 0x8c, 0x6d, 0x2a,
+	0x92, 0x39, 0xf0, 0x43, 0x40, 0x42, 0xd8, 0x73, 0xd7, 0x76, 0xe4, 0x53, 0xbb, 0x34, 0xec, 0x36,
+	0x5c, 0x15, 0x61, 0x55, 0x62, 0x9d, 0x11, 0x19, 0x37, 0x75, 0xb8, 0xf8, 0xcb, 0x00, 0x16, 0x51,
+	0xb5, 0x05, 0x8b, 0x6d, 0x6e, 0x16, 0x3b, 0x64, 0xa3, 0x35, 0x32, 0xa5, 0x1b, 0xff, 0xad, 0x40,
+	0x4e, 0x18, 0x5f, 0x5b, 0x7e, 0xbb, 0x17, 0x50, 0x3c, 0x02, 0x95, 0x9c, 0x11, 0xc7, 0x17, 0x2f,
+	0x6e, 0x33, 0x4a, 0x10, 0xc1, 0x16, 0x0c, 0x0a, 0x34, 0x39, 0x3e, 0x48, 0x2d, 0x36, 0x23, 0xb5,
+	0xb0, 0xb8, 0xf8, 0x7c, 0x71, 0x0f, 0x41, 0x65, 0xd4, 0xd1, 0x1b, 0x94, 0x82, 0xc4, 0xf3, 0x7a,
+	0xa5, 0xa6, 0x2b, 0xf4, 0x49, 0x56, 0x8d, 0xd2, 0x2b, 0x71, 0x73, 0x0e, 0x5f, 0xb2, 0x5b, 0x14,
+	0xc7, 0xfb, 0x90, 0x2a, 0xbb, 0xed, 0xd1, 0x29, 0x8d, 0x9c, 0x7e, 0x0d, 0xf7, 0x20, 0x79, 0x6c,
+	0x93, 0x7e, 0xc7, 0x13, 0xfa, 0x72, 0x05, 0xde, 0x2d, 0x0b, 0xb2, 0x95, 0x16, 0x4a, 0xce, 0xd8,
+	0x14, 0x18, 0xbc, 0x0e, 0xb0, 0x47, 0xfc, 0x59, 0xc5, 0x7f, 0x0a, 0x1a, 0xf3, 0x8a, 0x8a, 0xdd,
+	0x85, 0x54, 0x47, 0x6c, 0x2b, 0xaa, 0x2e, 0x1f, 0x87, 0x54, 0x63, 0x06, 0x00, 0xfc, 0x0c, 0x32,
+	0x15, 0xea, 0x93, 0xdc, 0xef, 0x14, 0x7c, 0x13, 0x96, 0xca, 0xa4, 0x4f, 0xfc, 0x99, 0xd7, 0xa2,
+	0x04, 0xfa, 0xce, 0xa8, 0x7f, 0x12, 0xd9, 0xe1, 0x13, 0x48, 0x4b, 0x02, 0xf9, 0x72, 0xce, 0x6d,
+	0x31, 0x41, 0xe0, 0x8f, 0xe1, 0x4a, 0x88, 0x42, 0xa4, 0x98, 0x03, 0xb5, 0xed, 0x8e, 0x84, 0x44,
+	0xd5, 0xe4, 0x0b, 0x7c, 0x9b, 0x43, 0xa3, 0x92, 0x74, 0x88, 0xdb, 0x1d, 0xbe, 0x51, 0xda, 0xa4,
+	0x3f, 0xf1, 0x1d, 0x40, 0x61, 0xd8, 0x5c, 0xca, 0x2a, 0x2c, 0x35, 0x88, 0x35, 0xa4, 0x77, 0x8c,
+	0xd3, 0x3d, 0x83, 0xac, 0xc7, 0x0c, 0xad, 0x21, 0xb7, 0x88, 0x2a, 0x5d, 0x7c, 0x7e, 0x4b, 0x5e,
+	0x38, 0x18, 0x1f, 0x40, 0x56, 0xb2, 0x89, 0x5d, 0x9f, 0xc0, 0x52, 0x40, 0xe7, 0x8d, 0xfa, 0xf3,
+	0xd9, 0x32, 0x92, 0x8d, 0x22, 0xf1, 0x6f, 0x0a, 0x68, 0xac, 0x2a, 0xbb, 0xae, 0x73, 0x6c, 0x77,
+	0x29, 0x15, 0xab, 0x62, 0xeb, 0xd4, 0x1a, 0x0c, 0x6c, 0xa7, 0x3b, 0x9f, 0x8a, 0x41, 0x5f, 0x70,
+	0x24, 0xda, 0x00, 0xe0, 0xa1, 0xfe, 0x78, 0x40, 0x44, 0x63, 0x4e, 0x33, 0x4b, 0x73, 0x3c, 0x20,
+	0xe8, 0x1e, 0x20, 0xee, 0xf6, 0x7c, 0x77, 0x68, 0x75, 0x09, 0x87, 0xf1, 0xde, 0xaf, 0x33, 0x4f,
+	0x83, 0x3b, 0x28, 0x1a, 0xd7, 0x61, 0x75, 0x8f, 0xf8, 0x21, 0x65, 0x41, 0xb2, 0x0f, 0x81, 0x6f,
+	0xdb, 0x6a, 0x33, 0xbb, 0x10, 0x88, 0xc4, 0xe1, 0x87, 0x23, 0x34, 0x7b, 0xb2, 0xc0, 0x35, 0x58,
+	0x91, 0x84, 0xb4, 0x8f, 0x7b, 0x21, 0x3e, 0x4d, 0xea, 0xb2, 0x7c, 0x6f, 0x6e, 0xbe, 0x60, 0x07,
+	0xe1, 0xf8, 0xcf, 0x18, 0xa4, 0x5e, 0x0e, 0xdd, 0x81, 0xeb, 0x59, 0x7d, 0x74, 0x37, 0xda, 0x5e,
+	0x56, 0x84, 0x18, 0xe9, 0x7f, 0xc7, 0x96, 0x12, 0x7e, 0x3d, 0xf1, 0x4b, 0x5e, 0x8f, 0x78, 0x2c,
+	0x89, 0xa0, 0x25, 0x44, 0x1e, 0x86, 0x7a, 0xd9, 0xc3, 0x90, 0x17, 0x3b, 0x39, 0xb9, 0xd8, 0x27,
+	0x17, 0xb6, 0x29, 0x3a, 0xbf, 0x8c, 0x66, 0xab, 0x56, 0x2f, 0x1b, 0xba, 0x42, 0x3f, 0x85, 0xca,
+	0x46, 0xd5, 0x68, 0x1a, 0xdc, 0xc0, 0xbe, 0x31, 0x2a, 0xb5, 0xb2, 0xf1, 0x8d, 0x1e, 0xa7, 0xbd,
+	0x8b, 0xfb, 0xf4, 0x04, 0xca, 0x02, 0xec, 0x1c, 0x56, 0x0f, 0x5a, 0xdc, 0xa7, 0xd2, 0x38, 0xb6,
+	0x16, 0x80, 0xe4, 0xf6, 0x5f, 0x29, 0x50, 0xd9, 0x99, 0x20, 0x07, 0x96, 0xa7, 0xbe, 0x7f, 0xd0,
+	0xc6, 0xdc, 0x4f, 0xb6, 0xfc, 0x7b, 0xf3, 0x3f, 0x9b, 0xf0, 0xfa, 0xdb, 0x7f, 0xfe, 0xfb, 0x35,
+	0xb6, 0x8a, 0x72, 0xc5, 0xb3, 0x4f, 0x8b, 0xb4, 0xb0, 0xc5, 0x1e, 0x43, 0xb5, 0x19, 0x79, 0x13,
+	0x52, 0x72, 0xfc, 0xa1, 0xd5, 0x73, 0xa7, 0x6d, 0xd0, 0x2f, 0xd0, 0xfc, 0x5a, 0x68, 0x87, 0xf0,
+	0x44, 0xc2, 0x6b, 0x8c, 0xfa, 0x0a, 0x5a, 0x0e, 0xa8, 0xe9, 0xe5, 0x19, 0x79, 0x68, 0x07, 0xb4,
+	0xd0, 0x7c, 0x44, 0x53, 0xc3, 0x3c, 0x34, 0x33, 0xf3, 0x33, 0xf6, 0xc4, 0x0b, 0xa8, 0x0c, 0x99,
+	0xf0, 0xb0, 0x44, 0xf9, 0x28, 0x49, 0x78, 0x82, 0xce, 0x61, 0xf9, 0x2e, 0x50, 0x32, 0x37, 0xc5,
+	0x29, 0xf2, 0x48, 0x96, 0x79, 0x96, 0x65, 0x0e, 0x21, 0x9a, 0xa5, 0x98, 0x62, 0x32, 0xd1, 0xbd,
+	0x40, 0x24, 0x1b, 0x9e, 0x33, 0xf9, 0x6f, 0xcc, 0x99, 0xb4, 0x78, 0xe1, 0xbe, 0x82, 0x0e, 0x20,
+	0xbe, 0x47, 0x7c, 0x24, 0xbf, 0xd2, 0x26, 0x03, 0x2a, 0x8f, 0xc2, 0x26, 0x11, 0xb1, 0xc1, 0x24,
+	0xad, 0xa1, 0x15, 0x2a, 0x29, 0xb8, 0xc5, 0xc5, 0x9f, 0xec, 0xce, 0x17, 0x77, 0xee, 0xfc, 0x8c,
+	0x3e, 0x93, 0xb7, 0xe9, 0x6a, 0xb8, 0x1d, 0x5c, 0x5e, 0xac, 0xc7, 0x90, 0xe4, 0x8d, 0x1c, 0xe5,
+	0xe4, 0x5b, 0x09, 0xb7, 0xff, 0x39, 0x91, 0x5f, 0x41, 0x3a, 0x18, 0x2c, 0x48, 0xde, 0x97, 0xe9,
+	0x69, 0x95, 0xbf, 0x76, 0xde, 0x21, 0x4b, 0x80, 0x76, 0x01, 0x26, 0x83, 0x04, 0x85, 0x91, 0x51,
+	0x0d, 0xd7, 0x2f, 0xf0, 0x04, 0x24, 0x8f, 0x20, 0xc9, 0x67, 0x42, 0x90, 0x40, 0x64, 0xe0, 0xe4,
+	0x57, 0xa6, 0xac, 0x41, 0x60, 0x05, 0xb2, 0xd1, 0x3e, 0x3b, 0xf3, 0x24, 0x37, 0x26, 0xc7, 0x71,
+	0x41, 0x5b, 0xc6, 0x0b, 0x68, 0x0f, 0x96, 0x22, 0x1d, 0x76, 0x26, 0xd3, 0xfa, 0x14, 0x53, 0xa4,
+	0x1f, 0xe3, 0x05, 0xf4, 0x39, 0xa4, 0x1a, 0x8e, 0x35, 0xf0, 0x7a, 0xae, 0x3f, 0x93, 0x63, 0xe6,
+	0x89, 0xec, 0x6c, 0x7d, 0xfb, 0x61, 0xd7, 0xf6, 0x7b, 0xa3, 0xa3, 0x42, 0xdb, 0x3d, 0x2d, 0x9e,
+	0xba, 0xde, 0xe8, 0xc4, 0x2a, 0x1e, 0xf5, 0x2d, 0xcf, 0x2f, 0x46, 0xff, 0x4b, 0x3d, 0x4a, 0xb2,
+	0xf5, 0x83, 0xff, 0x03, 0x00, 0x00, 0xff, 0xff, 0xa1, 0x9a, 0x63, 0x3b, 0xbe, 0x0e, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1234,9 +1444,11 @@ type IndexClient interface {
 	ClusterLeave(ctx context.Context, in *ClusterLeaveRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	ClusterInfo(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ClusterInfoResponse, error)
 	ClusterWatch(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (Index_ClusterWatchClient, error)
-	GetDocument(ctx context.Context, in *GetDocumentRequest, opts ...grpc.CallOption) (*GetDocumentResponse, error)
-	IndexDocument(ctx context.Context, opts ...grpc.CallOption) (Index_IndexDocumentClient, error)
-	DeleteDocument(ctx context.Context, opts ...grpc.CallOption) (Index_DeleteDocumentClient, error)
+	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
+	Index(ctx context.Context, in *IndexRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	BulkIndex(ctx context.Context, in *BulkIndexRequest, opts ...grpc.CallOption) (*BulkIndexResponse, error)
+	BulkDelete(ctx context.Context, in *BulkDeleteRequest, opts ...grpc.CallOption) (*BulkDeleteResponse, error)
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error)
 	GetIndexConfig(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetIndexConfigResponse, error)
 	GetIndexStats(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetIndexStatsResponse, error)
@@ -1328,81 +1540,49 @@ func (x *indexClusterWatchClient) Recv() (*ClusterWatchResponse, error) {
 	return m, nil
 }
 
-func (c *indexClient) GetDocument(ctx context.Context, in *GetDocumentRequest, opts ...grpc.CallOption) (*GetDocumentResponse, error) {
-	out := new(GetDocumentResponse)
-	err := c.cc.Invoke(ctx, "/index.Index/GetDocument", in, out, opts...)
+func (c *indexClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
+	out := new(GetResponse)
+	err := c.cc.Invoke(ctx, "/index.Index/Get", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *indexClient) IndexDocument(ctx context.Context, opts ...grpc.CallOption) (Index_IndexDocumentClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Index_serviceDesc.Streams[1], "/index.Index/IndexDocument", opts...)
+func (c *indexClient) Index(ctx context.Context, in *IndexRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/index.Index/Index", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &indexIndexDocumentClient{stream}
-	return x, nil
+	return out, nil
 }
 
-type Index_IndexDocumentClient interface {
-	Send(*IndexDocumentRequest) error
-	CloseAndRecv() (*IndexDocumentResponse, error)
-	grpc.ClientStream
-}
-
-type indexIndexDocumentClient struct {
-	grpc.ClientStream
-}
-
-func (x *indexIndexDocumentClient) Send(m *IndexDocumentRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *indexIndexDocumentClient) CloseAndRecv() (*IndexDocumentResponse, error) {
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	m := new(IndexDocumentResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func (c *indexClient) DeleteDocument(ctx context.Context, opts ...grpc.CallOption) (Index_DeleteDocumentClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Index_serviceDesc.Streams[2], "/index.Index/DeleteDocument", opts...)
+func (c *indexClient) Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/index.Index/Delete", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &indexDeleteDocumentClient{stream}
-	return x, nil
+	return out, nil
 }
 
-type Index_DeleteDocumentClient interface {
-	Send(*DeleteDocumentRequest) error
-	CloseAndRecv() (*DeleteDocumentResponse, error)
-	grpc.ClientStream
-}
-
-type indexDeleteDocumentClient struct {
-	grpc.ClientStream
-}
-
-func (x *indexDeleteDocumentClient) Send(m *DeleteDocumentRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *indexDeleteDocumentClient) CloseAndRecv() (*DeleteDocumentResponse, error) {
-	if err := x.ClientStream.CloseSend(); err != nil {
+func (c *indexClient) BulkIndex(ctx context.Context, in *BulkIndexRequest, opts ...grpc.CallOption) (*BulkIndexResponse, error) {
+	out := new(BulkIndexResponse)
+	err := c.cc.Invoke(ctx, "/index.Index/BulkIndex", in, out, opts...)
+	if err != nil {
 		return nil, err
 	}
-	m := new(DeleteDocumentResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
+	return out, nil
+}
+
+func (c *indexClient) BulkDelete(ctx context.Context, in *BulkDeleteRequest, opts ...grpc.CallOption) (*BulkDeleteResponse, error) {
+	out := new(BulkDeleteResponse)
+	err := c.cc.Invoke(ctx, "/index.Index/BulkDelete", in, out, opts...)
+	if err != nil {
 		return nil, err
 	}
-	return m, nil
+	return out, nil
 }
 
 func (c *indexClient) Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error) {
@@ -1449,9 +1629,11 @@ type IndexServer interface {
 	ClusterLeave(context.Context, *ClusterLeaveRequest) (*empty.Empty, error)
 	ClusterInfo(context.Context, *empty.Empty) (*ClusterInfoResponse, error)
 	ClusterWatch(*empty.Empty, Index_ClusterWatchServer) error
-	GetDocument(context.Context, *GetDocumentRequest) (*GetDocumentResponse, error)
-	IndexDocument(Index_IndexDocumentServer) error
-	DeleteDocument(Index_DeleteDocumentServer) error
+	Get(context.Context, *GetRequest) (*GetResponse, error)
+	Index(context.Context, *IndexRequest) (*empty.Empty, error)
+	Delete(context.Context, *DeleteRequest) (*empty.Empty, error)
+	BulkIndex(context.Context, *BulkIndexRequest) (*BulkIndexResponse, error)
+	BulkDelete(context.Context, *BulkDeleteRequest) (*BulkDeleteResponse, error)
 	Search(context.Context, *SearchRequest) (*SearchResponse, error)
 	GetIndexConfig(context.Context, *empty.Empty) (*GetIndexConfigResponse, error)
 	GetIndexStats(context.Context, *empty.Empty) (*GetIndexStatsResponse, error)
@@ -1480,14 +1662,20 @@ func (*UnimplementedIndexServer) ClusterInfo(ctx context.Context, req *empty.Emp
 func (*UnimplementedIndexServer) ClusterWatch(req *empty.Empty, srv Index_ClusterWatchServer) error {
 	return status.Errorf(codes.Unimplemented, "method ClusterWatch not implemented")
 }
-func (*UnimplementedIndexServer) GetDocument(ctx context.Context, req *GetDocumentRequest) (*GetDocumentResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetDocument not implemented")
+func (*UnimplementedIndexServer) Get(ctx context.Context, req *GetRequest) (*GetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
-func (*UnimplementedIndexServer) IndexDocument(srv Index_IndexDocumentServer) error {
-	return status.Errorf(codes.Unimplemented, "method IndexDocument not implemented")
+func (*UnimplementedIndexServer) Index(ctx context.Context, req *IndexRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Index not implemented")
 }
-func (*UnimplementedIndexServer) DeleteDocument(srv Index_DeleteDocumentServer) error {
-	return status.Errorf(codes.Unimplemented, "method DeleteDocument not implemented")
+func (*UnimplementedIndexServer) Delete(ctx context.Context, req *DeleteRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
+}
+func (*UnimplementedIndexServer) BulkIndex(ctx context.Context, req *BulkIndexRequest) (*BulkIndexResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BulkIndex not implemented")
+}
+func (*UnimplementedIndexServer) BulkDelete(ctx context.Context, req *BulkDeleteRequest) (*BulkDeleteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BulkDelete not implemented")
 }
 func (*UnimplementedIndexServer) Search(ctx context.Context, req *SearchRequest) (*SearchResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Search not implemented")
@@ -1617,74 +1805,94 @@ func (x *indexClusterWatchServer) Send(m *ClusterWatchResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _Index_GetDocument_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetDocumentRequest)
+func _Index_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(IndexServer).GetDocument(ctx, in)
+		return srv.(IndexServer).Get(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/index.Index/GetDocument",
+		FullMethod: "/index.Index/Get",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(IndexServer).GetDocument(ctx, req.(*GetDocumentRequest))
+		return srv.(IndexServer).Get(ctx, req.(*GetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Index_IndexDocument_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(IndexServer).IndexDocument(&indexIndexDocumentServer{stream})
-}
-
-type Index_IndexDocumentServer interface {
-	SendAndClose(*IndexDocumentResponse) error
-	Recv() (*IndexDocumentRequest, error)
-	grpc.ServerStream
-}
-
-type indexIndexDocumentServer struct {
-	grpc.ServerStream
-}
-
-func (x *indexIndexDocumentServer) SendAndClose(m *IndexDocumentResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *indexIndexDocumentServer) Recv() (*IndexDocumentRequest, error) {
-	m := new(IndexDocumentRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
+func _Index_Index_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IndexRequest)
+	if err := dec(in); err != nil {
 		return nil, err
 	}
-	return m, nil
+	if interceptor == nil {
+		return srv.(IndexServer).Index(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/index.Index/Index",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IndexServer).Index(ctx, req.(*IndexRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _Index_DeleteDocument_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(IndexServer).DeleteDocument(&indexDeleteDocumentServer{stream})
-}
-
-type Index_DeleteDocumentServer interface {
-	SendAndClose(*DeleteDocumentResponse) error
-	Recv() (*DeleteDocumentRequest, error)
-	grpc.ServerStream
-}
-
-type indexDeleteDocumentServer struct {
-	grpc.ServerStream
-}
-
-func (x *indexDeleteDocumentServer) SendAndClose(m *DeleteDocumentResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *indexDeleteDocumentServer) Recv() (*DeleteDocumentRequest, error) {
-	m := new(DeleteDocumentRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
+func _Index_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRequest)
+	if err := dec(in); err != nil {
 		return nil, err
 	}
-	return m, nil
+	if interceptor == nil {
+		return srv.(IndexServer).Delete(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/index.Index/Delete",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IndexServer).Delete(ctx, req.(*DeleteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Index_BulkIndex_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BulkIndexRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IndexServer).BulkIndex(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/index.Index/BulkIndex",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IndexServer).BulkIndex(ctx, req.(*BulkIndexRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Index_BulkDelete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BulkDeleteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IndexServer).BulkDelete(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/index.Index/BulkDelete",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IndexServer).BulkDelete(ctx, req.(*BulkDeleteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Index_Search_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -1784,8 +1992,24 @@ var _Index_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Index_ClusterInfo_Handler,
 		},
 		{
-			MethodName: "GetDocument",
-			Handler:    _Index_GetDocument_Handler,
+			MethodName: "Get",
+			Handler:    _Index_Get_Handler,
+		},
+		{
+			MethodName: "Index",
+			Handler:    _Index_Index_Handler,
+		},
+		{
+			MethodName: "Delete",
+			Handler:    _Index_Delete_Handler,
+		},
+		{
+			MethodName: "BulkIndex",
+			Handler:    _Index_BulkIndex_Handler,
+		},
+		{
+			MethodName: "BulkDelete",
+			Handler:    _Index_BulkDelete_Handler,
 		},
 		{
 			MethodName: "Search",
@@ -1809,16 +2033,6 @@ var _Index_serviceDesc = grpc.ServiceDesc{
 			StreamName:    "ClusterWatch",
 			Handler:       _Index_ClusterWatch_Handler,
 			ServerStreams: true,
-		},
-		{
-			StreamName:    "IndexDocument",
-			Handler:       _Index_IndexDocument_Handler,
-			ClientStreams: true,
-		},
-		{
-			StreamName:    "DeleteDocument",
-			Handler:       _Index_DeleteDocument_Handler,
-			ClientStreams: true,
 		},
 	},
 	Metadata: "protobuf/index/index.proto",

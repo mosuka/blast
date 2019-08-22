@@ -22,9 +22,8 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/mosuka/blast/protobuf/index"
-
 	"github.com/mosuka/blast/indexer"
+	"github.com/mosuka/blast/protobuf/index"
 	"github.com/urfave/cli"
 )
 
@@ -130,7 +129,7 @@ func indexerIndex(c *cli.Context) error {
 	}()
 
 	// index documents in bulk
-	count, err := client.IndexDocument(docs)
+	count, err := client.BulkIndex(docs)
 	if err != nil {
 		return err
 	}

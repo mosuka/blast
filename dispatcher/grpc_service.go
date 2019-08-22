@@ -551,7 +551,7 @@ func (s *GRPCService) GetDocument(ctx context.Context, req *distribute.GetDocume
 		wg.Add(1)
 		go func(clusterId string, client *indexer.GRPCClient, id string, respChan chan respVal) {
 			// index documents
-			doc, err := client.GetDocument(id)
+			doc, err := client.Get(id)
 			wg.Done()
 			respChan <- respVal{
 				clusterId: clusterId,
@@ -765,7 +765,7 @@ func (s *GRPCService) IndexDocument(stream distribute.Distribute_IndexDocumentSe
 	for clusterId, docs := range docSet {
 		wg.Add(1)
 		go func(clusterId string, docs []*index.Document, respChan chan respVal) {
-			count, err := indexerClients[clusterId].IndexDocument(docs)
+			count, err := indexerClients[clusterId].BulkIndex(docs)
 			wg.Done()
 			respChan <- respVal{
 				clusterId: clusterId,
@@ -838,7 +838,7 @@ func (s *GRPCService) DeleteDocument(stream distribute.Distribute_DeleteDocument
 		wg.Add(1)
 		go func(clusterId string, client *indexer.GRPCClient, ids []string, respChan chan respVal) {
 			// index documents
-			count, err := client.DeleteDocument(ids)
+			count, err := client.BulkDelete(ids)
 			wg.Done()
 			respChan <- respVal{
 				clusterId: clusterId,

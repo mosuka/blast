@@ -40,15 +40,15 @@ func (*ResponseMarshaler) ContentType() string {
 // Marshal marshals "v" into JSON
 func (j *ResponseMarshaler) Marshal(v interface{}) ([]byte, error) {
 	switch v.(type) {
-	case *index.GetDocumentResponse:
-		value, err := protobuf.MarshalAny(v.(*index.GetDocumentResponse).Document.Fields)
+	case *index.GetResponse:
+		value, err := protobuf.MarshalAny(v.(*index.GetResponse).Document.Fields)
 		if err != nil {
 			return nil, err
 		}
 		return json.Marshal(
 			map[string]interface{}{
 				"document": map[string]interface{}{
-					"id":     v.(*index.GetDocumentResponse).Document.Id,
+					"id":     v.(*index.GetResponse).Document.Id,
 					"fields": value,
 				},
 			},

@@ -279,6 +279,7 @@ You can see the result in JSON format. The result of the above command is:
   "state": 3,
   "metadata": {
     "grpc_address": ":5000",
+    "grpc_gateway_address": ":6000",
     "http_address": ":8000"
   }
 }
@@ -310,7 +311,7 @@ $ ./bin/blast indexer index --grpc-address=:5000 --file ./example/wiki_doc_enwik
 
 You can see the result in JSON format. The result of the above command is:
 
-```bash
+```text
 1
 ```
 
@@ -320,17 +321,20 @@ You can see the result in JSON format. The result of the above command is:
 Getting a document is as following:
 
 ```bash
-$ ./bin/blast indexer get --grpc-address=:5000 enwiki_1
+$ ./bin/blast indexer get --grpc-address=:5000 enwiki_1 | jq .
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
 ```json
 {
-  "_type": "enwiki",
-  "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
-  "timestamp": "2018-07-04T05:41:00Z",
-  "title_en": "Search engine (computing)"
+  "fields": {
+    "_type": "enwiki",
+    "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
+    "timestamp": "2018-07-04T05:41:00Z",
+    "title_en": "Search engine (computing)"
+  },
+  "id": "enwiki_1"
 }
 ```
 
@@ -520,7 +524,7 @@ $ ./bin/blast indexer delete --grpc-address=:5000 enwiki_1
 
 You can see the result in JSON format. The result of the above command is:
 
-```bash
+```text
 1
 ```
 
@@ -535,7 +539,7 @@ $ ./bin/blast indexer index --grpc-address=:5000 --file=./example/wiki_bulk_inde
 
 You can see the result in JSON format. The result of the above command is:
 
-```bash
+```text
 36
 ```
 
@@ -550,8 +554,8 @@ $ ./bin/blast indexer delete --grpc-address=:5000 --file=./example/wiki_bulk_del
 
 You can see the result in JSON format. The result of the above command is:
 
-```bash
-4
+```text
+36
 ```
 
 
@@ -586,7 +590,7 @@ $ curl -X PUT 'http://127.0.0.1:6000/v1/documents' -H 'Content-Type: application
 Getting a document via HTTP is as following:
 
 ```bash
-$ curl -X GET 'http://127.0.0.1:6000/v1/documents/enwiki_1' -H 'Content-Type: application/json'
+$ curl -X GET 'http://127.0.0.1:6000/v1/documents/enwiki_1' -H 'Content-Type: application/json' | jq .
 ```
 
 
@@ -637,6 +641,7 @@ First of all, start a indexer in standalone.
 ```bash
 $ ./bin/blast indexer start \
     --grpc-address=:5000 \
+    --grpc-gateway-address=:6000 \
     --http-address=:8000 \
     --node-id=indexer1 \
     --node-address=:2000 \
@@ -653,6 +658,7 @@ Then, start two more indexers.
 $ ./bin/blast indexer start \
     --peer-grpc-address=:5000 \
     --grpc-address=:5010 \
+    --grpc-gateway-address=:6010 \
     --http-address=:8010 \
     --node-id=indexer2 \
     --node-address=:2010 \
@@ -662,6 +668,7 @@ $ ./bin/blast indexer start \
 $ ./bin/blast indexer start \
     --peer-grpc-address=:5000 \
     --grpc-address=:5020 \
+    --grpc-gateway-address=:6020 \
     --http-address=:8020 \
     --node-id=indexer3 \
     --node-address=:2020 \
@@ -690,6 +697,7 @@ You can see the result in JSON format. The result of the above command is:
       "state": 3,
       "metadata": {
         "grpc_address": ":5000",
+        "grpc_gateway_address": ":6000",
         "http_address": ":8000"
       }
     },
@@ -699,6 +707,7 @@ You can see the result in JSON format. The result of the above command is:
       "state": 1,
       "metadata": {
         "grpc_address": ":5010",
+        "grpc_gateway_address": ":6010",
         "http_address": ":8010"
       }
     },
@@ -708,6 +717,7 @@ You can see the result in JSON format. The result of the above command is:
       "state": 1,
       "metadata": {
         "grpc_address": ":5020",
+        "grpc_gateway_address": ":6020",
         "http_address": ":8020"
       }
     }
@@ -726,37 +736,41 @@ $ ./bin/blast indexer index --grpc-address=:5000 --file ./example/wiki_doc_enwik
 So, you can get the document from the node specified by the above command as follows:
 
 ```bash
-$ ./bin/blast indexer get --grpc-address=:5000 enwiki_1
+$ ./bin/blast indexer get --grpc-address=:5000 enwiki_1 | jq .
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
 ```json
 {
-  "_type": "enwiki",
-  "contributor": "unknown",
-  "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
-  "timestamp": "2018-07-04T05:41:00Z",
-  "title_en": "Search engine (computing)"
+  "fields": {
+    "_type": "enwiki",
+    "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
+    "timestamp": "2018-07-04T05:41:00Z",
+    "title_en": "Search engine (computing)"
+  },
+  "id": "enwiki_1"
 }
 ```
 
 You can also get the same document from other nodes in the cluster as follows:
 
 ```bash
-$ ./bin/blast indexer get --grpc-address=:5010 enwiki_1
-$ ./bin/blast indexer get --grpc-address=:5020 enwiki_1
+$ ./bin/blast indexer get --grpc-address=:5010 enwiki_1 | jq .
+$ ./bin/blast indexer get --grpc-address=:5020 enwiki_1 | jq .
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
 ```json
 {
-  "_type": "enwiki",
-  "contributor": "unknown",
-  "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
-  "timestamp": "2018-07-04T05:41:00Z",
-  "title_en": "Search engine (computing)"
+  "fields": {
+    "_type": "enwiki",
+    "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
+    "timestamp": "2018-07-04T05:41:00Z",
+    "title_en": "Search engine (computing)"
+  },
+  "id": "enwiki_1"
 }
 ```
 

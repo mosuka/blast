@@ -763,10 +763,10 @@ func (s *GRPCService) ClusterWatch(req *empty.Empty, server index.Index_ClusterW
 	return nil
 }
 
-func (s *GRPCService) GetDocument(ctx context.Context, req *index.GetDocumentRequest) (*index.GetDocumentResponse, error) {
-	resp := &index.GetDocumentResponse{}
+func (s *GRPCService) Get(ctx context.Context, req *index.GetRequest) (*index.GetResponse, error) {
+	resp := &index.GetResponse{}
 
-	fields, err := s.raftServer.GetDocument(req.Id)
+	fields, err := s.raftServer.Get(req.Id)
 	if err != nil {
 		switch err {
 		case blasterrors.ErrNotFound:
@@ -801,6 +801,124 @@ func (s *GRPCService) GetDocument(ctx context.Context, req *index.GetDocumentReq
 	return resp, nil
 }
 
+func (s *GRPCService) Index(ctx context.Context, req *index.IndexRequest) (*empty.Empty, error) {
+	resp := &empty.Empty{}
+
+	// index
+	var err error
+	if s.raftServer.IsLeader() {
+		err = s.raftServer.Index(req.Document)
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+	} else {
+		// forward to leader
+		client, err := s.getLeaderClient()
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+		err = client.Index(req.Document)
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+	}
+
+	return resp, nil
+}
+
+func (s *GRPCService) Delete(ctx context.Context, req *index.DeleteRequest) (*empty.Empty, error) {
+	resp := &empty.Empty{}
+
+	// delete
+	var err error
+	if s.raftServer.IsLeader() {
+		err = s.raftServer.Delete(req.Id)
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+	} else {
+		// forward to leader
+		client, err := s.getLeaderClient()
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+		err = client.Delete(req.Id)
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+	}
+
+	return resp, nil
+}
+
+func (s *GRPCService) BulkIndex(ctx context.Context, req *index.BulkIndexRequest) (*index.BulkIndexResponse, error) {
+	resp := &index.BulkIndexResponse{}
+
+	// index
+	count := -1
+	var err error
+	if s.raftServer.IsLeader() {
+		count, err = s.raftServer.BulkIndex(req.Documents)
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+	} else {
+		// forward to leader
+		client, err := s.getLeaderClient()
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+		count, err = client.BulkIndex(req.Documents)
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+	}
+
+	return &index.BulkIndexResponse{
+		Count: int32(count),
+	}, nil
+}
+
+func (s *GRPCService) BulkDelete(ctx context.Context, req *index.BulkDeleteRequest) (*index.BulkDeleteResponse, error) {
+	resp := &index.BulkDeleteResponse{}
+
+	// delete
+	count := -1
+	var err error
+	if s.raftServer.IsLeader() {
+		count, err = s.raftServer.BulkDelete(req.Ids)
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+	} else {
+		// forward to leader
+		client, err := s.getLeaderClient()
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+		count, err = client.BulkDelete(req.Ids)
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+	}
+
+	return &index.BulkDeleteResponse{
+		Count: int32(count),
+	}, nil
+}
+
 func (s *GRPCService) Search(ctx context.Context, req *index.SearchRequest) (*index.SearchResponse, error) {
 	resp := &index.SearchResponse{}
 
@@ -826,100 +944,6 @@ func (s *GRPCService) Search(ctx context.Context, req *index.SearchRequest) (*in
 	resp.SearchResult = searchResultAny
 
 	return resp, nil
-}
-
-func (s *GRPCService) IndexDocument(stream index.Index_IndexDocumentServer) error {
-	docs := make([]*index.Document, 0)
-
-	for {
-		req, err := stream.Recv()
-		if err != nil {
-			if err == io.EOF {
-				s.logger.Debug(err.Error())
-				break
-			}
-			s.logger.Error(err.Error())
-			return status.Error(codes.Internal, err.Error())
-		}
-
-		docs = append(docs, req.Document)
-	}
-
-	// index
-	count := -1
-	var err error
-	if s.raftServer.IsLeader() {
-		count, err = s.raftServer.IndexDocument(docs)
-		if err != nil {
-			s.logger.Error(err.Error())
-			return status.Error(codes.Internal, err.Error())
-		}
-	} else {
-		// forward to leader
-		client, err := s.getLeaderClient()
-		if err != nil {
-			s.logger.Error(err.Error())
-			return status.Error(codes.Internal, err.Error())
-		}
-		count, err = client.IndexDocument(docs)
-		if err != nil {
-			s.logger.Error(err.Error())
-			return status.Error(codes.Internal, err.Error())
-		}
-	}
-
-	return stream.SendAndClose(
-		&index.IndexDocumentResponse{
-			Count: int32(count),
-		},
-	)
-}
-
-func (s *GRPCService) DeleteDocument(stream index.Index_DeleteDocumentServer) error {
-	ids := make([]string, 0)
-
-	for {
-		req, err := stream.Recv()
-		if err != nil {
-			if err == io.EOF {
-				s.logger.Debug(err.Error())
-				break
-			}
-			s.logger.Error(err.Error())
-			return status.Error(codes.Internal, err.Error())
-		}
-
-		ids = append(ids, req.Id)
-	}
-
-	// delete
-	count := -1
-	var err error
-	if s.raftServer.IsLeader() {
-		count, err = s.raftServer.DeleteDocument(ids)
-		if err != nil {
-			s.logger.Error(err.Error())
-			return status.Error(codes.Internal, err.Error())
-		}
-	} else {
-		// forward to leader
-		client, err := s.getLeaderClient()
-		if err != nil {
-			s.logger.Error(err.Error())
-			return status.Error(codes.Internal, err.Error())
-		}
-		count, err = client.DeleteDocument(ids)
-		if err != nil {
-			s.logger.Error(err.Error())
-			return status.Error(codes.Internal, err.Error())
-		}
-	}
-
-	return stream.SendAndClose(
-		&index.DeleteDocumentResponse{
-			Count: int32(count),
-		},
-	)
 }
 
 func (s *GRPCService) GetIndexConfig(ctx context.Context, req *empty.Empty) (*index.GetIndexConfigResponse, error) {

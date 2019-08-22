@@ -166,10 +166,14 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
-		return &fsmResponse{error: err}
+		return &fsmResponse{error: nil}
 	case management.Proposal_DELETE_NODE:
 		err = f.DeleteNode(proposal.Node.Id)
-		return &fsmResponse{error: err}
+		if err != nil {
+			f.logger.Error(err.Error())
+			return &fsmResponse{error: err}
+		}
+		return &fsmResponse{error: nil}
 	case management.Proposal_SET_VALUE:
 		value, err := protobuf.MarshalAny(proposal.KeyValue.Value)
 		if err != nil {
@@ -177,10 +181,18 @@ func (f *RaftFSM) Apply(l *raft.Log) interface{} {
 			return &fsmResponse{error: err}
 		}
 		err = f.SetValue(proposal.KeyValue.Key, value, false)
-		return &fsmResponse{error: err}
+		if err != nil {
+			f.logger.Error(err.Error())
+			return &fsmResponse{error: err}
+		}
+		return &fsmResponse{error: nil}
 	case management.Proposal_DELETE_VALUE:
 		err = f.DeleteValue(proposal.KeyValue.Key)
-		return &fsmResponse{error: err}
+		if err != nil {
+			f.logger.Error(err.Error())
+			return &fsmResponse{error: err}
+		}
+		return &fsmResponse{error: nil}
 	default:
 		err = errors.New("unsupported command")
 		f.logger.Error(err.Error())

@@ -58,9 +58,10 @@ func indexerDelete(c *cli.Context) error {
 
 		reader := bufio.NewReader(file)
 		for {
-			docId, err := reader.ReadString('\n')
+			docIdBytes, _, err := reader.ReadLine()
 			if err != nil {
 				if err == io.EOF || err == io.ErrClosedPipe {
+					docId := string(docIdBytes)
 					if docId != "" {
 						ids = append(ids, docId)
 					}
@@ -69,7 +70,7 @@ func indexerDelete(c *cli.Context) error {
 
 				return err
 			}
-
+			docId := string(docIdBytes)
 			if docId != "" {
 				ids = append(ids, docId)
 			}
@@ -88,7 +89,7 @@ func indexerDelete(c *cli.Context) error {
 		}
 	}()
 
-	result, err := client.DeleteDocument(ids)
+	result, err := client.BulkDelete(ids)
 	if err != nil {
 		return err
 	}

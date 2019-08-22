@@ -15,7 +15,6 @@
 package indexer
 
 import (
-	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"net"
@@ -24,6 +23,9 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
+
+	"github.com/golang/protobuf/proto"
+
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
@@ -45,8 +47,9 @@ type RaftServer struct {
 	bootstrap        bool
 	logger           *zap.Logger
 
-	raft *raft.Raft
-	fsm  *RaftFSM
+	transport *raft.NetworkTransport
+	raft      *raft.Raft
+	fsm       *RaftFSM
 }
 
 func NewRaftServer(node *index.Node, dataDir string, raftStorageType string, indexMapping *mapping.IndexMappingImpl, indexType string, indexStorageType string, bootstrap bool, logger *zap.Logger) (*RaftServer, error) {
@@ -97,7 +100,7 @@ func (s *RaftServer) Start() error {
 	}
 
 	s.logger.Info("create TCP transport", zap.String("bind_addr", s.node.BindAddress))
-	transport, err := raft.NewTCPTransport(s.node.BindAddress, addr, 3, 10*time.Second, ioutil.Discard)
+	s.transport, err = raft.NewTCPTransport(s.node.BindAddress, addr, 3, 10*time.Second, ioutil.Discard)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return err
@@ -185,7 +188,7 @@ func (s *RaftServer) Start() error {
 	}
 
 	s.logger.Info("create Raft machine")
-	s.raft, err = raft.NewRaft(raftConfig, s.fsm, logStore, stableStore, snapshotStore, transport)
+	s.raft, err = raft.NewRaft(raftConfig, s.fsm, logStore, stableStore, snapshotStore, s.transport)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return err
@@ -197,7 +200,7 @@ func (s *RaftServer) Start() error {
 			Servers: []raft.Server{
 				{
 					ID:      raftConfig.LocalID,
-					Address: transport.LocalAddr(),
+					Address: s.transport.LocalAddr(),
 				},
 			},
 		}
@@ -287,6 +290,10 @@ func (s *RaftServer) LeaderID(timeout time.Duration) (raft.ServerID, error) {
 	return "", blasterrors.ErrNotFoundLeader
 }
 
+func (s *RaftServer) NodeAddress() string {
+	return string(s.transport.LocalAddr())
+}
+
 func (s *RaftServer) NodeID() string {
 	return s.node.Id
 }
@@ -324,24 +331,17 @@ func (s *RaftServer) getNode(nodeId string) (*index.Node, error) {
 }
 
 func (s *RaftServer) setNode(node *index.Node) error {
-	msg, err := newMessage(
-		setNode,
-		map[string]interface{}{
-			"node": node,
-		},
-	)
+	proposal := &index.Proposal{
+		Event: index.Proposal_SET_NODE,
+		Node:  node,
+	}
+	proposalByte, err := proto.Marshal(proposal)
 	if err != nil {
-		s.logger.Error(err.Error(), zap.Any("node", node))
+		s.logger.Error(err.Error())
 		return err
 	}
 
-	msgBytes, err := json.Marshal(msg)
-	if err != nil {
-		s.logger.Error(err.Error(), zap.Any("node", node))
-		return err
-	}
-
-	f := s.raft.Apply(msgBytes, 10*time.Second)
+	f := s.raft.Apply(proposalByte, 10*time.Second)
 	err = f.Error()
 	if err != nil {
 		s.logger.Error(err.Error(), zap.Any("node", node))
@@ -357,24 +357,19 @@ func (s *RaftServer) setNode(node *index.Node) error {
 }
 
 func (s *RaftServer) deleteNode(nodeId string) error {
-	msg, err := newMessage(
-		deleteNode,
-		map[string]interface{}{
-			"id": nodeId,
+	proposal := &index.Proposal{
+		Event: index.Proposal_DELETE_NODE,
+		Node: &index.Node{
+			Id: nodeId,
 		},
-	)
+	}
+	proposalByte, err := proto.Marshal(proposal)
 	if err != nil {
-		s.logger.Error(err.Error(), zap.String("id", nodeId))
+		s.logger.Error(err.Error())
 		return err
 	}
 
-	msgBytes, err := json.Marshal(msg)
-	if err != nil {
-		s.logger.Error(err.Error(), zap.String("id", nodeId))
-		return err
-	}
-
-	f := s.raft.Apply(msgBytes, 10*time.Second)
+	f := s.raft.Apply(proposalByte, 10*time.Second)
 	err = f.Error()
 	if err != nil {
 		s.logger.Error(err.Error(), zap.String("id", nodeId))
@@ -526,7 +521,7 @@ func (s *RaftServer) Snapshot() error {
 	return nil
 }
 
-func (s *RaftServer) GetDocument(id string) (map[string]interface{}, error) {
+func (s *RaftServer) Get(id string) (map[string]interface{}, error) {
 	fields, err := s.fsm.GetDocument(id)
 	if err != nil {
 		switch err {
@@ -541,6 +536,130 @@ func (s *RaftServer) GetDocument(id string) (map[string]interface{}, error) {
 	return fields, nil
 }
 
+func (s *RaftServer) Index(doc *index.Document) error {
+	if !s.IsLeader() {
+		s.logger.Error(raft.ErrNotLeader.Error(), zap.String("state", s.raft.State().String()))
+		return raft.ErrNotLeader
+	}
+
+	proposal := &index.Proposal{
+		Event:    index.Proposal_INDEX,
+		Document: doc,
+	}
+	proposalByte, err := proto.Marshal(proposal)
+	if err != nil {
+		s.logger.Error(err.Error())
+		return err
+	}
+
+	f := s.raft.Apply(proposalByte, 10*time.Second)
+	err = f.Error()
+	if err != nil {
+		s.logger.Error(err.Error())
+		return err
+	}
+	err = f.Response().(*fsmResponse).error
+	if err != nil {
+		s.logger.Error(err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (s *RaftServer) Delete(id string) error {
+	if !s.IsLeader() {
+		s.logger.Error(raft.ErrNotLeader.Error(), zap.String("state", s.raft.State().String()))
+		return raft.ErrNotLeader
+	}
+
+	proposal := &index.Proposal{
+		Event: index.Proposal_DELETE,
+		Id:    id,
+	}
+	proposalByte, err := proto.Marshal(proposal)
+	if err != nil {
+		s.logger.Error(err.Error())
+		return err
+	}
+
+	f := s.raft.Apply(proposalByte, 10*time.Second)
+	err = f.Error()
+	if err != nil {
+		s.logger.Error(err.Error())
+		return err
+	}
+	err = f.Response().(*fsmResponse).error
+	if err != nil {
+		s.logger.Error(err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (s *RaftServer) BulkIndex(docs []*index.Document) (int, error) {
+	if !s.IsLeader() {
+		s.logger.Error(raft.ErrNotLeader.Error(), zap.String("state", s.raft.State().String()))
+		return -1, raft.ErrNotLeader
+	}
+
+	proposal := &index.Proposal{
+		Event:     index.Proposal_BULK_INDEX,
+		Documents: docs,
+	}
+	proposalByte, err := proto.Marshal(proposal)
+	if err != nil {
+		s.logger.Error(err.Error())
+		return -1, err
+	}
+
+	f := s.raft.Apply(proposalByte, 10*time.Second)
+	err = f.Error()
+	if err != nil {
+		s.logger.Error(err.Error())
+		return -1, err
+	}
+	err = f.Response().(*fsmBulkIndexResponse).error
+	if err != nil {
+		s.logger.Error(err.Error())
+		return -1, err
+	}
+
+	return f.Response().(*fsmBulkIndexResponse).count, nil
+}
+
+func (s *RaftServer) BulkDelete(ids []string) (int, error) {
+	if !s.IsLeader() {
+		s.logger.Error(raft.ErrNotLeader.Error(), zap.String("state", s.raft.State().String()))
+		return -1, raft.ErrNotLeader
+	}
+
+	proposal := &index.Proposal{
+		Event: index.Proposal_BULK_DELETE,
+		Ids:   ids,
+	}
+	proposalByte, err := proto.Marshal(proposal)
+	if err != nil {
+		s.logger.Error(err.Error())
+		return -1, err
+	}
+
+	f := s.raft.Apply(proposalByte, 10*time.Second)
+	err = f.Error()
+	if err != nil {
+		s.logger.Error(err.Error())
+		return -1, err
+	}
+	err = f.Response().(*fsmBulkDeleteResponse).error
+	if err != nil {
+		s.logger.Error(err.Error())
+		return -1, err
+	}
+
+	return f.Response().(*fsmBulkDeleteResponse).count, nil
+}
+
 func (s *RaftServer) Search(request *bleve.SearchRequest) (*bleve.SearchResult, error) {
 	result, err := s.fsm.Search(request)
 	if err != nil {
@@ -549,78 +668,6 @@ func (s *RaftServer) Search(request *bleve.SearchRequest) (*bleve.SearchResult, 
 	}
 
 	return result, nil
-}
-
-func (s *RaftServer) IndexDocument(docs []*index.Document) (int, error) {
-	if !s.IsLeader() {
-		s.logger.Error(raft.ErrNotLeader.Error(), zap.String("state", s.raft.State().String()))
-		return -1, raft.ErrNotLeader
-	}
-
-	msg, err := newMessage(
-		indexDocument,
-		docs,
-	)
-	if err != nil {
-		s.logger.Error(err.Error())
-		return -1, err
-	}
-
-	msgBytes, err := json.Marshal(msg)
-	if err != nil {
-		s.logger.Error(err.Error())
-		return -1, err
-	}
-
-	f := s.raft.Apply(msgBytes, 10*time.Second)
-	err = f.Error()
-	if err != nil {
-		s.logger.Error(err.Error())
-		return -1, err
-	}
-	err = f.Response().(*fsmIndexDocumentResponse).error
-	if err != nil {
-		s.logger.Error(err.Error())
-		return -1, err
-	}
-
-	return f.Response().(*fsmIndexDocumentResponse).count, nil
-}
-
-func (s *RaftServer) DeleteDocument(ids []string) (int, error) {
-	if !s.IsLeader() {
-		s.logger.Error(raft.ErrNotLeader.Error(), zap.String("state", s.raft.State().String()))
-		return -1, raft.ErrNotLeader
-	}
-
-	msg, err := newMessage(
-		deleteDocument,
-		ids,
-	)
-	if err != nil {
-		s.logger.Error(err.Error())
-		return -1, err
-	}
-
-	msgBytes, err := json.Marshal(msg)
-	if err != nil {
-		s.logger.Error(err.Error())
-		return -1, err
-	}
-
-	f := s.raft.Apply(msgBytes, 10*time.Second)
-	err = f.Error()
-	if err != nil {
-		s.logger.Error(err.Error())
-		return -1, err
-	}
-	err = f.Response().(*fsmDeleteDocumentResponse).error
-	if err != nil {
-		s.logger.Error(err.Error())
-		return -1, err
-	}
-
-	return f.Response().(*fsmDeleteDocumentResponse).count, nil
 }
 
 func (s *RaftServer) GetIndexConfig() (map[string]interface{}, error) {

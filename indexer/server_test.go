@@ -785,7 +785,7 @@ func TestServer_PutDocument(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 	docs = append(docs, doc1)
-	count, err := client.IndexDocument(docs)
+	count, err := client.BulkIndex(docs)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -884,7 +884,7 @@ func TestServer_GetDocument(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 	putDocs = append(putDocs, putDoc1)
-	putCount, err := client.IndexDocument(putDocs)
+	putCount, err := client.BulkIndex(putDocs)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -897,7 +897,7 @@ func TestServer_GetDocument(t *testing.T) {
 	}
 
 	// get document
-	getDoc1, err := client.GetDocument("enwiki_1")
+	getDoc1, err := client.Get("enwiki_1")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -908,7 +908,7 @@ func TestServer_GetDocument(t *testing.T) {
 	}
 
 	// get non-existing document
-	getDocFields2, err := client.GetDocument("doc2")
+	getDocFields2, err := client.Get("doc2")
 	if err != errors.ErrNotFound {
 		t.Fatalf("%v", err)
 	}
@@ -1003,7 +1003,7 @@ func TestServer_DeleteDocument(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 	putDocs = append(putDocs, putDoc1)
-	putCount, err := client.IndexDocument(putDocs)
+	putCount, err := client.BulkIndex(putDocs)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1016,7 +1016,7 @@ func TestServer_DeleteDocument(t *testing.T) {
 	}
 
 	// get document
-	getDoc1, err := client.GetDocument("enwiki_1")
+	getDoc1, err := client.Get("enwiki_1")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1027,7 +1027,7 @@ func TestServer_DeleteDocument(t *testing.T) {
 	}
 
 	// get non-existing document
-	getDoc2, err := client.GetDocument("non-existing")
+	getDoc2, err := client.Get("non-existing")
 	if err != errors.ErrNotFound {
 		t.Fatalf("%v", err)
 	}
@@ -1036,7 +1036,7 @@ func TestServer_DeleteDocument(t *testing.T) {
 	}
 
 	// delete document
-	delCount, err := client.DeleteDocument([]string{"enwiki_1"})
+	delCount, err := client.BulkDelete([]string{"enwiki_1"})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1047,7 +1047,7 @@ func TestServer_DeleteDocument(t *testing.T) {
 	}
 
 	// get document
-	getDoc1, err = client.GetDocument("enwiki_1")
+	getDoc1, err = client.Get("enwiki_1")
 	if err != errors.ErrNotFound {
 		t.Fatalf("%v", err)
 	}
@@ -1056,7 +1056,7 @@ func TestServer_DeleteDocument(t *testing.T) {
 	}
 
 	// delete non-existing document
-	getDoc1, err = client.GetDocument("non-existing")
+	getDoc1, err = client.Get("non-existing")
 	if err != errors.ErrNotFound {
 		t.Fatalf("%v", err)
 	}
@@ -1151,7 +1151,7 @@ func TestServer_Search(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 	putDocs = append(putDocs, putDoc1)
-	putCount, err := client.IndexDocument(putDocs)
+	putCount, err := client.BulkIndex(putDocs)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

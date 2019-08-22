@@ -67,8 +67,8 @@ func request_Index_ClusterInfo_0(ctx context.Context, marshaler runtime.Marshale
 
 }
 
-func request_Index_GetDocument_0(ctx context.Context, marshaler runtime.Marshaler, client IndexClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetDocumentRequest
+func request_Index_Get_0(ctx context.Context, marshaler runtime.Marshaler, client IndexClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -89,7 +89,7 @@ func request_Index_GetDocument_0(ctx context.Context, marshaler runtime.Marshale
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
-	msg, err := client.GetDocument(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.Get(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
@@ -192,7 +192,7 @@ func RegisterIndexHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 
 	})
 
-	mux.Handle("GET", pattern_Index_GetDocument_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Index_Get_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -201,14 +201,14 @@ func RegisterIndexHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_Index_GetDocument_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_Index_Get_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_Index_GetDocument_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Index_Get_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -222,7 +222,7 @@ var (
 
 	pattern_Index_ClusterInfo_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "cluster", "status"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_Index_GetDocument_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 3, 0, 4, 1, 5, 2}, []string{"v1", "documents", "id"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_Index_Get_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 3, 0, 4, 1, 5, 2}, []string{"v1", "documents", "id"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
@@ -232,5 +232,5 @@ var (
 
 	forward_Index_ClusterInfo_0 = runtime.ForwardResponseMessage
 
-	forward_Index_GetDocument_0 = runtime.ForwardResponseMessage
+	forward_Index_Get_0 = runtime.ForwardResponseMessage
 )
