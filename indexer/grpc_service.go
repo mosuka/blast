@@ -807,7 +807,7 @@ func (s *GRPCService) Index(ctx context.Context, req *index.IndexRequest) (*empt
 	// index
 	var err error
 	if s.raftServer.IsLeader() {
-		err = s.raftServer.Index(req.Document)
+		err = s.raftServer.Index(&index.Document{Id: req.Id, Fields: req.Fields})
 		if err != nil {
 			s.logger.Error(err.Error())
 			return resp, status.Error(codes.Internal, err.Error())
@@ -819,7 +819,12 @@ func (s *GRPCService) Index(ctx context.Context, req *index.IndexRequest) (*empt
 			s.logger.Error(err.Error())
 			return resp, status.Error(codes.Internal, err.Error())
 		}
-		err = client.Index(req.Document)
+		fields, err := protobuf.MarshalAny(req.Fields)
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+		err = client.Index(req.Id, fields.(map[string]interface{}))
 		if err != nil {
 			s.logger.Error(err.Error())
 			return resp, status.Error(codes.Internal, err.Error())

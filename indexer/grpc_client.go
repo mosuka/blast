@@ -196,12 +196,20 @@ func (c *GRPCClient) Get(id string, opts ...grpc.CallOption) (*index.Document, e
 	return resp.Document, nil
 }
 
-func (c *GRPCClient) Index(doc *index.Document, opts ...grpc.CallOption) error {
+func (c *GRPCClient) Index(id string, fields map[string]interface{}, opts ...grpc.CallOption) error {
 	req := &index.IndexRequest{
-		Document: doc,
+		Id: id,
 	}
 
-	_, err := c.client.Index(c.ctx, req, opts...)
+	fieldsAny := &any.Any{}
+	err := protobuf.UnmarshalAny(fields, fieldsAny)
+	if err != nil {
+		st, _ := status.FromError(err)
+		return errors.New(st.Message())
+	}
+	req.Fields = fieldsAny
+
+	_, err = c.client.Index(c.ctx, req, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
 		return errors.New(st.Message())

@@ -17,11 +17,14 @@ package indexer
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
+
+	"github.com/golang/protobuf/ptypes/any"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/mosuka/blast/protobuf"
@@ -73,6 +76,19 @@ func (j *ResponseMarshaler) NewDecoder(r io.Reader) runtime.Decoder {
 			}
 
 			switch v.(type) {
+			case *index.IndexRequest:
+				var tmpValue map[string]interface{}
+				err = json.Unmarshal(buffer, &tmpValue)
+				if err != nil {
+					return err
+				}
+				value, ok := tmpValue["fields"]
+				if !ok {
+					return errors.New("value does not exist")
+				}
+				v.(*index.IndexRequest).Fields = &any.Any{}
+				return protobuf.UnmarshalAny(value, v.(*index.IndexRequest).Fields)
+
 			//case *management.SetRequest:
 			//	var tmpValue map[string]interface{}
 			//	err = json.Unmarshal(buffer, &tmpValue)

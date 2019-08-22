@@ -48,7 +48,12 @@ service Index {
             get: "/v1/documents/{id=**}"
         };
     }
-    rpc Index (IndexRequest) returns (google.protobuf.Empty) {}
+    rpc Index (IndexRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            put: "/v1/documents/{id=**}"
+            body: "*"
+        };
+    }
     rpc Delete (DeleteRequest) returns (google.protobuf.Empty) {}
     rpc BulkIndex (BulkIndexRequest) returns (BulkIndexResponse) {}
     rpc BulkDelete (BulkDeleteRequest) returns (BulkDeleteResponse) {}
@@ -147,7 +152,8 @@ message GetResponse {
 }
 
 message IndexRequest {
-    Document document = 1;
+    string id = 1;
+    google.protobuf.Any fields = 2;
 }
 
 message DeleteRequest {

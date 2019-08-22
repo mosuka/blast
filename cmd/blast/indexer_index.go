@@ -16,6 +16,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -31,52 +32,45 @@ func indexerIndex(c *cli.Context) error {
 	grpcAddr := c.String("grpc-address")
 	filePath := c.String("file")
 	bulk := c.Bool("bulk")
-	id := c.Args().Get(0)
-	fieldsSrc := c.Args().Get(1)
 
-	docs := make([]*index.Document, 0)
+	// create gRPC client
+	client, err := indexer.NewGRPCClient(grpcAddr)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err := client.Close()
+		if err != nil {
+			_, _ = fmt.Fprintln(os.Stderr, err)
+		}
+	}()
 
-	if id != "" && fieldsSrc != "" {
+	count := 0
+
+	if c.NArg() >= 2 {
+		// index document by specifying ID and fields via standard input
+		id := c.Args().Get(0)
+		fieldsSrc := c.Args().Get(1)
+
 		var fieldsMap map[string]interface{}
 		err := json.Unmarshal([]byte(fieldsSrc), &fieldsMap)
 		if err != nil {
 			return err
 		}
-		docMap := map[string]interface{}{
-			"id":     id,
-			"fields": fieldsMap,
-		}
-		docBytes, err := json.Marshal(docMap)
-		if err != nil {
-			return err
-		}
-		doc := &index.Document{}
-		err = index.UnmarshalDocument(docBytes, doc)
-		docs = append(docs, doc)
-	}
 
-	if filePath != "" {
-		_, err := os.Stat(filePath)
-		if err != nil {
-			if os.IsNotExist(err) {
-				// does not exist
-				return err
-			}
-			// other error
-			return err
-		}
-
-		// read index mapping file
-		file, err := os.Open(filePath)
+		err = client.Index(id, fieldsMap)
 		if err != nil {
 			return err
 		}
-		defer func() {
-			_ = file.Close()
-		}()
+		count = 1
+	} else if c.NArg() == 1 {
+		// index document by specifying document(s) via standard input
+		docSrc := c.Args().Get(0)
 
 		if bulk {
-			reader := bufio.NewReader(file)
+			// jsonl
+			docs := make([]*index.Document, 0)
+			reader := bufio.NewReader(bytes.NewReader([]byte(docSrc)))
 			for {
 				docBytes, err := reader.ReadBytes('\n')
 				if err != nil {
@@ -102,36 +96,98 @@ func indexerIndex(c *cli.Context) error {
 					docs = append(docs, doc)
 				}
 			}
+			count, err = client.BulkIndex(docs)
+			if err != nil {
+				return err
+			}
 		} else {
-			docBytes, err := ioutil.ReadAll(file)
+			// json
+			var docMap map[string]interface{}
+			err := json.Unmarshal([]byte(docSrc), &docMap)
 			if err != nil {
 				return err
 			}
-			doc := &index.Document{}
-			err = index.UnmarshalDocument(docBytes, doc)
+
+			err = client.Index(docMap["id"].(string), docMap["fields"].(map[string]interface{}))
 			if err != nil {
 				return err
 			}
-			docs = append(docs, doc)
+			count = 1
 		}
-	}
+	} else {
+		// index document by specifying document(s) via file
+		if filePath != "" {
+			_, err := os.Stat(filePath)
+			if err != nil {
+				if os.IsNotExist(err) {
+					// does not exist
+					return err
+				}
+				// other error
+				return err
+			}
 
-	// create gRPC client
-	client, err := indexer.NewGRPCClient(grpcAddr)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			_, _ = fmt.Fprintln(os.Stderr, err)
+			// read index mapping file
+			file, err := os.Open(filePath)
+			if err != nil {
+				return err
+			}
+			defer func() {
+				_ = file.Close()
+			}()
+
+			if bulk {
+				// jsonl
+				docs := make([]*index.Document, 0)
+				reader := bufio.NewReader(file)
+				for {
+					docBytes, err := reader.ReadBytes('\n')
+					if err != nil {
+						if err == io.EOF || err == io.ErrClosedPipe {
+							if len(docBytes) > 0 {
+								doc := &index.Document{}
+								err = index.UnmarshalDocument(docBytes, doc)
+								if err != nil {
+									return err
+								}
+								docs = append(docs, doc)
+							}
+							break
+						}
+					}
+
+					if len(docBytes) > 0 {
+						doc := &index.Document{}
+						err = index.UnmarshalDocument(docBytes, doc)
+						if err != nil {
+							return err
+						}
+						docs = append(docs, doc)
+					}
+				}
+				count, err = client.BulkIndex(docs)
+				if err != nil {
+					return err
+				}
+			} else {
+				// json
+				docBytes, err := ioutil.ReadAll(file)
+				if err != nil {
+					return err
+				}
+				var docMap map[string]interface{}
+				err = json.Unmarshal(docBytes, &docMap)
+				if err != nil {
+					return err
+				}
+
+				err = client.Index(docMap["id"].(string), docMap["fields"].(map[string]interface{}))
+				if err != nil {
+					return err
+				}
+				count = 1
+			}
 		}
-	}()
-
-	// index documents in bulk
-	count, err := client.BulkIndex(docs)
-	if err != nil {
-		return err
 	}
 
 	resultBytes, err := json.MarshalIndent(count, "", "  ")
