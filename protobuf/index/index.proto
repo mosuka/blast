@@ -50,8 +50,12 @@ service Index {
     }
     rpc Index (IndexRequest) returns (google.protobuf.Empty) {
         option (google.api.http) = {
-            put: "/v1/documents/{id=**}"
+            put: "/v1/documents"
             body: "*"
+            additional_bindings {
+                put: "/v1/documents/{id=**}"
+                body: "*"
+            }
         };
     }
     rpc Delete (DeleteRequest) returns (google.protobuf.Empty) {
@@ -71,7 +75,12 @@ service Index {
             body: "*"
         };
     }
-    rpc Search (SearchRequest) returns (SearchResponse) {}
+    rpc Search (SearchRequest) returns (SearchResponse) {
+        option (google.api.http) = {
+            post: "/v1/search"
+            body: "*"
+        };
+    }
     rpc GetIndexConfig (google.protobuf.Empty) returns (GetIndexConfigResponse) {}
     rpc GetIndexStats (google.protobuf.Empty) returns (GetIndexStatsResponse) {}
     rpc Snapshot (google.protobuf.Empty) returns (google.protobuf.Empty) {}

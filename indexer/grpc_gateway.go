@@ -26,6 +26,8 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/blevesearch/bleve"
+
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/mosuka/blast/protobuf"
@@ -57,6 +59,16 @@ func (j *JsonMarshaler) Marshal(v interface{}) ([]byte, error) {
 				},
 			},
 		)
+	case *index.SearchResponse:
+		value, err := protobuf.MarshalAny(v.(*index.SearchResponse).SearchResult)
+		if err != nil {
+			return nil, err
+		}
+		return json.Marshal(
+			map[string]interface{}{
+				"search_result": value,
+			},
+		)
 	default:
 		return json.Marshal(v)
 	}
@@ -83,16 +95,38 @@ func (j *JsonMarshaler) NewDecoder(r io.Reader) runtime.Decoder {
 				if err != nil {
 					return err
 				}
-				//id, ok := tmpValue["id"].(string)
-				//if ok {
-				//	v.(*index.IndexRequest).Id = id
-				//}
+				id, ok := tmpValue["id"].(string)
+				if ok {
+					v.(*index.IndexRequest).Id = id
+				}
+
 				fields, ok := tmpValue["fields"]
 				if !ok {
 					return errors.New("value does not exist")
 				}
 				v.(*index.IndexRequest).Fields = &any.Any{}
 				return protobuf.UnmarshalAny(fields, v.(*index.IndexRequest).Fields)
+			case *index.SearchRequest:
+				var tmpValue map[string]interface{}
+				err = json.Unmarshal(buffer, &tmpValue)
+				if err != nil {
+					return err
+				}
+				searchRequestMap, ok := tmpValue["search_request"]
+				if !ok {
+					return errors.New("value does not exist")
+				}
+				searchRequestBytes, err := json.Marshal(searchRequestMap)
+				if err != nil {
+					return err
+				}
+				var searchRequest *bleve.SearchRequest
+				err = json.Unmarshal(searchRequestBytes, &searchRequest)
+				if err != nil {
+					return err
+				}
+				v.(*index.SearchRequest).SearchRequest = &any.Any{}
+				return protobuf.UnmarshalAny(searchRequest, v.(*index.SearchRequest).SearchRequest)
 			default:
 				return json.Unmarshal(buffer, v)
 			}

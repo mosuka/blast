@@ -1,13 +1,15 @@
 {
-  "query": {
-    "query": "+_all:search"
-  },
-  "size": 10,
-  "from": 0,
-  "fields": [
-    "*"
-  ],
-  "sort": [
-    "-_score"
-  ]
+  "search_request": {
+    "query": {
+      "query": "+_all:search"
+    },
+    "size": 10,
+    "from": 0,
+    "fields": [
+      "*"
+    ],
+    "sort": [
+      "-_score"
+    ]
+  }
 }
