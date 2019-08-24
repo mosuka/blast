@@ -16,23 +16,27 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 
 	"github.com/blevesearch/bleve"
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/mosuka/blast/indexer"
+	"github.com/mosuka/blast/protobuf"
+	"github.com/mosuka/blast/protobuf/index"
 	"github.com/urfave/cli"
 )
 
 func indexerSearch(c *cli.Context) error {
 	grpcAddr := c.String("grpc-address")
-	searchRequestPath := c.String("file")
+	filePath := c.String("file")
 
 	searchRequest := bleve.NewSearchRequest(nil)
 
-	if searchRequestPath != "" {
-		_, err := os.Stat(searchRequestPath)
+	if filePath != "" {
+		_, err := os.Stat(filePath)
 		if err != nil {
 			if os.IsNotExist(err) {
 				// does not exist
@@ -43,23 +47,36 @@ func indexerSearch(c *cli.Context) error {
 		}
 
 		// open file
-		searchRequestFile, err := os.Open(searchRequestPath)
+		file, err := os.Open(filePath)
 		if err != nil {
 			return err
 		}
 		defer func() {
-			_ = searchRequestFile.Close()
+			_ = file.Close()
 		}()
 
 		// read file
-		searchRequestBytes, err := ioutil.ReadAll(searchRequestFile)
+		fileBytes, err := ioutil.ReadAll(file)
 		if err != nil {
 			return err
 		}
 
 		// create search request
-		if searchRequestBytes != nil {
-			err := json.Unmarshal(searchRequestBytes, searchRequest)
+		if fileBytes != nil {
+			var tmpValue map[string]interface{}
+			err = json.Unmarshal(fileBytes, &tmpValue)
+			if err != nil {
+				return err
+			}
+			searchRequestMap, ok := tmpValue["search_request"]
+			if !ok {
+				return errors.New("search_request does not exist")
+			}
+			searchRequestBytes, err := json.Marshal(searchRequestMap)
+			if err != nil {
+				return err
+			}
+			err = json.Unmarshal(searchRequestBytes, &searchRequest)
 			if err != nil {
 				return err
 			}
@@ -77,17 +94,26 @@ func indexerSearch(c *cli.Context) error {
 		}
 	}()
 
-	searchResult, err := client.Search(searchRequest)
+	searchRequestAny := &any.Any{}
+	err = protobuf.UnmarshalAny(searchRequest, searchRequestAny)
 	if err != nil {
 		return err
 	}
 
-	jsonBytes, err := json.MarshalIndent(&searchResult, "", "  ")
+	req := &index.SearchRequest{SearchRequest: searchRequestAny}
+
+	res, err := client.Search(req)
 	if err != nil {
 		return err
 	}
 
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(jsonBytes)))
+	marshaler := indexer.JsonMarshaler{}
+	resBytes, err := marshaler.Marshal(res)
+	if err != nil {
+		return err
+	}
+
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resBytes)))
 
 	return nil
 }

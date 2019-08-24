@@ -267,20 +267,22 @@ Please refer to following document for details of index mapping:
 You can check the node with the following command:
 
 ```bash
-$ ./bin/blast indexer node info --grpc-address=:5000
+$ ./bin/blast indexer node info --grpc-address=:5000 | jq .
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
 ```json
 {
-  "id": "indexer1",
-  "bind_address": ":2000",
-  "state": 3,
-  "metadata": {
-    "grpc_address": ":5000",
-    "grpc_gateway_address": ":6000",
-    "http_address": ":8000"
+  "node": {
+    "id": "indexer1",
+    "bind_address": ":2000",
+    "state": 3,
+    "metadata": {
+      "grpc_address": ":5000",
+      "grpc_gateway_address": ":6000",
+      "http_address": ":8000"
+    }
   }
 }
 ```
@@ -295,24 +297,26 @@ For document indexing, execute the following command:
 ```bash
 $ ./bin/blast indexer index --grpc-address=:5000 enwiki_1 '
 {
-  "title_en": "Search engine (computing)",
-  "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
-  "timestamp": "2018-07-04T05:41:00Z",
-  "_type": "enwiki"
+  "fields": {
+    "title_en": "Search engine (computing)",
+    "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
+    "timestamp": "2018-07-04T05:41:00Z",
+    "_type": "enwiki"
+  }
 }
-'
+' | jq .
 ```
 
 or
 
 ```bash
-$ ./bin/blast indexer index --grpc-address=:5000 --file ./example/wiki_doc_enwiki_1.json
+$ ./bin/blast indexer index --grpc-address=:5000 --file ./example/wiki_doc_enwiki_1.json | jq .
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
-```text
-1
+```json
+{}
 ```
 
 
@@ -344,163 +348,165 @@ You can see the result in JSON format. The result of the above command is:
 Searching documents is as like following:
 
 ```bash
-$ ./bin/blast indexer search --grpc-address=:5000 --file=./example/wiki_search_request.json
+$ ./bin/blast indexer search --grpc-address=:5000 --file=./example/wiki_search_request.json | jq .
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
 ```json
 {
-  "status": {
-    "total": 1,
-    "failed": 0,
-    "successful": 1
-  },
-  "request": {
-    "query": {
-      "query": "+_all:search"
+  "search_result": {
+    "status": {
+      "total": 1,
+      "failed": 0,
+      "successful": 1
     },
-    "size": 10,
-    "from": 0,
-    "highlight": {
-      "style": "html",
+    "request": {
+      "query": {
+        "query": "+_all:search"
+      },
+      "size": 10,
+      "from": 0,
+      "highlight": {
+        "style": "html",
+        "fields": [
+          "title",
+          "text"
+        ]
+      },
       "fields": [
-        "title",
-        "text"
-      ]
+        "*"
+      ],
+      "facets": {
+        "Timestamp range": {
+          "size": 10,
+          "field": "timestamp",
+          "date_ranges": [
+            {
+              "end": "2010-12-31T23:59:59Z",
+              "name": "2001 - 2010",
+              "start": "2001-01-01T00:00:00Z"
+            },
+            {
+              "end": "2020-12-31T23:59:59Z",
+              "name": "2011 - 2020",
+              "start": "2011-01-01T00:00:00Z"
+            }
+          ]
+        },
+        "Type count": {
+          "size": 10,
+          "field": "_type"
+        }
+      },
+      "explain": false,
+      "sort": [
+        "-_score",
+        "_id",
+        "-timestamp"
+      ],
+      "includeLocations": false
     },
-    "fields": [
-      "*"
+    "hits": [
+      {
+        "index": "/tmp/blast/indexer1/index",
+        "id": "enwiki_1",
+        "score": 0.09703538256409851,
+        "locations": {
+          "text_en": {
+            "search": [
+              {
+                "pos": 2,
+                "start": 2,
+                "end": 8,
+                "array_positions": null
+              },
+              {
+                "pos": 20,
+                "start": 118,
+                "end": 124,
+                "array_positions": null
+              },
+              {
+                "pos": 33,
+                "start": 195,
+                "end": 201,
+                "array_positions": null
+              },
+              {
+                "pos": 68,
+                "start": 415,
+                "end": 421,
+                "array_positions": null
+              },
+              {
+                "pos": 73,
+                "start": 438,
+                "end": 444,
+                "array_positions": null
+              },
+              {
+                "pos": 76,
+                "start": 458,
+                "end": 466,
+                "array_positions": null
+              }
+            ]
+          },
+          "title_en": {
+            "search": [
+              {
+                "pos": 1,
+                "start": 0,
+                "end": 6,
+                "array_positions": null
+              }
+            ]
+          }
+        },
+        "sort": [
+          "_score",
+          "enwiki_1",
+          " \u0001\u0015\u001f\u0004~80Pp\u0000"
+        ],
+        "fields": {
+          "_type": "enwiki",
+          "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
+          "timestamp": "2018-07-04T05:41:00Z",
+          "title_en": "Search engine (computing)"
+        }
+      }
     ],
+    "total_hits": 1,
+    "max_score": 0.09703538256409851,
+    "took": 122105,
     "facets": {
       "Timestamp range": {
-        "size": 10,
         "field": "timestamp",
+        "total": 1,
+        "missing": 0,
+        "other": 0,
         "date_ranges": [
           {
-            "end": "2010-12-31T23:59:59Z",
-            "name": "2001 - 2010",
-            "start": "2001-01-01T00:00:00Z"
-          },
-          {
-            "end": "2020-12-31T23:59:59Z",
             "name": "2011 - 2020",
-            "start": "2011-01-01T00:00:00Z"
+            "start": "2011-01-01T00:00:00Z",
+            "end": "2020-12-31T23:59:59Z",
+            "count": 1
           }
         ]
       },
       "Type count": {
-        "size": 10,
-        "field": "_type"
+        "field": "_type",
+        "total": 1,
+        "missing": 0,
+        "other": 0,
+        "terms": [
+          {
+            "term": "enwiki",
+            "count": 1
+          }
+        ]
       }
-    },
-    "explain": false,
-    "sort": [
-      "-_score",
-      "_id",
-      "-timestamp"
-    ],
-    "includeLocations": false
-  },
-  "hits": [
-    {
-      "index": "/tmp/blast/indexer1/index",
-      "id": "enwiki_1",
-      "score": 0.09703538256409851,
-      "locations": {
-        "text_en": {
-          "search": [
-            {
-              "pos": 2,
-              "start": 2,
-              "end": 8,
-              "array_positions": null
-            },
-            {
-              "pos": 20,
-              "start": 118,
-              "end": 124,
-              "array_positions": null
-            },
-            {
-              "pos": 33,
-              "start": 195,
-              "end": 201,
-              "array_positions": null
-            },
-            {
-              "pos": 68,
-              "start": 415,
-              "end": 421,
-              "array_positions": null
-            },
-            {
-              "pos": 73,
-              "start": 438,
-              "end": 444,
-              "array_positions": null
-            },
-            {
-              "pos": 76,
-              "start": 458,
-              "end": 466,
-              "array_positions": null
-            }
-          ]
-        },
-        "title_en": {
-          "search": [
-            {
-              "pos": 1,
-              "start": 0,
-              "end": 6,
-              "array_positions": null
-            }
-          ]
-        }
-      },
-      "sort": [
-        "_score",
-        "enwiki_1",
-        " \u0001\u0015\u001f\u0004~80Pp\u0000"
-      ],
-      "fields": {
-        "_type": "enwiki",
-        "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
-        "timestamp": "2018-07-04T05:41:00Z",
-        "title_en": "Search engine (computing)"
-      }
-    }
-  ],
-  "total_hits": 1,
-  "max_score": 0.09703538256409851,
-  "took": 688819,
-  "facets": {
-    "Timestamp range": {
-      "field": "timestamp",
-      "total": 1,
-      "missing": 0,
-      "other": 0,
-      "date_ranges": [
-        {
-          "name": "2011 - 2020",
-          "start": "2011-01-01T00:00:00Z",
-          "end": "2020-12-31T23:59:59Z",
-          "count": 1
-        }
-      ]
-    },
-    "Type count": {
-      "field": "_type",
-      "total": 1,
-      "missing": 0,
-      "other": 0,
-      "terms": [
-        {
-          "term": "enwiki",
-          "count": 1
-        }
-      ]
     }
   }
 }
@@ -524,8 +530,8 @@ $ ./bin/blast indexer delete --grpc-address=:5000 enwiki_1
 
 You can see the result in JSON format. The result of the above command is:
 
-```text
-1
+```json
+{}
 ```
 
 
@@ -534,13 +540,15 @@ You can see the result in JSON format. The result of the above command is:
 Indexing documents in bulk, run the following command:
 
 ```bash
-$ ./bin/blast indexer index --grpc-address=:5000 --file=./example/wiki_bulk_index.jsonl --bulk
+$ ./bin/blast indexer index --grpc-address=:5000 --file=./example/wiki_bulk_index.jsonl --bulk | jq .
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
-```text
-36
+```json
+{
+  "count": 36
+}
 ```
 
 
@@ -549,13 +557,15 @@ You can see the result in JSON format. The result of the above command is:
 Deleting documents in bulk, run the following command:
 
 ```bash
-$ ./bin/blast indexer delete --grpc-address=:5000 --file=./example/wiki_bulk_delete.txt
+$ ./bin/blast indexer delete --grpc-address=:5000 --file=./example/wiki_bulk_delete.txt | jq .
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
-```text
-36
+```json
+{
+  "count": 36
+}
 ```
 
 
@@ -570,15 +580,15 @@ Indexing a document via HTTP is as following:
 
 ```bash
 $ curl -X PUT 'http://127.0.0.1:6000/v1/documents/enwiki_1' -H 'Content-Type: application/json' --data-binary '
- {
-   "fields": {
-     "title_en": "Search engine (computing)",
-     "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
-     "timestamp": "2018-07-04T05:41:00Z",
-     "_type": "enwiki"
-   }
- }
- '
+{
+  "fields": {
+    "title_en": "Search engine (computing)",
+    "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
+    "timestamp": "2018-07-04T05:41:00Z",
+    "_type": "enwiki"
+  }
+}
+' | jq .
 ```
 
 or
@@ -685,42 +695,44 @@ So you have a 3-node cluster. That way you can tolerate the failure of 1 node. Y
 
 
 ```bash
-$ ./bin/blast indexer cluster info --grpc-address=:5000
+$ ./bin/blast indexer cluster info --grpc-address=:5000 | jq .
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
 ```json
 {
-  "nodes": {
-    "indexer1": {
-      "id": "indexer1",
-      "bind_address": ":2000",
-      "state": 3,
-      "metadata": {
-        "grpc_address": ":5000",
-        "grpc_gateway_address": ":6000",
-        "http_address": ":8000"
-      }
-    },
-    "indexer2": {
-      "id": "indexer2",
-      "bind_address": ":2010",
-      "state": 1,
-      "metadata": {
-        "grpc_address": ":5010",
-        "grpc_gateway_address": ":6010",
-        "http_address": ":8010"
-      }
-    },
-    "indexer3": {
-      "id": "indexer3",
-      "bind_address": ":2020",
-      "state": 1,
-      "metadata": {
-        "grpc_address": ":5020",
-        "grpc_gateway_address": ":6020",
-        "http_address": ":8020"
+  "cluster": {
+    "nodes": {
+      "indexer1": {
+        "id": "indexer1",
+        "bind_address": ":2000",
+        "state": 1,
+        "metadata": {
+          "grpc_address": ":5000",
+          "grpc_gateway_address": ":6000",
+          "http_address": ":8000"
+        }
+      },
+      "indexer2": {
+        "id": "indexer2",
+        "bind_address": ":2010",
+        "state": 1,
+        "metadata": {
+          "grpc_address": ":5010",
+          "grpc_gateway_address": ":6010",
+          "http_address": ":8010"
+        }
+      },
+      "indexer3": {
+        "id": "indexer3",
+        "bind_address": ":2020",
+        "state": 3,
+        "metadata": {
+          "grpc_address": ":5020",
+          "grpc_gateway_address": ":6020",
+          "http_address": ":8020"
+        }
       }
     }
   }
@@ -732,7 +744,7 @@ Recommend 3 or more odd number of nodes in the cluster. In failure scenarios, da
 The following command indexes documents to any node in the cluster:
 
 ```bash
-$ ./bin/blast indexer index --grpc-address=:5000 --file ./example/wiki_doc_enwiki_1.json
+$ ./bin/blast indexer index --grpc-address=:5000 --file ./example/wiki_doc_enwiki_1.json | jq .
 ```
 
 So, you can get the document from the node specified by the above command as follows:
@@ -750,8 +762,7 @@ You can see the result in JSON format. The result of the above command is:
     "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
     "timestamp": "2018-07-04T05:41:00Z",
     "title_en": "Search engine (computing)"
-  },
-  "id": "enwiki_1"
+  }
 }
 ```
 
@@ -771,8 +782,7 @@ You can see the result in JSON format. The result of the above command is:
     "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
     "timestamp": "2018-07-04T05:41:00Z",
     "title_en": "Search engine (computing)"
-  },
-  "id": "enwiki_1"
+  }
 }
 ```
 
@@ -789,7 +799,7 @@ Blast provides the following type of node for federation:
 - manager: Manager manage common index mappings to index across multiple indexers. It also manages information and status of clusters that participate in the federation.
 - dispatcher: Dispatcher is responsible for distributed search or indexing of each indexer. In the case of a index request, send document to each cluster based on the document ID. And in the case of a search request, the same query is sent to each cluster, then the search results are merged and returned to the client.
 
-### Bring up the manager cluster.
+### Bring up the manager cluster
 
 Manager can also bring up a cluster like an indexer. Specify a common index mapping for federation at startup.
 
@@ -824,7 +834,7 @@ $ ./bin/blast manager start \
     --raft-storage-type=boltdb
 ```
 
-### Bring up the indexer cluster.
+### Bring up the indexer cluster
 
 Federated mode differs from cluster mode that it specifies the manager in start up to bring up indexer cluster.  
 The following example starts two 3-node clusters.
@@ -891,7 +901,7 @@ $ ./bin/blast indexer start \
     --raft-storage-type=boltdb
 ```
 
-### Start up the dispatcher.
+### Start up the dispatcher
 
 Finally, start the dispatcher with a manager that manages the target federation so that it can perform distributed search and indexing.
 
@@ -902,22 +912,25 @@ $ ./bin/blast dispatcher start \
     --http-address=:8200
 ```
 
+### Check the cluster info
+
 ```bash
-$ ./bin/blast manager cluster info --grpc-address=:5100
-$ ./bin/blast indexer cluster info --grpc-address=:5000
-$ ./bin/blast indexer cluster info --grpc-address=:5040
+$ ./bin/blast manager cluster info --grpc-address=:5100 | jq .
+$ ./bin/blast indexer cluster info --grpc-address=:5000 | jq .
+$ ./bin/blast indexer cluster info --grpc-address=:5040 | jq .
+$ ./bin/blast manager get cluster --grpc-address=:5100 --format=json | jq .
 ```
 
 ```bash
-$ ./bin/blast dispatcher index --grpc-address=:5200 --file=./example/wiki_bulk_index.jsonl --bulk
+$ ./bin/blast dispatcher index --grpc-address=:5200 --file=./example/wiki_bulk_index.jsonl --bulk | jq .
 ```
 
 ```bash
-$ ./bin/blast dispatcher search --grpc-address=:5200 --file=./example/wiki_search_request_simple.json
+$ ./bin/blast dispatcher search --grpc-address=:5200 --file=./example/wiki_search_request_simple.json | jq .
 ```
 
 ```bash
-$ ./bin/blast dispatcher delete --grpc-address=:5200 --file=./example/wiki_bulk_delete.txt
+$ ./bin/blast dispatcher delete --grpc-address=:5200 --file=./example/wiki_bulk_delete.txt | jq .
 ```
 
 

@@ -15,12 +15,12 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"os"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/mosuka/blast/indexer"
 	"github.com/mosuka/blast/protobuf/index"
 	"github.com/urfave/cli"
@@ -40,28 +40,31 @@ func indexerClusterWatch(c *cli.Context) error {
 		}
 	}()
 
-	cluster, err := client.ClusterInfo()
+	marshaler := indexer.JsonMarshaler{}
+
+	req := &empty.Empty{}
+	clusterInfo, err := client.ClusterInfo(req)
 	if err != nil {
 		return err
 	}
 	resp := &index.ClusterWatchResponse{
 		Event:   0,
 		Node:    nil,
-		Cluster: cluster,
+		Cluster: clusterInfo.Cluster,
 	}
-	clusterBytes, err := json.MarshalIndent(resp, "", "  ")
+	respBytes, err := marshaler.Marshal(resp)
 	if err != nil {
 		return err
 	}
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(clusterBytes)))
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(respBytes)))
 
-	watchClient, err := client.ClusterWatch()
+	clusterWatchClient, err := client.ClusterWatch(req)
 	if err != nil {
 		return err
 	}
 
 	for {
-		resp, err := watchClient.Recv()
+		resp, err := clusterWatchClient.Recv()
 		if err == io.EOF {
 			break
 		}
@@ -69,12 +72,11 @@ func indexerClusterWatch(c *cli.Context) error {
 			log.Println(err.Error())
 			break
 		}
-
-		clusterBytes, err = json.MarshalIndent(resp, "", "  ")
+		respBytes, err = marshaler.Marshal(resp)
 		if err != nil {
 			return err
 		}
-		_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(clusterBytes)))
+		_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(respBytes)))
 	}
 
 	return nil

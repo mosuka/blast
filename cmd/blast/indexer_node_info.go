@@ -15,10 +15,10 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/mosuka/blast/indexer"
 	"github.com/urfave/cli"
 )
@@ -37,12 +37,16 @@ func indexerNodeInfo(c *cli.Context) error {
 		}
 	}()
 
-	node, err := client.NodeInfo()
+	req := &empty.Empty{}
+
+	res, err := client.NodeInfo(req)
 	if err != nil {
 		return err
 	}
 
-	nodeBytes, err := json.MarshalIndent(node, "", "  ")
+	marshaler := indexer.JsonMarshaler{}
+
+	nodeBytes, err := marshaler.Marshal(res)
 	if err != nil {
 		return err
 	}

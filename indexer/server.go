@@ -18,13 +18,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/mosuka/blast/indexutils"
-
 	"github.com/blevesearch/bleve/mapping"
-
+	"github.com/golang/protobuf/ptypes/empty"
 	accesslog "github.com/mash/go-accesslog"
 	"github.com/mosuka/blast/errors"
+	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/index"
 	"go.uber.org/zap"
 )
@@ -178,15 +178,17 @@ func (s *Server) Start() {
 		}
 
 		s.logger.Debug("pull index config from cluster peer", zap.String("address", pc.GetAddress()))
-		value, err := pc.GetIndexConfig()
+		req := &empty.Empty{}
+		res, err := pc.GetIndexConfig(req)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return
 		}
 
-		s.indexMapping = value["index_mapping"].(*mapping.IndexMappingImpl)
-		s.indexType = value["index_type"].(string)
-		s.indexStorageType = value["index_storage_type"].(string)
+		indexMapping, err := protobuf.MarshalAny(res.IndexConfig.IndexMapping)
+		s.indexMapping = indexMapping.(*mapping.IndexMappingImpl)
+		s.indexType = res.IndexConfig.IndexType
+		s.indexStorageType = res.IndexConfig.IndexStorageType
 	}
 
 	// bootstrap node?
@@ -291,7 +293,11 @@ func (s *Server) Start() {
 			return
 		}
 
-		err = client.ClusterJoin(s.node)
+		req := &index.ClusterJoinRequest{
+			Node: s.node,
+		}
+
+		_, err = client.ClusterJoin(req)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return

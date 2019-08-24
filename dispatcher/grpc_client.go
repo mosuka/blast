@@ -16,18 +16,11 @@ package dispatcher
 
 import (
 	"context"
-	"errors"
 	"math"
 
-	"github.com/blevesearch/bleve"
-	"github.com/golang/protobuf/ptypes/any"
-	blasterrors "github.com/mosuka/blast/errors"
-	"github.com/mosuka/blast/protobuf"
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/mosuka/blast/protobuf/distribute"
-	"github.com/mosuka/blast/protobuf/index"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type GRPCClient struct {
@@ -96,134 +89,30 @@ func (c *GRPCClient) GetAddress() string {
 	return c.conn.Target()
 }
 
-func (c *GRPCClient) NodeHealthCheck(probe string, opts ...grpc.CallOption) (string, error) {
-	req := &distribute.NodeHealthCheckRequest{}
-
-	switch probe {
-	case distribute.NodeHealthCheckRequest_HEALTHINESS.String():
-		req.Probe = distribute.NodeHealthCheckRequest_HEALTHINESS
-	case distribute.NodeHealthCheckRequest_LIVENESS.String():
-		req.Probe = distribute.NodeHealthCheckRequest_LIVENESS
-	case distribute.NodeHealthCheckRequest_READINESS.String():
-		req.Probe = distribute.NodeHealthCheckRequest_READINESS
-	default:
-		req.Probe = distribute.NodeHealthCheckRequest_HEALTHINESS
-	}
-
-	resp, err := c.client.NodeHealthCheck(c.ctx, req, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return distribute.NodeHealthCheckResponse_UNHEALTHY.String(), errors.New(st.Message())
-	}
-
-	return resp.State.String(), nil
+func (c *GRPCClient) NodeHealthCheck(req *distribute.NodeHealthCheckRequest, opts ...grpc.CallOption) (*distribute.NodeHealthCheckResponse, error) {
+	return c.client.NodeHealthCheck(c.ctx, req, opts...)
 }
 
-func (c *GRPCClient) GetDocument(id string, opts ...grpc.CallOption) (*index.Document, error) {
-	req := &distribute.GetDocumentRequest{
-		Id: id,
-	}
-
-	resp, err := c.client.GetDocument(c.ctx, req, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		switch st.Code() {
-		case codes.NotFound:
-			return nil, blasterrors.ErrNotFound
-		default:
-			return nil, errors.New(st.Message())
-		}
-	}
-
-	return resp.Document, nil
+func (c *GRPCClient) Get(req *distribute.GetRequest, opts ...grpc.CallOption) (*distribute.GetResponse, error) {
+	return c.client.Get(c.ctx, req, opts...)
 }
 
-func (c *GRPCClient) Search(searchRequest *bleve.SearchRequest, opts ...grpc.CallOption) (*bleve.SearchResult, error) {
-	// bleve.SearchRequest -> Any
-	searchRequestAny := &any.Any{}
-	err := protobuf.UnmarshalAny(searchRequest, searchRequestAny)
-	if err != nil {
-		return nil, err
-	}
-
-	req := &distribute.SearchRequest{
-		SearchRequest: searchRequestAny,
-	}
-
-	resp, err := c.client.Search(c.ctx, req, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return nil, errors.New(st.Message())
-	}
-
-	// Any -> bleve.SearchResult
-	searchResultInstance, err := protobuf.MarshalAny(resp.SearchResult)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return nil, errors.New(st.Message())
-	}
-	if searchResultInstance == nil {
-		return nil, errors.New("nil")
-	}
-	searchResult := searchResultInstance.(*bleve.SearchResult)
-
-	return searchResult, nil
+func (c *GRPCClient) Index(req *distribute.IndexRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	return c.client.Index(c.ctx, req, opts...)
 }
 
-func (c *GRPCClient) IndexDocument(docs []*index.Document, opts ...grpc.CallOption) (int, error) {
-	stream, err := c.client.IndexDocument(c.ctx, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return -1, errors.New(st.Message())
-	}
-
-	for _, doc := range docs {
-		req := &distribute.IndexDocumentRequest{
-			Document: doc,
-		}
-
-		err = stream.Send(req)
-		if err != nil {
-			return -1, err
-		}
-	}
-
-	resp, err := stream.CloseAndRecv()
-	if err != nil {
-		return -1, err
-	}
-
-	return int(resp.Count), nil
+func (c *GRPCClient) Delete(req *distribute.DeleteRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	return c.client.Delete(c.ctx, req, opts...)
 }
 
-func (c *GRPCClient) DeleteDocument(ids []string, opts ...grpc.CallOption) (int, error) {
-	stream, err := c.client.DeleteDocument(c.ctx, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
+func (c *GRPCClient) BulkIndex(req *distribute.BulkIndexRequest, opts ...grpc.CallOption) (*distribute.BulkIndexResponse, error) {
+	return c.client.BulkIndex(c.ctx, req, opts...)
+}
 
-		return -1, errors.New(st.Message())
-	}
+func (c *GRPCClient) BulkDelete(req *distribute.BulkDeleteRequest, opts ...grpc.CallOption) (*distribute.BulkDeleteResponse, error) {
+	return c.client.BulkDelete(c.ctx, req, opts...)
+}
 
-	for _, id := range ids {
-		req := &distribute.DeleteDocumentRequest{
-			Id: id,
-		}
-
-		err := stream.Send(req)
-		if err != nil {
-			return -1, err
-		}
-	}
-
-	resp, err := stream.CloseAndRecv()
-	if err != nil {
-		return -1, err
-	}
-
-	return int(resp.Count), nil
+func (c *GRPCClient) Search(req *distribute.SearchRequest, opts ...grpc.CallOption) (*distribute.SearchResponse, error) {
+	return c.client.Search(c.ctx, req, opts...)
 }

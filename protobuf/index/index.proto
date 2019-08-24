@@ -161,17 +161,13 @@ message ClusterWatchResponse {
     Cluster cluster = 3;
 }
 
-message Document {
-    string id = 1;
-    google.protobuf.Any fields = 2;
-}
-
 message GetRequest {
     string id = 1;
 }
 
 message GetResponse {
-    Document document = 1;
+//    Document document = 1;
+    google.protobuf.Any fields = 1;
 }
 
 message IndexRequest {
@@ -181,6 +177,11 @@ message IndexRequest {
 
 message DeleteRequest {
     string id = 1;
+}
+
+message Document {
+    string id = 1;
+    google.protobuf.Any fields = 2;
 }
 
 message BulkIndexRequest {

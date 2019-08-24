@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package indexer
+package dispatcher
 
 import (
 	"bufio"
@@ -30,6 +30,7 @@ import (
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/mosuka/blast/protobuf"
+	"github.com/mosuka/blast/protobuf/distribute"
 	"github.com/mosuka/blast/protobuf/index"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -45,8 +46,8 @@ func (*JsonMarshaler) ContentType() string {
 // Marshal marshals "v" into JSON
 func (j *JsonMarshaler) Marshal(v interface{}) ([]byte, error) {
 	switch v.(type) {
-	case *index.GetResponse:
-		value, err := protobuf.MarshalAny(v.(*index.GetResponse).Fields)
+	case *distribute.GetResponse:
+		value, err := protobuf.MarshalAny(v.(*distribute.GetResponse).Fields)
 		if err != nil {
 			return nil, err
 		}
@@ -55,8 +56,8 @@ func (j *JsonMarshaler) Marshal(v interface{}) ([]byte, error) {
 				"fields": value,
 			},
 		)
-	case *index.SearchResponse:
-		value, err := protobuf.MarshalAny(v.(*index.SearchResponse).SearchResult)
+	case *distribute.SearchResponse:
+		value, err := protobuf.MarshalAny(v.(*distribute.SearchResponse).SearchResult)
 		if err != nil {
 			return nil, err
 		}
@@ -72,31 +73,7 @@ func (j *JsonMarshaler) Marshal(v interface{}) ([]byte, error) {
 
 // Unmarshal unmarshals JSON data into "v".
 func (j *JsonMarshaler) Unmarshal(data []byte, v interface{}) error {
-	switch v.(type) {
-	case *index.SearchRequest:
-		m := map[string]interface{}{}
-		err := json.Unmarshal(data, &m)
-		if err != nil {
-			return err
-		}
-		searchRequestMap, ok := m["search_request"]
-		if !ok {
-			return errors.New("search_request does not exist")
-		}
-		searchRequestBytes, err := json.Marshal(searchRequestMap)
-		if err != nil {
-			return err
-		}
-		searchRequest := bleve.NewSearchRequest(nil)
-		err = json.Unmarshal(searchRequestBytes, searchRequest)
-		if err != nil {
-			return err
-		}
-		v.(*index.SearchRequest).SearchRequest = &any.Any{}
-		return protobuf.UnmarshalAny(searchRequest, v.(*index.SearchRequest).SearchRequest)
-	default:
-		return json.Unmarshal(data, v)
-	}
+	return json.Unmarshal(data, v)
 }
 
 // NewDecoder returns a Decoder which reads JSON stream from "r".
@@ -109,7 +86,7 @@ func (j *JsonMarshaler) NewDecoder(r io.Reader) runtime.Decoder {
 			}
 
 			switch v.(type) {
-			case *index.IndexRequest:
+			case *distribute.IndexRequest:
 				var tmpValue map[string]interface{}
 				err = json.Unmarshal(buffer, &tmpValue)
 				if err != nil {
@@ -124,9 +101,9 @@ func (j *JsonMarshaler) NewDecoder(r io.Reader) runtime.Decoder {
 				if !ok {
 					return errors.New("value does not exist")
 				}
-				v.(*index.IndexRequest).Fields = &any.Any{}
-				return protobuf.UnmarshalAny(fields, v.(*index.IndexRequest).Fields)
-			case *index.SearchRequest:
+				v.(*distribute.IndexRequest).Fields = &any.Any{}
+				return protobuf.UnmarshalAny(fields, v.(*distribute.IndexRequest).Fields)
+			case *distribute.SearchRequest:
 				var tmpValue map[string]interface{}
 				err = json.Unmarshal(buffer, &tmpValue)
 				if err != nil {
@@ -145,8 +122,8 @@ func (j *JsonMarshaler) NewDecoder(r io.Reader) runtime.Decoder {
 				if err != nil {
 					return err
 				}
-				v.(*index.SearchRequest).SearchRequest = &any.Any{}
-				return protobuf.UnmarshalAny(searchRequest, v.(*index.SearchRequest).SearchRequest)
+				v.(*distribute.SearchRequest).SearchRequest = &any.Any{}
+				return protobuf.UnmarshalAny(searchRequest, v.(*distribute.SearchRequest).SearchRequest)
 			default:
 				return json.Unmarshal(buffer, v)
 			}
@@ -191,7 +168,7 @@ func (j *JsonlMarshaler) NewDecoder(r io.Reader) runtime.Decoder {
 			}
 
 			switch v.(type) {
-			case *index.BulkIndexRequest:
+			case *distribute.BulkIndexRequest:
 				docs := make([]*index.Document, 0)
 				reader := bufio.NewReader(bytes.NewReader(buffer))
 				for {
@@ -219,7 +196,7 @@ func (j *JsonlMarshaler) NewDecoder(r io.Reader) runtime.Decoder {
 						docs = append(docs, doc)
 					}
 				}
-				v.(*index.BulkIndexRequest).Documents = docs
+				v.(*distribute.BulkIndexRequest).Documents = docs
 				return nil
 			default:
 				return json.Unmarshal(buffer, v)
@@ -265,7 +242,7 @@ func (j *TextMarshaler) NewDecoder(r io.Reader) runtime.Decoder {
 			}
 
 			switch v.(type) {
-			case *index.BulkDeleteRequest:
+			case *distribute.BulkDeleteRequest:
 				ids := make([]string, 0)
 				reader := bufio.NewReader(bytes.NewReader(buffer))
 				for {
@@ -284,7 +261,7 @@ func (j *TextMarshaler) NewDecoder(r io.Reader) runtime.Decoder {
 						ids = append(ids, string(idBytes))
 					}
 				}
-				v.(*index.BulkDeleteRequest).Ids = ids
+				v.(*distribute.BulkDeleteRequest).Ids = ids
 				return nil
 			default:
 				return json.Unmarshal(buffer, v)

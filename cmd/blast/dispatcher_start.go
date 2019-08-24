@@ -28,6 +28,7 @@ func dispatcherStart(c *cli.Context) error {
 	managerAddr := c.String("manager-grpc-address")
 
 	grpcAddr := c.String("grpc-address")
+	grpcGatewayAddr := c.String("grpc-gateway-address")
 	httpAddr := c.String("http-address")
 
 	logLevel := c.GlobalString("log-level")
@@ -79,7 +80,7 @@ func dispatcherStart(c *cli.Context) error {
 		httpLogCompress,
 	)
 
-	svr, err := dispatcher.NewServer(managerAddr, grpcAddr, httpAddr, logger, grpcLogger, httpAccessLogger)
+	svr, err := dispatcher.NewServer(managerAddr, grpcAddr, grpcGatewayAddr, httpAddr, logger, grpcLogger, httpAccessLogger)
 	if err != nil {
 		return err
 	}

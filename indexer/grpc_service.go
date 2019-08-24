@@ -594,7 +594,8 @@ func (s *GRPCService) getPeerNode(id string) (*index.Node, error) {
 		return nil, err
 	}
 
-	node, err := s.peerClients[id].NodeInfo()
+	req := &empty.Empty{}
+	resp, err := s.peerClients[id].NodeInfo(req)
 	if err != nil {
 		s.logger.Debug(err.Error(), zap.String("id", id))
 		return &index.Node{
@@ -607,7 +608,7 @@ func (s *GRPCService) getPeerNode(id string) (*index.Node, error) {
 		}, nil
 	}
 
-	return node, nil
+	return resp.Node, nil
 }
 
 func (s *GRPCService) getNode(id string) (*index.Node, error) {
@@ -646,7 +647,12 @@ func (s *GRPCService) setNode(node *index.Node) error {
 			s.logger.Error(err.Error())
 			return err
 		}
-		err = client.ClusterJoin(node)
+
+		req := &index.ClusterJoinRequest{
+			Node: node,
+		}
+
+		_, err = client.ClusterJoin(req)
 		if err != nil {
 			s.logger.Error(err.Error())
 			return err
@@ -682,7 +688,12 @@ func (s *GRPCService) deleteNode(id string) error {
 			s.logger.Error(err.Error())
 			return err
 		}
-		err = client.ClusterLeave(id)
+
+		req := &index.ClusterLeaveRequest{
+			Id: id,
+		}
+
+		_, err = client.ClusterLeave(req)
 		if err != nil {
 			s.logger.Error(err.Error())
 			return err
@@ -778,25 +789,14 @@ func (s *GRPCService) Get(ctx context.Context, req *index.GetRequest) (*index.Ge
 		}
 	}
 
-	docMap := map[string]interface{}{
-		"id":     req.Id,
-		"fields": fields,
-	}
-
-	docBytes, err := json.Marshal(docMap)
+	fieldsAny := &any.Any{}
+	err = protobuf.UnmarshalAny(fields, fieldsAny)
 	if err != nil {
 		s.logger.Error(err.Error(), zap.String("id", req.Id))
 		return resp, status.Error(codes.Internal, err.Error())
 	}
 
-	doc := &index.Document{}
-	err = index.UnmarshalDocument(docBytes, doc)
-	if err != nil {
-		s.logger.Error(err.Error(), zap.String("id", req.Id))
-		return resp, status.Error(codes.Internal, err.Error())
-	}
-
-	resp.Document = doc
+	resp.Fields = fieldsAny
 
 	return resp, nil
 }
@@ -819,12 +819,7 @@ func (s *GRPCService) Index(ctx context.Context, req *index.IndexRequest) (*empt
 			s.logger.Error(err.Error())
 			return resp, status.Error(codes.Internal, err.Error())
 		}
-		fields, err := protobuf.MarshalAny(req.Fields)
-		if err != nil {
-			s.logger.Error(err.Error())
-			return resp, status.Error(codes.Internal, err.Error())
-		}
-		err = client.Index(req.Id, fields.(map[string]interface{}))
+		resp, err = client.Index(req)
 		if err != nil {
 			s.logger.Error(err.Error())
 			return resp, status.Error(codes.Internal, err.Error())
@@ -852,7 +847,7 @@ func (s *GRPCService) Delete(ctx context.Context, req *index.DeleteRequest) (*em
 			s.logger.Error(err.Error())
 			return resp, status.Error(codes.Internal, err.Error())
 		}
-		err = client.Delete(req.Id)
+		resp, err = client.Delete(req)
 		if err != nil {
 			s.logger.Error(err.Error())
 			return resp, status.Error(codes.Internal, err.Error())
@@ -865,15 +860,14 @@ func (s *GRPCService) Delete(ctx context.Context, req *index.DeleteRequest) (*em
 func (s *GRPCService) BulkIndex(ctx context.Context, req *index.BulkIndexRequest) (*index.BulkIndexResponse, error) {
 	resp := &index.BulkIndexResponse{}
 
-	// index
-	count := -1
-	var err error
 	if s.raftServer.IsLeader() {
-		count, err = s.raftServer.BulkIndex(req.Documents)
+		count, err := s.raftServer.BulkIndex(req.Documents)
 		if err != nil {
 			s.logger.Error(err.Error())
+			resp.Count = -1
 			return resp, status.Error(codes.Internal, err.Error())
 		}
+		resp.Count = int32(count)
 	} else {
 		// forward to leader
 		client, err := s.getLeaderClient()
@@ -881,30 +875,27 @@ func (s *GRPCService) BulkIndex(ctx context.Context, req *index.BulkIndexRequest
 			s.logger.Error(err.Error())
 			return resp, status.Error(codes.Internal, err.Error())
 		}
-		count, err = client.BulkIndex(req.Documents)
+		resp, err = client.BulkIndex(req)
 		if err != nil {
 			s.logger.Error(err.Error())
 			return resp, status.Error(codes.Internal, err.Error())
 		}
 	}
 
-	return &index.BulkIndexResponse{
-		Count: int32(count),
-	}, nil
+	return resp, nil
 }
 
 func (s *GRPCService) BulkDelete(ctx context.Context, req *index.BulkDeleteRequest) (*index.BulkDeleteResponse, error) {
 	resp := &index.BulkDeleteResponse{}
 
-	// delete
-	count := -1
-	var err error
 	if s.raftServer.IsLeader() {
-		count, err = s.raftServer.BulkDelete(req.Ids)
+		count, err := s.raftServer.BulkDelete(req.Ids)
 		if err != nil {
 			s.logger.Error(err.Error())
+			resp.Count = -1
 			return resp, status.Error(codes.Internal, err.Error())
 		}
+		resp.Count = int32(count)
 	} else {
 		// forward to leader
 		client, err := s.getLeaderClient()
@@ -912,16 +903,14 @@ func (s *GRPCService) BulkDelete(ctx context.Context, req *index.BulkDeleteReque
 			s.logger.Error(err.Error())
 			return resp, status.Error(codes.Internal, err.Error())
 		}
-		count, err = client.BulkDelete(req.Ids)
+		resp, err := client.BulkDelete(req)
 		if err != nil {
 			s.logger.Error(err.Error())
 			return resp, status.Error(codes.Internal, err.Error())
 		}
 	}
 
-	return &index.BulkDeleteResponse{
-		Count: int32(count),
-	}, nil
+	return resp, nil
 }
 
 func (s *GRPCService) Search(ctx context.Context, req *index.SearchRequest) (*index.SearchResponse, error) {

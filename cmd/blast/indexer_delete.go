@@ -16,12 +16,13 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 
 	"github.com/mosuka/blast/indexer"
+	"github.com/mosuka/blast/protobuf/index"
 	"github.com/urfave/cli"
 )
 
@@ -29,53 +30,6 @@ func indexerDelete(c *cli.Context) error {
 	grpcAddr := c.String("grpc-address")
 	filePath := c.String("file")
 	id := c.Args().Get(0)
-
-	ids := make([]string, 0)
-
-	if id != "" {
-		ids = append(ids, id)
-	}
-
-	if filePath != "" {
-		_, err := os.Stat(filePath)
-		if err != nil {
-			if os.IsNotExist(err) {
-				// does not exist
-				return err
-			}
-			// other error
-			return err
-		}
-
-		// read index mapping file
-		file, err := os.Open(filePath)
-		if err != nil {
-			return err
-		}
-		defer func() {
-			_ = file.Close()
-		}()
-
-		reader := bufio.NewReader(file)
-		for {
-			docIdBytes, _, err := reader.ReadLine()
-			if err != nil {
-				if err == io.EOF || err == io.ErrClosedPipe {
-					docId := string(docIdBytes)
-					if docId != "" {
-						ids = append(ids, docId)
-					}
-					break
-				}
-
-				return err
-			}
-			docId := string(docIdBytes)
-			if docId != "" {
-				ids = append(ids, docId)
-			}
-		}
-	}
 
 	// create client
 	client, err := indexer.NewGRPCClient(grpcAddr)
@@ -89,17 +43,83 @@ func indexerDelete(c *cli.Context) error {
 		}
 	}()
 
-	result, err := client.BulkDelete(ids)
-	if err != nil {
-		return err
-	}
+	marshaler := indexer.JsonMarshaler{}
 
-	resultBytes, err := json.MarshalIndent(result, "", "  ")
-	if err != nil {
-		return err
-	}
+	if id != "" {
+		req := &index.DeleteRequest{
+			Id: id,
+		}
+		resp, err := client.Delete(req)
+		if err != nil {
+			return err
+		}
+		respBytes, err := marshaler.Marshal(resp)
+		if err != nil {
+			return err
+		}
+		_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(respBytes)))
+	} else {
+		if filePath != "" {
+			ids := make([]string, 0)
 
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resultBytes)))
+			_, err := os.Stat(filePath)
+			if err != nil {
+				if os.IsNotExist(err) {
+					// does not exist
+					return err
+				}
+				// other error
+				return err
+			}
+
+			// read index mapping file
+			file, err := os.Open(filePath)
+			if err != nil {
+				return err
+			}
+			defer func() {
+				_ = file.Close()
+			}()
+
+			reader := bufio.NewReader(file)
+			for {
+				docIdBytes, _, err := reader.ReadLine()
+				if err != nil {
+					if err == io.EOF || err == io.ErrClosedPipe {
+						docId := string(docIdBytes)
+						if docId != "" {
+							ids = append(ids, docId)
+						}
+						break
+					}
+
+					return err
+				}
+				docId := string(docIdBytes)
+				if docId != "" {
+					ids = append(ids, docId)
+				}
+			}
+
+			req := &index.BulkDeleteRequest{
+				Ids: ids,
+			}
+
+			resp, err := client.BulkDelete(req)
+			if err != nil {
+				return err
+			}
+
+			resultBytes, err := marshaler.Marshal(resp)
+			if err != nil {
+				return err
+			}
+
+			_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resultBytes)))
+		} else {
+			return errors.New("argument error")
+		}
+	}
 
 	return nil
 }

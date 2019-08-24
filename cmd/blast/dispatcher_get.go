@@ -20,7 +20,7 @@ import (
 	"os"
 
 	"github.com/mosuka/blast/dispatcher"
-	"github.com/mosuka/blast/protobuf/index"
+	"github.com/mosuka/blast/protobuf/distribute"
 	"github.com/urfave/cli"
 )
 
@@ -43,17 +43,22 @@ func dispatcherGet(c *cli.Context) error {
 		}
 	}()
 
-	doc, err := client.GetDocument(id)
+	req := &distribute.GetRequest{
+		Id: id,
+	}
+
+	res, err := client.Get(req)
 	if err != nil {
 		return err
 	}
 
-	docBytes, err := index.MarshalDocument(doc)
+	marshaler := dispatcher.JsonMarshaler{}
+	resBytes, err := marshaler.Marshal(res)
 	if err != nil {
 		return err
 	}
 
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(docBytes)))
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resBytes)))
 
 	return nil
 }

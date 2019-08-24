@@ -18,12 +18,15 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/mosuka/blast/indexer"
+	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/index"
 	"github.com/urfave/cli"
 )
@@ -45,24 +48,41 @@ func indexerIndex(c *cli.Context) error {
 		}
 	}()
 
-	count := 0
+	marshaler := indexer.JsonMarshaler{}
 
 	if c.NArg() >= 2 {
 		// index document by specifying ID and fields via standard input
 		id := c.Args().Get(0)
-		fieldsSrc := c.Args().Get(1)
+		docSrc := c.Args().Get(1)
 
-		var fieldsMap map[string]interface{}
-		err := json.Unmarshal([]byte(fieldsSrc), &fieldsMap)
+		var docMap map[string]interface{}
+		err := json.Unmarshal([]byte(docSrc), &docMap)
 		if err != nil {
 			return err
 		}
 
-		err = client.Index(id, fieldsMap)
+		fieldsAny := &any.Any{}
+		err = protobuf.UnmarshalAny(docMap["fields"], fieldsAny)
 		if err != nil {
 			return err
 		}
-		count = 1
+
+		req := &index.IndexRequest{
+			Id:     id,
+			Fields: fieldsAny,
+		}
+
+		res, err := client.Index(req)
+		if err != nil {
+			return err
+		}
+
+		resBytes, err := marshaler.Marshal(res)
+		if err != nil {
+			return err
+		}
+
+		_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resBytes)))
 	} else if c.NArg() == 1 {
 		// index document by specifying document(s) via standard input
 		docSrc := c.Args().Get(0)
@@ -96,10 +116,21 @@ func indexerIndex(c *cli.Context) error {
 					docs = append(docs, doc)
 				}
 			}
-			count, err = client.BulkIndex(docs)
+
+			req := &index.BulkIndexRequest{
+				Documents: docs,
+			}
+			res, err := client.BulkIndex(req)
 			if err != nil {
 				return err
 			}
+
+			resBytes, err := marshaler.Marshal(res)
+			if err != nil {
+				return err
+			}
+
+			_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resBytes)))
 		} else {
 			// json
 			var docMap map[string]interface{}
@@ -108,11 +139,28 @@ func indexerIndex(c *cli.Context) error {
 				return err
 			}
 
-			err = client.Index(docMap["id"].(string), docMap["fields"].(map[string]interface{}))
+			fieldsAny := &any.Any{}
+			err = protobuf.UnmarshalAny(docMap["fields"].(map[string]interface{}), fieldsAny)
 			if err != nil {
 				return err
 			}
-			count = 1
+
+			req := &index.IndexRequest{
+				Id:     docMap["id"].(string),
+				Fields: fieldsAny,
+			}
+
+			res, err := client.Index(req)
+			if err != nil {
+				return err
+			}
+
+			resBytes, err := marshaler.Marshal(res)
+			if err != nil {
+				return err
+			}
+
+			_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resBytes)))
 		}
 	} else {
 		// index document by specifying document(s) via file
@@ -165,10 +213,21 @@ func indexerIndex(c *cli.Context) error {
 						docs = append(docs, doc)
 					}
 				}
-				count, err = client.BulkIndex(docs)
+
+				req := &index.BulkIndexRequest{
+					Documents: docs,
+				}
+				res, err := client.BulkIndex(req)
 				if err != nil {
 					return err
 				}
+
+				resBytes, err := marshaler.Marshal(res)
+				if err != nil {
+					return err
+				}
+
+				_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resBytes)))
 			} else {
 				// json
 				docBytes, err := ioutil.ReadAll(file)
@@ -181,21 +240,33 @@ func indexerIndex(c *cli.Context) error {
 					return err
 				}
 
-				err = client.Index(docMap["id"].(string), docMap["fields"].(map[string]interface{}))
+				fieldsAny := &any.Any{}
+				err = protobuf.UnmarshalAny(docMap["fields"].(map[string]interface{}), fieldsAny)
 				if err != nil {
 					return err
 				}
-				count = 1
+
+				req := &index.IndexRequest{
+					Id:     docMap["id"].(string),
+					Fields: fieldsAny,
+				}
+
+				res, err := client.Index(req)
+				if err != nil {
+					return err
+				}
+
+				resBytes, err := marshaler.Marshal(res)
+				if err != nil {
+					return err
+				}
+
+				_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resBytes)))
 			}
+		} else {
+			return errors.New("argument error")
 		}
 	}
-
-	resultBytes, err := json.MarshalIndent(count, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resultBytes)))
 
 	return nil
 }
