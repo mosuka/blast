@@ -30,12 +30,44 @@ service Distribute {
         };
     }
 
-    rpc Get (GetRequest) returns (GetResponse) {}
-    rpc Index (IndexRequest) returns (google.protobuf.Empty) {}
-    rpc Delete (DeleteRequest) returns (google.protobuf.Empty) {}
-    rpc BulkIndex (BulkIndexRequest) returns (BulkIndexResponse) {}
-    rpc BulkDelete (BulkDeleteRequest) returns (BulkDeleteResponse) {}
-    rpc Search (SearchRequest) returns (SearchResponse) {}
+    rpc Get (GetRequest) returns (GetResponse) {
+        option (google.api.http) = {
+            get: "/v1/documents/{id=**}"
+        };
+    }
+    rpc Index (IndexRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            put: "/v1/documents"
+            body: "*"
+            additional_bindings {
+                put: "/v1/documents/{id=**}"
+                body: "*"
+            }
+        };
+    }
+    rpc Delete (DeleteRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            delete: "/v1/documents/{id=**}"
+        };
+    }
+    rpc BulkIndex (BulkIndexRequest) returns (BulkIndexResponse) {
+        option (google.api.http) = {
+            put: "/v1/bulk"
+            body: "*"
+        };
+    }
+    rpc BulkDelete (BulkDeleteRequest) returns (BulkDeleteResponse) {
+        option (google.api.http) = {
+            delete: "/v1/bulk"
+            body: "*"
+        };
+    }
+    rpc Search (SearchRequest) returns (SearchResponse) {
+        option (google.api.http) = {
+            post: "/v1/search"
+            body: "*"
+        };
+    }
 }
 
 message NodeHealthCheckRequest {

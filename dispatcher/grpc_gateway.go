@@ -94,7 +94,7 @@ func (j *JsonMarshaler) NewDecoder(r io.Reader) runtime.Decoder {
 				}
 				id, ok := tmpValue["id"].(string)
 				if ok {
-					v.(*index.IndexRequest).Id = id
+					v.(*distribute.IndexRequest).Id = id
 				}
 
 				fields, ok := tmpValue["fields"]
@@ -308,7 +308,7 @@ func (s *GRPCGateway) Start() error {
 	)
 	opts := []grpc.DialOption{grpc.WithInsecure()}
 
-	err := index.RegisterIndexHandlerFromEndpoint(s.ctx, mux, s.grpcAddr, opts)
+	err := distribute.RegisterDistributeHandlerFromEndpoint(s.ctx, mux, s.grpcAddr, opts)
 	if err != nil {
 		return err
 	}

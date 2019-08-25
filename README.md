@@ -806,6 +806,7 @@ Manager can also bring up a cluster like an indexer. Specify a common index mapp
 ```bash
 $ ./bin/blast manager start \
     --grpc-address=:5100 \
+    --grpc-gateway-address=:6100 \
     --http-address=:8100 \
     --node-id=manager1 \
     --node-address=:2100 \
@@ -818,6 +819,7 @@ $ ./bin/blast manager start \
 $ ./bin/blast manager start \
     --peer-grpc-address=:5100 \
     --grpc-address=:5110 \
+    --grpc-gateway-address=:6110 \
     --http-address=:8110 \
     --node-id=manager2 \
     --node-address=:2110 \
@@ -827,6 +829,7 @@ $ ./bin/blast manager start \
 $ ./bin/blast manager start \
     --peer-grpc-address=:5100 \
     --grpc-address=:5120 \
+    --grpc-gateway-address=:6120 \
     --http-address=:8120 \
     --node-id=manager3 \
     --node-address=:2120 \
@@ -844,6 +847,7 @@ $ ./bin/blast indexer start \
     --manager-grpc-address=:5100 \
     --shard-id=shard1 \
     --grpc-address=:5000 \
+    --grpc-gateway-address=:6000 \
     --http-address=:8000 \
     --node-id=indexer1 \
     --node-address=:2000 \
@@ -854,6 +858,7 @@ $ ./bin/blast indexer start \
     --manager-grpc-address=:5100 \
     --shard-id=shard1 \
     --grpc-address=:5010 \
+    --grpc-gateway-address=:6010 \
     --http-address=:8010 \
     --node-id=indexer2 \
     --node-address=:2010 \
@@ -864,6 +869,7 @@ $ ./bin/blast indexer start \
     --manager-grpc-address=:5100 \
     --shard-id=shard1 \
     --grpc-address=:5020 \
+    --grpc-gateway-address=:6020 \
     --http-address=:8020 \
     --node-id=indexer3 \
     --node-address=:2020 \
@@ -874,6 +880,7 @@ $ ./bin/blast indexer start \
     --manager-grpc-address=:5100 \
     --shard-id=shard2 \
     --grpc-address=:5030 \
+    --grpc-gateway-address=:6030 \
     --http-address=:8030 \
     --node-id=indexer4 \
     --node-address=:2030 \
@@ -884,6 +891,7 @@ $ ./bin/blast indexer start \
     --manager-grpc-address=:5100 \
     --shard-id=shard2 \
     --grpc-address=:5040 \
+    --grpc-gateway-address=:6040 \
     --http-address=:8040 \
     --node-id=indexer5 \
     --node-address=:2040 \
@@ -894,6 +902,7 @@ $ ./bin/blast indexer start \
     --manager-grpc-address=:5100 \
     --shard-id=shard2 \
     --grpc-address=:5050 \
+    --grpc-gateway-address=:6050 \
     --http-address=:8050 \
     --node-id=indexer6 \
     --node-address=:2050 \
@@ -909,6 +918,7 @@ Finally, start the dispatcher with a manager that manages the target federation 
 $ ./bin/blast dispatcher start \
     --manager-grpc-address=:5100 \
     --grpc-address=:5200 \
+    --grpc-gateway-address=:6200 \
     --http-address=:8200
 ```
 
@@ -917,7 +927,7 @@ $ ./bin/blast dispatcher start \
 ```bash
 $ ./bin/blast manager cluster info --grpc-address=:5100 | jq .
 $ ./bin/blast indexer cluster info --grpc-address=:5000 | jq .
-$ ./bin/blast indexer cluster info --grpc-address=:5040 | jq .
+$ ./bin/blast indexer cluster info --grpc-address=:5030 | jq .
 $ ./bin/blast manager get cluster --grpc-address=:5100 --format=json | jq .
 ```
 
