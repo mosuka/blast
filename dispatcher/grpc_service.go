@@ -202,10 +202,10 @@ func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 
 			s.logger.Info("wait for receive a manager cluster updates from stream")
 			resp, err := stream.Recv()
-			//if err == io.EOF {
-			//	s.logger.Info(err.Error())
-			//	continue
-			//}
+			if err == io.EOF {
+				s.logger.Info(err.Error())
+				continue
+			}
 			if err != nil {
 				s.logger.Error(err.Error())
 				continue
