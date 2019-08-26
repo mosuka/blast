@@ -961,7 +961,7 @@ func TestServer_Get(t *testing.T) {
 	}
 }
 
-func TestServer_DeleteDocument(t *testing.T) {
+func TestServer_Delete(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -1396,7 +1396,7 @@ func TestCluster_Start(t *testing.T) {
 	time.Sleep(5 * time.Second)
 }
 
-func TestCluster_LivenessProbe(t *testing.T) {
+func TestCluster_HealthCheck(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)

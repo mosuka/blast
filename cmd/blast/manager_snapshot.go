@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/mosuka/blast/manager"
 	"github.com/urfave/cli"
 )
@@ -36,10 +37,19 @@ func managerSnapshot(c *cli.Context) error {
 		}
 	}()
 
-	err = client.Snapshot()
+	req := &empty.Empty{}
+	res, err := client.Snapshot(req)
 	if err != nil {
 		return err
 	}
+
+	marshaler := manager.JsonMarshaler{}
+	resBytes, err := marshaler.Marshal(res)
+	if err != nil {
+		return err
+	}
+
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resBytes)))
 
 	return nil
 }

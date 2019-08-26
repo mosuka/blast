@@ -146,13 +146,14 @@ func (s *GRPCService) getManagerCluster(managerAddr string) (*management.Cluster
 		return nil, err
 	}
 
-	managers, err := client.ClusterInfo()
+	req := &empty.Empty{}
+	res, err := client.ClusterInfo(req)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return nil, err
 	}
 
-	return managers, nil
+	return res.Cluster, nil
 }
 
 func (s *GRPCService) cloneManagerCluster(cluster *management.Cluster) (*management.Cluster, error) {
@@ -192,7 +193,8 @@ func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 			}
 
 			// create stream for watching cluster changes
-			stream, err := client.ClusterWatch()
+			req := &empty.Empty{}
+			stream, err := client.ClusterWatch(req)
 			if err != nil {
 				s.logger.Error(err.Error())
 				continue
@@ -319,15 +321,19 @@ func (s *GRPCService) startUpdateIndexers(checkInterval time.Duration) {
 	}
 
 	// get initial indexers
-	shards, err := client.Get("/cluster/shards")
+	req := &management.GetRequest{
+		Key: "/cluster/shards",
+	}
+	res, err := client.Get(req)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return
 	}
-	if shards == nil {
+	if res.Value == nil {
 		s.logger.Error("/cluster/shards is nil")
 	}
 
+	shards, err := protobuf.MarshalAny(res.Value)
 	for shardId, shard := range *shards.(*map[string]interface{}) {
 		shardBytes, err := json.Marshal(shard)
 		if err != nil {
@@ -373,7 +379,10 @@ func (s *GRPCService) startUpdateIndexers(checkInterval time.Duration) {
 				continue
 			}
 
-			stream, err := client.Watch("/cluster/shards/")
+			watchReq := &management.WatchRequest{
+				Key: "/cluster/shards/",
+			}
+			stream, err := client.Watch(watchReq)
 			if err != nil {
 				s.logger.Error(err.Error())
 				continue
@@ -390,16 +399,20 @@ func (s *GRPCService) startUpdateIndexers(checkInterval time.Duration) {
 			}
 			s.logger.Debug("data has changed", zap.Any("command", resp.Command), zap.String("key", resp.Key), zap.Any("value", resp.Value))
 
-			shards, err := client.Get("/cluster/shards/")
+			getReq := &management.GetRequest{
+				Key: "/cluster/shards/",
+			}
+			res, err := client.Get(getReq)
 			if err != nil {
 				s.logger.Error(err.Error())
 				continue
 			}
-			if shards == nil {
+			if res.Value == nil {
 				s.logger.Error("/cluster/shards is nil")
 				continue
 			}
 
+			shards, err := protobuf.MarshalAny(res.Value)
 			for shardId, shard := range *shards.(*map[string]interface{}) {
 				shardBytes, err := json.Marshal(shard)
 				if err != nil {

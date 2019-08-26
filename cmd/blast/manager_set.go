@@ -20,7 +20,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/protobuf"
+	"github.com/mosuka/blast/protobuf/management"
 	"github.com/urfave/cli"
 )
 
@@ -61,10 +64,29 @@ func managerSet(c *cli.Context) error {
 		}
 	}()
 
-	err = client.Set(key, value)
+	valueAny := &any.Any{}
+	err = protobuf.UnmarshalAny(value, valueAny)
 	if err != nil {
 		return err
 	}
+
+	req := &management.SetRequest{
+		Key:   key,
+		Value: valueAny,
+	}
+
+	res, err := client.Set(req)
+	if err != nil {
+		return err
+	}
+
+	marshaler := manager.JsonMarshaler{}
+	resBytes, err := marshaler.Marshal(res)
+	if err != nil {
+		return err
+	}
+
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resBytes)))
 
 	return nil
 }

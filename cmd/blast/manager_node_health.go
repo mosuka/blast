@@ -40,30 +40,40 @@ func managerNodeHealthCheck(c *cli.Context) error {
 		}
 	}()
 
-	var state string
+	var res *management.NodeHealthCheckResponse
 	if healthiness {
-		state, err = client.NodeHealthCheck(management.NodeHealthCheckRequest_HEALTHINESS.String())
+		req := &management.NodeHealthCheckRequest{Probe: management.NodeHealthCheckRequest_HEALTHINESS}
+		res, err = client.NodeHealthCheck(req)
 		if err != nil {
-			state = management.NodeHealthCheckResponse_UNHEALTHY.String()
+			res = &management.NodeHealthCheckResponse{State: management.NodeHealthCheckResponse_UNHEALTHY}
 		}
 	} else if liveness {
-		state, err = client.NodeHealthCheck(management.NodeHealthCheckRequest_LIVENESS.String())
+		req := &management.NodeHealthCheckRequest{Probe: management.NodeHealthCheckRequest_LIVENESS}
+		res, err = client.NodeHealthCheck(req)
 		if err != nil {
-			state = management.NodeHealthCheckResponse_DEAD.String()
+			res = &management.NodeHealthCheckResponse{State: management.NodeHealthCheckResponse_DEAD}
 		}
 	} else if readiness {
-		state, err = client.NodeHealthCheck(management.NodeHealthCheckRequest_READINESS.String())
+		req := &management.NodeHealthCheckRequest{Probe: management.NodeHealthCheckRequest_READINESS}
+		res, err = client.NodeHealthCheck(req)
 		if err != nil {
-			state = management.NodeHealthCheckResponse_NOT_READY.String()
+			res = &management.NodeHealthCheckResponse{State: management.NodeHealthCheckResponse_NOT_READY}
 		}
 	} else {
-		state, err = client.NodeHealthCheck(management.NodeHealthCheckRequest_HEALTHINESS.String())
+		req := &management.NodeHealthCheckRequest{Probe: management.NodeHealthCheckRequest_HEALTHINESS}
+		res, err = client.NodeHealthCheck(req)
 		if err != nil {
-			state = management.NodeHealthCheckResponse_UNHEALTHY.String()
+			res = &management.NodeHealthCheckResponse{State: management.NodeHealthCheckResponse_UNHEALTHY}
 		}
 	}
 
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", state))
+	marshaler := manager.JsonMarshaler{}
+	resBytes, err := marshaler.Marshal(res)
+	if err != nil {
+		return err
+	}
+
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resBytes)))
 
 	return nil
 }

@@ -21,6 +21,7 @@ import (
 	"os"
 
 	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/protobuf/management"
 	"github.com/urfave/cli"
 )
 
@@ -40,10 +41,15 @@ func managerWatch(c *cli.Context) error {
 		}
 	}()
 
-	watchClient, err := client.Watch(key)
+	req := &management.WatchRequest{
+		Key: key,
+	}
+	watchClient, err := client.Watch(req)
 	if err != nil {
 		return err
 	}
+
+	marshaler := manager.JsonMarshaler{}
 
 	for {
 		resp, err := watchClient.Recv()
@@ -55,7 +61,13 @@ func managerWatch(c *cli.Context) error {
 			break
 		}
 
-		_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%s %s %v", resp.Command.String(), resp.Key, resp.Value))
+		respBytes, err := marshaler.Marshal(resp)
+		if err != nil {
+			log.Println(err.Error())
+			break
+		}
+
+		_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(respBytes)))
 	}
 
 	return nil

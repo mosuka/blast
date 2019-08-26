@@ -15,18 +15,16 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/protobuf/management"
 	"github.com/urfave/cli"
-	yaml "gopkg.in/yaml.v2"
 )
 
 func managerGet(c *cli.Context) error {
 	grpcAddr := c.String("grpc-address")
-	format := c.String("format")
 
 	key := c.Args().Get(0)
 
@@ -41,27 +39,22 @@ func managerGet(c *cli.Context) error {
 		}
 	}()
 
-	value, err := client.Get(key)
+	req := &management.GetRequest{
+		Key: key,
+	}
+
+	res, err := client.Get(req)
 	if err != nil {
 		return err
 	}
 
-	switch format {
-	case "json":
-		valueBytes, err := json.MarshalIndent(value, "", "  ")
-		if err != nil {
-			return err
-		}
-		_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(valueBytes)))
-	case "yaml":
-		valueBytes, err := yaml.Marshal(value)
-		if err != nil {
-			return err
-		}
-		_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(valueBytes)))
-	default:
-		_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", value))
+	marshaler := manager.JsonMarshaler{}
+	resBytes, err := marshaler.Marshal(res)
+	if err != nil {
+		return err
 	}
+
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resBytes)))
 
 	return nil
 }

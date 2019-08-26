@@ -157,13 +157,14 @@ func (s *GRPCService) getManagerCluster(managerAddr string) (*management.Cluster
 		return nil, err
 	}
 
-	managers, err := client.ClusterInfo()
+	req := &empty.Empty{}
+	res, err := client.ClusterInfo(req)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return nil, err
 	}
 
-	return managers, nil
+	return res.Cluster, nil
 }
 
 func (s *GRPCService) cloneManagerCluster(cluster *management.Cluster) (*management.Cluster, error) {
@@ -203,7 +204,8 @@ func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 			}
 
 			// create stream for watching cluster changes
-			stream, err := client.ClusterWatch()
+			req := &empty.Empty{}
+			stream, err := client.ClusterWatch(req)
 			if err != nil {
 				s.logger.Error(err.Error())
 				continue
@@ -509,7 +511,17 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 					s.logger.Error(err.Error())
 					continue
 				}
-				err = client.Set(fmt.Sprintf("cluster/shards/%s", s.shardId), snapshotClusterMap)
+				valueAny := &any.Any{}
+				err = protobuf.UnmarshalAny(snapshotClusterMap, valueAny)
+				if err != nil {
+					s.logger.Error(err.Error())
+					continue
+				}
+				req := &management.SetRequest{
+					Key:   fmt.Sprintf("cluster/shards/%s", s.shardId),
+					Value: valueAny,
+				}
+				_, err = client.Set(req)
 				if err != nil {
 					s.logger.Error(err.Error())
 					continue

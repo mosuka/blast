@@ -22,10 +22,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
-
 	"github.com/golang/protobuf/ptypes/empty"
-
+	"github.com/google/go-cmp/cmp"
 	"github.com/mosuka/blast/indexer"
 	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/logutils"
@@ -183,7 +181,7 @@ func TestServer_Start(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 	// get cluster info from manager1
-	managerCluster1, err := managerClient1.ClusterInfo()
+	resClusterInfo, err := managerClient1.ClusterInfo(&empty.Empty{})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -221,7 +219,7 @@ func TestServer_Start(t *testing.T) {
 			},
 		},
 	}
-	actManagerCluster1 := managerCluster1
+	actManagerCluster1 := resClusterInfo.Cluster
 	if !reflect.DeepEqual(expManagerCluster1, actManagerCluster1) {
 		t.Fatalf("expected content to see %v, saw %v", expManagerCluster1, actManagerCluster1)
 	}
@@ -230,7 +228,7 @@ func TestServer_Start(t *testing.T) {
 	// indexer cluster1
 	//
 	indexerManagerGrpcAddress1 := managerGrpcAddress1
-	indexerShardId1 := "shard-1"
+	indexerShardId1 := "shard1"
 	indexerPeerGrpcAddress1 := ""
 	indexerGrpcAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerGrpcGatewayAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -272,7 +270,7 @@ func TestServer_Start(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	indexerManagerGrpcAddress2 := managerGrpcAddress1
-	indexerShardId2 := "shard-1"
+	indexerShardId2 := "shard1"
 	indexerPeerGrpcAddress2 := ""
 	indexerGrpcAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerGrpcGatewayAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -314,7 +312,7 @@ func TestServer_Start(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	indexerManagerGrpcAddress3 := managerGrpcAddress1
-	indexerShardId3 := "shard-1"
+	indexerShardId3 := "shard1"
 	indexerPeerGrpcAddress3 := ""
 	indexerGrpcAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerGrpcGatewayAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -364,7 +362,7 @@ func TestServer_Start(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 	// get cluster info from manager1
-	indexerCluster1, err := indexerClient1.ClusterInfo(&empty.Empty{})
+	resClusterInfoIndexer1, err := indexerClient1.ClusterInfo(&empty.Empty{})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -402,7 +400,7 @@ func TestServer_Start(t *testing.T) {
 			},
 		},
 	}
-	actIndexerCluster1 := indexerCluster1.Cluster
+	actIndexerCluster1 := resClusterInfoIndexer1.Cluster
 	if !cmp.Equal(expIndexerCluster1, actIndexerCluster1) {
 		t.Fatalf("expected content to see %v, saw %v", expIndexerCluster1, actIndexerCluster1)
 	}
@@ -411,7 +409,7 @@ func TestServer_Start(t *testing.T) {
 	// indexer cluster2
 	//
 	indexerManagerGrpcAddress4 := managerGrpcAddress1
-	indexerShardId4 := "shard-2"
+	indexerShardId4 := "shard2"
 	indexerPeerGrpcAddress4 := ""
 	indexerGrpcAddress4 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerGrpcGatewayAddress4 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -453,7 +451,7 @@ func TestServer_Start(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	indexerManagerGrpcAddress5 := managerGrpcAddress1
-	indexerShardId5 := "shard-2"
+	indexerShardId5 := "shard2"
 	indexerPeerGrpcAddress5 := ""
 	indexerGrpcAddress5 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerGrpcGatewayAddress5 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -495,7 +493,7 @@ func TestServer_Start(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	indexerManagerGrpcAddress6 := managerGrpcAddress1
-	indexerShardId6 := "shard-2"
+	indexerShardId6 := "shard2"
 	indexerPeerGrpcAddress6 := ""
 	indexerGrpcAddress6 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerGrpcGatewayAddress6 := fmt.Sprintf(":%d", testutils.TmpPort())

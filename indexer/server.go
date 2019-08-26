@@ -18,11 +18,14 @@ import (
 	"encoding/json"
 	"fmt"
 
+	accesslog "github.com/mash/go-accesslog"
+	"github.com/mosuka/blast/indexutils"
+
+	"github.com/mosuka/blast/protobuf/management"
+
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/golang/protobuf/ptypes/empty"
-	accesslog "github.com/mash/go-accesslog"
-	"github.com/mosuka/blast/errors"
-	"github.com/mosuka/blast/indexutils"
+	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/manager"
 	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/index"
@@ -87,20 +90,29 @@ func (s *Server) Start() {
 			return
 		}
 
-		clusterIntr, err := mc.Get(fmt.Sprintf("cluster/shards/%s", s.shardId))
-		if err != nil && err != errors.ErrNotFound {
+		req := &management.GetRequest{
+			Key: fmt.Sprintf("cluster/shards/%s", s.shardId),
+		}
+		res, err := mc.Get(req)
+		if err != nil && err != blasterrors.ErrNotFound {
 			s.logger.Fatal(err.Error())
 			return
 		}
-		if clusterIntr != nil {
-			b, err := json.Marshal(clusterIntr)
+		value, err := protobuf.MarshalAny(res.Value)
+		if err != nil {
+			s.logger.Fatal(err.Error())
+			return
+		}
+		if value != nil {
+			nodes := *value.(*map[string]interface{})
+			nodesBytes, err := json.Marshal(nodes)
 			if err != nil {
 				s.logger.Fatal(err.Error())
 				return
 			}
 
 			var cluster *index.Cluster
-			err = json.Unmarshal(b, &cluster)
+			err = json.Unmarshal(nodesBytes, &cluster)
 			if err != nil {
 				s.logger.Fatal(err.Error())
 				return
@@ -135,32 +147,38 @@ func (s *Server) Start() {
 			return
 		}
 		s.logger.Debug("pull index config from manager", zap.String("address", mc.GetAddress()))
-		value, err := mc.Get("/index_config")
+		req := &management.GetRequest{
+			Key: "/index_config",
+		}
+		resp, err := mc.Get(req)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return
 		}
-		indexConfigMap := *value.(*map[string]interface{})
-		indexMappingSrc, ok := indexConfigMap["index_mapping"].(map[string]interface{})
-		if ok {
-			indexMappingBytes, err := json.Marshal(indexMappingSrc)
-			if err != nil {
-				s.logger.Fatal(err.Error())
-				return
+		value, err := protobuf.MarshalAny(resp.Value)
+		if value != nil {
+			indexConfigMap := *value.(*map[string]interface{})
+			indexMappingSrc, ok := indexConfigMap["index_mapping"].(map[string]interface{})
+			if ok {
+				indexMappingBytes, err := json.Marshal(indexMappingSrc)
+				if err != nil {
+					s.logger.Fatal(err.Error())
+					return
+				}
+				s.indexMapping, err = indexutils.NewIndexMappingFromBytes(indexMappingBytes)
+				if err != nil {
+					s.logger.Fatal(err.Error())
+					return
+				}
 			}
-			s.indexMapping, err = indexutils.NewIndexMappingFromBytes(indexMappingBytes)
-			if err != nil {
-				s.logger.Fatal(err.Error())
-				return
+			indexTypeSrc, ok := indexConfigMap["index_type"]
+			if ok {
+				s.indexType = indexTypeSrc.(string)
 			}
-		}
-		indexTypeSrc, ok := indexConfigMap["index_type"]
-		if ok {
-			s.indexType = indexTypeSrc.(string)
-		}
-		indexStorageTypeSrc, ok := indexConfigMap["index_storage_type"]
-		if ok {
-			s.indexStorageType = indexStorageTypeSrc.(string)
+			indexStorageTypeSrc, ok := indexConfigMap["index_storage_type"]
+			if ok {
+				s.indexStorageType = indexStorageTypeSrc.(string)
+			}
 		}
 	} else if s.peerGrpcAddress != "" {
 		pc, err := NewGRPCClient(s.peerGrpcAddress)

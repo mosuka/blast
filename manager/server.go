@@ -159,15 +159,16 @@ func (s *Server) Start() {
 			return
 		}
 
-		err = client.ClusterJoin(s.node)
+		req := &management.ClusterJoinRequest{
+			Node: s.node,
+		}
+
+		_, err = client.ClusterJoin(req)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return
 		}
 	}
-
-	// start HTTP server
-
 }
 
 func (s *Server) Stop() {

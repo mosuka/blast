@@ -32,15 +32,15 @@ import (
 	"google.golang.org/grpc"
 )
 
-type ResponseMarshaler struct{}
+type JsonMarshaler struct{}
 
 // ContentType always Returns "application/json".
-func (*ResponseMarshaler) ContentType() string {
+func (*JsonMarshaler) ContentType() string {
 	return "application/json"
 }
 
 // Marshal marshals "v" into JSON
-func (j *ResponseMarshaler) Marshal(v interface{}) ([]byte, error) {
+func (j *JsonMarshaler) Marshal(v interface{}) ([]byte, error) {
 	switch v.(type) {
 	case *management.GetResponse:
 		value, err := protobuf.MarshalAny(v.(*management.GetResponse).Value)
@@ -58,12 +58,12 @@ func (j *ResponseMarshaler) Marshal(v interface{}) ([]byte, error) {
 }
 
 // Unmarshal unmarshals JSON data into "v".
-func (j *ResponseMarshaler) Unmarshal(data []byte, v interface{}) error {
+func (j *JsonMarshaler) Unmarshal(data []byte, v interface{}) error {
 	return json.Unmarshal(data, v)
 }
 
 // NewDecoder returns a Decoder which reads JSON stream from "r".
-func (j *ResponseMarshaler) NewDecoder(r io.Reader) runtime.Decoder {
+func (j *JsonMarshaler) NewDecoder(r io.Reader) runtime.Decoder {
 	return runtime.DecoderFunc(
 		func(v interface{}) error {
 			buffer, err := ioutil.ReadAll(r)
@@ -92,12 +92,12 @@ func (j *ResponseMarshaler) NewDecoder(r io.Reader) runtime.Decoder {
 }
 
 // NewEncoder returns an Encoder which writes JSON stream into "w".
-func (j *ResponseMarshaler) NewEncoder(w io.Writer) runtime.Encoder {
+func (j *JsonMarshaler) NewEncoder(w io.Writer) runtime.Encoder {
 	return json.NewEncoder(w)
 }
 
 // Delimiter for newline encoded JSON streams.
-func (j *ResponseMarshaler) Delimiter() []byte {
+func (j *JsonMarshaler) Delimiter() []byte {
 	return []byte("\n")
 }
 
@@ -123,7 +123,7 @@ func (s *GRPCGateway) Start() error {
 	s.ctx, s.cancel = NewGRPCContext()
 
 	mux := runtime.NewServeMux(
-		runtime.WithMarshalerOption("application/json", new(ResponseMarshaler)),
+		runtime.WithMarshalerOption("application/json", new(JsonMarshaler)),
 	)
 	opts := []grpc.DialOption{grpc.WithInsecure()}
 

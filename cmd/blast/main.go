@@ -311,11 +311,6 @@ func main() {
 							Value: ":5100",
 							Usage: "The gRPC listen address",
 						},
-						cli.StringFlag{
-							Name:  "format",
-							Value: "",
-							Usage: "Output format",
-						},
 					},
 					ArgsUsage: "[key]",
 					Action:    managerGet,

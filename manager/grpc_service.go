@@ -79,16 +79,28 @@ func (s *GRPCService) Stop() error {
 }
 
 func (s *GRPCService) getLeaderClient() (*GRPCClient, error) {
+	//leaderId, err := s.raftServer.LeaderID(10 * time.Second)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//client, exist := s.peerClients[string(leaderId)]
+	//if !exist {
+	//	err := errors.New("there is no client for leader")
+	//	s.logger.Error(err.Error())
+	//	return nil, err
+	//}
+	//return client, nil
+
 	for id, node := range s.cluster.Nodes {
 		switch node.State {
 		case management.Node_LEADER:
-			if client, exist := s.peerClients[id]; exist {
-				return client, nil
-			}
+		}
+		if client, exist := s.peerClients[id]; exist {
+			return client, nil
 		}
 	}
 
-	err := errors.New("there is no leader")
+	err := errors.New("there is no client for leader")
 	s.logger.Error(err.Error())
 	return nil, err
 }
@@ -331,7 +343,8 @@ func (s *GRPCService) getPeerNode(id string) (*management.Node, error) {
 		return nil, err
 	}
 
-	node, err := s.peerClients[id].NodeInfo()
+	req := &empty.Empty{}
+	resp, err := s.peerClients[id].NodeInfo(req)
 	if err != nil {
 		s.logger.Debug(err.Error(), zap.String("id", id))
 		return &management.Node{
@@ -344,7 +357,7 @@ func (s *GRPCService) getPeerNode(id string) (*management.Node, error) {
 		}, nil
 	}
 
-	return node, nil
+	return resp.Node, nil
 }
 
 func (s *GRPCService) getNode(id string) (*management.Node, error) {
@@ -383,7 +396,12 @@ func (s *GRPCService) setNode(node *management.Node) error {
 			s.logger.Error(err.Error())
 			return err
 		}
-		err = client.ClusterJoin(node)
+
+		req := &management.ClusterJoinRequest{
+			Node: node,
+		}
+
+		_, err = client.ClusterJoin(req)
 		if err != nil {
 			s.logger.Error(err.Error())
 			return err
@@ -419,7 +437,12 @@ func (s *GRPCService) deleteNode(id string) error {
 			s.logger.Error(err.Error())
 			return err
 		}
-		err = client.ClusterLeave(id)
+
+		req := &management.ClusterLeaveRequest{
+			Id: id,
+		}
+
+		_, err = client.ClusterLeave(req)
 		if err != nil {
 			s.logger.Error(err.Error())
 			return err
@@ -540,13 +563,13 @@ func (s *GRPCService) Set(ctx context.Context, req *management.SetRequest) (*emp
 
 	resp := &empty.Empty{}
 
-	value, err := protobuf.MarshalAny(req.Value)
-	if err != nil {
-		s.logger.Error(err.Error())
-		return resp, status.Error(codes.Internal, err.Error())
-	}
-
 	if s.raftServer.IsLeader() {
+		value, err := protobuf.MarshalAny(req.Value)
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+
 		err = s.raftServer.SetValue(req.Key, value)
 		if err != nil {
 			s.logger.Error(err.Error())
@@ -564,7 +587,7 @@ func (s *GRPCService) Set(ctx context.Context, req *management.SetRequest) (*emp
 			s.logger.Error(err.Error())
 			return resp, status.Error(codes.Internal, err.Error())
 		}
-		err = client.Set(req.Key, value)
+		resp, err = client.Set(req)
 		if err != nil {
 			s.logger.Error(err.Error())
 			return resp, status.Error(codes.Internal, err.Error())
@@ -610,7 +633,7 @@ func (s *GRPCService) Delete(ctx context.Context, req *management.DeleteRequest)
 			s.logger.Error(err.Error())
 			return resp, status.Error(codes.Internal, err.Error())
 		}
-		err = client.Delete(req.Key)
+		resp, err = client.Delete(req)
 		if err != nil {
 			switch err {
 			case blasterrors.ErrNotFound:
