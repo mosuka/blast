@@ -67,7 +67,7 @@ COPY --from=0 /go/src/github.com/blevesearch/cld2/cld2/internal/*.so /usr/local/
 COPY --from=0 /go/src/github.com/mosuka/blast/bin/* /usr/bin/
 COPY --from=0 /go/src/github.com/mosuka/blast/docker-entrypoint.sh /usr/bin/
 
-EXPOSE 2000 5000 8000
+EXPOSE 2000 5000 6000 8000
 
 ENTRYPOINT [ "/usr/bin/docker-entrypoint.sh" ]
 CMD        [ "blast", "--help" ]

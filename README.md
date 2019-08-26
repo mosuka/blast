@@ -72,7 +72,6 @@ $ ./compile_libs.sh
 $ sudo cp *.so /usr/local/lib
 ```
 
-
 ### macOS High Sierra Version 10.13.6
 
 ```bash
@@ -123,7 +122,6 @@ $ make \
 
 You can enable all the Bleve extensions supported by Blast as follows:
 
-
 ###  Linux
 
 ```bash
@@ -134,8 +132,7 @@ $ make \
     build
 ```
 
-
-#### macOS
+### macOS
 
 ```bash
 $ make \
@@ -146,7 +143,6 @@ $ make \
     CGO_CFLAGS="-I/usr/local/opt/icu4c/include" \
     build
 ```
-
 
 ### Build flags
 
@@ -163,7 +159,6 @@ Please refer to the following table for details of Bleve Extensions:
 | badger     | 0           | Enable Badger (This feature is considered experimental) |
 
 If you want to enable the feature whose `CGO_ENABLE` is `1`, please install it referring to the Installing dependencies section above.
-
 
 ### Binaries
 
@@ -186,7 +181,6 @@ $ make \
 
 You can test with all the Bleve extensions supported by Blast as follows:
 
-
 ###  Linux
 
 ```bash
@@ -197,8 +191,7 @@ $ make \
     test
 ```
 
-
-#### macOS
+### macOS
 
 ```bash
 $ make \
@@ -223,8 +216,7 @@ $ make \
     dist
 ```
 
-
-#### macOS
+### macOS
 
 ```bash
 $ make \
@@ -235,7 +227,6 @@ $ make \
     CGO_CFLAGS="-I/usr/local/opt/icu4c/include" \
     dist
 ```
-
 
 
 ## Starting Blast in standalone mode
@@ -289,7 +280,6 @@ You can see the result in JSON format. The result of the above command is:
 
 You can now put, get, search and delete the documents via CLI.  
 
-
 ### Indexing a document via CLI
 
 For document indexing, execute the following command:
@@ -319,7 +309,6 @@ You can see the result in JSON format. The result of the above command is:
 {}
 ```
 
-
 ### Getting a document via CLI
 
 Getting a document is as following:
@@ -337,11 +326,9 @@ You can see the result in JSON format. The result of the above command is:
     "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
     "timestamp": "2018-07-04T05:41:00Z",
     "title_en": "Search engine (computing)"
-  },
-  "id": "enwiki_1"
+  }
 }
 ```
-
 
 ### Searching documents via CLI
 
@@ -519,7 +506,6 @@ Please refer to following document for details of search request and result:
 - https://github.com/blevesearch/bleve/blob/master/search.go#L267
 - https://github.com/blevesearch/bleve/blob/master/search.go#L443
 
-
 ### Deleting a document via CLI
 
 Deleting a document is as following:
@@ -533,7 +519,6 @@ You can see the result in JSON format. The result of the above command is:
 ```json
 {}
 ```
-
 
 ### Indexing documents in bulk via CLI
 
@@ -550,7 +535,6 @@ You can see the result in JSON format. The result of the above command is:
   "count": 36
 }
 ```
-
 
 ### Deleting documents in bulk via CLI
 
@@ -572,7 +556,6 @@ You can see the result in JSON format. The result of the above command is:
 ## Using HTTP REST API
 
 Also you can do above commands via HTTP REST API that listened port 5002.
-
 
 ### Indexing a document via HTTP REST API
 
@@ -597,6 +580,12 @@ or
 $ curl -X PUT 'http://127.0.0.1:6000/v1/documents' -H 'Content-Type: application/json' --data-binary @./example/wiki_doc_enwiki_1.json | jq .
 ```
 
+You can see the result in JSON format. The result of the above command is:
+
+```json
+{}
+```
+
 ### Getting a document via HTTP REST API
 
 Getting a document via HTTP is as following:
@@ -605,6 +594,18 @@ Getting a document via HTTP is as following:
 $ curl -X GET 'http://127.0.0.1:6000/v1/documents/enwiki_1' -H 'Content-Type: application/json' | jq .
 ```
 
+You can see the result in JSON format. The result of the above command is:
+
+```json
+{
+  "fields": {
+    "_type": "enwiki",
+    "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
+    "timestamp": "2018-07-04T05:41:00Z",
+    "title_en": "Search engine (computing)"
+  }
+}
+```
 
 ### Searching documents via HTTP REST API
 
@@ -614,6 +615,166 @@ Searching documents via HTTP is as following:
 $ curl -X POST 'http://127.0.0.1:6000/v1/search' -H 'Content-Type: application/json' --data-binary @./example/wiki_search_request.json | jq .
 ```
 
+You can see the result in JSON format. The result of the above command is:
+
+```json
+{
+  "search_result": {
+    "status": {
+      "total": 1,
+      "failed": 0,
+      "successful": 1
+    },
+    "request": {
+      "query": {
+        "query": "+_all:search"
+      },
+      "size": 10,
+      "from": 0,
+      "highlight": {
+        "style": "html",
+        "fields": [
+          "title",
+          "text"
+        ]
+      },
+      "fields": [
+        "*"
+      ],
+      "facets": {
+        "Timestamp range": {
+          "size": 10,
+          "field": "timestamp",
+          "date_ranges": [
+            {
+              "end": "2010-12-31T23:59:59Z",
+              "name": "2001 - 2010",
+              "start": "2001-01-01T00:00:00Z"
+            },
+            {
+              "end": "2020-12-31T23:59:59Z",
+              "name": "2011 - 2020",
+              "start": "2011-01-01T00:00:00Z"
+            }
+          ]
+        },
+        "Type count": {
+          "size": 10,
+          "field": "_type"
+        }
+      },
+      "explain": false,
+      "sort": [
+        "-_score",
+        "_id",
+        "-timestamp"
+      ],
+      "includeLocations": false
+    },
+    "hits": [
+      {
+        "index": "/tmp/blast/indexer1/index",
+        "id": "enwiki_1",
+        "score": 0.09703538256409851,
+        "locations": {
+          "text_en": {
+            "search": [
+              {
+                "pos": 2,
+                "start": 2,
+                "end": 8,
+                "array_positions": null
+              },
+              {
+                "pos": 20,
+                "start": 118,
+                "end": 124,
+                "array_positions": null
+              },
+              {
+                "pos": 33,
+                "start": 195,
+                "end": 201,
+                "array_positions": null
+              },
+              {
+                "pos": 68,
+                "start": 415,
+                "end": 421,
+                "array_positions": null
+              },
+              {
+                "pos": 73,
+                "start": 438,
+                "end": 444,
+                "array_positions": null
+              },
+              {
+                "pos": 76,
+                "start": 458,
+                "end": 466,
+                "array_positions": null
+              }
+            ]
+          },
+          "title_en": {
+            "search": [
+              {
+                "pos": 1,
+                "start": 0,
+                "end": 6,
+                "array_positions": null
+              }
+            ]
+          }
+        },
+        "sort": [
+          "_score",
+          "enwiki_1",
+          " \u0001\u0015\u001f\u0004~80Pp\u0000"
+        ],
+        "fields": {
+          "_type": "enwiki",
+          "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
+          "timestamp": "2018-07-04T05:41:00Z",
+          "title_en": "Search engine (computing)"
+        }
+      }
+    ],
+    "total_hits": 1,
+    "max_score": 0.09703538256409851,
+    "took": 323568,
+    "facets": {
+      "Timestamp range": {
+        "field": "timestamp",
+        "total": 1,
+        "missing": 0,
+        "other": 0,
+        "date_ranges": [
+          {
+            "name": "2011 - 2020",
+            "start": "2011-01-01T00:00:00Z",
+            "end": "2020-12-31T23:59:59Z",
+            "count": 1
+          }
+        ]
+      },
+      "Type count": {
+        "field": "_type",
+        "total": 1,
+        "missing": 0,
+        "other": 0,
+        "terms": [
+          {
+            "term": "enwiki",
+            "count": 1
+          }
+        ]
+      }
+    }
+  }
+}
+```
 
 ### Deleting a document via HTTP REST API
 
@@ -623,6 +784,11 @@ Deleting a document via HTTP is as following:
 $ curl -X DELETE 'http://127.0.0.1:6000/v1/documents/enwiki_1' -H 'Content-Type: application/json' | jq .
 ```
 
+You can see the result in JSON format. The result of the above command is:
+
+```json
+{}
+```
 
 ### Indexing documents in bulk via HTTP REST API
 
@@ -632,6 +798,13 @@ Indexing documents in bulk via HTTP is as following:
 $ curl -X PUT 'http://127.0.0.1:6000/v1/bulk' -H 'Content-Type: application/x-ndjson' --data-binary @./example/wiki_bulk_index.jsonl | jq .
 ```
 
+You can see the result in JSON format. The result of the above command is:
+
+```json
+{
+  "count": 36
+}
+```
 
 ### Deleting documents in bulk via HTTP REST API
 
@@ -639,6 +812,14 @@ Deleting documents in bulk via HTTP is as following:
 
 ```bash
 $ curl -X DELETE 'http://127.0.0.1:6000/v1/bulk' -H 'Content-Type: text/plain' --data-binary @./example/wiki_bulk_delete.txt | jq .
+```
+
+You can see the result in JSON format. The result of the above command is:
+
+```json
+{
+  "count": 36
+}
 ```
 
 
@@ -693,9 +874,14 @@ _Above example shows each Blast node running on the same host, so each node must
 This instructs each new node to join an existing node, specifying `--peer-addr=:5001`. Each node recognizes the joining clusters when started.
 So you have a 3-node cluster. That way you can tolerate the failure of 1 node. You can check the peers in the cluster with the following command:
 
-
 ```bash
 $ ./bin/blast indexer cluster info --grpc-address=:5000 | jq .
+```
+
+or
+
+```bash
+$ curl -X GET 'http://127.0.0.1:6000/v1/cluster/status' -H 'Content-Type: application/json' | jq .
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -944,7 +1130,6 @@ $ ./bin/blast dispatcher delete --grpc-address=:5200 --file=./example/wiki_bulk_
 ```
 
 
-
 ## Blast on Docker
 
 ### Building Docker container image on localhost
@@ -965,7 +1150,6 @@ $ docker pull mosuka/blast:latest
 
 See https://hub.docker.com/r/mosuka/blast/tags/
 
-
 ### Pulling Docker container image from docker.io
 
 You can also use the Docker container image already registered in docker.io like so:
@@ -973,7 +1157,6 @@ You can also use the Docker container image already registered in docker.io like
 ```bash
 $ docker pull mosuka/blast:latest
 ```
-
 
 ### Running Indexer on Docker
 
@@ -983,10 +1166,12 @@ Running a Blast data node on Docker. Start Blast data node like so:
 $ docker run --rm --name blast-indexer1 \
     -p 2000:2000 \
     -p 5000:5000 \
+    -p 6000:6000 \
     -p 8000:8000 \
     -v $(pwd)/example:/opt/blast/example \
     mosuka/blast:latest blast indexer start \
       --grpc-address=:5000 \
+      --grpc-gateway-address=:6000 \
       --http-address=:8000 \
       --node-id=blast-indexer1 \
       --node-address=:2000 \
@@ -1008,7 +1193,6 @@ $ docker exec -it blast-indexer1 blast indexer node info --grpc-address=:5000
 
 This section explain how to index Wikipedia dump to Blast.
 
-
 ### Install wikiextractor
 
 ```bash
@@ -1016,13 +1200,11 @@ $ cd ${HOME}
 $ git clone git@github.com:attardi/wikiextractor.git
 ```
 
-
 ### Download wikipedia dump
 
 ```bash
 $ curl -o ~/tmp/enwiki-20190101-pages-articles.xml.bz2 https://dumps.wikimedia.org/enwiki/20190101/enwiki-20190101-pages-articles.xml.bz2
 ```
-
 
 ### Parsing wikipedia dump
 
@@ -1031,12 +1213,12 @@ $ cd wikiextractor
 $ ./WikiExtractor.py -o ~/tmp/enwiki --json ~/tmp/enwiki-20190101-pages-articles.xml.bz2
 ```
 
-
 ### Starting Indexer
 
 ```bash
 $ ./bin/blast indexer start \
     --grpc-address=:5000 \
+    --grpc-gateway-address=:6000 \
     --http-address=:8000 \
     --node-id=indexer1 \
     --node-address=:2000 \
