@@ -1237,7 +1237,8 @@ $ for FILE in $(find ~/tmp/enwiki -type f -name '*' | sort)
     echo "Indexing ${FILE}"
     TIMESTAMP=$(date -u "+%Y-%m-%dT%H:%M:%SZ")
     DOCS=$(cat ${FILE} | jq -r '. + {fields: {url: .url, title_en: .title, text_en: .text, timestamp: "'${TIMESTAMP}'", _type: "enwiki"}} | del(.url) | del(.title) | del(.text) | del(.fields.id)' | jq -c)
-    curl -s -X PUT -H 'Content-Type: application/json' "http://127.0.0.1:6000/v1/bulk" --data-binary "${DOCS}"
+    curl -s -X PUT -H 'Content-Type: application/x-ndjson' "http://127.0.0.1:6000/v1/bulk" --data-binary "${DOCS}"
+    echo ""
   done
 ```
 
