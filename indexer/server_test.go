@@ -26,12 +26,16 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/mapping"
-	"github.com/mosuka/blast/errors"
+	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/google/go-cmp/cmp"
 	"github.com/mosuka/blast/indexutils"
 	"github.com/mosuka/blast/logutils"
+	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/index"
 	"github.com/mosuka/blast/strutils"
 	"github.com/mosuka/blast/testutils"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func TestServer_Start(t *testing.T) {
@@ -45,6 +49,7 @@ func TestServer_Start(t *testing.T) {
 	shardId := ""
 	peerGrpcAddress := ""
 	grpcAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -59,8 +64,9 @@ func TestServer_Start(t *testing.T) {
 		BindAddress: bindAddress,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress,
-			HttpAddress: httpAddress,
+			GrpcAddress:        grpcAddress,
+			GrpcGatewayAddress: grpcGatewayAddress,
+			HttpAddress:        httpAddress,
 		},
 	}
 
@@ -97,6 +103,7 @@ func TestServer_LivenessProbe(t *testing.T) {
 	shardId := ""
 	peerGrpcAddress := ""
 	grpcAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -111,8 +118,9 @@ func TestServer_LivenessProbe(t *testing.T) {
 		BindAddress: bindAddress,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress,
-			HttpAddress: httpAddress,
+			GrpcAddress:        grpcAddress,
+			GrpcGatewayAddress: grpcGatewayAddress,
+			HttpAddress:        httpAddress,
 		},
 	}
 
@@ -152,36 +160,39 @@ func TestServer_LivenessProbe(t *testing.T) {
 	}
 
 	// healthiness
-	healthiness, err := client.NodeHealthCheck(index.NodeHealthCheckRequest_HEALTHINESS.String())
+	reqHealthiness := &index.NodeHealthCheckRequest{Probe: index.NodeHealthCheckRequest_HEALTHINESS}
+	resHealthiness, err := client.NodeHealthCheck(reqHealthiness)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expHealthiness := index.NodeHealthCheckResponse_HEALTHY.String()
-	actHealthiness := healthiness
-	if expHealthiness != actHealthiness {
-		t.Fatalf("expected content to see %v, saw %v", expHealthiness, actHealthiness)
+	expHealthinessState := index.NodeHealthCheckResponse_HEALTHY
+	actHealthinessState := resHealthiness.State
+	if expHealthinessState != actHealthinessState {
+		t.Fatalf("expected content to see %v, saw %v", expHealthinessState, actHealthinessState)
 	}
 
 	// liveness
-	liveness, err := client.NodeHealthCheck(index.NodeHealthCheckRequest_LIVENESS.String())
+	reqLiveness := &index.NodeHealthCheckRequest{Probe: index.NodeHealthCheckRequest_LIVENESS}
+	resLiveness, err := client.NodeHealthCheck(reqLiveness)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expLiveness := index.NodeHealthCheckResponse_ALIVE.String()
-	actLiveness := liveness
-	if expLiveness != actLiveness {
-		t.Fatalf("expected content to see %v, saw %v", expLiveness, actLiveness)
+	expLivenessState := index.NodeHealthCheckResponse_ALIVE
+	actLivenessState := resLiveness.State
+	if expLivenessState != actLivenessState {
+		t.Fatalf("expected content to see %v, saw %v", expLivenessState, actLivenessState)
 	}
 
 	// readiness
-	readiness, err := client.NodeHealthCheck(index.NodeHealthCheckRequest_READINESS.String())
+	reqReadiness := &index.NodeHealthCheckRequest{Probe: index.NodeHealthCheckRequest_READINESS}
+	resReadiness, err := client.NodeHealthCheck(reqReadiness)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expReadiness := index.NodeHealthCheckResponse_READY.String()
-	actReadiness := readiness
-	if expReadiness != actReadiness {
-		t.Fatalf("expected content to see %v, saw %v", expReadiness, actReadiness)
+	expReadinessState := index.NodeHealthCheckResponse_READY
+	actReadinessState := resReadiness.State
+	if expReadinessState != actReadinessState {
+		t.Fatalf("expected content to see %v, saw %v", expReadinessState, actReadinessState)
 	}
 }
 
@@ -196,6 +207,7 @@ func TestServer_GetNode(t *testing.T) {
 	shardId := ""
 	peerGrpcAddress := ""
 	grpcAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -210,8 +222,9 @@ func TestServer_GetNode(t *testing.T) {
 		BindAddress: bindAddress,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress,
-			HttpAddress: httpAddress,
+			GrpcAddress:        grpcAddress,
+			GrpcGatewayAddress: grpcGatewayAddress,
+			HttpAddress:        httpAddress,
 		},
 	}
 
@@ -251,7 +264,8 @@ func TestServer_GetNode(t *testing.T) {
 	}
 
 	// get node
-	nodeInfo, err := client.NodeInfo()
+	req := &empty.Empty{}
+	res, err := client.NodeInfo(req)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -260,11 +274,12 @@ func TestServer_GetNode(t *testing.T) {
 		BindAddress: bindAddress,
 		State:       index.Node_LEADER,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress,
-			HttpAddress: httpAddress,
+			GrpcAddress:        grpcAddress,
+			GrpcGatewayAddress: grpcGatewayAddress,
+			HttpAddress:        httpAddress,
 		},
 	}
-	actNodeInfo := nodeInfo
+	actNodeInfo := res.Node
 	if !reflect.DeepEqual(expNodeInfo, actNodeInfo) {
 		t.Fatalf("expected content to see %v, saw %v", expNodeInfo, actNodeInfo)
 	}
@@ -281,6 +296,7 @@ func TestServer_GetCluster(t *testing.T) {
 	shardId := ""
 	peerGrpcAddress := ""
 	grpcAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -295,8 +311,9 @@ func TestServer_GetCluster(t *testing.T) {
 		BindAddress: bindAddress,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress,
-			HttpAddress: httpAddress,
+			GrpcAddress:        grpcAddress,
+			GrpcGatewayAddress: grpcGatewayAddress,
+			HttpAddress:        httpAddress,
 		},
 	}
 
@@ -336,7 +353,8 @@ func TestServer_GetCluster(t *testing.T) {
 	}
 
 	// get cluster
-	cluster, err := client.ClusterInfo()
+	req := &empty.Empty{}
+	res, err := client.ClusterInfo(req)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -347,13 +365,14 @@ func TestServer_GetCluster(t *testing.T) {
 				BindAddress: bindAddress,
 				State:       index.Node_LEADER,
 				Metadata: &index.Metadata{
-					GrpcAddress: grpcAddress,
-					HttpAddress: httpAddress,
+					GrpcAddress:        grpcAddress,
+					GrpcGatewayAddress: grpcGatewayAddress,
+					HttpAddress:        httpAddress,
 				},
 			},
 		},
 	}
-	actCluster := cluster
+	actCluster := res.Cluster
 	if !reflect.DeepEqual(expCluster, actCluster) {
 		t.Fatalf("expected content to see %v, saw %v", expCluster, actCluster)
 	}
@@ -370,6 +389,7 @@ func TestServer_GetIndexMapping(t *testing.T) {
 	shardId := ""
 	peerGrpcAddress := ""
 	grpcAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -384,8 +404,9 @@ func TestServer_GetIndexMapping(t *testing.T) {
 		BindAddress: bindAddress,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress,
-			HttpAddress: httpAddress,
+			GrpcAddress:        grpcAddress,
+			GrpcGatewayAddress: grpcGatewayAddress,
+			HttpAddress:        httpAddress,
 		},
 	}
 
@@ -426,15 +447,17 @@ func TestServer_GetIndexMapping(t *testing.T) {
 
 	expIndexMapping := indexMapping
 
-	actIndexConfigMap, err := client.GetIndexConfig()
+	req := &empty.Empty{}
+	res, err := client.GetIndexConfig(req)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	actIndexMapping := actIndexConfigMap["index_mapping"].(*mapping.IndexMappingImpl)
+	im, err := protobuf.MarshalAny(res.IndexConfig.IndexMapping)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	actIndexMapping := im.(*mapping.IndexMappingImpl)
 
 	exp, err := json.Marshal(expIndexMapping)
 	if err != nil {
@@ -461,6 +484,7 @@ func TestServer_GetIndexType(t *testing.T) {
 	shardId := ""
 	peerGrpcAddress := ""
 	grpcAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -475,8 +499,9 @@ func TestServer_GetIndexType(t *testing.T) {
 		BindAddress: bindAddress,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress,
-			HttpAddress: httpAddress,
+			GrpcAddress:        grpcAddress,
+			GrpcGatewayAddress: grpcGatewayAddress,
+			HttpAddress:        httpAddress,
 		},
 	}
 
@@ -517,12 +542,13 @@ func TestServer_GetIndexType(t *testing.T) {
 
 	expIndexType := indexType
 
-	actIndexConfigMap, err := client.GetIndexConfig()
+	req := &empty.Empty{}
+	res, err := client.GetIndexConfig(req)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	actIndexType := actIndexConfigMap["index_type"].(string)
+	actIndexType := res.IndexConfig.IndexType
 
 	if !reflect.DeepEqual(expIndexType, actIndexType) {
 		t.Fatalf("expected content to see %v, saw %v", expIndexType, actIndexType)
@@ -540,6 +566,7 @@ func TestServer_GetIndexStorageType(t *testing.T) {
 	shardId := ""
 	peerGrpcAddress := ""
 	grpcAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -554,8 +581,9 @@ func TestServer_GetIndexStorageType(t *testing.T) {
 		BindAddress: bindAddress,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress,
-			HttpAddress: httpAddress,
+			GrpcAddress:        grpcAddress,
+			GrpcGatewayAddress: grpcGatewayAddress,
+			HttpAddress:        httpAddress,
 		},
 	}
 
@@ -596,12 +624,13 @@ func TestServer_GetIndexStorageType(t *testing.T) {
 
 	expIndexStorageType := indexStorageType
 
-	actIndexConfigMap, err := client.GetIndexConfig()
+	req := &empty.Empty{}
+	res, err := client.GetIndexConfig(req)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	actIndexStorageType := actIndexConfigMap["index_storage_type"].(string)
+	actIndexStorageType := res.IndexConfig.IndexStorageType
 
 	if !reflect.DeepEqual(expIndexStorageType, actIndexStorageType) {
 		t.Fatalf("expected content to see %v, saw %v", expIndexStorageType, actIndexStorageType)
@@ -619,6 +648,7 @@ func TestServer_GetIndexStats(t *testing.T) {
 	shardId := ""
 	peerGrpcAddress := ""
 	grpcAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -633,8 +663,9 @@ func TestServer_GetIndexStats(t *testing.T) {
 		BindAddress: bindAddress,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress,
-			HttpAddress: httpAddress,
+			GrpcAddress:        grpcAddress,
+			GrpcGatewayAddress: grpcGatewayAddress,
+			HttpAddress:        httpAddress,
 		},
 	}
 
@@ -689,17 +720,24 @@ func TestServer_GetIndexStats(t *testing.T) {
 		"searches":    float64(0),
 	}
 
-	actIndexStats, err := client.GetIndexStats()
+	req := &empty.Empty{}
+	res, err := client.GetIndexStats(req)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+
+	is, err := protobuf.MarshalAny(res.IndexStats)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	actIndexStats := *is.(*map[string]interface{})
 
 	if !reflect.DeepEqual(expIndexStats, actIndexStats) {
 		t.Fatalf("expected content to see %v, saw %v", expIndexStats, actIndexStats)
 	}
 }
 
-func TestServer_PutDocument(t *testing.T) {
+func TestServer_Index(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -710,6 +748,7 @@ func TestServer_PutDocument(t *testing.T) {
 	shardId := ""
 	peerGrpcAddress := ""
 	grpcAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -724,8 +763,9 @@ func TestServer_PutDocument(t *testing.T) {
 		BindAddress: bindAddress,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress,
-			HttpAddress: httpAddress,
+			GrpcAddress:        grpcAddress,
+			GrpcGatewayAddress: grpcGatewayAddress,
+			HttpAddress:        httpAddress,
 		},
 	}
 
@@ -764,10 +804,8 @@ func TestServer_PutDocument(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	// put document
-	docs := make([]*index.Document, 0)
+	// index document
 	docPath1 := filepath.Join(curDir, "../example/wiki_doc_enwiki_1.json")
-	// read index mapping file
 	docFile1, err := os.Open(docPath1)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -784,21 +822,17 @@ func TestServer_PutDocument(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	docs = append(docs, doc1)
-	count, err := client.IndexDocument(docs)
+	req := &index.IndexRequest{
+		Id:     doc1.Id,
+		Fields: doc1.Fields,
+	}
+	_, err = client.Index(req)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-
-	expCount := 1
-	actCount := count
-
-	if expCount != actCount {
-		t.Fatalf("expected content to see %v, saw %v", expCount, actCount)
-	}
 }
 
-func TestServer_GetDocument(t *testing.T) {
+func TestServer_Get(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -809,6 +843,7 @@ func TestServer_GetDocument(t *testing.T) {
 	shardId := ""
 	peerGrpcAddress := ""
 	grpcAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -823,8 +858,9 @@ func TestServer_GetDocument(t *testing.T) {
 		BindAddress: bindAddress,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress,
-			HttpAddress: httpAddress,
+			GrpcAddress:        grpcAddress,
+			GrpcGatewayAddress: grpcGatewayAddress,
+			HttpAddress:        httpAddress,
 		},
 	}
 
@@ -863,61 +899,69 @@ func TestServer_GetDocument(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	// put document
-	putDocs := make([]*index.Document, 0)
-	putDocPath1 := filepath.Join(curDir, "../example/wiki_doc_enwiki_1.json")
-	// read index mapping file
-	putDocFile1, err := os.Open(putDocPath1)
+	// index document
+	docPath1 := filepath.Join(curDir, "../example/wiki_doc_enwiki_1.json")
+	docFile1, err := os.Open(docPath1)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 	defer func() {
-		_ = putDocFile1.Close()
+		_ = docFile1.Close()
 	}()
-	putDocBytes1, err := ioutil.ReadAll(putDocFile1)
+	docBytes1, err := ioutil.ReadAll(docFile1)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	putDoc1 := &index.Document{}
-	err = index.UnmarshalDocument(putDocBytes1, putDoc1)
+	doc1 := &index.Document{}
+	err = index.UnmarshalDocument(docBytes1, doc1)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	putDocs = append(putDocs, putDoc1)
-	putCount, err := client.IndexDocument(putDocs)
+	indexReq := &index.IndexRequest{
+		Id:     doc1.Id,
+		Fields: doc1.Fields,
+	}
+	_, err = client.Index(indexReq)
 	if err != nil {
 		t.Fatalf("%v", err)
-	}
-
-	expPutCount := 1
-	actPutCount := putCount
-
-	if expPutCount != actPutCount {
-		t.Fatalf("expected content to see %v, saw %v", expPutCount, actPutCount)
 	}
 
 	// get document
-	getDoc1, err := client.GetDocument("enwiki_1")
+	getReq := &index.GetRequest{Id: "enwiki_1"}
+	getRes, err := client.Get(getReq)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expGetDoc1, _ := index.MarshalDocument(putDoc1)
-	actGetDoc1, _ := index.MarshalDocument(getDoc1)
-	if !reflect.DeepEqual(expGetDoc1, actGetDoc1) {
-		t.Fatalf("expected content to see %v, saw %v", expGetDoc1, actGetDoc1)
+	expFields, err := protobuf.MarshalAny(doc1.Fields)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	actFields, err := protobuf.MarshalAny(getRes.Fields)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	if !cmp.Equal(expFields, actFields) {
+		t.Fatalf("expected content to see %v, saw %v", expFields, actFields)
 	}
 
 	// get non-existing document
-	getDocFields2, err := client.GetDocument("doc2")
-	if err != errors.ErrNotFound {
-		t.Fatalf("%v", err)
+	getReq2 := &index.GetRequest{Id: "non-existing"}
+	getRes2, err := client.Get(getReq2)
+	if err != nil {
+		st, _ := status.FromError(err)
+		switch st.Code() {
+		case codes.NotFound:
+			// noop
+		default:
+			t.Fatalf("%v", err)
+		}
 	}
-	if getDocFields2 != nil {
-		t.Fatalf("expected content to see nil, saw %v", getDocFields2)
+	if getRes2 != nil {
+		t.Fatalf("expected content to see nil, saw %v", getRes2)
 	}
 }
 
-func TestServer_DeleteDocument(t *testing.T) {
+func TestServer_Delete(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -928,6 +972,7 @@ func TestServer_DeleteDocument(t *testing.T) {
 	shardId := ""
 	peerGrpcAddress := ""
 	grpcAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -942,8 +987,9 @@ func TestServer_DeleteDocument(t *testing.T) {
 		BindAddress: bindAddress,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress,
-			HttpAddress: httpAddress,
+			GrpcAddress:        grpcAddress,
+			GrpcGatewayAddress: grpcGatewayAddress,
+			HttpAddress:        httpAddress,
 		},
 	}
 
@@ -982,86 +1028,84 @@ func TestServer_DeleteDocument(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	// put document
-	putDocs := make([]*index.Document, 0)
-	putDocPath1 := filepath.Join(curDir, "../example/wiki_doc_enwiki_1.json")
-	// read index mapping file
-	putDocFile1, err := os.Open(putDocPath1)
+	// index document
+	docPath1 := filepath.Join(curDir, "../example/wiki_doc_enwiki_1.json")
+	docFile1, err := os.Open(docPath1)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 	defer func() {
-		_ = putDocFile1.Close()
+		_ = docFile1.Close()
 	}()
-	putDocBytes1, err := ioutil.ReadAll(putDocFile1)
+	docBytes1, err := ioutil.ReadAll(docFile1)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	putDoc1 := &index.Document{}
-	err = index.UnmarshalDocument(putDocBytes1, putDoc1)
+	doc1 := &index.Document{}
+	err = index.UnmarshalDocument(docBytes1, doc1)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	putDocs = append(putDocs, putDoc1)
-	putCount, err := client.IndexDocument(putDocs)
+	indexReq := &index.IndexRequest{
+		Id:     doc1.Id,
+		Fields: doc1.Fields,
+	}
+	_, err = client.Index(indexReq)
 	if err != nil {
 		t.Fatalf("%v", err)
-	}
-
-	expPutCount := 1
-	actPutCount := putCount
-
-	if expPutCount != actPutCount {
-		t.Fatalf("expected content to see %v, saw %v", expPutCount, actPutCount)
 	}
 
 	// get document
-	getDoc1, err := client.GetDocument("enwiki_1")
+	getReq := &index.GetRequest{Id: "enwiki_1"}
+	getRes, err := client.Get(getReq)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expGetDoc1, _ := index.MarshalDocument(putDoc1)
-	actGetDoc1, _ := index.MarshalDocument(getDoc1)
-	if !reflect.DeepEqual(expGetDoc1, actGetDoc1) {
-		t.Fatalf("expected content to see %v, saw %v", expGetDoc1, actGetDoc1)
-	}
-
-	// get non-existing document
-	getDoc2, err := client.GetDocument("non-existing")
-	if err != errors.ErrNotFound {
+	expFields, err := protobuf.MarshalAny(doc1.Fields)
+	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	if getDoc2 != nil {
-		t.Fatalf("expected content to see nil, saw %v", getDoc2)
+	actFields, err := protobuf.MarshalAny(getRes.Fields)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	if !cmp.Equal(expFields, actFields) {
+		t.Fatalf("expected content to see %v, saw %v", expFields, actFields)
 	}
 
 	// delete document
-	delCount, err := client.DeleteDocument([]string{"enwiki_1"})
+	deleteReq := &index.DeleteRequest{Id: "enwiki_1"}
+	_, err = client.Delete(deleteReq)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expDelCount := 1
-	actDelCount := delCount
-	if expDelCount != actDelCount {
-		t.Fatalf("expected content to see %v, saw %v", expDelCount, actDelCount)
-	}
 
-	// get document
-	getDoc1, err = client.GetDocument("enwiki_1")
-	if err != errors.ErrNotFound {
-		t.Fatalf("%v", err)
+	// get document again
+	getRes, err = client.Get(getReq)
+	if err != nil {
+		st, _ := status.FromError(err)
+		switch st.Code() {
+		case codes.NotFound:
+			// noop
+		default:
+			t.Fatalf("%v", err)
+		}
 	}
-	if getDoc1 != nil {
-		t.Fatalf("expected content to see nil, saw %v", getDoc1)
+	if getRes != nil {
+		t.Fatalf("expected content to see nil, saw %v", getRes)
 	}
 
 	// delete non-existing document
-	getDoc1, err = client.GetDocument("non-existing")
-	if err != errors.ErrNotFound {
-		t.Fatalf("%v", err)
-	}
-	if getDoc1 != nil {
-		t.Fatalf("expected content to see nil, saw %v", getDoc1)
+	deleteReq2 := &index.DeleteRequest{Id: "non-existing"}
+	_, err = client.Delete(deleteReq2)
+	if err != nil {
+		st, _ := status.FromError(err)
+		switch st.Code() {
+		case codes.NotFound:
+			// noop
+		default:
+			t.Fatalf("%v", err)
+		}
 	}
 }
 
@@ -1076,6 +1120,7 @@ func TestServer_Search(t *testing.T) {
 	shardId := ""
 	peerGrpcAddress := ""
 	grpcAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -1090,8 +1135,9 @@ func TestServer_Search(t *testing.T) {
 		BindAddress: bindAddress,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress,
-			HttpAddress: httpAddress,
+			GrpcAddress:        grpcAddress,
+			GrpcGatewayAddress: grpcGatewayAddress,
+			HttpAddress:        httpAddress,
 		},
 	}
 
@@ -1130,42 +1176,53 @@ func TestServer_Search(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	// put document
-	putDocs := make([]*index.Document, 0)
-	putDocPath1 := filepath.Join(curDir, "../example/wiki_doc_enwiki_1.json")
-	// read index mapping file
-	putDocFile1, err := os.Open(putDocPath1)
+	// index document
+	docPath1 := filepath.Join(curDir, "../example/wiki_doc_enwiki_1.json")
+	docFile1, err := os.Open(docPath1)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 	defer func() {
-		_ = putDocFile1.Close()
+		_ = docFile1.Close()
 	}()
-	putDocBytes1, err := ioutil.ReadAll(putDocFile1)
+	docBytes1, err := ioutil.ReadAll(docFile1)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	putDoc1 := &index.Document{}
-	err = index.UnmarshalDocument(putDocBytes1, putDoc1)
+	doc1 := &index.Document{}
+	err = index.UnmarshalDocument(docBytes1, doc1)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	putDocs = append(putDocs, putDoc1)
-	putCount, err := client.IndexDocument(putDocs)
+	indexReq := &index.IndexRequest{
+		Id:     doc1.Id,
+		Fields: doc1.Fields,
+	}
+	_, err = client.Index(indexReq)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	expPutCount := 1
-	actPutCount := putCount
-
-	if expPutCount != actPutCount {
-		t.Fatalf("expected content to see %v, saw %v", expPutCount, actPutCount)
+	// get document
+	getReq := &index.GetRequest{Id: "enwiki_1"}
+	getRes, err := client.Get(getReq)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	expFields, err := protobuf.MarshalAny(doc1.Fields)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	actFields, err := protobuf.MarshalAny(getRes.Fields)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	if !cmp.Equal(expFields, actFields) {
+		t.Fatalf("expected content to see %v, saw %v", expFields, actFields)
 	}
 
 	// search
 	searchRequestPath := filepath.Join(curDir, "../example/wiki_search_request.json")
-
 	searchRequestFile, err := os.Open(searchRequestPath)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -1173,24 +1230,27 @@ func TestServer_Search(t *testing.T) {
 	defer func() {
 		_ = searchRequestFile.Close()
 	}()
-
 	searchRequestByte, err := ioutil.ReadAll(searchRequestFile)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	searchRequest := bleve.NewSearchRequest(nil)
-	err = json.Unmarshal(searchRequestByte, searchRequest)
+	searchReq := &index.SearchRequest{}
+	marshaler := JsonMarshaler{}
+	err = marshaler.Unmarshal(searchRequestByte, searchReq)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-
-	searchResult1, err := client.Search(searchRequest)
+	searchRes, err := client.Search(searchReq)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	searchResult, err := protobuf.MarshalAny(searchRes.SearchResult)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 	expTotal := uint64(1)
-	actTotal := searchResult1.Total
+	actTotal := searchResult.(*bleve.SearchResult).Total
 	if expTotal != actTotal {
 		t.Fatalf("expected content to see %v, saw %v", expTotal, actTotal)
 	}
@@ -1207,6 +1267,7 @@ func TestCluster_Start(t *testing.T) {
 	shardId1 := ""
 	peerGrpcAddress1 := ""
 	grpcAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId1 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -1221,8 +1282,9 @@ func TestCluster_Start(t *testing.T) {
 		BindAddress: bindAddress1,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress1,
-			HttpAddress: httpAddress1,
+			GrpcAddress:        grpcAddress1,
+			GrpcGatewayAddress: grpcGatewayAddress1,
+			HttpAddress:        httpAddress1,
 		},
 	}
 
@@ -1248,6 +1310,7 @@ func TestCluster_Start(t *testing.T) {
 	shardId2 := ""
 	peerGrpcAddress2 := grpcAddress1
 	grpcAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId2 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -1262,8 +1325,9 @@ func TestCluster_Start(t *testing.T) {
 		BindAddress: bindAddress2,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress2,
-			HttpAddress: httpAddress2,
+			GrpcAddress:        grpcAddress2,
+			GrpcGatewayAddress: grpcGatewayAddress2,
+			HttpAddress:        httpAddress2,
 		},
 	}
 
@@ -1289,6 +1353,7 @@ func TestCluster_Start(t *testing.T) {
 	shardId3 := ""
 	peerGrpcAddress3 := grpcAddress1
 	grpcAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId3 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -1303,8 +1368,9 @@ func TestCluster_Start(t *testing.T) {
 		BindAddress: bindAddress3,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress3,
-			HttpAddress: httpAddress3,
+			GrpcAddress:        grpcAddress3,
+			GrpcGatewayAddress: grpcGatewayAddress3,
+			HttpAddress:        httpAddress3,
 		},
 	}
 
@@ -1330,7 +1396,7 @@ func TestCluster_Start(t *testing.T) {
 	time.Sleep(5 * time.Second)
 }
 
-func TestCluster_LivenessProbe(t *testing.T) {
+func TestCluster_HealthCheck(t *testing.T) {
 	curDir, _ := os.Getwd()
 
 	logger := logutils.NewLogger("WARN", "", 500, 3, 30, false)
@@ -1341,6 +1407,7 @@ func TestCluster_LivenessProbe(t *testing.T) {
 	shardId1 := ""
 	peerGrpcAddress1 := ""
 	grpcAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId1 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -1355,8 +1422,9 @@ func TestCluster_LivenessProbe(t *testing.T) {
 		BindAddress: bindAddress1,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress1,
-			HttpAddress: httpAddress1,
+			GrpcAddress:        grpcAddress1,
+			GrpcGatewayAddress: grpcGatewayAddress1,
+			HttpAddress:        httpAddress1,
 		},
 	}
 
@@ -1382,6 +1450,7 @@ func TestCluster_LivenessProbe(t *testing.T) {
 	shardId2 := ""
 	peerGrpcAddress2 := grpcAddress1
 	grpcAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId2 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -1396,8 +1465,9 @@ func TestCluster_LivenessProbe(t *testing.T) {
 		BindAddress: bindAddress2,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress2,
-			HttpAddress: httpAddress2,
+			GrpcAddress:        grpcAddress2,
+			GrpcGatewayAddress: grpcGatewayAddress2,
+			HttpAddress:        httpAddress2,
 		},
 	}
 
@@ -1423,6 +1493,7 @@ func TestCluster_LivenessProbe(t *testing.T) {
 	shardId3 := ""
 	peerGrpcAddress3 := grpcAddress1
 	grpcAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId3 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -1437,8 +1508,9 @@ func TestCluster_LivenessProbe(t *testing.T) {
 		BindAddress: bindAddress3,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress3,
-			HttpAddress: httpAddress3,
+			GrpcAddress:        grpcAddress3,
+			GrpcGatewayAddress: grpcGatewayAddress3,
+			HttpAddress:        httpAddress3,
 		},
 	}
 
@@ -1486,101 +1558,105 @@ func TestCluster_LivenessProbe(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
+	healthinessReq := &index.NodeHealthCheckRequest{Probe: index.NodeHealthCheckRequest_HEALTHINESS}
+	livenessReq := &index.NodeHealthCheckRequest{Probe: index.NodeHealthCheckRequest_LIVENESS}
+	readinessReq := &index.NodeHealthCheckRequest{Probe: index.NodeHealthCheckRequest_READINESS}
+
 	// healthiness
-	healthiness1, err := client1.NodeHealthCheck(index.NodeHealthCheckRequest_HEALTHINESS.String())
+	healthinessRes1, err := client1.NodeHealthCheck(healthinessReq)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expHealthiness1 := index.NodeHealthCheckResponse_HEALTHY.String()
-	actHealthiness1 := healthiness1
+	expHealthiness1 := index.NodeHealthCheckResponse_HEALTHY
+	actHealthiness1 := healthinessRes1.State
 	if expHealthiness1 != actHealthiness1 {
 		t.Fatalf("expected content to see %v, saw %v", expHealthiness1, actHealthiness1)
 	}
 
 	// liveness
-	liveness1, err := client1.NodeHealthCheck(index.NodeHealthCheckRequest_LIVENESS.String())
+	livenessRes1, err := client1.NodeHealthCheck(livenessReq)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expLiveness1 := index.NodeHealthCheckResponse_ALIVE.String()
-	actLiveness1 := liveness1
+	expLiveness1 := index.NodeHealthCheckResponse_ALIVE
+	actLiveness1 := livenessRes1.State
 	if expLiveness1 != actLiveness1 {
 		t.Fatalf("expected content to see %v, saw %v", expLiveness1, actLiveness1)
 	}
 
 	// readiness
-	readiness1, err := client1.NodeHealthCheck(index.NodeHealthCheckRequest_READINESS.String())
+	readinessRes1, err := client1.NodeHealthCheck(readinessReq)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expReadiness1 := index.NodeHealthCheckResponse_READY.String()
-	actReadiness1 := readiness1
+	expReadiness1 := index.NodeHealthCheckResponse_READY
+	actReadiness1 := readinessRes1.State
 	if expReadiness1 != actReadiness1 {
 		t.Fatalf("expected content to see %v, saw %v", expReadiness1, actReadiness1)
 	}
 
 	// healthiness
-	healthiness2, err := client2.NodeHealthCheck(index.NodeHealthCheckRequest_HEALTHINESS.String())
+	healthinessRes2, err := client2.NodeHealthCheck(healthinessReq)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expHealthiness2 := index.NodeHealthCheckResponse_HEALTHY.String()
-	actHealthiness2 := healthiness2
+	expHealthiness2 := index.NodeHealthCheckResponse_HEALTHY
+	actHealthiness2 := healthinessRes2.State
 	if expHealthiness2 != actHealthiness2 {
 		t.Fatalf("expected content to see %v, saw %v", expHealthiness2, actHealthiness2)
 	}
 
 	// liveness
-	liveness2, err := client2.NodeHealthCheck(index.NodeHealthCheckRequest_LIVENESS.String())
+	livenessRes2, err := client2.NodeHealthCheck(livenessReq)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expLiveness2 := index.NodeHealthCheckResponse_ALIVE.String()
-	actLiveness2 := liveness2
+	expLiveness2 := index.NodeHealthCheckResponse_ALIVE
+	actLiveness2 := livenessRes2.State
 	if expLiveness2 != actLiveness2 {
 		t.Fatalf("expected content to see %v, saw %v", expLiveness2, actLiveness2)
 	}
 
 	// readiness
-	readiness2, err := client2.NodeHealthCheck(index.NodeHealthCheckRequest_READINESS.String())
+	readinessRes2, err := client2.NodeHealthCheck(readinessReq)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expReadiness2 := index.NodeHealthCheckResponse_READY.String()
-	actReadiness2 := readiness2
+	expReadiness2 := index.NodeHealthCheckResponse_READY
+	actReadiness2 := readinessRes2.State
 	if expReadiness2 != actReadiness2 {
 		t.Fatalf("expected content to see %v, saw %v", expReadiness2, actReadiness2)
 	}
 
 	// healthiness
-	healthiness3, err := client3.NodeHealthCheck(index.NodeHealthCheckRequest_HEALTHINESS.String())
+	healthinessRes3, err := client3.NodeHealthCheck(healthinessReq)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expHealthiness3 := index.NodeHealthCheckResponse_HEALTHY.String()
-	actHealthiness3 := healthiness3
+	expHealthiness3 := index.NodeHealthCheckResponse_HEALTHY
+	actHealthiness3 := healthinessRes3.State
 	if expHealthiness3 != actHealthiness3 {
 		t.Fatalf("expected content to see %v, saw %v", expHealthiness3, actHealthiness3)
 	}
 
 	// liveness
-	liveness3, err := client3.NodeHealthCheck(index.NodeHealthCheckRequest_LIVENESS.String())
+	livenessRes3, err := client3.NodeHealthCheck(livenessReq)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expLiveness3 := index.NodeHealthCheckResponse_ALIVE.String()
-	actLiveness3 := liveness3
+	expLiveness3 := index.NodeHealthCheckResponse_ALIVE
+	actLiveness3 := livenessRes3.State
 	if expLiveness3 != actLiveness3 {
 		t.Fatalf("expected content to see %v, saw %v", expLiveness3, actLiveness3)
 	}
 
 	// readiness
-	readiness3, err := client3.NodeHealthCheck(index.NodeHealthCheckRequest_READINESS.String())
+	readinessRes3, err := client3.NodeHealthCheck(readinessReq)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	expReadiness3 := index.NodeHealthCheckResponse_READY.String()
-	actReadiness3 := readiness3
+	expReadiness3 := index.NodeHealthCheckResponse_READY
+	actReadiness3 := readinessRes3.State
 	if expReadiness3 != actReadiness3 {
 		t.Fatalf("expected content to see %v, saw %v", expReadiness3, actReadiness3)
 	}
@@ -1597,6 +1673,7 @@ func TestCluster_GetNode(t *testing.T) {
 	shardId1 := ""
 	peerGrpcAddress1 := ""
 	grpcAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId1 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -1611,8 +1688,9 @@ func TestCluster_GetNode(t *testing.T) {
 		BindAddress: bindAddress1,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress1,
-			HttpAddress: httpAddress1,
+			GrpcAddress:        grpcAddress1,
+			GrpcGatewayAddress: grpcGatewayAddress1,
+			HttpAddress:        httpAddress1,
 		},
 	}
 
@@ -1638,6 +1716,7 @@ func TestCluster_GetNode(t *testing.T) {
 	shardId2 := ""
 	peerGrpcAddress2 := grpcAddress1
 	grpcAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId2 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -1652,8 +1731,9 @@ func TestCluster_GetNode(t *testing.T) {
 		BindAddress: bindAddress2,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress2,
-			HttpAddress: httpAddress2,
+			GrpcAddress:        grpcAddress2,
+			GrpcGatewayAddress: grpcGatewayAddress2,
+			HttpAddress:        httpAddress2,
 		},
 	}
 
@@ -1679,6 +1759,7 @@ func TestCluster_GetNode(t *testing.T) {
 	shardId3 := ""
 	peerGrpcAddress3 := grpcAddress1
 	grpcAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId3 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -1693,8 +1774,9 @@ func TestCluster_GetNode(t *testing.T) {
 		BindAddress: bindAddress3,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress3,
-			HttpAddress: httpAddress3,
+			GrpcAddress:        grpcAddress3,
+			GrpcGatewayAddress: grpcGatewayAddress3,
+			HttpAddress:        httpAddress3,
 		},
 	}
 
@@ -1743,7 +1825,7 @@ func TestCluster_GetNode(t *testing.T) {
 	}
 
 	// get all node info from all nodes
-	node11, err := client1.NodeInfo()
+	node11, err := client1.NodeInfo(&empty.Empty{})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1752,16 +1834,17 @@ func TestCluster_GetNode(t *testing.T) {
 		BindAddress: bindAddress1,
 		State:       index.Node_LEADER,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress1,
-			HttpAddress: httpAddress1,
+			GrpcAddress:        grpcAddress1,
+			GrpcGatewayAddress: grpcGatewayAddress1,
+			HttpAddress:        httpAddress1,
 		},
 	}
-	actNode11 := node11
+	actNode11 := node11.Node
 	if !reflect.DeepEqual(expNode11, actNode11) {
 		t.Fatalf("expected content to see %v, saw %v", expNode11, actNode11)
 	}
 
-	node21, err := client2.NodeInfo()
+	node21, err := client2.NodeInfo(&empty.Empty{})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1770,16 +1853,17 @@ func TestCluster_GetNode(t *testing.T) {
 		BindAddress: bindAddress2,
 		State:       index.Node_FOLLOWER,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress2,
-			HttpAddress: httpAddress2,
+			GrpcAddress:        grpcAddress2,
+			GrpcGatewayAddress: grpcGatewayAddress2,
+			HttpAddress:        httpAddress2,
 		},
 	}
-	actNode21 := node21
+	actNode21 := node21.Node
 	if !reflect.DeepEqual(expNode21, actNode21) {
 		t.Fatalf("expected content to see %v, saw %v", expNode21, actNode21)
 	}
 
-	node31, err := client3.NodeInfo()
+	node31, err := client3.NodeInfo(&empty.Empty{})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1788,11 +1872,12 @@ func TestCluster_GetNode(t *testing.T) {
 		BindAddress: bindAddress3,
 		State:       index.Node_FOLLOWER,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress3,
-			HttpAddress: httpAddress3,
+			GrpcAddress:        grpcAddress3,
+			GrpcGatewayAddress: grpcGatewayAddress3,
+			HttpAddress:        httpAddress3,
 		},
 	}
-	actNode31 := node31
+	actNode31 := node31.Node
 	if !reflect.DeepEqual(expNode31, actNode31) {
 		t.Fatalf("expected content to see %v, saw %v", expNode31, actNode31)
 	}
@@ -1809,6 +1894,7 @@ func TestCluster_GetCluster(t *testing.T) {
 	shardId1 := ""
 	peerGrpcAddress1 := ""
 	grpcAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId1 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -1823,8 +1909,9 @@ func TestCluster_GetCluster(t *testing.T) {
 		BindAddress: bindAddress1,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress1,
-			HttpAddress: httpAddress1,
+			GrpcAddress:        grpcAddress1,
+			GrpcGatewayAddress: grpcGatewayAddress1,
+			HttpAddress:        httpAddress1,
 		},
 	}
 
@@ -1850,6 +1937,7 @@ func TestCluster_GetCluster(t *testing.T) {
 	shardId2 := ""
 	peerGrpcAddress2 := grpcAddress1
 	grpcAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId2 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -1864,8 +1952,9 @@ func TestCluster_GetCluster(t *testing.T) {
 		BindAddress: bindAddress2,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress2,
-			HttpAddress: httpAddress2,
+			GrpcAddress:        grpcAddress2,
+			GrpcGatewayAddress: grpcGatewayAddress2,
+			HttpAddress:        httpAddress2,
 		},
 	}
 
@@ -1891,6 +1980,7 @@ func TestCluster_GetCluster(t *testing.T) {
 	shardId3 := ""
 	peerGrpcAddress3 := grpcAddress1
 	grpcAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	grpcGatewayAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	httpAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	nodeId3 := fmt.Sprintf("node-%s", strutils.RandStr(5))
 	bindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -1905,8 +1995,9 @@ func TestCluster_GetCluster(t *testing.T) {
 		BindAddress: bindAddress3,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: grpcAddress3,
-			HttpAddress: httpAddress3,
+			GrpcAddress:        grpcAddress3,
+			GrpcGatewayAddress: grpcGatewayAddress3,
+			HttpAddress:        httpAddress3,
 		},
 	}
 
@@ -1955,7 +2046,7 @@ func TestCluster_GetCluster(t *testing.T) {
 	}
 
 	// get cluster info from manager1
-	cluster1, err := client1.ClusterInfo()
+	cluster1, err := client1.ClusterInfo(&empty.Empty{})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1966,8 +2057,9 @@ func TestCluster_GetCluster(t *testing.T) {
 				BindAddress: bindAddress1,
 				State:       index.Node_LEADER,
 				Metadata: &index.Metadata{
-					GrpcAddress: grpcAddress1,
-					HttpAddress: httpAddress1,
+					GrpcAddress:        grpcAddress1,
+					GrpcGatewayAddress: grpcGatewayAddress1,
+					HttpAddress:        httpAddress1,
 				},
 			},
 			nodeId2: {
@@ -1975,8 +2067,9 @@ func TestCluster_GetCluster(t *testing.T) {
 				BindAddress: bindAddress2,
 				State:       index.Node_FOLLOWER,
 				Metadata: &index.Metadata{
-					GrpcAddress: grpcAddress2,
-					HttpAddress: httpAddress2,
+					GrpcAddress:        grpcAddress2,
+					GrpcGatewayAddress: grpcGatewayAddress2,
+					HttpAddress:        httpAddress2,
 				},
 			},
 			nodeId3: {
@@ -1984,18 +2077,19 @@ func TestCluster_GetCluster(t *testing.T) {
 				BindAddress: bindAddress3,
 				State:       index.Node_FOLLOWER,
 				Metadata: &index.Metadata{
-					GrpcAddress: grpcAddress3,
-					HttpAddress: httpAddress3,
+					GrpcAddress:        grpcAddress3,
+					GrpcGatewayAddress: grpcGatewayAddress3,
+					HttpAddress:        httpAddress3,
 				},
 			},
 		},
 	}
-	actCluster1 := cluster1
+	actCluster1 := cluster1.Cluster
 	if !reflect.DeepEqual(expCluster1, actCluster1) {
 		t.Fatalf("expected content to see %v, saw %v", expCluster1, actCluster1)
 	}
 
-	cluster2, err := client2.ClusterInfo()
+	cluster2, err := client2.ClusterInfo(&empty.Empty{})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -2006,8 +2100,9 @@ func TestCluster_GetCluster(t *testing.T) {
 				BindAddress: bindAddress1,
 				State:       index.Node_LEADER,
 				Metadata: &index.Metadata{
-					GrpcAddress: grpcAddress1,
-					HttpAddress: httpAddress1,
+					GrpcAddress:        grpcAddress1,
+					GrpcGatewayAddress: grpcGatewayAddress1,
+					HttpAddress:        httpAddress1,
 				},
 			},
 			nodeId2: {
@@ -2015,8 +2110,9 @@ func TestCluster_GetCluster(t *testing.T) {
 				BindAddress: bindAddress2,
 				State:       index.Node_FOLLOWER,
 				Metadata: &index.Metadata{
-					GrpcAddress: grpcAddress2,
-					HttpAddress: httpAddress2,
+					GrpcAddress:        grpcAddress2,
+					GrpcGatewayAddress: grpcGatewayAddress2,
+					HttpAddress:        httpAddress2,
 				},
 			},
 			nodeId3: {
@@ -2024,18 +2120,19 @@ func TestCluster_GetCluster(t *testing.T) {
 				BindAddress: bindAddress3,
 				State:       index.Node_FOLLOWER,
 				Metadata: &index.Metadata{
-					GrpcAddress: grpcAddress3,
-					HttpAddress: httpAddress3,
+					GrpcAddress:        grpcAddress3,
+					GrpcGatewayAddress: grpcGatewayAddress3,
+					HttpAddress:        httpAddress3,
 				},
 			},
 		},
 	}
-	actCluster2 := cluster2
+	actCluster2 := cluster2.Cluster
 	if !reflect.DeepEqual(expCluster2, actCluster2) {
 		t.Fatalf("expected content to see %v, saw %v", expCluster2, actCluster2)
 	}
 
-	cluster3, err := client3.ClusterInfo()
+	cluster3, err := client3.ClusterInfo(&empty.Empty{})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -2046,8 +2143,9 @@ func TestCluster_GetCluster(t *testing.T) {
 				BindAddress: bindAddress1,
 				State:       index.Node_LEADER,
 				Metadata: &index.Metadata{
-					GrpcAddress: grpcAddress1,
-					HttpAddress: httpAddress1,
+					GrpcAddress:        grpcAddress1,
+					GrpcGatewayAddress: grpcGatewayAddress1,
+					HttpAddress:        httpAddress1,
 				},
 			},
 			nodeId2: {
@@ -2055,8 +2153,9 @@ func TestCluster_GetCluster(t *testing.T) {
 				BindAddress: bindAddress2,
 				State:       index.Node_FOLLOWER,
 				Metadata: &index.Metadata{
-					GrpcAddress: grpcAddress2,
-					HttpAddress: httpAddress2,
+					GrpcAddress:        grpcAddress2,
+					GrpcGatewayAddress: grpcGatewayAddress2,
+					HttpAddress:        httpAddress2,
 				},
 			},
 			nodeId3: {
@@ -2064,13 +2163,14 @@ func TestCluster_GetCluster(t *testing.T) {
 				BindAddress: bindAddress3,
 				State:       index.Node_FOLLOWER,
 				Metadata: &index.Metadata{
-					GrpcAddress: grpcAddress3,
-					HttpAddress: httpAddress3,
+					GrpcAddress:        grpcAddress3,
+					GrpcGatewayAddress: grpcGatewayAddress3,
+					HttpAddress:        httpAddress3,
 				},
 			},
 		},
 	}
-	actCluster3 := cluster3
+	actCluster3 := cluster3.Cluster
 	if !reflect.DeepEqual(expCluster3, actCluster3) {
 		t.Fatalf("expected content to see %v, saw %v", expCluster3, actCluster3)
 	}

@@ -15,15 +15,13 @@
 package main
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
 
 	"github.com/mosuka/blast/manager"
-	"github.com/mosuka/blast/protobuf"
+	"github.com/mosuka/blast/protobuf/management"
 	"github.com/urfave/cli"
 )
 
@@ -43,10 +41,15 @@ func managerWatch(c *cli.Context) error {
 		}
 	}()
 
-	watchClient, err := client.Watch(key)
+	req := &management.WatchRequest{
+		Key: key,
+	}
+	watchClient, err := client.Watch(req)
 	if err != nil {
 		return err
 	}
+
+	marshaler := manager.JsonMarshaler{}
 
 	for {
 		resp, err := watchClient.Recv()
@@ -58,29 +61,13 @@ func managerWatch(c *cli.Context) error {
 			break
 		}
 
-		value, err := protobuf.MarshalAny(resp.Value)
+		respBytes, err := marshaler.Marshal(resp)
 		if err != nil {
-			return err
-		}
-		if value == nil {
-			return errors.New("nil")
+			log.Println(err.Error())
+			break
 		}
 
-		var valueBytes []byte
-		switch value.(type) {
-		case *map[string]interface{}:
-			valueMap := *value.(*map[string]interface{})
-			valueBytes, err = json.Marshal(valueMap)
-			if err != nil {
-				return err
-			}
-			_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%s %s %v", resp.Command.String(), resp.Key, string(valueBytes)))
-		case *string:
-			valueStr := *value.(*string)
-			_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%s %s %s", resp.Command.String(), resp.Key, valueStr))
-		default:
-			_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%s %s %v", resp.Command.String(), resp.Key, &value))
-		}
+		_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(respBytes)))
 	}
 
 	return nil

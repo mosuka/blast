@@ -21,9 +21,11 @@ import (
 	"io/ioutil"
 	"sync"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/raft"
 	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/maputils"
+	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/management"
 	"go.uber.org/zap"
 )
@@ -95,6 +97,7 @@ func (f *RaftFSM) DeleteNode(nodeId string) error {
 }
 
 func (f *RaftFSM) GetValue(key string) (interface{}, error) {
+	// get raw data
 	value, err := f.data.Get(key)
 	if err != nil {
 		switch err {
@@ -107,15 +110,7 @@ func (f *RaftFSM) GetValue(key string) (interface{}, error) {
 		}
 	}
 
-	var ret interface{}
-	switch value.(type) {
-	case maputils.Map:
-		ret = value.(maputils.Map).ToMap()
-	default:
-		ret = value
-	}
-
-	return ret, nil
+	return value, nil
 }
 
 func (f *RaftFSM) SetValue(key string, value interface{}, merge bool) error {
@@ -157,65 +152,47 @@ type fsmResponse struct {
 }
 
 func (f *RaftFSM) Apply(l *raft.Log) interface{} {
-	var msg message
-	err := json.Unmarshal(l.Data, &msg)
+	proposal := &management.Proposal{}
+	err := proto.Unmarshal(l.Data, proposal)
 	if err != nil {
 		f.logger.Error(err.Error())
 		return err
 	}
 
-	switch msg.Command {
-	case setNode:
-		var data map[string]interface{}
-		err := json.Unmarshal(msg.Data, &data)
+	switch proposal.Event {
+	case management.Proposal_SET_NODE:
+		err = f.SetNode(proposal.Node)
 		if err != nil {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
-		b, err := json.Marshal(data["node"])
+		return &fsmResponse{error: nil}
+	case management.Proposal_DELETE_NODE:
+		err = f.DeleteNode(proposal.Node.Id)
 		if err != nil {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
-		var node *management.Node
-		err = json.Unmarshal(b, &node)
+		return &fsmResponse{error: nil}
+	case management.Proposal_SET_VALUE:
+		value, err := protobuf.MarshalAny(proposal.KeyValue.Value)
 		if err != nil {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
-		err = f.SetNode(node)
+		err = f.SetValue(proposal.KeyValue.Key, value, false)
 		if err != nil {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
-		return &fsmResponse{error: err}
-	case deleteNode:
-		var data map[string]interface{}
-		err := json.Unmarshal(msg.Data, &data)
+		return &fsmResponse{error: nil}
+	case management.Proposal_DELETE_VALUE:
+		err = f.DeleteValue(proposal.KeyValue.Key)
 		if err != nil {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
-		err = f.DeleteNode(data["id"].(string))
-		return &fsmResponse{error: err}
-	case setKeyValue:
-		var data map[string]interface{}
-		err := json.Unmarshal(msg.Data, &data)
-		if err != nil {
-			f.logger.Error(err.Error())
-			return &fsmResponse{error: err}
-		}
-		err = f.SetValue(data["key"].(string), data["value"], false)
-		return &fsmResponse{error: err}
-	case deleteKeyValue:
-		var data map[string]interface{}
-		err := json.Unmarshal(msg.Data, &data)
-		if err != nil {
-			f.logger.Error(err.Error())
-			return &fsmResponse{error: err}
-		}
-		err = f.DeleteValue(data["key"].(string))
-		return &fsmResponse{error: err}
+		return &fsmResponse{error: nil}
 	default:
 		err = errors.New("unsupported command")
 		f.logger.Error(err.Error())

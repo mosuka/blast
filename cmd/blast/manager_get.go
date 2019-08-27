@@ -15,11 +15,11 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/protobuf/management"
 	"github.com/urfave/cli"
 )
 
@@ -39,16 +39,22 @@ func managerGet(c *cli.Context) error {
 		}
 	}()
 
-	value, err := client.Get(key)
+	req := &management.GetRequest{
+		Key: key,
+	}
+
+	res, err := client.Get(req)
 	if err != nil {
 		return err
 	}
 
-	valueBytes, err := json.MarshalIndent(value, "", "  ")
+	marshaler := manager.JsonMarshaler{}
+	resBytes, err := marshaler.Marshal(res)
 	if err != nil {
 		return err
 	}
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(valueBytes)))
+
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resBytes)))
 
 	return nil
 }

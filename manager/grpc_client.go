@@ -16,13 +16,9 @@ package manager
 
 import (
 	"context"
-	"errors"
 	"math"
 
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
-	blasterrors "github.com/mosuka/blast/errors"
-	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/management"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -95,180 +91,66 @@ func (c *GRPCClient) GetAddress() string {
 	return c.conn.Target()
 }
 
-func (c *GRPCClient) NodeHealthCheck(probe string, opts ...grpc.CallOption) (string, error) {
-	req := &management.NodeHealthCheckRequest{}
+func (c *GRPCClient) NodeHealthCheck(req *management.NodeHealthCheckRequest, opts ...grpc.CallOption) (*management.NodeHealthCheckResponse, error) {
+	return c.client.NodeHealthCheck(c.ctx, req, opts...)
+}
 
-	switch probe {
-	case management.NodeHealthCheckRequest_HEALTHINESS.String():
-		req.Probe = management.NodeHealthCheckRequest_HEALTHINESS
-	case management.NodeHealthCheckRequest_LIVENESS.String():
-		req.Probe = management.NodeHealthCheckRequest_LIVENESS
-	case management.NodeHealthCheckRequest_READINESS.String():
-		req.Probe = management.NodeHealthCheckRequest_READINESS
-	default:
-		req.Probe = management.NodeHealthCheckRequest_HEALTHINESS
-	}
+func (c *GRPCClient) NodeInfo(req *empty.Empty, opts ...grpc.CallOption) (*management.NodeInfoResponse, error) {
+	return c.client.NodeInfo(c.ctx, req, opts...)
+}
 
-	resp, err := c.client.NodeHealthCheck(c.ctx, req, opts...)
+func (c *GRPCClient) ClusterJoin(req *management.ClusterJoinRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	return c.client.ClusterJoin(c.ctx, req, opts...)
+}
+
+func (c *GRPCClient) ClusterLeave(req *management.ClusterLeaveRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	return c.client.ClusterLeave(c.ctx, req, opts...)
+}
+
+func (c *GRPCClient) ClusterInfo(req *empty.Empty, opts ...grpc.CallOption) (*management.ClusterInfoResponse, error) {
+	return c.client.ClusterInfo(c.ctx, &empty.Empty{}, opts...)
+}
+
+func (c *GRPCClient) ClusterWatch(req *empty.Empty, opts ...grpc.CallOption) (management.Management_ClusterWatchClient, error) {
+	return c.client.ClusterWatch(c.ctx, req, opts...)
+}
+
+func (c *GRPCClient) Get(req *management.GetRequest, opts ...grpc.CallOption) (*management.GetResponse, error) {
+	res, err := c.client.Get(c.ctx, req, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
-
-		return management.NodeHealthCheckResponse_UNHEALTHY.String(), errors.New(st.Message())
-	}
-
-	return resp.State.String(), nil
-}
-
-func (c *GRPCClient) NodeInfo(opts ...grpc.CallOption) (*management.Node, error) {
-	resp, err := c.client.NodeInfo(c.ctx, &empty.Empty{}, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return nil, errors.New(st.Message())
-	}
-
-	return resp.Node, nil
-}
-
-func (c *GRPCClient) ClusterJoin(node *management.Node, opts ...grpc.CallOption) error {
-	req := &management.ClusterJoinRequest{
-		Node: node,
-	}
-
-	_, err := c.client.ClusterJoin(c.ctx, req, opts...)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *GRPCClient) ClusterLeave(id string, opts ...grpc.CallOption) error {
-	req := &management.ClusterLeaveRequest{
-		Id: id,
-	}
-
-	_, err := c.client.ClusterLeave(c.ctx, req, opts...)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *GRPCClient) ClusterInfo(opts ...grpc.CallOption) (*management.Cluster, error) {
-	resp, err := c.client.ClusterInfo(c.ctx, &empty.Empty{}, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return nil, errors.New(st.Message())
-	}
-
-	return resp.Cluster, nil
-}
-
-func (c *GRPCClient) ClusterWatch(opts ...grpc.CallOption) (management.Management_ClusterWatchClient, error) {
-	req := &empty.Empty{}
-
-	watchClient, err := c.client.ClusterWatch(c.ctx, req, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-		return nil, errors.New(st.Message())
-	}
-
-	return watchClient, nil
-}
-
-func (c *GRPCClient) Get(key string, opts ...grpc.CallOption) (interface{}, error) {
-	req := &management.GetRequest{
-		Key: key,
-	}
-
-	resp, err := c.client.Get(c.ctx, req, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
 		switch st.Code() {
 		case codes.NotFound:
-			return nil, blasterrors.ErrNotFound
+			return &management.GetResponse{}, nil
 		default:
-			return nil, errors.New(st.Message())
+			return nil, err
 		}
 	}
-
-	value, err := protobuf.MarshalAny(resp.Value)
-
-	return value, nil
+	return res, nil
 }
 
-func (c *GRPCClient) Set(key string, value interface{}, opts ...grpc.CallOption) error {
-	valueAny := &any.Any{}
-	err := protobuf.UnmarshalAny(value, valueAny)
-	if err != nil {
-		return err
-	}
+func (c *GRPCClient) Set(req *management.SetRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	return c.client.Set(c.ctx, req, opts...)
+}
 
-	req := &management.SetRequest{
-		Key:   key,
-		Value: valueAny,
-	}
-
-	_, err = c.client.Set(c.ctx, req, opts...)
+func (c *GRPCClient) Delete(req *management.DeleteRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	res, err := c.client.Delete(c.ctx, req, opts...)
 	if err != nil {
 		st, _ := status.FromError(err)
-
 		switch st.Code() {
 		case codes.NotFound:
-			return blasterrors.ErrNotFound
+			return &empty.Empty{}, nil
 		default:
-			return errors.New(st.Message())
+			return nil, err
 		}
 	}
-
-	return nil
+	return res, nil
 }
 
-func (c *GRPCClient) Delete(key string, opts ...grpc.CallOption) error {
-	req := &management.DeleteRequest{
-		Key: key,
-	}
-
-	_, err := c.client.Delete(c.ctx, req, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		switch st.Code() {
-		case codes.NotFound:
-			return blasterrors.ErrNotFound
-		default:
-			return errors.New(st.Message())
-		}
-	}
-
-	return nil
+func (c *GRPCClient) Watch(req *management.WatchRequest, opts ...grpc.CallOption) (management.Management_WatchClient, error) {
+	return c.client.Watch(c.ctx, req, opts...)
 }
 
-func (c *GRPCClient) Watch(key string, opts ...grpc.CallOption) (management.Management_WatchClient, error) {
-	req := &management.WatchRequest{
-		Key: key,
-	}
-
-	watchClient, err := c.client.Watch(c.ctx, req, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-		return nil, errors.New(st.Message())
-	}
-
-	return watchClient, nil
-}
-
-func (c *GRPCClient) Snapshot(opts ...grpc.CallOption) error {
-	_, err := c.client.Snapshot(c.ctx, &empty.Empty{})
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return errors.New(st.Message())
-	}
-
-	return nil
+func (c *GRPCClient) Snapshot(req *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error) {
+	return c.client.Snapshot(c.ctx, &empty.Empty{})
 }

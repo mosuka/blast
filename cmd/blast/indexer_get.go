@@ -43,17 +43,22 @@ func indexerGet(c *cli.Context) error {
 		}
 	}()
 
-	doc, err := client.GetDocument(id)
+	req := &index.GetRequest{
+		Id: id,
+	}
+
+	resp, err := client.Get(req)
 	if err != nil {
 		return err
 	}
 
-	docBytes, err := index.MarshalDocument(doc)
+	marshaler := indexer.JsonMarshaler{}
+	respBytes, err := marshaler.Marshal(resp)
 	if err != nil {
 		return err
 	}
 
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(docBytes)))
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(respBytes)))
 
 	return nil
 }

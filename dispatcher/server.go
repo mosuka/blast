@@ -22,6 +22,7 @@ import (
 type Server struct {
 	managerGrpcAddress string
 	grpcAddress        string
+	grpcGatewayAddress string
 	httpAddress        string
 	logger             *zap.Logger
 	grpcLogger         *zap.Logger
@@ -29,14 +30,16 @@ type Server struct {
 
 	grpcService *GRPCService
 	grpcServer  *GRPCServer
+	grpcGateway *GRPCGateway
 	httpRouter  *Router
 	httpServer  *HTTPServer
 }
 
-func NewServer(managerGrpcAddress string, grpcAddress string, httpAddress string, logger *zap.Logger, grpcLogger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
+func NewServer(managerGrpcAddress string, grpcAddress string, grpcGatewayAddress string, httpAddress string, logger *zap.Logger, grpcLogger *zap.Logger, httpLogger accesslog.Logger) (*Server, error) {
 	return &Server{
 		managerGrpcAddress: managerGrpcAddress,
 		grpcAddress:        grpcAddress,
+		grpcGatewayAddress: grpcGatewayAddress,
 		httpAddress:        httpAddress,
 		logger:             logger,
 		grpcLogger:         grpcLogger,
@@ -61,8 +64,15 @@ func (s *Server) Start() {
 		return
 	}
 
+	// create gRPC gateway
+	s.grpcGateway, err = NewGRPCGateway(s.grpcGatewayAddress, s.grpcAddress, s.logger)
+	if err != nil {
+		s.logger.Error(err.Error())
+		return
+	}
+
 	// create HTTP router
-	s.httpRouter, err = NewRouter(s.grpcAddress, s.logger)
+	s.httpRouter, err = NewRouter(s.logger)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return
@@ -95,6 +105,12 @@ func (s *Server) Start() {
 		}
 	}()
 
+	// start gRPC gateway
+	s.logger.Info("start gRPC gateway")
+	go func() {
+		_ = s.grpcGateway.Start()
+	}()
+
 	// start HTTP server
 	s.logger.Info("start HTTP server")
 	go func() {
@@ -109,7 +125,14 @@ func (s *Server) Stop() {
 		s.logger.Error(err.Error())
 	}
 
+	s.logger.Info("stop HTTP router")
 	err = s.httpRouter.Close()
+	if err != nil {
+		s.logger.Error(err.Error())
+	}
+
+	s.logger.Info("stop gRPC gateway")
+	err = s.grpcGateway.Stop()
 	if err != nil {
 		s.logger.Error(err.Error())
 	}

@@ -1,26 +1,28 @@
 {
-  "query": {
-    "location": {
-      "lon": -122.107799,
-      "lat": 37.399285
-    },
-    "distance": "100mi",
-    "field": "geo"
-  },
-  "size": 10,
-  "from": 0,
-  "fields": [
-    "*"
-  ],
-  "sort": [
-    {
-      "by": "geo_distance",
-      "field": "geo",
-      "unit": "mi",
+  "search_request": {
+    "query": {
       "location": {
         "lon": -122.107799,
         "lat": 37.399285
+      },
+      "distance": "100mi",
+      "field": "geo"
+    },
+    "size": 10,
+    "from": 0,
+    "fields": [
+      "*"
+    ],
+    "sort": [
+      {
+        "by": "geo_distance",
+        "field": "geo",
+        "unit": "mi",
+        "location": {
+          "lon": -122.107799,
+          "lat": 37.399285
+        }
       }
-    }
-  ]
+    ]
+  }
 }

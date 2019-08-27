@@ -20,6 +20,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/mosuka/blast/logutils"
 	"github.com/mosuka/blast/protobuf/management"
 )
@@ -360,7 +361,7 @@ func TestRaftFSM_Get(t *testing.T) {
 
 	expectedValue := 1
 	actualValue := value
-	if expectedValue != actualValue {
+	if !cmp.Equal(expectedValue, actualValue) {
 		t.Fatalf("expected content to see %v, saw %v", expectedValue, actualValue)
 	}
 }
@@ -395,9 +396,7 @@ func TestRaftFSM_Set(t *testing.T) {
 	}
 
 	// set {"a": 1}
-	err = fsm.SetValue("/", map[string]interface{}{
-		"a": 1,
-	}, false)
+	err = fsm.SetValue("/", map[string]interface{}{"a": 1}, false)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -405,36 +404,26 @@ func TestRaftFSM_Set(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	exp1 := map[string]interface{}{
-		"a": 1,
-	}
+	exp1 := map[string]interface{}{"a": 1}
 	act1 := val1
 	if !reflect.DeepEqual(exp1, act1) {
 		t.Fatalf("expected content to see %v, saw %v", exp1, act1)
 	}
 
 	// merge {"a": "A"}
-	_ = fsm.SetValue("/", map[string]interface{}{
-		"a": "A",
-	}, true)
+	_ = fsm.SetValue("/", map[string]interface{}{"a": "A"}, true)
 	val2, err := fsm.GetValue("/")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	exp2 := map[string]interface{}{
-		"a": "A",
-	}
+	exp2 := map[string]interface{}{"a": "A"}
 	act2 := val2
 	if !reflect.DeepEqual(exp2, act2) {
 		t.Fatalf("expected content to see %v, saw %v", exp2, act2)
 	}
 
 	// set {"a": {"b": "AB"}}
-	err = fsm.SetValue("/", map[string]interface{}{
-		"a": map[string]interface{}{
-			"b": "AB",
-		},
-	}, false)
+	err = fsm.SetValue("/", map[string]interface{}{"a": map[string]interface{}{"b": "AB"}}, false)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -443,22 +432,14 @@ func TestRaftFSM_Set(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	exp3 := map[string]interface{}{
-		"a": map[string]interface{}{
-			"b": "AB",
-		},
-	}
+	exp3 := map[string]interface{}{"a": map[string]interface{}{"b": "AB"}}
 	act3 := val3
 	if !reflect.DeepEqual(exp3, act3) {
 		t.Fatalf("expected content to see %v, saw %v", exp3, act3)
 	}
 
 	// merge {"a": {"c": "AC"}}
-	err = fsm.SetValue("/", map[string]interface{}{
-		"a": map[string]interface{}{
-			"c": "AC",
-		},
-	}, true)
+	err = fsm.SetValue("/", map[string]interface{}{"a": map[string]interface{}{"c": "AC"}}, true)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -466,21 +447,14 @@ func TestRaftFSM_Set(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	exp4 := map[string]interface{}{
-		"a": map[string]interface{}{
-			"b": "AB",
-			"c": "AC",
-		},
-	}
+	exp4 := map[string]interface{}{"a": map[string]interface{}{"b": "AB", "c": "AC"}}
 	act4 := val4
 	if !reflect.DeepEqual(exp4, act4) {
 		t.Fatalf("expected content to see %v, saw %v", exp4, act4)
 	}
 
 	// set {"a": 1}
-	err = fsm.SetValue("/", map[string]interface{}{
-		"a": 1,
-	}, false)
+	err = fsm.SetValue("/", map[string]interface{}{"a": 1}, false)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -488,9 +462,7 @@ func TestRaftFSM_Set(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	exp5 := map[string]interface{}{
-		"a": 1,
-	}
+	exp5 := map[string]interface{}{"a": 1}
 	act5 := val5
 	if !reflect.DeepEqual(exp5, act5) {
 		t.Fatalf("expected content to see %v, saw %v", exp5, act5)
@@ -546,6 +518,7 @@ func TestRaftFSM_Delete(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
+	// set {"a": 1}
 	err = fsm.SetValue("/", map[string]interface{}{"a": 1}, false)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -558,7 +531,7 @@ func TestRaftFSM_Delete(t *testing.T) {
 
 	expectedValue := 1
 	actualValue := value
-	if expectedValue != actualValue {
+	if !cmp.Equal(expectedValue, actualValue) {
 		t.Fatalf("expected content to see %v, saw %v", expectedValue, actualValue)
 	}
 

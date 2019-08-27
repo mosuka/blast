@@ -36,6 +36,7 @@ type Server struct {
 	raftServer  *RaftServer
 	grpcService *GRPCService
 	grpcServer  *GRPCServer
+	grpcGateway *GRPCGateway
 	httpRouter  *Router
 	httpServer  *HTTPServer
 }
@@ -83,8 +84,15 @@ func (s *Server) Start() {
 		return
 	}
 
+	// create gRPC gateway
+	s.grpcGateway, err = NewGRPCGateway(s.node.Metadata.GrpcGatewayAddress, s.node.Metadata.GrpcAddress, s.logger)
+	if err != nil {
+		s.logger.Error(err.Error())
+		return
+	}
+
 	// create HTTP router
-	s.httpRouter, err = NewRouter(s.node.Metadata.GrpcAddress, s.logger)
+	s.httpRouter, err = NewRouter(s.logger)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return
@@ -93,7 +101,7 @@ func (s *Server) Start() {
 	// create HTTP server
 	s.httpServer, err = NewHTTPServer(s.node.Metadata.HttpAddress, s.httpRouter, s.logger, s.httpLogger)
 	if err != nil {
-		s.logger.Error(err.Error())
+		s.logger.Fatal(err.Error())
 		return
 	}
 
@@ -125,6 +133,12 @@ func (s *Server) Start() {
 		}
 	}()
 
+	// start gRPC gateway
+	s.logger.Info("start gRPC gateway")
+	go func() {
+		_ = s.grpcGateway.Start()
+	}()
+
 	// start HTTP server
 	s.logger.Info("start HTTP server")
 	go func() {
@@ -145,7 +159,11 @@ func (s *Server) Start() {
 			return
 		}
 
-		err = client.ClusterJoin(s.node)
+		req := &management.ClusterJoinRequest{
+			Node: s.node,
+		}
+
+		_, err = client.ClusterJoin(req)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return
@@ -160,7 +178,14 @@ func (s *Server) Stop() {
 		s.logger.Error(err.Error())
 	}
 
+	s.logger.Info("stop HTTP router")
 	err = s.httpRouter.Close()
+	if err != nil {
+		s.logger.Error(err.Error())
+	}
+
+	s.logger.Info("stop gRPC gateway")
+	err = s.grpcGateway.Stop()
 	if err != nil {
 		s.logger.Error(err.Error())
 	}
@@ -198,7 +223,7 @@ func (s *Server) GrpcAddress() string {
 }
 
 func (s *Server) HttpAddress() string {
-	address, err := s.httpServer.GetAddress()
+	address, err := s.grpcGateway.GetAddress()
 	if err != nil {
 		return ""
 	}

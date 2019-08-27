@@ -15,10 +15,10 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/mosuka/blast/manager"
 	"github.com/urfave/cli"
 )
@@ -37,17 +37,19 @@ func managerClusterInfo(c *cli.Context) error {
 		}
 	}()
 
-	cluster, err := client.ClusterInfo()
+	req := &empty.Empty{}
+	res, err := client.ClusterInfo(req)
 	if err != nil {
 		return err
 	}
 
-	clusterBytes, err := json.MarshalIndent(cluster, "", "  ")
+	marshaler := manager.JsonMarshaler{}
+	resBytes, err := marshaler.Marshal(res)
 	if err != nil {
 		return err
 	}
 
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(clusterBytes)))
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resBytes)))
 
 	return nil
 }

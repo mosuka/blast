@@ -58,6 +58,12 @@ func main() {
 							Usage:  "The gRPC listen address",
 						},
 						cli.StringFlag{
+							Name:   "grpc-gateway-address",
+							Value:  ":6100",
+							EnvVar: "BLAST_MANAGER_GRPC_GATEWAY_ADDRESS",
+							Usage:  "The gRPC gateway listen address",
+						},
+						cli.StringFlag{
 							Name:   "http-address",
 							Value:  ":8100",
 							EnvVar: "BLAST_MANAGER_HTTP_ADDRESS",
@@ -398,6 +404,12 @@ func main() {
 							Value:  ":5000",
 							EnvVar: "BLAST_INDEXER_GRPC_ADDRESS",
 							Usage:  "The gRPC listen address",
+						},
+						cli.StringFlag{
+							Name:   "grpc-gateway-address",
+							Value:  ":6000",
+							EnvVar: "BLAST_INDEXER_GRPC_GATEWAY_ADDRESS",
+							Usage:  "The gRPC gateway listen address",
 						},
 						cli.StringFlag{
 							Name:   "http-address",
@@ -757,6 +769,12 @@ func main() {
 							Value:  ":5200",
 							EnvVar: "BLAST_DISPATCHER_GRPC_ADDRESS",
 							Usage:  "The gRPC listen address",
+						},
+						cli.StringFlag{
+							Name:   "grpc-gateway-address",
+							Value:  ":6200",
+							EnvVar: "BLAST_DISPATCHER_GRPC_GATEWAY_ADDRESS",
+							Usage:  "The gRPC gateway listen address",
 						},
 						cli.StringFlag{
 							Name:   "http-address",

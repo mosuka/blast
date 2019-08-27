@@ -157,13 +157,14 @@ func (s *GRPCService) getManagerCluster(managerAddr string) (*management.Cluster
 		return nil, err
 	}
 
-	managers, err := client.ClusterInfo()
+	req := &empty.Empty{}
+	res, err := client.ClusterInfo(req)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return nil, err
 	}
 
-	return managers, nil
+	return res.Cluster, nil
 }
 
 func (s *GRPCService) cloneManagerCluster(cluster *management.Cluster) (*management.Cluster, error) {
@@ -203,7 +204,8 @@ func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 			}
 
 			// create stream for watching cluster changes
-			stream, err := client.ClusterWatch()
+			req := &empty.Empty{}
+			stream, err := client.ClusterWatch(req)
 			if err != nil {
 				s.logger.Error(err.Error())
 				continue
@@ -509,8 +511,17 @@ func (s *GRPCService) startUpdateCluster(checkInterval time.Duration) {
 					s.logger.Error(err.Error())
 					continue
 				}
-				s.logger.Info("update shards", zap.Any("shards", snapshotClusterMap))
-				err = client.Set(fmt.Sprintf("cluster/shards/%s", s.shardId), snapshotClusterMap)
+				valueAny := &any.Any{}
+				err = protobuf.UnmarshalAny(snapshotClusterMap, valueAny)
+				if err != nil {
+					s.logger.Error(err.Error())
+					continue
+				}
+				req := &management.SetRequest{
+					Key:   fmt.Sprintf("cluster/shards/%s", s.shardId),
+					Value: valueAny,
+				}
+				_, err = client.Set(req)
 				if err != nil {
 					s.logger.Error(err.Error())
 					continue
@@ -548,12 +559,18 @@ func (s *GRPCService) NodeHealthCheck(ctx context.Context, req *index.NodeHealth
 	resp := &index.NodeHealthCheckResponse{}
 
 	switch req.Probe {
+	case index.NodeHealthCheckRequest_UNKNOWN:
+		fallthrough
 	case index.NodeHealthCheckRequest_HEALTHINESS:
 		resp.State = index.NodeHealthCheckResponse_HEALTHY
 	case index.NodeHealthCheckRequest_LIVENESS:
 		resp.State = index.NodeHealthCheckResponse_ALIVE
 	case index.NodeHealthCheckRequest_READINESS:
 		resp.State = index.NodeHealthCheckResponse_READY
+	default:
+		err := errors.New("unknown probe")
+		s.logger.Error(err.Error())
+		return resp, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	return resp, nil
@@ -589,7 +606,8 @@ func (s *GRPCService) getPeerNode(id string) (*index.Node, error) {
 		return nil, err
 	}
 
-	node, err := s.peerClients[id].NodeInfo()
+	req := &empty.Empty{}
+	resp, err := s.peerClients[id].NodeInfo(req)
 	if err != nil {
 		s.logger.Debug(err.Error(), zap.String("id", id))
 		return &index.Node{
@@ -602,7 +620,7 @@ func (s *GRPCService) getPeerNode(id string) (*index.Node, error) {
 		}, nil
 	}
 
-	return node, nil
+	return resp.Node, nil
 }
 
 func (s *GRPCService) getNode(id string) (*index.Node, error) {
@@ -641,7 +659,12 @@ func (s *GRPCService) setNode(node *index.Node) error {
 			s.logger.Error(err.Error())
 			return err
 		}
-		err = client.ClusterJoin(node)
+
+		req := &index.ClusterJoinRequest{
+			Node: node,
+		}
+
+		_, err = client.ClusterJoin(req)
 		if err != nil {
 			s.logger.Error(err.Error())
 			return err
@@ -677,7 +700,12 @@ func (s *GRPCService) deleteNode(id string) error {
 			s.logger.Error(err.Error())
 			return err
 		}
-		err = client.ClusterLeave(id)
+
+		req := &index.ClusterLeaveRequest{
+			Id: id,
+		}
+
+		_, err = client.ClusterLeave(req)
 		if err != nil {
 			s.logger.Error(err.Error())
 			return err
@@ -758,10 +786,10 @@ func (s *GRPCService) ClusterWatch(req *empty.Empty, server index.Index_ClusterW
 	return nil
 }
 
-func (s *GRPCService) GetDocument(ctx context.Context, req *index.GetDocumentRequest) (*index.GetDocumentResponse, error) {
-	resp := &index.GetDocumentResponse{}
+func (s *GRPCService) Get(ctx context.Context, req *index.GetRequest) (*index.GetResponse, error) {
+	resp := &index.GetResponse{}
 
-	fields, err := s.raftServer.GetDocument(req.Id)
+	fields, err := s.raftServer.Get(req.Id)
 	if err != nil {
 		switch err {
 		case blasterrors.ErrNotFound:
@@ -773,25 +801,126 @@ func (s *GRPCService) GetDocument(ctx context.Context, req *index.GetDocumentReq
 		}
 	}
 
-	docMap := map[string]interface{}{
-		"id":     req.Id,
-		"fields": fields,
-	}
-
-	docBytes, err := json.Marshal(docMap)
+	fieldsAny := &any.Any{}
+	err = protobuf.UnmarshalAny(fields, fieldsAny)
 	if err != nil {
 		s.logger.Error(err.Error(), zap.String("id", req.Id))
 		return resp, status.Error(codes.Internal, err.Error())
 	}
 
-	doc := &index.Document{}
-	err = index.UnmarshalDocument(docBytes, doc)
-	if err != nil {
-		s.logger.Error(err.Error(), zap.String("id", req.Id))
-		return resp, status.Error(codes.Internal, err.Error())
+	resp.Fields = fieldsAny
+
+	return resp, nil
+}
+
+func (s *GRPCService) Index(ctx context.Context, req *index.IndexRequest) (*empty.Empty, error) {
+	resp := &empty.Empty{}
+
+	// index
+	var err error
+	if s.raftServer.IsLeader() {
+		err = s.raftServer.Index(&index.Document{Id: req.Id, Fields: req.Fields})
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+	} else {
+		// forward to leader
+		client, err := s.getLeaderClient()
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+		resp, err = client.Index(req)
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
 	}
 
-	resp.Document = doc
+	return resp, nil
+}
+
+func (s *GRPCService) Delete(ctx context.Context, req *index.DeleteRequest) (*empty.Empty, error) {
+	resp := &empty.Empty{}
+
+	// delete
+	var err error
+	if s.raftServer.IsLeader() {
+		err = s.raftServer.Delete(req.Id)
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+	} else {
+		// forward to leader
+		client, err := s.getLeaderClient()
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+		resp, err = client.Delete(req)
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+	}
+
+	return resp, nil
+}
+
+func (s *GRPCService) BulkIndex(ctx context.Context, req *index.BulkIndexRequest) (*index.BulkIndexResponse, error) {
+	resp := &index.BulkIndexResponse{}
+
+	if s.raftServer.IsLeader() {
+		count, err := s.raftServer.BulkIndex(req.Documents)
+		if err != nil {
+			s.logger.Error(err.Error())
+			resp.Count = -1
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+		resp.Count = int32(count)
+	} else {
+		// forward to leader
+		client, err := s.getLeaderClient()
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+		resp, err = client.BulkIndex(req)
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+	}
+
+	return resp, nil
+}
+
+func (s *GRPCService) BulkDelete(ctx context.Context, req *index.BulkDeleteRequest) (*index.BulkDeleteResponse, error) {
+	resp := &index.BulkDeleteResponse{}
+
+	if s.raftServer.IsLeader() {
+		count, err := s.raftServer.BulkDelete(req.Ids)
+		if err != nil {
+			s.logger.Error(err.Error())
+			resp.Count = -1
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+		resp.Count = int32(count)
+	} else {
+		// forward to leader
+		client, err := s.getLeaderClient()
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+		resp, err := client.BulkDelete(req)
+		if err != nil {
+			s.logger.Error(err.Error())
+			return resp, status.Error(codes.Internal, err.Error())
+		}
+	}
 
 	return resp, nil
 }
@@ -821,100 +950,6 @@ func (s *GRPCService) Search(ctx context.Context, req *index.SearchRequest) (*in
 	resp.SearchResult = searchResultAny
 
 	return resp, nil
-}
-
-func (s *GRPCService) IndexDocument(stream index.Index_IndexDocumentServer) error {
-	docs := make([]*index.Document, 0)
-
-	for {
-		req, err := stream.Recv()
-		if err != nil {
-			if err == io.EOF {
-				s.logger.Debug(err.Error())
-				break
-			}
-			s.logger.Error(err.Error())
-			return status.Error(codes.Internal, err.Error())
-		}
-
-		docs = append(docs, req.Document)
-	}
-
-	// index
-	count := -1
-	var err error
-	if s.raftServer.IsLeader() {
-		count, err = s.raftServer.IndexDocument(docs)
-		if err != nil {
-			s.logger.Error(err.Error())
-			return status.Error(codes.Internal, err.Error())
-		}
-	} else {
-		// forward to leader
-		client, err := s.getLeaderClient()
-		if err != nil {
-			s.logger.Error(err.Error())
-			return status.Error(codes.Internal, err.Error())
-		}
-		count, err = client.IndexDocument(docs)
-		if err != nil {
-			s.logger.Error(err.Error())
-			return status.Error(codes.Internal, err.Error())
-		}
-	}
-
-	return stream.SendAndClose(
-		&index.IndexDocumentResponse{
-			Count: int32(count),
-		},
-	)
-}
-
-func (s *GRPCService) DeleteDocument(stream index.Index_DeleteDocumentServer) error {
-	ids := make([]string, 0)
-
-	for {
-		req, err := stream.Recv()
-		if err != nil {
-			if err == io.EOF {
-				s.logger.Debug(err.Error())
-				break
-			}
-			s.logger.Error(err.Error())
-			return status.Error(codes.Internal, err.Error())
-		}
-
-		ids = append(ids, req.Id)
-	}
-
-	// delete
-	count := -1
-	var err error
-	if s.raftServer.IsLeader() {
-		count, err = s.raftServer.DeleteDocument(ids)
-		if err != nil {
-			s.logger.Error(err.Error())
-			return status.Error(codes.Internal, err.Error())
-		}
-	} else {
-		// forward to leader
-		client, err := s.getLeaderClient()
-		if err != nil {
-			s.logger.Error(err.Error())
-			return status.Error(codes.Internal, err.Error())
-		}
-		count, err = client.DeleteDocument(ids)
-		if err != nil {
-			s.logger.Error(err.Error())
-			return status.Error(codes.Internal, err.Error())
-		}
-	}
-
-	return stream.SendAndClose(
-		&index.DeleteDocumentResponse{
-			Count: int32(count),
-		},
-	)
 }
 
 func (s *GRPCService) GetIndexConfig(ctx context.Context, req *empty.Empty) (*index.GetIndexConfigResponse, error) {

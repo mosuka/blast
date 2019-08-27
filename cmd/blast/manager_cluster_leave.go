@@ -19,6 +19,7 @@ import (
 	"os"
 
 	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/protobuf/management"
 	"github.com/urfave/cli"
 )
 
@@ -42,10 +43,21 @@ func managerClusterLeave(c *cli.Context) error {
 		}
 	}()
 
-	err = client.ClusterLeave(nodeId)
+	req := &management.ClusterLeaveRequest{
+		Id: nodeId,
+	}
+	res, err := client.ClusterLeave(req)
 	if err != nil {
 		return err
 	}
+
+	marshaler := manager.JsonMarshaler{}
+	resBytes, err := marshaler.Marshal(res)
+	if err != nil {
+		return err
+	}
+
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resBytes)))
 
 	return nil
 }

@@ -22,13 +22,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/google/go-cmp/cmp"
 	"github.com/mosuka/blast/indexer"
-	"github.com/mosuka/blast/protobuf/index"
-
 	"github.com/mosuka/blast/indexutils"
-
 	"github.com/mosuka/blast/logutils"
 	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/protobuf/index"
 	"github.com/mosuka/blast/protobuf/management"
 	"github.com/mosuka/blast/testutils"
 )
@@ -42,6 +42,7 @@ func TestServer_Start(t *testing.T) {
 
 	managerPeerGrpcAddress1 := ""
 	managerGrpcAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	managerGrpcGatewayAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	managerHttpAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	managerNodeId1 := "manager1"
 	managerBindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -53,8 +54,9 @@ func TestServer_Start(t *testing.T) {
 		BindAddress: managerBindAddress1,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
-			GrpcAddress: managerGrpcAddress1,
-			HttpAddress: managerHttpAddress1,
+			GrpcAddress:        managerGrpcAddress1,
+			GrpcGatewayAddress: managerGrpcGatewayAddress1,
+			HttpAddress:        managerHttpAddress1,
 		},
 	}
 
@@ -84,6 +86,7 @@ func TestServer_Start(t *testing.T) {
 
 	managerPeerGrpcAddress2 := managerGrpcAddress1
 	managerGrpcAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	managerGrpcGatewayAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	managerHttpAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	managerNodeId2 := "manager2"
 	managerBindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -95,8 +98,9 @@ func TestServer_Start(t *testing.T) {
 		BindAddress: managerBindAddress2,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
-			GrpcAddress: managerGrpcAddress2,
-			HttpAddress: managerHttpAddress2,
+			GrpcAddress:        managerGrpcAddress2,
+			GrpcGatewayAddress: managerGrpcGatewayAddress2,
+			HttpAddress:        managerHttpAddress2,
 		},
 	}
 
@@ -126,6 +130,7 @@ func TestServer_Start(t *testing.T) {
 
 	managerPeerGrpcAddress3 := managerGrpcAddress1
 	managerGrpcAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	managerGrpcGatewayAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	managerHttpAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	managerNodeId3 := "manager3"
 	managerBindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -137,8 +142,9 @@ func TestServer_Start(t *testing.T) {
 		BindAddress: managerBindAddress3,
 		State:       management.Node_UNKNOWN,
 		Metadata: &management.Metadata{
-			GrpcAddress: managerGrpcAddress3,
-			HttpAddress: managerHttpAddress3,
+			GrpcAddress:        managerGrpcAddress3,
+			GrpcGatewayAddress: managerGrpcGatewayAddress3,
+			HttpAddress:        managerHttpAddress3,
 		},
 	}
 
@@ -175,7 +181,7 @@ func TestServer_Start(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 	// get cluster info from manager1
-	managerCluster1, err := managerClient1.ClusterInfo()
+	resClusterInfo, err := managerClient1.ClusterInfo(&empty.Empty{})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -186,8 +192,9 @@ func TestServer_Start(t *testing.T) {
 				BindAddress: managerBindAddress1,
 				State:       management.Node_LEADER,
 				Metadata: &management.Metadata{
-					GrpcAddress: managerGrpcAddress1,
-					HttpAddress: managerHttpAddress1,
+					GrpcAddress:        managerGrpcAddress1,
+					GrpcGatewayAddress: managerGrpcGatewayAddress1,
+					HttpAddress:        managerHttpAddress1,
 				},
 			},
 			managerNodeId2: {
@@ -195,8 +202,9 @@ func TestServer_Start(t *testing.T) {
 				BindAddress: managerBindAddress2,
 				State:       management.Node_FOLLOWER,
 				Metadata: &management.Metadata{
-					GrpcAddress: managerGrpcAddress2,
-					HttpAddress: managerHttpAddress2,
+					GrpcAddress:        managerGrpcAddress2,
+					GrpcGatewayAddress: managerGrpcGatewayAddress2,
+					HttpAddress:        managerHttpAddress2,
 				},
 			},
 			managerNodeId3: {
@@ -204,13 +212,14 @@ func TestServer_Start(t *testing.T) {
 				BindAddress: managerBindAddress3,
 				State:       management.Node_FOLLOWER,
 				Metadata: &management.Metadata{
-					GrpcAddress: managerGrpcAddress3,
-					HttpAddress: managerHttpAddress3,
+					GrpcAddress:        managerGrpcAddress3,
+					GrpcGatewayAddress: managerGrpcGatewayAddress3,
+					HttpAddress:        managerHttpAddress3,
 				},
 			},
 		},
 	}
-	actManagerCluster1 := managerCluster1
+	actManagerCluster1 := resClusterInfo.Cluster
 	if !reflect.DeepEqual(expManagerCluster1, actManagerCluster1) {
 		t.Fatalf("expected content to see %v, saw %v", expManagerCluster1, actManagerCluster1)
 	}
@@ -219,9 +228,10 @@ func TestServer_Start(t *testing.T) {
 	// indexer cluster1
 	//
 	indexerManagerGrpcAddress1 := managerGrpcAddress1
-	indexerShardId1 := "shard-1"
+	indexerShardId1 := "shard1"
 	indexerPeerGrpcAddress1 := ""
 	indexerGrpcAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerGrpcGatewayAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerHttpAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerNodeId1 := "indexer1"
 	indexerBindAddress1 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -236,8 +246,9 @@ func TestServer_Start(t *testing.T) {
 		BindAddress: indexerBindAddress1,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: indexerGrpcAddress1,
-			HttpAddress: indexerHttpAddress1,
+			GrpcAddress:        indexerGrpcAddress1,
+			GrpcGatewayAddress: indexerGrpcGatewayAddress1,
+			HttpAddress:        indexerHttpAddress1,
 		},
 	}
 	indexerIndexMapping1, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
@@ -259,9 +270,10 @@ func TestServer_Start(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	indexerManagerGrpcAddress2 := managerGrpcAddress1
-	indexerShardId2 := "shard-1"
+	indexerShardId2 := "shard1"
 	indexerPeerGrpcAddress2 := ""
 	indexerGrpcAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerGrpcGatewayAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerHttpAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerNodeId2 := "indexer2"
 	indexerBindAddress2 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -276,8 +288,9 @@ func TestServer_Start(t *testing.T) {
 		BindAddress: indexerBindAddress2,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: indexerGrpcAddress2,
-			HttpAddress: indexerHttpAddress2,
+			GrpcAddress:        indexerGrpcAddress2,
+			GrpcGatewayAddress: indexerGrpcGatewayAddress2,
+			HttpAddress:        indexerHttpAddress2,
 		},
 	}
 	indexerIndexMapping2, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
@@ -299,9 +312,10 @@ func TestServer_Start(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	indexerManagerGrpcAddress3 := managerGrpcAddress1
-	indexerShardId3 := "shard-1"
+	indexerShardId3 := "shard1"
 	indexerPeerGrpcAddress3 := ""
 	indexerGrpcAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerGrpcGatewayAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerHttpAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerNodeId3 := "indexer3"
 	indexerBindAddress3 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -316,8 +330,9 @@ func TestServer_Start(t *testing.T) {
 		BindAddress: indexerBindAddress3,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: indexerGrpcAddress3,
-			HttpAddress: indexerHttpAddress3,
+			GrpcAddress:        indexerGrpcAddress3,
+			GrpcGatewayAddress: indexerGrpcGatewayAddress3,
+			HttpAddress:        indexerHttpAddress3,
 		},
 	}
 	indexerIndexMapping3, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
@@ -347,7 +362,7 @@ func TestServer_Start(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 	// get cluster info from manager1
-	indexerCluster1, err := indexerClient1.ClusterInfo()
+	resClusterInfoIndexer1, err := indexerClient1.ClusterInfo(&empty.Empty{})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -358,8 +373,9 @@ func TestServer_Start(t *testing.T) {
 				BindAddress: indexerBindAddress1,
 				State:       index.Node_LEADER,
 				Metadata: &index.Metadata{
-					GrpcAddress: indexerGrpcAddress1,
-					HttpAddress: indexerHttpAddress1,
+					GrpcAddress:        indexerGrpcAddress1,
+					GrpcGatewayAddress: indexerGrpcGatewayAddress1,
+					HttpAddress:        indexerHttpAddress1,
 				},
 			},
 			indexerNodeId2: {
@@ -367,8 +383,9 @@ func TestServer_Start(t *testing.T) {
 				BindAddress: indexerBindAddress2,
 				State:       index.Node_FOLLOWER,
 				Metadata: &index.Metadata{
-					GrpcAddress: indexerGrpcAddress2,
-					HttpAddress: indexerHttpAddress2,
+					GrpcAddress:        indexerGrpcAddress2,
+					GrpcGatewayAddress: indexerGrpcGatewayAddress2,
+					HttpAddress:        indexerHttpAddress2,
 				},
 			},
 			indexerNodeId3: {
@@ -376,14 +393,15 @@ func TestServer_Start(t *testing.T) {
 				BindAddress: indexerBindAddress3,
 				State:       index.Node_FOLLOWER,
 				Metadata: &index.Metadata{
-					GrpcAddress: indexerGrpcAddress3,
-					HttpAddress: indexerHttpAddress3,
+					GrpcAddress:        indexerGrpcAddress3,
+					GrpcGatewayAddress: indexerGrpcGatewayAddress3,
+					HttpAddress:        indexerHttpAddress3,
 				},
 			},
 		},
 	}
-	actIndexerCluster1 := indexerCluster1
-	if !reflect.DeepEqual(expIndexerCluster1, actIndexerCluster1) {
+	actIndexerCluster1 := resClusterInfoIndexer1.Cluster
+	if !cmp.Equal(expIndexerCluster1, actIndexerCluster1) {
 		t.Fatalf("expected content to see %v, saw %v", expIndexerCluster1, actIndexerCluster1)
 	}
 
@@ -391,9 +409,10 @@ func TestServer_Start(t *testing.T) {
 	// indexer cluster2
 	//
 	indexerManagerGrpcAddress4 := managerGrpcAddress1
-	indexerShardId4 := "shard-2"
+	indexerShardId4 := "shard2"
 	indexerPeerGrpcAddress4 := ""
 	indexerGrpcAddress4 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerGrpcGatewayAddress4 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerHttpAddress4 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerNodeId4 := "indexer4"
 	indexerBindAddress4 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -408,8 +427,9 @@ func TestServer_Start(t *testing.T) {
 		BindAddress: indexerBindAddress4,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: indexerGrpcAddress4,
-			HttpAddress: indexerHttpAddress4,
+			GrpcAddress:        indexerGrpcAddress4,
+			GrpcGatewayAddress: indexerGrpcGatewayAddress4,
+			HttpAddress:        indexerHttpAddress4,
 		},
 	}
 	indexerIndexMapping4, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
@@ -431,9 +451,10 @@ func TestServer_Start(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	indexerManagerGrpcAddress5 := managerGrpcAddress1
-	indexerShardId5 := "shard-2"
+	indexerShardId5 := "shard2"
 	indexerPeerGrpcAddress5 := ""
 	indexerGrpcAddress5 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerGrpcGatewayAddress5 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerHttpAddress5 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerNodeId5 := "indexer5"
 	indexerBindAddress5 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -448,8 +469,9 @@ func TestServer_Start(t *testing.T) {
 		BindAddress: indexerBindAddress5,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: indexerGrpcAddress5,
-			HttpAddress: indexerHttpAddress5,
+			GrpcAddress:        indexerGrpcAddress5,
+			GrpcGatewayAddress: indexerGrpcGatewayAddress5,
+			HttpAddress:        indexerHttpAddress5,
 		},
 	}
 	indexerIndexMapping5, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
@@ -471,9 +493,10 @@ func TestServer_Start(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	indexerManagerGrpcAddress6 := managerGrpcAddress1
-	indexerShardId6 := "shard-2"
+	indexerShardId6 := "shard2"
 	indexerPeerGrpcAddress6 := ""
 	indexerGrpcAddress6 := fmt.Sprintf(":%d", testutils.TmpPort())
+	indexerGrpcGatewayAddress6 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerHttpAddress6 := fmt.Sprintf(":%d", testutils.TmpPort())
 	indexerNodeId6 := "indexer6"
 	indexerBindAddress6 := fmt.Sprintf(":%d", testutils.TmpPort())
@@ -488,8 +511,9 @@ func TestServer_Start(t *testing.T) {
 		BindAddress: indexerBindAddress6,
 		State:       index.Node_UNKNOWN,
 		Metadata: &index.Metadata{
-			GrpcAddress: indexerGrpcAddress6,
-			HttpAddress: indexerHttpAddress6,
+			GrpcAddress:        indexerGrpcAddress6,
+			GrpcGatewayAddress: indexerGrpcGatewayAddress6,
+			HttpAddress:        indexerHttpAddress6,
 		},
 	}
 	indexerIndexMapping6, err := indexutils.NewIndexMappingFromFile(filepath.Join(curDir, "../example/wiki_index_mapping.json"))
@@ -519,7 +543,7 @@ func TestServer_Start(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 	// get cluster info from manager1
-	indexerCluster2, err := indexerClient2.ClusterInfo()
+	indexerCluster2, err := indexerClient2.ClusterInfo(&empty.Empty{})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -530,8 +554,9 @@ func TestServer_Start(t *testing.T) {
 				BindAddress: indexerBindAddress4,
 				State:       index.Node_LEADER,
 				Metadata: &index.Metadata{
-					GrpcAddress: indexerGrpcAddress4,
-					HttpAddress: indexerHttpAddress4,
+					GrpcAddress:        indexerGrpcAddress4,
+					GrpcGatewayAddress: indexerGrpcGatewayAddress4,
+					HttpAddress:        indexerHttpAddress4,
 				},
 			},
 			indexerNodeId5: {
@@ -539,8 +564,9 @@ func TestServer_Start(t *testing.T) {
 				BindAddress: indexerBindAddress5,
 				State:       index.Node_FOLLOWER,
 				Metadata: &index.Metadata{
-					GrpcAddress: indexerGrpcAddress5,
-					HttpAddress: indexerHttpAddress5,
+					GrpcAddress:        indexerGrpcAddress5,
+					GrpcGatewayAddress: indexerGrpcGatewayAddress5,
+					HttpAddress:        indexerHttpAddress5,
 				},
 			},
 			indexerNodeId6: {
@@ -548,13 +574,14 @@ func TestServer_Start(t *testing.T) {
 				BindAddress: indexerBindAddress6,
 				State:       index.Node_FOLLOWER,
 				Metadata: &index.Metadata{
-					GrpcAddress: indexerGrpcAddress6,
-					HttpAddress: indexerHttpAddress6,
+					GrpcAddress:        indexerGrpcAddress6,
+					GrpcGatewayAddress: indexerGrpcGatewayAddress6,
+					HttpAddress:        indexerHttpAddress6,
 				},
 			},
 		},
 	}
-	actIndexerCluster2 := indexerCluster2
+	actIndexerCluster2 := indexerCluster2.Cluster
 	if !reflect.DeepEqual(expIndexerCluster2, actIndexerCluster2) {
 		t.Fatalf("expected content to see %v, saw %v", expIndexerCluster2, actIndexerCluster2)
 	}
@@ -564,9 +591,10 @@ func TestServer_Start(t *testing.T) {
 	//
 	dispatcherManagerGrpcAddress := managerGrpcAddress1
 	dispatcherGrpcAddress := fmt.Sprintf(":%d", testutils.TmpPort())
+	dispatcherGrpcGatewayAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 	dispatcherHttpAddress := fmt.Sprintf(":%d", testutils.TmpPort())
 
-	dispatcher1, err := NewServer(dispatcherManagerGrpcAddress, dispatcherGrpcAddress, dispatcherHttpAddress, logger.Named("dispatcher1"), grpcLogger.Named("dispatcher1"), httpAccessLogger)
+	dispatcher1, err := NewServer(dispatcherManagerGrpcAddress, dispatcherGrpcAddress, dispatcherGrpcGatewayAddress, dispatcherHttpAddress, logger.Named("dispatcher1"), grpcLogger.Named("dispatcher1"), httpAccessLogger)
 	defer func() {
 		dispatcher1.Stop()
 	}()

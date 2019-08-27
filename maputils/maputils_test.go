@@ -516,8 +516,8 @@ func Test_Get(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	exp2 := Map{
-		"b": Map{
+	exp2 := map[string]interface{}{
+		"b": map[string]interface{}{
 			"c": "abc",
 			"d": "abd",
 		},

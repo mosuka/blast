@@ -25,11 +25,14 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve/mapping"
+	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
 	raftbadgerdb "github.com/markthethomas/raft-badger"
 	_ "github.com/mosuka/blast/builtins"
 	blasterrors "github.com/mosuka/blast/errors"
+	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/management"
 	"go.uber.org/zap"
 	//raftmdb "github.com/hashicorp/raft-mdb"
@@ -354,24 +357,17 @@ func (s *RaftServer) getNode(nodeId string) (*management.Node, error) {
 }
 
 func (s *RaftServer) setNode(node *management.Node) error {
-	msg, err := newMessage(
-		setNode,
-		map[string]interface{}{
-			"node": node,
-		},
-	)
+	proposal := &management.Proposal{
+		Event: management.Proposal_SET_NODE,
+		Node:  node,
+	}
+	proposalByte, err := proto.Marshal(proposal)
 	if err != nil {
-		s.logger.Error(err.Error(), zap.Any("node", node))
+		s.logger.Error(err.Error())
 		return err
 	}
 
-	msgBytes, err := json.Marshal(msg)
-	if err != nil {
-		s.logger.Error(err.Error(), zap.Any("node", node))
-		return err
-	}
-
-	f := s.raft.Apply(msgBytes, 10*time.Second)
+	f := s.raft.Apply(proposalByte, 10*time.Second)
 	err = f.Error()
 	if err != nil {
 		s.logger.Error(err.Error(), zap.Any("node", node))
@@ -387,24 +383,19 @@ func (s *RaftServer) setNode(node *management.Node) error {
 }
 
 func (s *RaftServer) deleteNode(nodeId string) error {
-	msg, err := newMessage(
-		deleteNode,
-		map[string]interface{}{
-			"id": nodeId,
+	proposal := &management.Proposal{
+		Event: management.Proposal_DELETE_NODE,
+		Node: &management.Node{
+			Id: nodeId,
 		},
-	)
+	}
+	proposalByte, err := proto.Marshal(proposal)
 	if err != nil {
-		s.logger.Error(err.Error(), zap.String("id", nodeId))
+		s.logger.Error(err.Error())
 		return err
 	}
 
-	msgBytes, err := json.Marshal(msg)
-	if err != nil {
-		s.logger.Error(err.Error(), zap.String("id", nodeId))
-		return err
-	}
-
-	f := s.raft.Apply(msgBytes, 10*time.Second)
+	f := s.raft.Apply(proposalByte, 10*time.Second)
 	err = f.Error()
 	if err != nil {
 		s.logger.Error(err.Error(), zap.String("id", nodeId))
@@ -577,25 +568,27 @@ func (s *RaftServer) SetValue(key string, value interface{}) error {
 		return raft.ErrNotLeader
 	}
 
-	msg, err := newMessage(
-		setKeyValue,
-		map[string]interface{}{
-			"key":   key,
-			"value": value,
+	valueAny := &any.Any{}
+	err := protobuf.UnmarshalAny(value, valueAny)
+	if err != nil {
+		s.logger.Error(err.Error())
+		return err
+	}
+
+	proposal := &management.Proposal{
+		Event: management.Proposal_SET_VALUE,
+		KeyValue: &management.KeyValue{
+			Key:   key,
+			Value: valueAny,
 		},
-	)
+	}
+	proposalByte, err := proto.Marshal(proposal)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return err
 	}
 
-	msgBytes, err := json.Marshal(msg)
-	if err != nil {
-		s.logger.Error(err.Error())
-		return err
-	}
-
-	f := s.raft.Apply(msgBytes, 10*time.Second)
+	f := s.raft.Apply(proposalByte, 10*time.Second)
 	err = f.Error()
 	if err != nil {
 		s.logger.Error(err.Error())
@@ -616,24 +609,19 @@ func (s *RaftServer) DeleteValue(key string) error {
 		return raft.ErrNotLeader
 	}
 
-	msg, err := newMessage(
-		deleteKeyValue,
-		map[string]interface{}{
-			"key": key,
+	proposal := &management.Proposal{
+		Event: management.Proposal_DELETE_VALUE,
+		KeyValue: &management.KeyValue{
+			Key: key,
 		},
-	)
+	}
+	proposalByte, err := proto.Marshal(proposal)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return err
 	}
 
-	msgBytes, err := json.Marshal(msg)
-	if err != nil {
-		s.logger.Error(err.Error())
-		return err
-	}
-
-	f := s.raft.Apply(msgBytes, 10*time.Second)
+	f := s.raft.Apply(proposalByte, 10*time.Second)
 	err = f.Error()
 	if err != nil {
 		s.logger.Error(err.Error())

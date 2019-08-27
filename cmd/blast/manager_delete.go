@@ -20,6 +20,7 @@ import (
 	"os"
 
 	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/protobuf/management"
 	"github.com/urfave/cli"
 )
 
@@ -43,10 +44,21 @@ func managerDelete(c *cli.Context) error {
 		}
 	}()
 
-	err = client.Delete(key)
+	req := &management.DeleteRequest{
+		Key: key,
+	}
+	res, err := client.Delete(req)
 	if err != nil {
 		return err
 	}
+
+	marshaler := manager.JsonMarshaler{}
+	resBytes, err := marshaler.Marshal(res)
+	if err != nil {
+		return err
+	}
+
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resBytes)))
 
 	return nil
 }

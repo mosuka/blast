@@ -18,9 +18,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mosuka/blast/protobuf/distribute"
-
 	"github.com/mosuka/blast/dispatcher"
+	"github.com/mosuka/blast/protobuf/distribute"
 	"github.com/urfave/cli"
 )
 
@@ -41,30 +40,40 @@ func dispatcherNodeHealth(c *cli.Context) error {
 		}
 	}()
 
-	var state string
+	var res *distribute.NodeHealthCheckResponse
 	if healthiness {
-		state, err = client.NodeHealthCheck(distribute.NodeHealthCheckRequest_HEALTHINESS.String())
+		req := &distribute.NodeHealthCheckRequest{Probe: distribute.NodeHealthCheckRequest_HEALTHINESS}
+		res, err = client.NodeHealthCheck(req)
 		if err != nil {
-			state = distribute.NodeHealthCheckResponse_UNHEALTHY.String()
+			res = &distribute.NodeHealthCheckResponse{State: distribute.NodeHealthCheckResponse_UNHEALTHY}
 		}
 	} else if liveness {
-		state, err = client.NodeHealthCheck(distribute.NodeHealthCheckRequest_LIVENESS.String())
+		req := &distribute.NodeHealthCheckRequest{Probe: distribute.NodeHealthCheckRequest_LIVENESS}
+		res, err = client.NodeHealthCheck(req)
 		if err != nil {
-			state = distribute.NodeHealthCheckResponse_DEAD.String()
+			res = &distribute.NodeHealthCheckResponse{State: distribute.NodeHealthCheckResponse_DEAD}
 		}
 	} else if readiness {
-		state, err = client.NodeHealthCheck(distribute.NodeHealthCheckRequest_READINESS.String())
+		req := &distribute.NodeHealthCheckRequest{Probe: distribute.NodeHealthCheckRequest_READINESS}
+		res, err = client.NodeHealthCheck(req)
 		if err != nil {
-			state = distribute.NodeHealthCheckResponse_NOT_READY.String()
+			res = &distribute.NodeHealthCheckResponse{State: distribute.NodeHealthCheckResponse_NOT_READY}
 		}
 	} else {
-		state, err = client.NodeHealthCheck(distribute.NodeHealthCheckRequest_HEALTHINESS.String())
+		req := &distribute.NodeHealthCheckRequest{Probe: distribute.NodeHealthCheckRequest_HEALTHINESS}
+		res, err = client.NodeHealthCheck(req)
 		if err != nil {
-			state = distribute.NodeHealthCheckResponse_UNHEALTHY.String()
+			res = &distribute.NodeHealthCheckResponse{State: distribute.NodeHealthCheckResponse_UNHEALTHY}
 		}
 	}
 
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", state))
+	marshaler := dispatcher.JsonMarshaler{}
+	resBytes, err := marshaler.Marshal(res)
+	if err != nil {
+		return err
+	}
+
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resBytes)))
 
 	return nil
 }

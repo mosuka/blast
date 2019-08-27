@@ -72,7 +72,6 @@ $ ./compile_libs.sh
 $ sudo cp *.so /usr/local/lib
 ```
 
-
 ### macOS High Sierra Version 10.13.6
 
 ```bash
@@ -123,7 +122,6 @@ $ make \
 
 You can enable all the Bleve extensions supported by Blast as follows:
 
-
 ###  Linux
 
 ```bash
@@ -134,8 +132,7 @@ $ make \
     build
 ```
 
-
-#### macOS
+### macOS
 
 ```bash
 $ make \
@@ -146,7 +143,6 @@ $ make \
     CGO_CFLAGS="-I/usr/local/opt/icu4c/include" \
     build
 ```
-
 
 ### Build flags
 
@@ -163,7 +159,6 @@ Please refer to the following table for details of Bleve Extensions:
 | badger     | 0           | Enable Badger (This feature is considered experimental) |
 
 If you want to enable the feature whose `CGO_ENABLE` is `1`, please install it referring to the Installing dependencies section above.
-
 
 ### Binaries
 
@@ -186,7 +181,6 @@ $ make \
 
 You can test with all the Bleve extensions supported by Blast as follows:
 
-
 ###  Linux
 
 ```bash
@@ -197,8 +191,7 @@ $ make \
     test
 ```
 
-
-#### macOS
+### macOS
 
 ```bash
 $ make \
@@ -223,8 +216,7 @@ $ make \
     dist
 ```
 
-
-#### macOS
+### macOS
 
 ```bash
 $ make \
@@ -237,7 +229,6 @@ $ make \
 ```
 
 
-
 ## Starting Blast in standalone mode
 
 ![standalone](https://user-images.githubusercontent.com/970948/59768879-138f5180-92e0-11e9-8b33-c7b1a93e0893.png)
@@ -247,6 +238,7 @@ Running a Blast in standalone mode is easy. Start a indexer like so:
 ```bash
 $ ./bin/blast indexer start \
     --grpc-address=:5000 \
+    --grpc-gateway-address=:6000 \
     --http-address=:8000 \
     --node-id=indexer1 \
     --node-address=:2000 \
@@ -266,25 +258,27 @@ Please refer to following document for details of index mapping:
 You can check the node with the following command:
 
 ```bash
-$ ./bin/blast indexer node info --grpc-address=:5000
+$ ./bin/blast indexer node info --grpc-address=:5000 | jq .
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
 ```json
 {
-  "id": "indexer1",
-  "bind_address": ":2000",
-  "state": 3,
-  "metadata": {
-    "grpc_address": ":5000",
-    "http_address": ":8000"
+  "node": {
+    "id": "indexer1",
+    "bind_address": ":2000",
+    "state": 3,
+    "metadata": {
+      "grpc_address": ":5000",
+      "grpc_gateway_address": ":6000",
+      "http_address": ":8000"
+    }
   }
 }
 ```
 
 You can now put, get, search and delete the documents via CLI.  
-
 
 ### Indexing a document via CLI
 
@@ -293,209 +287,213 @@ For document indexing, execute the following command:
 ```bash
 $ ./bin/blast indexer index --grpc-address=:5000 enwiki_1 '
 {
-  "title_en": "Search engine (computing)",
-  "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
-  "timestamp": "2018-07-04T05:41:00Z",
-  "_type": "enwiki"
+  "fields": {
+    "title_en": "Search engine (computing)",
+    "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
+    "timestamp": "2018-07-04T05:41:00Z",
+    "_type": "enwiki"
+  }
 }
-'
+' | jq .
 ```
 
 or
 
 ```bash
-$ ./bin/blast indexer index --grpc-address=:5000 --file ./example/wiki_doc_enwiki_1.json
+$ ./bin/blast indexer index --grpc-address=:5000 --file ./example/wiki_doc_enwiki_1.json | jq .
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
-```bash
-1
+```json
+{}
 ```
-
 
 ### Getting a document via CLI
 
 Getting a document is as following:
 
 ```bash
-$ ./bin/blast indexer get --grpc-address=:5000 enwiki_1
+$ ./bin/blast indexer get --grpc-address=:5000 enwiki_1 | jq .
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
 ```json
 {
-  "_type": "enwiki",
-  "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
-  "timestamp": "2018-07-04T05:41:00Z",
-  "title_en": "Search engine (computing)"
+  "fields": {
+    "_type": "enwiki",
+    "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
+    "timestamp": "2018-07-04T05:41:00Z",
+    "title_en": "Search engine (computing)"
+  }
 }
 ```
-
 
 ### Searching documents via CLI
 
 Searching documents is as like following:
 
 ```bash
-$ ./bin/blast indexer search --grpc-address=:5000 --file=./example/wiki_search_request.json
+$ ./bin/blast indexer search --grpc-address=:5000 --file=./example/wiki_search_request.json | jq .
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
 ```json
 {
-  "status": {
-    "total": 1,
-    "failed": 0,
-    "successful": 1
-  },
-  "request": {
-    "query": {
-      "query": "+_all:search"
+  "search_result": {
+    "status": {
+      "total": 1,
+      "failed": 0,
+      "successful": 1
     },
-    "size": 10,
-    "from": 0,
-    "highlight": {
-      "style": "html",
+    "request": {
+      "query": {
+        "query": "+_all:search"
+      },
+      "size": 10,
+      "from": 0,
+      "highlight": {
+        "style": "html",
+        "fields": [
+          "title",
+          "text"
+        ]
+      },
       "fields": [
-        "title",
-        "text"
-      ]
+        "*"
+      ],
+      "facets": {
+        "Timestamp range": {
+          "size": 10,
+          "field": "timestamp",
+          "date_ranges": [
+            {
+              "end": "2010-12-31T23:59:59Z",
+              "name": "2001 - 2010",
+              "start": "2001-01-01T00:00:00Z"
+            },
+            {
+              "end": "2020-12-31T23:59:59Z",
+              "name": "2011 - 2020",
+              "start": "2011-01-01T00:00:00Z"
+            }
+          ]
+        },
+        "Type count": {
+          "size": 10,
+          "field": "_type"
+        }
+      },
+      "explain": false,
+      "sort": [
+        "-_score",
+        "_id",
+        "-timestamp"
+      ],
+      "includeLocations": false
     },
-    "fields": [
-      "*"
+    "hits": [
+      {
+        "index": "/tmp/blast/indexer1/index",
+        "id": "enwiki_1",
+        "score": 0.09703538256409851,
+        "locations": {
+          "text_en": {
+            "search": [
+              {
+                "pos": 2,
+                "start": 2,
+                "end": 8,
+                "array_positions": null
+              },
+              {
+                "pos": 20,
+                "start": 118,
+                "end": 124,
+                "array_positions": null
+              },
+              {
+                "pos": 33,
+                "start": 195,
+                "end": 201,
+                "array_positions": null
+              },
+              {
+                "pos": 68,
+                "start": 415,
+                "end": 421,
+                "array_positions": null
+              },
+              {
+                "pos": 73,
+                "start": 438,
+                "end": 444,
+                "array_positions": null
+              },
+              {
+                "pos": 76,
+                "start": 458,
+                "end": 466,
+                "array_positions": null
+              }
+            ]
+          },
+          "title_en": {
+            "search": [
+              {
+                "pos": 1,
+                "start": 0,
+                "end": 6,
+                "array_positions": null
+              }
+            ]
+          }
+        },
+        "sort": [
+          "_score",
+          "enwiki_1",
+          " \u0001\u0015\u001f\u0004~80Pp\u0000"
+        ],
+        "fields": {
+          "_type": "enwiki",
+          "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
+          "timestamp": "2018-07-04T05:41:00Z",
+          "title_en": "Search engine (computing)"
+        }
+      }
     ],
+    "total_hits": 1,
+    "max_score": 0.09703538256409851,
+    "took": 122105,
     "facets": {
       "Timestamp range": {
-        "size": 10,
         "field": "timestamp",
+        "total": 1,
+        "missing": 0,
+        "other": 0,
         "date_ranges": [
           {
-            "end": "2010-12-31T23:59:59Z",
-            "name": "2001 - 2010",
-            "start": "2001-01-01T00:00:00Z"
-          },
-          {
-            "end": "2020-12-31T23:59:59Z",
             "name": "2011 - 2020",
-            "start": "2011-01-01T00:00:00Z"
+            "start": "2011-01-01T00:00:00Z",
+            "end": "2020-12-31T23:59:59Z",
+            "count": 1
           }
         ]
       },
       "Type count": {
-        "size": 10,
-        "field": "_type"
+        "field": "_type",
+        "total": 1,
+        "missing": 0,
+        "other": 0,
+        "terms": [
+          {
+            "term": "enwiki",
+            "count": 1
+          }
+        ]
       }
-    },
-    "explain": false,
-    "sort": [
-      "-_score",
-      "_id",
-      "-timestamp"
-    ],
-    "includeLocations": false
-  },
-  "hits": [
-    {
-      "index": "/tmp/blast/indexer1/index",
-      "id": "enwiki_1",
-      "score": 0.09703538256409851,
-      "locations": {
-        "text_en": {
-          "search": [
-            {
-              "pos": 2,
-              "start": 2,
-              "end": 8,
-              "array_positions": null
-            },
-            {
-              "pos": 20,
-              "start": 118,
-              "end": 124,
-              "array_positions": null
-            },
-            {
-              "pos": 33,
-              "start": 195,
-              "end": 201,
-              "array_positions": null
-            },
-            {
-              "pos": 68,
-              "start": 415,
-              "end": 421,
-              "array_positions": null
-            },
-            {
-              "pos": 73,
-              "start": 438,
-              "end": 444,
-              "array_positions": null
-            },
-            {
-              "pos": 76,
-              "start": 458,
-              "end": 466,
-              "array_positions": null
-            }
-          ]
-        },
-        "title_en": {
-          "search": [
-            {
-              "pos": 1,
-              "start": 0,
-              "end": 6,
-              "array_positions": null
-            }
-          ]
-        }
-      },
-      "sort": [
-        "_score",
-        "enwiki_1",
-        " \u0001\u0015\u001f\u0004~80Pp\u0000"
-      ],
-      "fields": {
-        "_type": "enwiki",
-        "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
-        "timestamp": "2018-07-04T05:41:00Z",
-        "title_en": "Search engine (computing)"
-      }
-    }
-  ],
-  "total_hits": 1,
-  "max_score": 0.09703538256409851,
-  "took": 688819,
-  "facets": {
-    "Timestamp range": {
-      "field": "timestamp",
-      "total": 1,
-      "missing": 0,
-      "other": 0,
-      "date_ranges": [
-        {
-          "name": "2011 - 2020",
-          "start": "2011-01-01T00:00:00Z",
-          "end": "2020-12-31T23:59:59Z",
-          "count": 1
-        }
-      ]
-    },
-    "Type count": {
-      "field": "_type",
-      "total": 1,
-      "missing": 0,
-      "other": 0,
-      "terms": [
-        {
-          "term": "enwiki",
-          "count": 1
-        }
-      ]
     }
   }
 }
@@ -508,7 +506,6 @@ Please refer to following document for details of search request and result:
 - https://github.com/blevesearch/bleve/blob/master/search.go#L267
 - https://github.com/blevesearch/bleve/blob/master/search.go#L443
 
-
 ### Deleting a document via CLI
 
 Deleting a document is as following:
@@ -519,38 +516,40 @@ $ ./bin/blast indexer delete --grpc-address=:5000 enwiki_1
 
 You can see the result in JSON format. The result of the above command is:
 
-```bash
-1
+```json
+{}
 ```
-
 
 ### Indexing documents in bulk via CLI
 
 Indexing documents in bulk, run the following command:
 
 ```bash
-$ ./bin/blast indexer index --grpc-address=:5000 --file=./example/wiki_bulk_index.jsonl --bulk
+$ ./bin/blast indexer index --grpc-address=:5000 --file=./example/wiki_bulk_index.jsonl --bulk | jq .
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
-```bash
-36
+```json
+{
+  "count": 36
+}
 ```
-
 
 ### Deleting documents in bulk via CLI
 
 Deleting documents in bulk, run the following command:
 
 ```bash
-$ ./bin/blast indexer delete --grpc-address=:5000 --file=./example/wiki_bulk_delete.txt
+$ ./bin/blast indexer delete --grpc-address=:5000 --file=./example/wiki_bulk_delete.txt | jq .
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
-```bash
-4
+```json
+{
+  "count": 36
+}
 ```
 
 
@@ -558,26 +557,33 @@ You can see the result in JSON format. The result of the above command is:
 
 Also you can do above commands via HTTP REST API that listened port 5002.
 
-
 ### Indexing a document via HTTP REST API
 
 Indexing a document via HTTP is as following:
 
 ```bash
-$ curl -X PUT 'http://127.0.0.1:8000/documents/enwiki_1' -H 'Content-Type: application/json' --data-binary '
+$ curl -X PUT 'http://127.0.0.1:6000/v1/documents/enwiki_1' -H 'Content-Type: application/json' --data-binary '
 {
-  "title_en": "Search engine (computing)",
-  "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
-  "timestamp": "2018-07-04T05:41:00Z",
-  "_type": "enwiki"
+  "fields": {
+    "title_en": "Search engine (computing)",
+    "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
+    "timestamp": "2018-07-04T05:41:00Z",
+    "_type": "enwiki"
+  }
 }
-'
+' | jq .
 ```
 
 or
 
 ```bash
-$ curl -X PUT 'http://127.0.0.1:8000/documents' -H 'Content-Type: application/json' --data-binary @./example/wiki_doc_enwiki_1.json
+$ curl -X PUT 'http://127.0.0.1:6000/v1/documents' -H 'Content-Type: application/json' --data-binary @./example/wiki_doc_enwiki_1.json | jq .
+```
+
+You can see the result in JSON format. The result of the above command is:
+
+```json
+{}
 ```
 
 ### Getting a document via HTTP REST API
@@ -585,43 +591,235 @@ $ curl -X PUT 'http://127.0.0.1:8000/documents' -H 'Content-Type: application/js
 Getting a document via HTTP is as following:
 
 ```bash
-$ curl -X GET 'http://127.0.0.1:8000/documents/enwiki_1'
+$ curl -X GET 'http://127.0.0.1:6000/v1/documents/enwiki_1' -H 'Content-Type: application/json' | jq .
 ```
 
+You can see the result in JSON format. The result of the above command is:
+
+```json
+{
+  "fields": {
+    "_type": "enwiki",
+    "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
+    "timestamp": "2018-07-04T05:41:00Z",
+    "title_en": "Search engine (computing)"
+  }
+}
+```
 
 ### Searching documents via HTTP REST API
 
 Searching documents via HTTP is as following:
 
 ```bash
-$ curl -X POST 'http://127.0.0.1:8000/search' -H 'Content-Type: application/json' --data-binary @./example/wiki_search_request.json
+$ curl -X POST 'http://127.0.0.1:6000/v1/search' -H 'Content-Type: application/json' --data-binary @./example/wiki_search_request.json | jq .
 ```
 
+You can see the result in JSON format. The result of the above command is:
+
+```json
+{
+  "search_result": {
+    "status": {
+      "total": 1,
+      "failed": 0,
+      "successful": 1
+    },
+    "request": {
+      "query": {
+        "query": "+_all:search"
+      },
+      "size": 10,
+      "from": 0,
+      "highlight": {
+        "style": "html",
+        "fields": [
+          "title",
+          "text"
+        ]
+      },
+      "fields": [
+        "*"
+      ],
+      "facets": {
+        "Timestamp range": {
+          "size": 10,
+          "field": "timestamp",
+          "date_ranges": [
+            {
+              "end": "2010-12-31T23:59:59Z",
+              "name": "2001 - 2010",
+              "start": "2001-01-01T00:00:00Z"
+            },
+            {
+              "end": "2020-12-31T23:59:59Z",
+              "name": "2011 - 2020",
+              "start": "2011-01-01T00:00:00Z"
+            }
+          ]
+        },
+        "Type count": {
+          "size": 10,
+          "field": "_type"
+        }
+      },
+      "explain": false,
+      "sort": [
+        "-_score",
+        "_id",
+        "-timestamp"
+      ],
+      "includeLocations": false
+    },
+    "hits": [
+      {
+        "index": "/tmp/blast/indexer1/index",
+        "id": "enwiki_1",
+        "score": 0.09703538256409851,
+        "locations": {
+          "text_en": {
+            "search": [
+              {
+                "pos": 2,
+                "start": 2,
+                "end": 8,
+                "array_positions": null
+              },
+              {
+                "pos": 20,
+                "start": 118,
+                "end": 124,
+                "array_positions": null
+              },
+              {
+                "pos": 33,
+                "start": 195,
+                "end": 201,
+                "array_positions": null
+              },
+              {
+                "pos": 68,
+                "start": 415,
+                "end": 421,
+                "array_positions": null
+              },
+              {
+                "pos": 73,
+                "start": 438,
+                "end": 444,
+                "array_positions": null
+              },
+              {
+                "pos": 76,
+                "start": 458,
+                "end": 466,
+                "array_positions": null
+              }
+            ]
+          },
+          "title_en": {
+            "search": [
+              {
+                "pos": 1,
+                "start": 0,
+                "end": 6,
+                "array_positions": null
+              }
+            ]
+          }
+        },
+        "sort": [
+          "_score",
+          "enwiki_1",
+          " \u0001\u0015\u001f\u0004~80Pp\u0000"
+        ],
+        "fields": {
+          "_type": "enwiki",
+          "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
+          "timestamp": "2018-07-04T05:41:00Z",
+          "title_en": "Search engine (computing)"
+        }
+      }
+    ],
+    "total_hits": 1,
+    "max_score": 0.09703538256409851,
+    "took": 323568,
+    "facets": {
+      "Timestamp range": {
+        "field": "timestamp",
+        "total": 1,
+        "missing": 0,
+        "other": 0,
+        "date_ranges": [
+          {
+            "name": "2011 - 2020",
+            "start": "2011-01-01T00:00:00Z",
+            "end": "2020-12-31T23:59:59Z",
+            "count": 1
+          }
+        ]
+      },
+      "Type count": {
+        "field": "_type",
+        "total": 1,
+        "missing": 0,
+        "other": 0,
+        "terms": [
+          {
+            "term": "enwiki",
+            "count": 1
+          }
+        ]
+      }
+    }
+  }
+}
+```
 
 ### Deleting a document via HTTP REST API
 
 Deleting a document via HTTP is as following:
 
 ```bash
-$ curl -X DELETE 'http://127.0.0.1:8000/documents/enwiki_1'
+$ curl -X DELETE 'http://127.0.0.1:6000/v1/documents/enwiki_1' -H 'Content-Type: application/json' | jq .
 ```
 
+You can see the result in JSON format. The result of the above command is:
+
+```json
+{}
+```
 
 ### Indexing documents in bulk via HTTP REST API
 
 Indexing documents in bulk via HTTP is as following:
 
 ```bash
-$ curl -X PUT 'http://127.0.0.1:8000/documents?bulk=true' -H 'Content-Type: application/x-ndjson' --data-binary @./example/wiki_bulk_index.jsonl
+$ curl -X PUT 'http://127.0.0.1:6000/v1/bulk' -H 'Content-Type: application/x-ndjson' --data-binary @./example/wiki_bulk_index.jsonl | jq .
 ```
 
+You can see the result in JSON format. The result of the above command is:
+
+```json
+{
+  "count": 36
+}
+```
 
 ### Deleting documents in bulk via HTTP REST API
 
 Deleting documents in bulk via HTTP is as following:
 
 ```bash
-$ curl -X DELETE 'http://127.0.0.1:8000/documents' -H 'Content-Type: text/plain' --data-binary @./example/wiki_bulk_delete.txt
+$ curl -X DELETE 'http://127.0.0.1:6000/v1/bulk' -H 'Content-Type: text/plain' --data-binary @./example/wiki_bulk_delete.txt | jq .
+```
+
+You can see the result in JSON format. The result of the above command is:
+
+```json
+{
+  "count": 36
+}
 ```
 
 
@@ -636,6 +834,7 @@ First of all, start a indexer in standalone.
 ```bash
 $ ./bin/blast indexer start \
     --grpc-address=:5000 \
+    --grpc-gateway-address=:6000 \
     --http-address=:8000 \
     --node-id=indexer1 \
     --node-address=:2000 \
@@ -652,6 +851,7 @@ Then, start two more indexers.
 $ ./bin/blast indexer start \
     --peer-grpc-address=:5000 \
     --grpc-address=:5010 \
+    --grpc-gateway-address=:6010 \
     --http-address=:8010 \
     --node-id=indexer2 \
     --node-address=:2010 \
@@ -661,6 +861,7 @@ $ ./bin/blast indexer start \
 $ ./bin/blast indexer start \
     --peer-grpc-address=:5000 \
     --grpc-address=:5020 \
+    --grpc-gateway-address=:6020 \
     --http-address=:8020 \
     --node-id=indexer3 \
     --node-address=:2020 \
@@ -673,41 +874,51 @@ _Above example shows each Blast node running on the same host, so each node must
 This instructs each new node to join an existing node, specifying `--peer-addr=:5001`. Each node recognizes the joining clusters when started.
 So you have a 3-node cluster. That way you can tolerate the failure of 1 node. You can check the peers in the cluster with the following command:
 
+```bash
+$ ./bin/blast indexer cluster info --grpc-address=:5000 | jq .
+```
+
+or
 
 ```bash
-$ ./bin/blast indexer cluster info --grpc-address=:5000
+$ curl -X GET 'http://127.0.0.1:6000/v1/cluster/status' -H 'Content-Type: application/json' | jq .
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
 ```json
 {
-  "nodes": {
-    "indexer1": {
-      "id": "indexer1",
-      "bind_address": ":2000",
-      "state": 3,
-      "metadata": {
-        "grpc_address": ":5000",
-        "http_address": ":8000"
-      }
-    },
-    "indexer2": {
-      "id": "indexer2",
-      "bind_address": ":2010",
-      "state": 1,
-      "metadata": {
-        "grpc_address": ":5010",
-        "http_address": ":8010"
-      }
-    },
-    "indexer3": {
-      "id": "indexer3",
-      "bind_address": ":2020",
-      "state": 1,
-      "metadata": {
-        "grpc_address": ":5020",
-        "http_address": ":8020"
+  "cluster": {
+    "nodes": {
+      "indexer1": {
+        "id": "indexer1",
+        "bind_address": ":2000",
+        "state": 1,
+        "metadata": {
+          "grpc_address": ":5000",
+          "grpc_gateway_address": ":6000",
+          "http_address": ":8000"
+        }
+      },
+      "indexer2": {
+        "id": "indexer2",
+        "bind_address": ":2010",
+        "state": 1,
+        "metadata": {
+          "grpc_address": ":5010",
+          "grpc_gateway_address": ":6010",
+          "http_address": ":8010"
+        }
+      },
+      "indexer3": {
+        "id": "indexer3",
+        "bind_address": ":2020",
+        "state": 3,
+        "metadata": {
+          "grpc_address": ":5020",
+          "grpc_gateway_address": ":6020",
+          "http_address": ":8020"
+        }
       }
     }
   }
@@ -719,43 +930,45 @@ Recommend 3 or more odd number of nodes in the cluster. In failure scenarios, da
 The following command indexes documents to any node in the cluster:
 
 ```bash
-$ ./bin/blast indexer index --grpc-address=:5000 --file ./example/wiki_doc_enwiki_1.json
+$ ./bin/blast indexer index --grpc-address=:5000 --file ./example/wiki_doc_enwiki_1.json | jq .
 ```
 
 So, you can get the document from the node specified by the above command as follows:
 
 ```bash
-$ ./bin/blast indexer get --grpc-address=:5000 enwiki_1
+$ ./bin/blast indexer get --grpc-address=:5000 enwiki_1 | jq .
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
 ```json
 {
-  "_type": "enwiki",
-  "contributor": "unknown",
-  "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
-  "timestamp": "2018-07-04T05:41:00Z",
-  "title_en": "Search engine (computing)"
+  "fields": {
+    "_type": "enwiki",
+    "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
+    "timestamp": "2018-07-04T05:41:00Z",
+    "title_en": "Search engine (computing)"
+  }
 }
 ```
 
 You can also get the same document from other nodes in the cluster as follows:
 
 ```bash
-$ ./bin/blast indexer get --grpc-address=:5010 enwiki_1
-$ ./bin/blast indexer get --grpc-address=:5020 enwiki_1
+$ ./bin/blast indexer get --grpc-address=:5010 enwiki_1 | jq .
+$ ./bin/blast indexer get --grpc-address=:5020 enwiki_1 | jq .
 ```
 
 You can see the result in JSON format. The result of the above command is:
 
 ```json
 {
-  "_type": "enwiki",
-  "contributor": "unknown",
-  "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
-  "timestamp": "2018-07-04T05:41:00Z",
-  "title_en": "Search engine (computing)"
+  "fields": {
+    "_type": "enwiki",
+    "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
+    "timestamp": "2018-07-04T05:41:00Z",
+    "title_en": "Search engine (computing)"
+  }
 }
 ```
 
@@ -772,13 +985,14 @@ Blast provides the following type of node for federation:
 - manager: Manager manage common index mappings to index across multiple indexers. It also manages information and status of clusters that participate in the federation.
 - dispatcher: Dispatcher is responsible for distributed search or indexing of each indexer. In the case of a index request, send document to each cluster based on the document ID. And in the case of a search request, the same query is sent to each cluster, then the search results are merged and returned to the client.
 
-### Bring up the manager cluster.
+### Bring up the manager cluster
 
 Manager can also bring up a cluster like an indexer. Specify a common index mapping for federation at startup.
 
 ```bash
 $ ./bin/blast manager start \
     --grpc-address=:5100 \
+    --grpc-gateway-address=:6100 \
     --http-address=:8100 \
     --node-id=manager1 \
     --node-address=:2100 \
@@ -791,6 +1005,7 @@ $ ./bin/blast manager start \
 $ ./bin/blast manager start \
     --peer-grpc-address=:5100 \
     --grpc-address=:5110 \
+    --grpc-gateway-address=:6110 \
     --http-address=:8110 \
     --node-id=manager2 \
     --node-address=:2110 \
@@ -800,6 +1015,7 @@ $ ./bin/blast manager start \
 $ ./bin/blast manager start \
     --peer-grpc-address=:5100 \
     --grpc-address=:5120 \
+    --grpc-gateway-address=:6120 \
     --http-address=:8120 \
     --node-id=manager3 \
     --node-address=:2120 \
@@ -807,7 +1023,7 @@ $ ./bin/blast manager start \
     --raft-storage-type=boltdb
 ```
 
-### Bring up the indexer cluster.
+### Bring up the indexer cluster
 
 Federated mode differs from cluster mode that it specifies the manager in start up to bring up indexer cluster.  
 The following example starts two 3-node clusters.
@@ -817,6 +1033,7 @@ $ ./bin/blast indexer start \
     --manager-grpc-address=:5100 \
     --shard-id=shard1 \
     --grpc-address=:5000 \
+    --grpc-gateway-address=:6000 \
     --http-address=:8000 \
     --node-id=indexer1 \
     --node-address=:2000 \
@@ -827,6 +1044,7 @@ $ ./bin/blast indexer start \
     --manager-grpc-address=:5100 \
     --shard-id=shard1 \
     --grpc-address=:5010 \
+    --grpc-gateway-address=:6010 \
     --http-address=:8010 \
     --node-id=indexer2 \
     --node-address=:2010 \
@@ -837,6 +1055,7 @@ $ ./bin/blast indexer start \
     --manager-grpc-address=:5100 \
     --shard-id=shard1 \
     --grpc-address=:5020 \
+    --grpc-gateway-address=:6020 \
     --http-address=:8020 \
     --node-id=indexer3 \
     --node-address=:2020 \
@@ -847,6 +1066,7 @@ $ ./bin/blast indexer start \
     --manager-grpc-address=:5100 \
     --shard-id=shard2 \
     --grpc-address=:5030 \
+    --grpc-gateway-address=:6030 \
     --http-address=:8030 \
     --node-id=indexer4 \
     --node-address=:2030 \
@@ -857,6 +1077,7 @@ $ ./bin/blast indexer start \
     --manager-grpc-address=:5100 \
     --shard-id=shard2 \
     --grpc-address=:5040 \
+    --grpc-gateway-address=:6040 \
     --http-address=:8040 \
     --node-id=indexer5 \
     --node-address=:2040 \
@@ -867,6 +1088,7 @@ $ ./bin/blast indexer start \
     --manager-grpc-address=:5100 \
     --shard-id=shard2 \
     --grpc-address=:5050 \
+    --grpc-gateway-address=:6050 \
     --http-address=:8050 \
     --node-id=indexer6 \
     --node-address=:2050 \
@@ -874,7 +1096,7 @@ $ ./bin/blast indexer start \
     --raft-storage-type=boltdb
 ```
 
-### Start up the dispatcher.
+### Start up the dispatcher
 
 Finally, start the dispatcher with a manager that manages the target federation so that it can perform distributed search and indexing.
 
@@ -882,27 +1104,30 @@ Finally, start the dispatcher with a manager that manages the target federation 
 $ ./bin/blast dispatcher start \
     --manager-grpc-address=:5100 \
     --grpc-address=:5200 \
+    --grpc-gateway-address=:6200 \
     --http-address=:8200
 ```
 
+### Check the cluster info
+
 ```bash
-$ ./bin/blast manager cluster info --grpc-address=:5100
-$ ./bin/blast indexer cluster info --grpc-address=:5000
-$ ./bin/blast indexer cluster info --grpc-address=:5040
+$ ./bin/blast manager cluster info --grpc-address=:5100 | jq .
+$ ./bin/blast indexer cluster info --grpc-address=:5000 | jq .
+$ ./bin/blast indexer cluster info --grpc-address=:5030 | jq .
+$ ./bin/blast manager get cluster --grpc-address=:5100 --format=json | jq .
 ```
 
 ```bash
-$ ./bin/blast dispatcher index --grpc-address=:5200 --file=./example/wiki_bulk_index.jsonl --bulk
+$ ./bin/blast dispatcher index --grpc-address=:5200 --file=./example/wiki_bulk_index.jsonl --bulk | jq .
 ```
 
 ```bash
-$ ./bin/blast dispatcher search --grpc-address=:5200 --file=./example/wiki_search_request_simple.json
+$ ./bin/blast dispatcher search --grpc-address=:5200 --file=./example/wiki_search_request_simple.json | jq .
 ```
 
 ```bash
-$ ./bin/blast dispatcher delete --grpc-address=:5200 --file=./example/wiki_bulk_delete.txt
+$ ./bin/blast dispatcher delete --grpc-address=:5200 --file=./example/wiki_bulk_delete.txt | jq .
 ```
-
 
 
 ## Blast on Docker
@@ -925,7 +1150,6 @@ $ docker pull mosuka/blast:latest
 
 See https://hub.docker.com/r/mosuka/blast/tags/
 
-
 ### Pulling Docker container image from docker.io
 
 You can also use the Docker container image already registered in docker.io like so:
@@ -933,7 +1157,6 @@ You can also use the Docker container image already registered in docker.io like
 ```bash
 $ docker pull mosuka/blast:latest
 ```
-
 
 ### Running Indexer on Docker
 
@@ -943,10 +1166,12 @@ Running a Blast data node on Docker. Start Blast data node like so:
 $ docker run --rm --name blast-indexer1 \
     -p 2000:2000 \
     -p 5000:5000 \
+    -p 6000:6000 \
     -p 8000:8000 \
     -v $(pwd)/example:/opt/blast/example \
     mosuka/blast:latest blast indexer start \
       --grpc-address=:5000 \
+      --grpc-gateway-address=:6000 \
       --http-address=:8000 \
       --node-id=blast-indexer1 \
       --node-address=:2000 \
@@ -968,7 +1193,6 @@ $ docker exec -it blast-indexer1 blast indexer node info --grpc-address=:5000
 
 This section explain how to index Wikipedia dump to Blast.
 
-
 ### Install wikiextractor
 
 ```bash
@@ -976,13 +1200,11 @@ $ cd ${HOME}
 $ git clone git@github.com:attardi/wikiextractor.git
 ```
 
-
 ### Download wikipedia dump
 
 ```bash
 $ curl -o ~/tmp/enwiki-20190101-pages-articles.xml.bz2 https://dumps.wikimedia.org/enwiki/20190101/enwiki-20190101-pages-articles.xml.bz2
 ```
-
 
 ### Parsing wikipedia dump
 
@@ -991,12 +1213,12 @@ $ cd wikiextractor
 $ ./WikiExtractor.py -o ~/tmp/enwiki --json ~/tmp/enwiki-20190101-pages-articles.xml.bz2
 ```
 
-
 ### Starting Indexer
 
 ```bash
 $ ./bin/blast indexer start \
     --grpc-address=:5000 \
+    --grpc-gateway-address=:6000 \
     --http-address=:8000 \
     --node-id=indexer1 \
     --node-address=:2000 \
@@ -1015,7 +1237,8 @@ $ for FILE in $(find ~/tmp/enwiki -type f -name '*' | sort)
     echo "Indexing ${FILE}"
     TIMESTAMP=$(date -u "+%Y-%m-%dT%H:%M:%SZ")
     DOCS=$(cat ${FILE} | jq -r '. + {fields: {url: .url, title_en: .title, text_en: .text, timestamp: "'${TIMESTAMP}'", _type: "enwiki"}} | del(.url) | del(.title) | del(.text) | del(.fields.id)' | jq -c)
-    curl -s -X PUT -H 'Content-Type: application/json' "http://127.0.0.1:8000/documents?bulk=true" --data-binary "${DOCS}"
+    curl -s -X PUT -H 'Content-Type: application/x-ndjson' "http://127.0.0.1:6000/v1/bulk" --data-binary "${DOCS}"
+    echo ""
   done
 ```
 

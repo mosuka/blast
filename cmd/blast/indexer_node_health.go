@@ -40,30 +40,40 @@ func indexerNodeHealth(c *cli.Context) error {
 		}
 	}()
 
-	var state string
+	var res *index.NodeHealthCheckResponse
 	if healthiness {
-		state, err = client.NodeHealthCheck(index.NodeHealthCheckRequest_HEALTHINESS.String())
+		req := &index.NodeHealthCheckRequest{Probe: index.NodeHealthCheckRequest_HEALTHINESS}
+		res, err = client.NodeHealthCheck(req)
 		if err != nil {
-			state = index.NodeHealthCheckResponse_UNHEALTHY.String()
+			res = &index.NodeHealthCheckResponse{State: index.NodeHealthCheckResponse_UNHEALTHY}
 		}
 	} else if liveness {
-		state, err = client.NodeHealthCheck(index.NodeHealthCheckRequest_LIVENESS.String())
+		req := &index.NodeHealthCheckRequest{Probe: index.NodeHealthCheckRequest_LIVENESS}
+		res, err = client.NodeHealthCheck(req)
 		if err != nil {
-			state = index.NodeHealthCheckResponse_DEAD.String()
+			res = &index.NodeHealthCheckResponse{State: index.NodeHealthCheckResponse_DEAD}
 		}
 	} else if readiness {
-		state, err = client.NodeHealthCheck(index.NodeHealthCheckRequest_READINESS.String())
+		req := &index.NodeHealthCheckRequest{Probe: index.NodeHealthCheckRequest_READINESS}
+		res, err = client.NodeHealthCheck(req)
 		if err != nil {
-			state = index.NodeHealthCheckResponse_NOT_READY.String()
+			res = &index.NodeHealthCheckResponse{State: index.NodeHealthCheckResponse_NOT_READY}
 		}
 	} else {
-		state, err = client.NodeHealthCheck(index.NodeHealthCheckRequest_HEALTHINESS.String())
+		req := &index.NodeHealthCheckRequest{Probe: index.NodeHealthCheckRequest_HEALTHINESS}
+		res, err = client.NodeHealthCheck(req)
 		if err != nil {
-			state = index.NodeHealthCheckResponse_UNHEALTHY.String()
+			res = &index.NodeHealthCheckResponse{State: index.NodeHealthCheckResponse_UNHEALTHY}
 		}
 	}
 
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", state))
+	marshaler := indexer.JsonMarshaler{}
+	resBytes, err := marshaler.Marshal(res)
+	if err != nil {
+		return err
+	}
+
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resBytes)))
 
 	return nil
 }

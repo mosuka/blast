@@ -16,15 +16,18 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 
-	"github.com/mosuka/blast/protobuf/index"
-
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/mosuka/blast/indexer"
+	"github.com/mosuka/blast/protobuf"
+	"github.com/mosuka/blast/protobuf/index"
 	"github.com/urfave/cli"
 )
 
@@ -32,52 +35,62 @@ func indexerIndex(c *cli.Context) error {
 	grpcAddr := c.String("grpc-address")
 	filePath := c.String("file")
 	bulk := c.Bool("bulk")
-	id := c.Args().Get(0)
-	fieldsSrc := c.Args().Get(1)
 
-	docs := make([]*index.Document, 0)
-
-	if id != "" && fieldsSrc != "" {
-		var fieldsMap map[string]interface{}
-		err := json.Unmarshal([]byte(fieldsSrc), &fieldsMap)
-		if err != nil {
-			return err
-		}
-		docMap := map[string]interface{}{
-			"id":     id,
-			"fields": fieldsMap,
-		}
-		docBytes, err := json.Marshal(docMap)
-		if err != nil {
-			return err
-		}
-		doc := &index.Document{}
-		err = index.UnmarshalDocument(docBytes, doc)
-		docs = append(docs, doc)
+	// create gRPC client
+	client, err := indexer.NewGRPCClient(grpcAddr)
+	if err != nil {
+		return err
 	}
-
-	if filePath != "" {
-		_, err := os.Stat(filePath)
+	defer func() {
+		err := client.Close()
 		if err != nil {
-			if os.IsNotExist(err) {
-				// does not exist
-				return err
-			}
-			// other error
+			_, _ = fmt.Fprintln(os.Stderr, err)
+		}
+	}()
+
+	marshaler := indexer.JsonMarshaler{}
+
+	if c.NArg() >= 2 {
+		// index document by specifying ID and fields via standard input
+		id := c.Args().Get(0)
+		docSrc := c.Args().Get(1)
+
+		var docMap map[string]interface{}
+		err := json.Unmarshal([]byte(docSrc), &docMap)
+		if err != nil {
 			return err
 		}
 
-		// read index mapping file
-		file, err := os.Open(filePath)
+		fieldsAny := &any.Any{}
+		err = protobuf.UnmarshalAny(docMap["fields"], fieldsAny)
 		if err != nil {
 			return err
 		}
-		defer func() {
-			_ = file.Close()
-		}()
+
+		req := &index.IndexRequest{
+			Id:     id,
+			Fields: fieldsAny,
+		}
+
+		res, err := client.Index(req)
+		if err != nil {
+			return err
+		}
+
+		resBytes, err := marshaler.Marshal(res)
+		if err != nil {
+			return err
+		}
+
+		_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resBytes)))
+	} else if c.NArg() == 1 {
+		// index document by specifying document(s) via standard input
+		docSrc := c.Args().Get(0)
 
 		if bulk {
-			reader := bufio.NewReader(file)
+			// jsonl
+			docs := make([]*index.Document, 0)
+			reader := bufio.NewReader(bytes.NewReader([]byte(docSrc)))
 			for {
 				docBytes, err := reader.ReadBytes('\n')
 				if err != nil {
@@ -103,44 +116,157 @@ func indexerIndex(c *cli.Context) error {
 					docs = append(docs, doc)
 				}
 			}
+
+			req := &index.BulkIndexRequest{
+				Documents: docs,
+			}
+			res, err := client.BulkIndex(req)
+			if err != nil {
+				return err
+			}
+
+			resBytes, err := marshaler.Marshal(res)
+			if err != nil {
+				return err
+			}
+
+			_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resBytes)))
 		} else {
-			docBytes, err := ioutil.ReadAll(file)
+			// json
+			var docMap map[string]interface{}
+			err := json.Unmarshal([]byte(docSrc), &docMap)
 			if err != nil {
 				return err
 			}
-			doc := &index.Document{}
-			err = index.UnmarshalDocument(docBytes, doc)
+
+			fieldsAny := &any.Any{}
+			err = protobuf.UnmarshalAny(docMap["fields"].(map[string]interface{}), fieldsAny)
 			if err != nil {
 				return err
 			}
-			docs = append(docs, doc)
+
+			req := &index.IndexRequest{
+				Id:     docMap["id"].(string),
+				Fields: fieldsAny,
+			}
+
+			res, err := client.Index(req)
+			if err != nil {
+				return err
+			}
+
+			resBytes, err := marshaler.Marshal(res)
+			if err != nil {
+				return err
+			}
+
+			_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resBytes)))
+		}
+	} else {
+		// index document by specifying document(s) via file
+		if filePath != "" {
+			_, err := os.Stat(filePath)
+			if err != nil {
+				if os.IsNotExist(err) {
+					// does not exist
+					return err
+				}
+				// other error
+				return err
+			}
+
+			// read index mapping file
+			file, err := os.Open(filePath)
+			if err != nil {
+				return err
+			}
+			defer func() {
+				_ = file.Close()
+			}()
+
+			if bulk {
+				// jsonl
+				docs := make([]*index.Document, 0)
+				reader := bufio.NewReader(file)
+				for {
+					docBytes, err := reader.ReadBytes('\n')
+					if err != nil {
+						if err == io.EOF || err == io.ErrClosedPipe {
+							if len(docBytes) > 0 {
+								doc := &index.Document{}
+								err = index.UnmarshalDocument(docBytes, doc)
+								if err != nil {
+									return err
+								}
+								docs = append(docs, doc)
+							}
+							break
+						}
+					}
+
+					if len(docBytes) > 0 {
+						doc := &index.Document{}
+						err = index.UnmarshalDocument(docBytes, doc)
+						if err != nil {
+							return err
+						}
+						docs = append(docs, doc)
+					}
+				}
+
+				req := &index.BulkIndexRequest{
+					Documents: docs,
+				}
+				res, err := client.BulkIndex(req)
+				if err != nil {
+					return err
+				}
+
+				resBytes, err := marshaler.Marshal(res)
+				if err != nil {
+					return err
+				}
+
+				_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resBytes)))
+			} else {
+				// json
+				docBytes, err := ioutil.ReadAll(file)
+				if err != nil {
+					return err
+				}
+				var docMap map[string]interface{}
+				err = json.Unmarshal(docBytes, &docMap)
+				if err != nil {
+					return err
+				}
+
+				fieldsAny := &any.Any{}
+				err = protobuf.UnmarshalAny(docMap["fields"].(map[string]interface{}), fieldsAny)
+				if err != nil {
+					return err
+				}
+
+				req := &index.IndexRequest{
+					Id:     docMap["id"].(string),
+					Fields: fieldsAny,
+				}
+
+				res, err := client.Index(req)
+				if err != nil {
+					return err
+				}
+
+				resBytes, err := marshaler.Marshal(res)
+				if err != nil {
+					return err
+				}
+
+				_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resBytes)))
+			}
+		} else {
+			return errors.New("argument error")
 		}
 	}
-
-	// create gRPC client
-	client, err := indexer.NewGRPCClient(grpcAddr)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		err := client.Close()
-		if err != nil {
-			_, _ = fmt.Fprintln(os.Stderr, err)
-		}
-	}()
-
-	// index documents in bulk
-	count, err := client.IndexDocument(docs)
-	if err != nil {
-		return err
-	}
-
-	resultBytes, err := json.MarshalIndent(count, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resultBytes)))
 
 	return nil
 }

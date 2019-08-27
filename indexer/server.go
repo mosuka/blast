@@ -18,13 +18,16 @@ import (
 	"encoding/json"
 	"fmt"
 
+	accesslog "github.com/mash/go-accesslog"
 	"github.com/mosuka/blast/indexutils"
 
-	"github.com/blevesearch/bleve/mapping"
+	"github.com/mosuka/blast/protobuf/management"
 
-	accesslog "github.com/mash/go-accesslog"
-	"github.com/mosuka/blast/errors"
+	"github.com/blevesearch/bleve/mapping"
+	"github.com/golang/protobuf/ptypes/empty"
+	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/manager"
+	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/index"
 	"go.uber.org/zap"
 )
@@ -46,6 +49,7 @@ type Server struct {
 	raftServer  *RaftServer
 	grpcService *GRPCService
 	grpcServer  *GRPCServer
+	grpcGateway *GRPCGateway
 	httpRouter  *Router
 	httpServer  *HTTPServer
 }
@@ -86,20 +90,29 @@ func (s *Server) Start() {
 			return
 		}
 
-		clusterIntr, err := mc.Get(fmt.Sprintf("cluster/shards/%s", s.shardId))
-		if err != nil && err != errors.ErrNotFound {
+		req := &management.GetRequest{
+			Key: fmt.Sprintf("cluster/shards/%s", s.shardId),
+		}
+		res, err := mc.Get(req)
+		if err != nil && err != blasterrors.ErrNotFound {
 			s.logger.Fatal(err.Error())
 			return
 		}
-		if clusterIntr != nil {
-			b, err := json.Marshal(clusterIntr)
+		value, err := protobuf.MarshalAny(res.Value)
+		if err != nil {
+			s.logger.Fatal(err.Error())
+			return
+		}
+		if value != nil {
+			nodes := *value.(*map[string]interface{})
+			nodesBytes, err := json.Marshal(nodes)
 			if err != nil {
 				s.logger.Fatal(err.Error())
 				return
 			}
 
 			var cluster *index.Cluster
-			err = json.Unmarshal(b, &cluster)
+			err = json.Unmarshal(nodesBytes, &cluster)
 			if err != nil {
 				s.logger.Fatal(err.Error())
 				return
@@ -134,31 +147,38 @@ func (s *Server) Start() {
 			return
 		}
 		s.logger.Debug("pull index config from manager", zap.String("address", mc.GetAddress()))
-		value, err := mc.Get("/index_config")
+		req := &management.GetRequest{
+			Key: "/index_config",
+		}
+		resp, err := mc.Get(req)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return
 		}
-		indexMappingSrc, ok := (*value.(*map[string]interface{}))["index_mapping"]
-		if ok {
-			b, err := json.Marshal(indexMappingSrc)
-			if err != nil {
-				s.logger.Fatal(err.Error())
-				return
+		value, err := protobuf.MarshalAny(resp.Value)
+		if value != nil {
+			indexConfigMap := *value.(*map[string]interface{})
+			indexMappingSrc, ok := indexConfigMap["index_mapping"].(map[string]interface{})
+			if ok {
+				indexMappingBytes, err := json.Marshal(indexMappingSrc)
+				if err != nil {
+					s.logger.Fatal(err.Error())
+					return
+				}
+				s.indexMapping, err = indexutils.NewIndexMappingFromBytes(indexMappingBytes)
+				if err != nil {
+					s.logger.Fatal(err.Error())
+					return
+				}
 			}
-			s.indexMapping, err = indexutils.NewIndexMappingFromBytes(b)
-			if err != nil {
-				s.logger.Fatal(err.Error())
-				return
+			indexTypeSrc, ok := indexConfigMap["index_type"]
+			if ok {
+				s.indexType = indexTypeSrc.(string)
 			}
-		}
-		indexTypeSrc, ok := (*value.(*map[string]interface{}))["index_type"]
-		if ok {
-			s.indexType = indexTypeSrc.(string)
-		}
-		indexStorageTypeSrc, ok := (*value.(*map[string]interface{}))["index_storage_type"]
-		if ok {
-			s.indexStorageType = indexStorageTypeSrc.(string)
+			indexStorageTypeSrc, ok := indexConfigMap["index_storage_type"]
+			if ok {
+				s.indexStorageType = indexStorageTypeSrc.(string)
+			}
 		}
 	} else if s.peerGrpcAddress != "" {
 		pc, err := NewGRPCClient(s.peerGrpcAddress)
@@ -176,15 +196,17 @@ func (s *Server) Start() {
 		}
 
 		s.logger.Debug("pull index config from cluster peer", zap.String("address", pc.GetAddress()))
-		value, err := pc.GetIndexConfig()
+		req := &empty.Empty{}
+		res, err := pc.GetIndexConfig(req)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return
 		}
 
-		s.indexMapping = value["index_mapping"].(*mapping.IndexMappingImpl)
-		s.indexType = value["index_type"].(string)
-		s.indexStorageType = value["index_storage_type"].(string)
+		indexMapping, err := protobuf.MarshalAny(res.IndexConfig.IndexMapping)
+		s.indexMapping = indexMapping.(*mapping.IndexMappingImpl)
+		s.indexType = res.IndexConfig.IndexType
+		s.indexStorageType = res.IndexConfig.IndexStorageType
 	}
 
 	// bootstrap node?
@@ -214,8 +236,15 @@ func (s *Server) Start() {
 		return
 	}
 
+	// create gRPC gateway
+	s.grpcGateway, err = NewGRPCGateway(s.node.Metadata.GrpcGatewayAddress, s.node.Metadata.GrpcAddress, s.logger)
+	if err != nil {
+		s.logger.Error(err.Error())
+		return
+	}
+
 	// create HTTP router
-	s.httpRouter, err = NewRouter(s.node.Metadata.GrpcAddress, s.logger)
+	s.httpRouter, err = NewRouter(s.logger)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return
@@ -256,6 +285,12 @@ func (s *Server) Start() {
 		}
 	}()
 
+	// start gRPC gateway
+	s.logger.Info("start gRPC gateway")
+	go func() {
+		_ = s.grpcGateway.Start()
+	}()
+
 	// start HTTP server
 	s.logger.Info("start HTTP server")
 	go func() {
@@ -276,7 +311,11 @@ func (s *Server) Start() {
 			return
 		}
 
-		err = client.ClusterJoin(s.node)
+		req := &index.ClusterJoinRequest{
+			Node: s.node,
+		}
+
+		_, err = client.ClusterJoin(req)
 		if err != nil {
 			s.logger.Fatal(err.Error())
 			return
@@ -291,7 +330,14 @@ func (s *Server) Stop() {
 		s.logger.Error(err.Error())
 	}
 
+	s.logger.Info("stop HTTP router")
 	err = s.httpRouter.Close()
+	if err != nil {
+		s.logger.Error(err.Error())
+	}
+
+	s.logger.Info("stop gRPC gateway")
+	err = s.grpcGateway.Stop()
 	if err != nil {
 		s.logger.Error(err.Error())
 	}

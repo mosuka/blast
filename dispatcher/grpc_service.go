@@ -28,6 +28,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search"
 	"github.com/golang/protobuf/ptypes/any"
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/mosuka/blast/indexer"
 	"github.com/mosuka/blast/manager"
 	"github.com/mosuka/blast/protobuf"
@@ -145,13 +146,14 @@ func (s *GRPCService) getManagerCluster(managerAddr string) (*management.Cluster
 		return nil, err
 	}
 
-	managers, err := client.ClusterInfo()
+	req := &empty.Empty{}
+	res, err := client.ClusterInfo(req)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return nil, err
 	}
 
-	return managers, nil
+	return res.Cluster, nil
 }
 
 func (s *GRPCService) cloneManagerCluster(cluster *management.Cluster) (*management.Cluster, error) {
@@ -191,7 +193,8 @@ func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 			}
 
 			// create stream for watching cluster changes
-			stream, err := client.ClusterWatch()
+			req := &empty.Empty{}
+			stream, err := client.ClusterWatch(req)
 			if err != nil {
 				s.logger.Error(err.Error())
 				continue
@@ -199,10 +202,10 @@ func (s *GRPCService) startUpdateManagers(checkInterval time.Duration) {
 
 			s.logger.Info("wait for receive a manager cluster updates from stream")
 			resp, err := stream.Recv()
-			//if err == io.EOF {
-			//	s.logger.Info(err.Error())
-			//	continue
-			//}
+			if err == io.EOF {
+				s.logger.Info(err.Error())
+				continue
+			}
 			if err != nil {
 				s.logger.Error(err.Error())
 				continue
@@ -318,31 +321,36 @@ func (s *GRPCService) startUpdateIndexers(checkInterval time.Duration) {
 	}
 
 	// get initial indexers
-	shards, err := client.Get("/cluster/shards")
+	req := &management.GetRequest{
+		Key: "/cluster/shards",
+	}
+	res, err := client.Get(req)
 	if err != nil {
 		s.logger.Fatal(err.Error())
 		return
 	}
-	if shards == nil {
+	if res.Value == nil {
 		s.logger.Error("/cluster/shards is nil")
 	}
-	for shardId, shardIntr := range *shards.(*map[string]interface{}) {
-		shardBytes, err := json.Marshal(shardIntr)
+
+	shards, err := protobuf.MarshalAny(res.Value)
+	for shardId, shard := range *shards.(*map[string]interface{}) {
+		shardBytes, err := json.Marshal(shard)
 		if err != nil {
 			s.logger.Error(err.Error())
 			continue
 		}
 
-		var shard *index.Cluster
-		err = json.Unmarshal(shardBytes, &shard)
+		var cluster *index.Cluster
+		err = json.Unmarshal(shardBytes, &cluster)
 		if err != nil {
 			s.logger.Error(err.Error())
 			continue
 		}
 
-		s.indexers[shardId] = shard
+		s.indexers[shardId] = cluster
 
-		for nodeId, node := range shard.Nodes {
+		for nodeId, node := range cluster.Nodes {
 			if node.Metadata.GrpcAddress == "" {
 				s.logger.Warn("missing gRPC address", zap.String("id", node.Id), zap.String("grpc_addr", node.Metadata.GrpcAddress))
 				continue
@@ -371,7 +379,10 @@ func (s *GRPCService) startUpdateIndexers(checkInterval time.Duration) {
 				continue
 			}
 
-			stream, err := client.Watch("/cluster/shards/")
+			watchReq := &management.WatchRequest{
+				Key: "/cluster/shards/",
+			}
+			stream, err := client.Watch(watchReq)
 			if err != nil {
 				s.logger.Error(err.Error())
 				continue
@@ -388,37 +399,42 @@ func (s *GRPCService) startUpdateIndexers(checkInterval time.Duration) {
 			}
 			s.logger.Debug("data has changed", zap.Any("command", resp.Command), zap.String("key", resp.Key), zap.Any("value", resp.Value))
 
-			shardsIntr, err := client.Get("/cluster/shards/")
+			getReq := &management.GetRequest{
+				Key: "/cluster/shards/",
+			}
+			res, err := client.Get(getReq)
 			if err != nil {
 				s.logger.Error(err.Error())
 				continue
 			}
-			if shardsIntr == nil {
+			if res.Value == nil {
 				s.logger.Error("/cluster/shards is nil")
 				continue
 			}
-			for shardId, shardIntr := range *shards.(*map[string]interface{}) {
-				shardBytes, err := json.Marshal(shardIntr)
+
+			shards, err := protobuf.MarshalAny(res.Value)
+			for shardId, shard := range *shards.(*map[string]interface{}) {
+				shardBytes, err := json.Marshal(shard)
 				if err != nil {
 					s.logger.Error(err.Error())
 					continue
 				}
 
-				var shard *index.Cluster
-				err = json.Unmarshal(shardBytes, &shard)
+				var cluster *index.Cluster
+				err = json.Unmarshal(shardBytes, &cluster)
 				if err != nil {
 					s.logger.Error(err.Error())
 					continue
 				}
 
-				s.indexers[shardId] = shard
+				s.indexers[shardId] = cluster
 
 				if _, exist := s.indexerClients[shardId]; !exist {
 					s.indexerClients[shardId] = make(map[string]*indexer.GRPCClient)
 				}
 
 				// open clients for indexer nodes
-				for nodeId, node := range shard.Nodes {
+				for nodeId, node := range cluster.Nodes {
 					if node.Metadata.GrpcAddress == "" {
 						s.logger.Warn("missing gRPC address", zap.String("id", node.Id), zap.String("grpc_addr", node.Metadata.GrpcAddress))
 						continue
@@ -514,18 +530,24 @@ func (s *GRPCService) NodeHealthCheck(ctx context.Context, req *distribute.NodeH
 	resp := &distribute.NodeHealthCheckResponse{}
 
 	switch req.Probe {
+	case distribute.NodeHealthCheckRequest_UNKNOWN:
+		fallthrough
 	case distribute.NodeHealthCheckRequest_HEALTHINESS:
 		resp.State = distribute.NodeHealthCheckResponse_HEALTHY
 	case distribute.NodeHealthCheckRequest_LIVENESS:
 		resp.State = distribute.NodeHealthCheckResponse_ALIVE
 	case distribute.NodeHealthCheckRequest_READINESS:
 		resp.State = distribute.NodeHealthCheckResponse_READY
+	default:
+		err := errors.New("unknown probe")
+		s.logger.Error(err.Error())
+		return resp, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	return resp, nil
 }
 
-func (s *GRPCService) GetDocument(ctx context.Context, req *distribute.GetDocumentRequest) (*distribute.GetDocumentResponse, error) {
+func (s *GRPCService) Get(ctx context.Context, req *distribute.GetRequest) (*distribute.GetResponse, error) {
 	indexerClients := s.getIndexerClients()
 
 	// cluster id list sorted by cluster id
@@ -537,7 +559,7 @@ func (s *GRPCService) GetDocument(ctx context.Context, req *distribute.GetDocume
 
 	type respVal struct {
 		clusterId string
-		doc       *index.Document
+		res       *index.GetResponse
 		err       error
 	}
 
@@ -549,11 +571,15 @@ func (s *GRPCService) GetDocument(ctx context.Context, req *distribute.GetDocume
 		wg.Add(1)
 		go func(clusterId string, client *indexer.GRPCClient, id string, respChan chan respVal) {
 			// index documents
-			doc, err := client.GetDocument(id)
+			req := &index.GetRequest{
+				Id: id,
+			}
+			res, err := client.Get(req)
+
 			wg.Done()
 			respChan <- respVal{
 				clusterId: clusterId,
-				doc:       doc,
+				res:       res,
 				err:       err,
 			}
 		}(clusterId, client, req.Id, respChan)
@@ -564,22 +590,237 @@ func (s *GRPCService) GetDocument(ctx context.Context, req *distribute.GetDocume
 	close(respChan)
 
 	// summarize responses
-	var doc *index.Document
+	iRes := &index.GetResponse{}
 	for r := range respChan {
-		if r.doc != nil {
-			doc = r.doc
+		if r.res != nil {
+			iRes = r.res
 		}
 		if r.err != nil {
 			s.logger.Error(r.err.Error(), zap.String("cluster_id", r.clusterId))
 		}
 	}
 
-	resp := &distribute.GetDocumentResponse{}
-
-	// response
-	resp.Document = doc
+	resp := &distribute.GetResponse{
+		Fields: iRes.Fields,
+	}
 
 	return resp, nil
+}
+
+func (s *GRPCService) docIdHash(docId string) uint64 {
+	hash := fnv.New64()
+	_, err := hash.Write([]byte(docId))
+	if err != nil {
+		return 0
+	}
+
+	return hash.Sum64()
+}
+
+func (s *GRPCService) Index(ctx context.Context, req *distribute.IndexRequest) (*empty.Empty, error) {
+	res := &empty.Empty{}
+
+	indexerClients := s.getIndexerClients()
+
+	// cluster id list sorted by cluster id
+	clusterIds := make([]string, 0)
+	for clusterId := range indexerClients {
+		clusterIds = append(clusterIds, clusterId)
+		sort.Strings(clusterIds)
+	}
+
+	docIdHash := s.docIdHash(req.Id)
+	clusterNum := uint64(len(indexerClients))
+	clusterId := clusterIds[int(docIdHash%clusterNum)]
+
+	iReq := &index.IndexRequest{
+		Id:     req.Id,
+		Fields: req.Fields,
+	}
+
+	res, err := indexerClients[clusterId].Index(iReq)
+	if err != nil {
+		s.logger.Error(err.Error())
+		return res, status.Error(codes.Internal, err.Error())
+	}
+
+	return res, nil
+}
+
+func (s *GRPCService) Delete(ctx context.Context, req *distribute.DeleteRequest) (*empty.Empty, error) {
+	resp := &empty.Empty{}
+
+	indexerClients := s.getIndexerClients()
+
+	// cluster id list sorted by cluster id
+	clusterIds := make([]string, 0)
+	for clusterId := range indexerClients {
+		clusterIds = append(clusterIds, clusterId)
+		sort.Strings(clusterIds)
+	}
+
+	type respVal struct {
+		clusterId string
+		err       error
+	}
+
+	// create response channel
+	respChan := make(chan respVal, len(clusterIds))
+
+	wg := &sync.WaitGroup{}
+	for clusterId, client := range indexerClients {
+		wg.Add(1)
+		go func(clusterId string, client *indexer.GRPCClient, id string, respChan chan respVal) {
+			// index documents
+			iReq := &index.DeleteRequest{Id: id}
+			_, err := client.Delete(iReq)
+			wg.Done()
+			respChan <- respVal{
+				clusterId: clusterId,
+				err:       err,
+			}
+		}(clusterId, client, req.Id, respChan)
+	}
+	wg.Wait()
+
+	// close response channel
+	close(respChan)
+
+	for r := range respChan {
+		if r.err != nil {
+			s.logger.Error(r.err.Error(), zap.String("cluster_id", r.clusterId))
+		}
+	}
+
+	return resp, nil
+}
+
+func (s *GRPCService) BulkIndex(ctx context.Context, req *distribute.BulkIndexRequest) (*distribute.BulkIndexResponse, error) {
+	indexerClients := s.getIndexerClients()
+
+	// cluster id list sorted by cluster id
+	clusterIds := make([]string, 0)
+	for clusterId := range indexerClients {
+		clusterIds = append(clusterIds, clusterId)
+		sort.Strings(clusterIds)
+	}
+
+	// initialize document list for each cluster
+	docSet := make(map[string][]*index.Document, 0)
+	for _, clusterId := range clusterIds {
+		docSet[clusterId] = make([]*index.Document, 0)
+	}
+
+	for _, doc := range req.Documents {
+		// distribute documents to each cluster based on document id
+		docIdHash := s.docIdHash(doc.Id)
+		clusterNum := uint64(len(indexerClients))
+		clusterId := clusterIds[int(docIdHash%clusterNum)]
+		docSet[clusterId] = append(docSet[clusterId], doc)
+	}
+
+	type respVal struct {
+		clusterId string
+		res       *index.BulkIndexResponse
+		err       error
+	}
+
+	// create response channel
+	respChan := make(chan respVal, len(clusterIds))
+
+	wg := &sync.WaitGroup{}
+	for clusterId, docs := range docSet {
+		wg.Add(1)
+		go func(clusterId string, docs []*index.Document, respChan chan respVal) {
+			iReq := &index.BulkIndexRequest{
+				Documents: docs,
+			}
+			iRes, err := indexerClients[clusterId].BulkIndex(iReq)
+			wg.Done()
+			respChan <- respVal{
+				clusterId: clusterId,
+				res:       iRes,
+				err:       err,
+			}
+		}(clusterId, docs, respChan)
+	}
+	wg.Wait()
+
+	// close response channel
+	close(respChan)
+
+	// summarize responses
+	totalCount := 0
+	for r := range respChan {
+		if r.res.Count >= 0 {
+			totalCount += int(r.res.Count)
+		}
+		if r.err != nil {
+			s.logger.Error(r.err.Error(), zap.String("cluster_id", r.clusterId))
+		}
+	}
+
+	// response
+	return &distribute.BulkIndexResponse{
+		Count: int32(totalCount),
+	}, nil
+}
+
+func (s *GRPCService) BulkDelete(ctx context.Context, req *distribute.BulkDeleteRequest) (*distribute.BulkDeleteResponse, error) {
+	indexerClients := s.getIndexerClients()
+
+	// cluster id list sorted by cluster id
+	clusterIds := make([]string, 0)
+	for clusterId := range indexerClients {
+		clusterIds = append(clusterIds, clusterId)
+		sort.Strings(clusterIds)
+	}
+
+	type respVal struct {
+		clusterId string
+		res       *index.BulkDeleteResponse
+		err       error
+	}
+
+	// create response channel
+	respChan := make(chan respVal, len(clusterIds))
+
+	wg := &sync.WaitGroup{}
+	for clusterId, client := range indexerClients {
+		wg.Add(1)
+		go func(clusterId string, client *indexer.GRPCClient, ids []string, respChan chan respVal) {
+			// index documents
+			iReq := &index.BulkDeleteRequest{
+				Ids: ids,
+			}
+			iRes, err := client.BulkDelete(iReq)
+			wg.Done()
+			respChan <- respVal{
+				clusterId: clusterId,
+				res:       iRes,
+				err:       err,
+			}
+		}(clusterId, client, req.Ids, respChan)
+	}
+	wg.Wait()
+
+	// close response channel
+	close(respChan)
+
+	// summarize responses
+	totalCount := 0
+	for r := range respChan {
+		if r.res.Count >= 0 {
+			totalCount += int(r.res.Count)
+		}
+		if r.err != nil {
+			s.logger.Error(r.err.Error(), zap.String("cluster_id", r.clusterId))
+		}
+	}
+	// response
+	return &distribute.BulkDeleteResponse{
+		Count: int32(totalCount),
+	}, nil
 }
 
 func (s *GRPCService) Search(ctx context.Context, req *distribute.SearchRequest) (*distribute.SearchResponse, error) {
@@ -623,11 +864,37 @@ func (s *GRPCService) Search(ctx context.Context, req *distribute.SearchRequest)
 	for clusterId, client := range indexerClients {
 		wg.Add(1)
 		go func(clusterId string, client *indexer.GRPCClient, searchRequest *bleve.SearchRequest, respChan chan respVal) {
-			searchResult, err := client.Search(searchRequest)
+			searchRequestAny := &any.Any{}
+			err := protobuf.UnmarshalAny(searchRequest, searchRequestAny)
+			if err != nil {
+				respChan <- respVal{
+					clusterId:    clusterId,
+					searchResult: nil,
+					err:          err,
+				}
+				return
+			}
+
+			iReq := &index.SearchRequest{
+				SearchRequest: searchRequestAny,
+			}
+
+			iRes, err := client.Search(iReq)
+
+			searchResult, err := protobuf.MarshalAny(iRes.SearchResult)
+			if err != nil {
+				respChan <- respVal{
+					clusterId:    clusterId,
+					searchResult: nil,
+					err:          err,
+				}
+				return
+			}
+
 			wg.Done()
 			respChan <- respVal{
 				clusterId:    clusterId,
-				searchResult: searchResult,
+				searchResult: searchResult.(*bleve.SearchResult),
 				err:          err,
 			}
 		}(clusterId, client, searchRequest, respChan)
@@ -704,164 +971,4 @@ func (s *GRPCService) Search(ctx context.Context, req *distribute.SearchRequest)
 	resp.SearchResult = searchResultAny
 
 	return resp, nil
-}
-
-func (s *GRPCService) docIdHash(docId string) uint64 {
-	hash := fnv.New64()
-	_, err := hash.Write([]byte(docId))
-	if err != nil {
-		return 0
-	}
-
-	return hash.Sum64()
-}
-
-func (s *GRPCService) IndexDocument(stream distribute.Distribute_IndexDocumentServer) error {
-	indexerClients := s.getIndexerClients()
-
-	// cluster id list sorted by cluster id
-	clusterIds := make([]string, 0)
-	for clusterId := range indexerClients {
-		clusterIds = append(clusterIds, clusterId)
-		sort.Strings(clusterIds)
-	}
-
-	// initialize document list for each cluster
-	docSet := make(map[string][]*index.Document, 0)
-	for _, clusterId := range clusterIds {
-		docSet[clusterId] = make([]*index.Document, 0)
-	}
-
-	for {
-		req, err := stream.Recv()
-		if err != nil {
-			if err == io.EOF {
-				s.logger.Debug(err.Error())
-				break
-			}
-			s.logger.Error(err.Error())
-			return status.Error(codes.Internal, err.Error())
-		}
-
-		// distribute documents to each cluster based on document id
-		docIdHash := s.docIdHash(req.Document.Id)
-		clusterNum := uint64(len(indexerClients))
-		clusterId := clusterIds[int(docIdHash%clusterNum)]
-		docSet[clusterId] = append(docSet[clusterId], req.Document)
-	}
-
-	type respVal struct {
-		clusterId string
-		count     int
-		err       error
-	}
-
-	// create response channel
-	respChan := make(chan respVal, len(clusterIds))
-
-	wg := &sync.WaitGroup{}
-	for clusterId, docs := range docSet {
-		wg.Add(1)
-		go func(clusterId string, docs []*index.Document, respChan chan respVal) {
-			count, err := indexerClients[clusterId].IndexDocument(docs)
-			wg.Done()
-			respChan <- respVal{
-				clusterId: clusterId,
-				count:     count,
-				err:       err,
-			}
-		}(clusterId, docs, respChan)
-	}
-	wg.Wait()
-
-	// close response channel
-	close(respChan)
-
-	// summarize responses
-	totalCount := 0
-	for r := range respChan {
-		if r.count >= 0 {
-			totalCount += r.count
-		}
-		if r.err != nil {
-			s.logger.Error(r.err.Error(), zap.String("cluster_id", r.clusterId))
-		}
-	}
-
-	// response
-	resp := &distribute.IndexDocumentResponse{
-		Count: int32(totalCount),
-	}
-
-	return stream.SendAndClose(resp)
-}
-
-func (s *GRPCService) DeleteDocument(stream distribute.Distribute_DeleteDocumentServer) error {
-	indexerClients := s.getIndexerClients()
-
-	// cluster id list sorted by cluster id
-	clusterIds := make([]string, 0)
-	for clusterId := range indexerClients {
-		clusterIds = append(clusterIds, clusterId)
-		sort.Strings(clusterIds)
-	}
-
-	ids := make([]string, 0)
-
-	for {
-		req, err := stream.Recv()
-		if err != nil {
-			if err == io.EOF {
-				s.logger.Debug(err.Error())
-				break
-			}
-			s.logger.Error(err.Error())
-			return status.Error(codes.Internal, err.Error())
-		}
-
-		ids = append(ids, req.Id)
-	}
-
-	type respVal struct {
-		clusterId string
-		count     int
-		err       error
-	}
-
-	// create response channel
-	respChan := make(chan respVal, len(clusterIds))
-
-	wg := &sync.WaitGroup{}
-	for clusterId, client := range indexerClients {
-		wg.Add(1)
-		go func(clusterId string, client *indexer.GRPCClient, ids []string, respChan chan respVal) {
-			// index documents
-			count, err := client.DeleteDocument(ids)
-			wg.Done()
-			respChan <- respVal{
-				clusterId: clusterId,
-				count:     count,
-				err:       err,
-			}
-		}(clusterId, client, ids, respChan)
-	}
-	wg.Wait()
-
-	// close response channel
-	close(respChan)
-
-	// summarize responses
-	totalCount := len(ids)
-	for r := range respChan {
-		if r.err != nil {
-			s.logger.Error(r.err.Error(), zap.String("cluster_id", r.clusterId))
-		}
-	}
-
-	// response
-	resp := &distribute.DeleteDocumentResponse{
-		Count: int32(totalCount),
-	}
-
-	return stream.SendAndClose(resp)
 }

@@ -128,7 +128,7 @@ func (f *RaftFSM) GetDocument(id string) (map[string]interface{}, error) {
 	return fields, nil
 }
 
-func (f *RaftFSM) IndexDocument(doc *index.Document) error {
+func (f *RaftFSM) Index(doc *index.Document) error {
 	err := f.index.Index(doc)
 	if err != nil {
 		f.logger.Error(err.Error())
@@ -138,7 +138,7 @@ func (f *RaftFSM) IndexDocument(doc *index.Document) error {
 	return nil
 }
 
-func (f *RaftFSM) IndexDocuments(docs []*index.Document) (int, error) {
+func (f *RaftFSM) BulkIndex(docs []*index.Document) (int, error) {
 	count, err := f.index.BulkIndex(docs)
 	if err != nil {
 		f.logger.Error(err.Error())
@@ -148,7 +148,7 @@ func (f *RaftFSM) IndexDocuments(docs []*index.Document) (int, error) {
 	return count, nil
 }
 
-func (f *RaftFSM) DeleteDocument(id string) error {
+func (f *RaftFSM) Delete(id string) error {
 	err := f.index.Delete(id)
 	if err != nil {
 		f.logger.Error(err.Error())
@@ -158,7 +158,7 @@ func (f *RaftFSM) DeleteDocument(id string) error {
 	return nil
 }
 
-func (f *RaftFSM) DeleteDocuments(ids []string) (int, error) {
+func (f *RaftFSM) BulkDelete(ids []string) (int, error) {
 	count, err := f.index.BulkDelete(ids)
 	if err != nil {
 		f.logger.Error(err.Error())
@@ -190,75 +190,67 @@ type fsmResponse struct {
 	error error
 }
 
-type fsmIndexDocumentResponse struct {
+type fsmBulkIndexResponse struct {
 	count int
 	error error
 }
 
-type fsmDeleteDocumentResponse struct {
+type fsmBulkDeleteResponse struct {
 	count int
 	error error
 }
 
 func (f *RaftFSM) Apply(l *raft.Log) interface{} {
-	var msg message
-	err := json.Unmarshal(l.Data, &msg)
+	proposal := &index.Proposal{}
+	err := proto.Unmarshal(l.Data, proposal)
 	if err != nil {
+		f.logger.Error(err.Error())
 		return err
 	}
 
-	switch msg.Command {
-	case setNode:
-		var data map[string]interface{}
-		err := json.Unmarshal(msg.Data, &data)
+	switch proposal.Event {
+	case index.Proposal_SET_NODE:
+		err = f.SetNode(proposal.Node)
 		if err != nil {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
-		b, err := json.Marshal(data["node"])
+		return &fsmResponse{error: nil}
+	case index.Proposal_DELETE_NODE:
+		err = f.DeleteNode(proposal.Node.Id)
 		if err != nil {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
-		var node *index.Node
-		err = json.Unmarshal(b, &node)
+		return &fsmResponse{error: nil}
+	case index.Proposal_INDEX:
+		err := f.Index(proposal.Document)
 		if err != nil {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
-		err = f.SetNode(node)
+		return &fsmResponse{error: nil}
+	case index.Proposal_DELETE:
+		err := f.Delete(proposal.Id)
 		if err != nil {
 			f.logger.Error(err.Error())
 			return &fsmResponse{error: err}
 		}
-		return &fsmResponse{error: err}
-	case deleteNode:
-		var data map[string]interface{}
-		err := json.Unmarshal(msg.Data, &data)
+		return &fsmResponse{error: nil}
+	case index.Proposal_BULK_INDEX:
+		count, err := f.BulkIndex(proposal.Documents)
 		if err != nil {
 			f.logger.Error(err.Error())
-			return &fsmResponse{error: err}
+			return &fsmBulkIndexResponse{count: count, error: err}
 		}
-		err = f.DeleteNode(data["id"].(string))
-		return &fsmResponse{error: err}
-	case indexDocument:
-		var data []*index.Document
-		err := json.Unmarshal(msg.Data, &data)
+		return &fsmBulkIndexResponse{count: count, error: nil}
+	case index.Proposal_BULK_DELETE:
+		count, err := f.BulkDelete(proposal.Ids)
 		if err != nil {
 			f.logger.Error(err.Error())
-			return &fsmIndexDocumentResponse{count: -1, error: err}
+			return &fsmBulkDeleteResponse{count: count, error: err}
 		}
-		count, err := f.IndexDocuments(data)
-		return &fsmIndexDocumentResponse{count: count, error: err}
-	case deleteDocument:
-		var data []string
-		err := json.Unmarshal(msg.Data, &data)
-		if err != nil {
-			f.logger.Error(err.Error())
-			return &fsmDeleteDocumentResponse{count: -1, error: err}
-		}
-		count, err := f.DeleteDocuments(data)
-		return &fsmDeleteDocumentResponse{count: count, error: err}
+		return &fsmBulkDeleteResponse{count: count, error: nil}
 	default:
 		err = errors.New("unsupported command")
 		f.logger.Error(err.Error())

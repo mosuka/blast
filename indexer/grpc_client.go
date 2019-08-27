@@ -16,18 +16,11 @@ package indexer
 
 import (
 	"context"
-	"errors"
 	"math"
 
-	"github.com/blevesearch/bleve"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
-	blasterrors "github.com/mosuka/blast/errors"
-	"github.com/mosuka/blast/protobuf"
 	"github.com/mosuka/blast/protobuf/index"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type GRPCClient struct {
@@ -96,246 +89,62 @@ func (c *GRPCClient) GetAddress() string {
 	return c.conn.Target()
 }
 
-func (c *GRPCClient) NodeHealthCheck(probe string, opts ...grpc.CallOption) (string, error) {
-	req := &index.NodeHealthCheckRequest{}
-
-	switch probe {
-	case index.NodeHealthCheckRequest_HEALTHINESS.String():
-		req.Probe = index.NodeHealthCheckRequest_HEALTHINESS
-	case index.NodeHealthCheckRequest_LIVENESS.String():
-		req.Probe = index.NodeHealthCheckRequest_LIVENESS
-	case index.NodeHealthCheckRequest_READINESS.String():
-		req.Probe = index.NodeHealthCheckRequest_READINESS
-	default:
-		req.Probe = index.NodeHealthCheckRequest_HEALTHINESS
-	}
-
-	resp, err := c.client.NodeHealthCheck(c.ctx, req, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return index.NodeHealthCheckResponse_UNHEALTHY.String(), errors.New(st.Message())
-	}
-
-	return resp.State.String(), nil
+func (c *GRPCClient) NodeHealthCheck(req *index.NodeHealthCheckRequest, opts ...grpc.CallOption) (*index.NodeHealthCheckResponse, error) {
+	return c.client.NodeHealthCheck(c.ctx, req, opts...)
 }
 
-func (c *GRPCClient) NodeInfo(opts ...grpc.CallOption) (*index.Node, error) {
-	resp, err := c.client.NodeInfo(c.ctx, &empty.Empty{}, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return nil, errors.New(st.Message())
-	}
-
-	return resp.Node, nil
+func (c *GRPCClient) NodeInfo(req *empty.Empty, opts ...grpc.CallOption) (*index.NodeInfoResponse, error) {
+	return c.client.NodeInfo(c.ctx, req, opts...)
 }
 
-func (c *GRPCClient) ClusterJoin(node *index.Node, opts ...grpc.CallOption) error {
-	req := &index.ClusterJoinRequest{
-		Node: node,
-	}
-
-	_, err := c.client.ClusterJoin(c.ctx, req, opts...)
-	if err != nil {
-		return err
-	}
-
-	return nil
+func (c *GRPCClient) ClusterJoin(req *index.ClusterJoinRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	return c.client.ClusterJoin(c.ctx, req, opts...)
 }
 
-func (c *GRPCClient) ClusterLeave(id string, opts ...grpc.CallOption) error {
-	req := &index.ClusterLeaveRequest{
-		Id: id,
-	}
-
-	_, err := c.client.ClusterLeave(c.ctx, req, opts...)
-	if err != nil {
-		return err
-	}
-
-	return nil
+func (c *GRPCClient) ClusterLeave(req *index.ClusterLeaveRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	return c.client.ClusterLeave(c.ctx, req, opts...)
 }
 
-func (c *GRPCClient) ClusterInfo(opts ...grpc.CallOption) (*index.Cluster, error) {
-	resp, err := c.client.ClusterInfo(c.ctx, &empty.Empty{}, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return nil, errors.New(st.Message())
-	}
-
-	return resp.Cluster, nil
+func (c *GRPCClient) ClusterInfo(req *empty.Empty, opts ...grpc.CallOption) (*index.ClusterInfoResponse, error) {
+	return c.client.ClusterInfo(c.ctx, &empty.Empty{}, opts...)
 }
 
-func (c *GRPCClient) ClusterWatch(opts ...grpc.CallOption) (index.Index_ClusterWatchClient, error) {
-	req := &empty.Empty{}
-
-	watchClient, err := c.client.ClusterWatch(c.ctx, req, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-		return nil, errors.New(st.Message())
-	}
-
-	return watchClient, nil
+func (c *GRPCClient) ClusterWatch(req *empty.Empty, opts ...grpc.CallOption) (index.Index_ClusterWatchClient, error) {
+	return c.client.ClusterWatch(c.ctx, req, opts...)
 }
 
-func (c *GRPCClient) GetDocument(id string, opts ...grpc.CallOption) (*index.Document, error) {
-	req := &index.GetDocumentRequest{
-		Id: id,
-	}
-
-	resp, err := c.client.GetDocument(c.ctx, req, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		switch st.Code() {
-		case codes.NotFound:
-			return nil, blasterrors.ErrNotFound
-		default:
-			return nil, errors.New(st.Message())
-		}
-	}
-
-	return resp.Document, nil
+func (c *GRPCClient) Get(req *index.GetRequest, opts ...grpc.CallOption) (*index.GetResponse, error) {
+	return c.client.Get(c.ctx, req, opts...)
 }
 
-func (c *GRPCClient) Search(searchRequest *bleve.SearchRequest, opts ...grpc.CallOption) (*bleve.SearchResult, error) {
-	// bleve.SearchRequest -> Any
-	searchRequestAny := &any.Any{}
-	err := protobuf.UnmarshalAny(searchRequest, searchRequestAny)
-	if err != nil {
-		return nil, err
-	}
-
-	req := &index.SearchRequest{
-		SearchRequest: searchRequestAny,
-	}
-
-	resp, err := c.client.Search(c.ctx, req, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return nil, errors.New(st.Message())
-	}
-
-	// Any -> bleve.SearchResult
-	searchResultInstance, err := protobuf.MarshalAny(resp.SearchResult)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return nil, errors.New(st.Message())
-	}
-	if searchResultInstance == nil {
-		return nil, errors.New("nil")
-	}
-	searchResult := searchResultInstance.(*bleve.SearchResult)
-
-	return searchResult, nil
+func (c *GRPCClient) Index(req *index.IndexRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	return c.client.Index(c.ctx, req, opts...)
 }
 
-func (c *GRPCClient) IndexDocument(docs []*index.Document, opts ...grpc.CallOption) (int, error) {
-	stream, err := c.client.IndexDocument(c.ctx, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return -1, errors.New(st.Message())
-	}
-
-	for _, doc := range docs {
-		req := &index.IndexDocumentRequest{
-			Document: doc,
-			//Id:     id,
-			//Fields: fieldsAny,
-		}
-
-		err = stream.Send(req)
-		if err != nil {
-			return -1, err
-		}
-	}
-
-	resp, err := stream.CloseAndRecv()
-	if err != nil {
-		return -1, err
-	}
-
-	return int(resp.Count), nil
+func (c *GRPCClient) Delete(req *index.DeleteRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	return c.client.Delete(c.ctx, req, opts...)
 }
 
-func (c *GRPCClient) DeleteDocument(ids []string, opts ...grpc.CallOption) (int, error) {
-	stream, err := c.client.DeleteDocument(c.ctx, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-
-		return -1, errors.New(st.Message())
-	}
-
-	for _, id := range ids {
-		req := &index.DeleteDocumentRequest{
-			Id: id,
-		}
-
-		err := stream.Send(req)
-		if err != nil {
-			return -1, err
-		}
-	}
-
-	resp, err := stream.CloseAndRecv()
-	if err != nil {
-		return -1, err
-	}
-
-	return int(resp.Count), nil
+func (c *GRPCClient) BulkIndex(req *index.BulkIndexRequest, opts ...grpc.CallOption) (*index.BulkIndexResponse, error) {
+	return c.client.BulkIndex(c.ctx, req, opts...)
 }
 
-func (c *GRPCClient) GetIndexConfig(opts ...grpc.CallOption) (map[string]interface{}, error) {
-	resp, err := c.client.GetIndexConfig(c.ctx, &empty.Empty{}, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-		return nil, errors.New(st.Message())
-	}
-
-	indexMapping, err := protobuf.MarshalAny(resp.IndexConfig.IndexMapping)
-	if err != nil {
-		st, _ := status.FromError(err)
-		return nil, errors.New(st.Message())
-	}
-
-	indexConfig := map[string]interface{}{
-		"index_mapping":      indexMapping,
-		"index_type":         resp.IndexConfig.IndexType,
-		"index_storage_type": resp.IndexConfig.IndexStorageType,
-	}
-
-	return indexConfig, nil
+func (c *GRPCClient) BulkDelete(req *index.BulkDeleteRequest, opts ...grpc.CallOption) (*index.BulkDeleteResponse, error) {
+	return c.client.BulkDelete(c.ctx, req, opts...)
 }
 
-func (c *GRPCClient) GetIndexStats(opts ...grpc.CallOption) (map[string]interface{}, error) {
-	resp, err := c.client.GetIndexStats(c.ctx, &empty.Empty{}, opts...)
-	if err != nil {
-		st, _ := status.FromError(err)
-		return nil, errors.New(st.Message())
-	}
-
-	indexStatsIntr, err := protobuf.MarshalAny(resp.IndexStats)
-	if err != nil {
-		st, _ := status.FromError(err)
-		return nil, errors.New(st.Message())
-	}
-	indexStats := *indexStatsIntr.(*map[string]interface{})
-
-	return indexStats, nil
+func (c *GRPCClient) Search(req *index.SearchRequest, opts ...grpc.CallOption) (*index.SearchResponse, error) {
+	return c.client.Search(c.ctx, req, opts...)
 }
 
-func (c *GRPCClient) Snapshot(opts ...grpc.CallOption) error {
-	_, err := c.client.Snapshot(c.ctx, &empty.Empty{})
-	if err != nil {
-		st, _ := status.FromError(err)
+func (c *GRPCClient) GetIndexConfig(req *empty.Empty, opts ...grpc.CallOption) (*index.GetIndexConfigResponse, error) {
+	return c.client.GetIndexConfig(c.ctx, &empty.Empty{}, opts...)
+}
 
-		return errors.New(st.Message())
-	}
+func (c *GRPCClient) GetIndexStats(req *empty.Empty, opts ...grpc.CallOption) (*index.GetIndexStatsResponse, error) {
+	return c.client.GetIndexStats(c.ctx, &empty.Empty{}, opts...)
+}
 
-	return nil
+func (c *GRPCClient) Snapshot(req *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error) {
+	return c.client.Snapshot(c.ctx, &empty.Empty{})
 }

@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/mosuka/blast/indexer"
 	"github.com/urfave/cli"
 )
@@ -36,10 +37,20 @@ func indexerSnapshot(c *cli.Context) error {
 		}
 	}()
 
-	err = client.Snapshot()
+	req := &empty.Empty{}
+
+	res, err := client.Snapshot(req)
 	if err != nil {
 		return err
 	}
+
+	marshaler := indexer.JsonMarshaler{}
+	resBytes, err := marshaler.Marshal(res)
+	if err != nil {
+		return err
+	}
+
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(resBytes)))
 
 	return nil
 }

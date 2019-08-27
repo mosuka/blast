@@ -19,6 +19,7 @@ import (
 	"os"
 
 	"github.com/mosuka/blast/indexer"
+	"github.com/mosuka/blast/protobuf/index"
 	"github.com/urfave/cli"
 )
 
@@ -46,10 +47,22 @@ func indexerClusterLeave(c *cli.Context) error {
 		}
 	}()
 
-	err = client.ClusterLeave(nodeId)
+	req := &index.ClusterLeaveRequest{
+		Id: nodeId,
+	}
+
+	resp, err := client.ClusterLeave(req)
 	if err != nil {
 		return err
 	}
+
+	marshaler := indexer.JsonMarshaler{}
+	respBytes, err := marshaler.Marshal(resp)
+	if err != nil {
+		return err
+	}
+
+	_, _ = fmt.Fprintln(os.Stdout, fmt.Sprintf("%v", string(respBytes)))
 
 	return nil
 }
