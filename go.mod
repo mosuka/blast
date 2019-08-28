@@ -3,7 +3,7 @@ module github.com/mosuka/blast
 go 1.12
 
 require (
-	cloud.google.com/go v0.43.0 // indirect
+	cloud.google.com/go v0.44.3 // indirect
 	github.com/blevesearch/bleve v0.7.0
 	github.com/blevesearch/blevex v0.0.0-20180227211930-4b158bb555a3 // indirect
 	github.com/blevesearch/cld2 v0.0.0-20150916130542-10f17c049ec9 // indirect
@@ -24,7 +24,7 @@ require (
 	github.com/gorilla/mux v1.7.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
-	github.com/grpc-ecosystem/grpc-gateway v1.9.5
+	github.com/grpc-ecosystem/grpc-gateway v1.9.6
 	github.com/hashicorp/golang-lru v0.5.3 // indirect
 	github.com/hashicorp/raft v1.1.0
 	github.com/hashicorp/raft-boltdb v0.0.0-20190605210249-ef2e128ed477
@@ -42,6 +42,7 @@ require (
 	github.com/prometheus/procfs v0.0.0-20190322151404-55ae3d9d5573 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20190321074620-2f0d2b0e0001 // indirect
 	github.com/rogpeppe/fastuuid v1.2.0 // indirect
+	github.com/rogpeppe/go-internal v1.3.1 // indirect
 	github.com/stretchr/objx v0.1.1
 	github.com/syndtr/goleveldb v1.0.0 // indirect
 	github.com/tebeka/snowball v0.0.0-20130405174319-16e884df4e19 // indirect
@@ -50,13 +51,15 @@ require (
 	go.uber.org/atomic v1.4.0 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.10.0
-	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
-	golang.org/x/mobile v0.0.0-20190806162312-597adff16ade // indirect
-	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80 // indirect
-	golang.org/x/sys v0.0.0-20190804053845-51ab0e2deafa // indirect
-	golang.org/x/tools v0.0.0-20190808195139-e713427fea3f // indirect
-	google.golang.org/genproto v0.0.0-20190801165951-fa694d86fc64
-	google.golang.org/grpc v1.22.1
+	golang.org/x/crypto v0.0.0-20190820162420-60c769a6c586 // indirect
+	golang.org/x/image v0.0.0-20190823064033-3a9bac650e44 // indirect
+	golang.org/x/mobile v0.0.0-20190826170111-cafc553e1ac5 // indirect
+	golang.org/x/net v0.0.0-20190827160401-ba9fcec4b297 // indirect
+	golang.org/x/sys v0.0.0-20190826190057-c7b8b68b1456 // indirect
+	golang.org/x/tools v0.0.0-20190827205025-b29f5f60c37a // indirect
+	google.golang.org/api v0.9.0 // indirect
+	google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55
+	google.golang.org/grpc v1.23.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.2.2
 	honnef.co/go/tools v0.0.1-2019.2.2 // indirect
