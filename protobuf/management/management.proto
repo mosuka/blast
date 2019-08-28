@@ -17,6 +17,7 @@ syntax = "proto3";
 import "google/protobuf/any.proto";
 import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-swagger/options/annotations.proto";
 
 package management;
 
@@ -152,6 +153,15 @@ message GetRequest {
 }
 
 message GetResponse {
+//    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+//        json_schema: {
+//            required: ["value"]
+//        },
+//        example: {
+//            value: '{ "fields": { "field1": "Get Example", "field2": "This is an example Get response." } }'
+//        }
+//    };
+//    google.protobuf.Any value = 1 [(grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {type: 6}];
     google.protobuf.Any value = 1;
 }
 
