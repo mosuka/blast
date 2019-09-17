@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.12.7-stretch
+FROM golang:1.13.0-stretch
 
 ARG VERSION
 

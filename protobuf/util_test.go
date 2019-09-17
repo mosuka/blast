@@ -145,7 +145,7 @@ func TestMarshalAny_SearchRequest(t *testing.T) {
 		t.Fatalf("expected content to see %s, saw %s", expectedType, actualType)
 	}
 
-	expectedValue := []byte(`{"query":{"query":"blast"},"size":10,"from":0,"highlight":null,"fields":null,"facets":null,"explain":false,"sort":["-_score"],"includeLocations":false}`)
+	expectedValue := []byte(`{"query":{"query":"blast"},"size":10,"from":0,"highlight":null,"fields":null,"facets":null,"explain":false,"sort":["-_score"],"includeLocations":false,"search_after":null,"search_before":null}`)
 	actualValue := dataAny.Value
 	if !bytes.Equal(expectedValue, actualValue) {
 		t.Fatalf("expected content to see %v, saw %v", expectedValue, actualValue)
