@@ -29,7 +29,6 @@ import (
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
-	raftbadgerdb "github.com/markthethomas/raft-badger"
 	_ "github.com/mosuka/blast/builtins"
 	blasterrors "github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
@@ -141,31 +140,31 @@ func (s *RaftServer) Start() error {
 			s.logger.Fatal(err.Error())
 			return err
 		}
-	case "badger":
-		logStorePath := filepath.Join(s.dataDir, "raft", "log")
-		s.logger.Info("create raft log store", zap.String("path", logStorePath), zap.String("raft_storage_type", s.raftStorageType))
-		err = os.MkdirAll(filepath.Join(logStorePath, "badger"), 0755)
-		if err != nil {
-			s.logger.Fatal(err.Error())
-			return err
-		}
-		logStore, err = raftbadgerdb.NewBadgerStore(logStorePath)
-		if err != nil {
-			s.logger.Fatal(err.Error())
-			return err
-		}
-		stableStorePath := filepath.Join(s.dataDir, "raft", "stable")
-		s.logger.Info("create raft stable store", zap.String("path", stableStorePath), zap.String("raft_storage_type", s.raftStorageType))
-		err = os.MkdirAll(filepath.Join(stableStorePath, "badger"), 0755)
-		if err != nil {
-			s.logger.Fatal(err.Error())
-			return err
-		}
-		stableStore, err = raftbadgerdb.NewBadgerStore(stableStorePath)
-		if err != nil {
-			s.logger.Fatal(err.Error())
-			return err
-		}
+	//case "badger":
+	//	logStorePath := filepath.Join(s.dataDir, "raft", "log")
+	//	s.logger.Info("create raft log store", zap.String("path", logStorePath), zap.String("raft_storage_type", s.raftStorageType))
+	//	err = os.MkdirAll(filepath.Join(logStorePath, "badger"), 0755)
+	//	if err != nil {
+	//		s.logger.Fatal(err.Error())
+	//		return err
+	//	}
+	//	logStore, err = raftbadgerdb.NewBadgerStore(logStorePath)
+	//	if err != nil {
+	//		s.logger.Fatal(err.Error())
+	//		return err
+	//	}
+	//	stableStorePath := filepath.Join(s.dataDir, "raft", "stable")
+	//	s.logger.Info("create raft stable store", zap.String("path", stableStorePath), zap.String("raft_storage_type", s.raftStorageType))
+	//	err = os.MkdirAll(filepath.Join(stableStorePath, "badger"), 0755)
+	//	if err != nil {
+	//		s.logger.Fatal(err.Error())
+	//		return err
+	//	}
+	//	stableStore, err = raftbadgerdb.NewBadgerStore(stableStorePath)
+	//	if err != nil {
+	//		s.logger.Fatal(err.Error())
+	//		return err
+	//	}
 	default:
 		logStorePath := filepath.Join(s.dataDir, "raft", "log", "boltdb.db")
 		s.logger.Info("create raft log store", zap.String("path", logStorePath), zap.String("raft_storage_type", s.raftStorageType))
