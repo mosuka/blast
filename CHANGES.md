@@ -8,9 +8,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+
 - Add swagger specification experimentaly #107
 
 ### Changed
+
+- Update go version and dependencies #109
+
 
 ## [v0.8.0]
 
@@ -36,6 +40,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Fix a bug for waiting to receive an indexer cluster updates from the stream #100
 - Migrate to grpc-gateway #105
 
+
 ## [v0.7.1] - 2019-07-18
 
 ### Added
@@ -50,6 +55,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Remove original document #72
 - Rename config package to builtins #75
 
+
 ## [v0.7.0] - 2019-07-03
 
 ### Added
@@ -60,6 +66,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Migrate grpc-middleware #68
 
+
 ## [v0.6.1] - 2019-06-21
 
 ### Added
@@ -68,6 +75,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Fix HTTP response into JSON format #64
 - Update Dockerfile #62
+
 
 ## [v0.6.0] - 2019-06-19
 
@@ -82,6 +90,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Update http logger #51
 - Update logutils (#50)
 - Remve KVS (#49)
+
 
 ## [v0.5.0] - 2019-03-22
 
