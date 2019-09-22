@@ -9,7 +9,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
-- Add swagger specification experimentaly #107
+### Changed
+
+
+## [v0.8.1]
+
+### Added
 
 ### Changed
 
