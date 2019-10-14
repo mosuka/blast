@@ -24,3 +24,6 @@
 # Blast
 bin/
 dist/
+
+cover.out
+cover.html
