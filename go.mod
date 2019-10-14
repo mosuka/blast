@@ -3,12 +3,14 @@ module github.com/mosuka/blast
 go 1.13
 
 require (
-	github.com/blevesearch/bleve v0.8.0
+	github.com/RoaringBitmap/roaring v0.4.21 // indirect
+	github.com/blevesearch/bleve v0.8.1
 	github.com/blevesearch/blevex v0.0.0-20190916190636-152f0fe5c040 // indirect
 	github.com/blevesearch/cld2 v0.0.0-20150916130542-10f17c049ec9 // indirect
 	github.com/blevesearch/snowballstem v0.0.0-20180110192139-26b06a2c243d // indirect
 	github.com/couchbase/ghistogram v0.0.0-20170308220240-d910dd063dd6 // indirect
 	github.com/couchbase/moss v0.0.0-20190322010551-a0cae174c498 // indirect
+	github.com/couchbase/vellum v0.0.0-20190829182332-ef2e028c01fd // indirect
 	github.com/cznic/b v0.0.0-20181122101859-a26611c4d92d // indirect
 	github.com/cznic/mathutil v0.0.0-20181122101859-297441e03548 // indirect
 	github.com/cznic/strutil v0.0.0-20181122101858-275e90344537 // indirect
