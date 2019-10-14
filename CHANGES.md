@@ -9,7 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Add coverage to Makefile #114
+
 ### Changed
+
+- Bump Bleve version to v0.8.1 #117
 
 
 ## [v0.8.1]
