@@ -1188,6 +1188,21 @@ You can execute the command in docker container as follows:
 $ docker exec -it blast-indexer1 blast indexer node info --grpc-address=:5000
 ```
 
+### Running cluster on Docker compose
+
+Also, running a Blast cluster on Docker compose. 
+
+```bash
+$ docker-compose up
+$ docker-compose ps
+$ ./bin/blast manager get --grpc-address=127.0.0.1:5110 /cluster | jq .
+```
+
+```bash
+$ docker-compose stop
+$ docker-compose rm
+```
+
 
 ## Wikipedia example
 
