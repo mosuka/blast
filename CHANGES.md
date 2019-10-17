@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - Add coverage to Makefile #114
+- Docker compose #119
 
 ### Changed
 
