@@ -1190,7 +1190,7 @@ $ docker exec -it blast-indexer1 blast indexer node info --grpc-address=:5000
 
 ### Running cluster on Docker compose
 
-Also, running a Blast cluster on Docker composer. 
+Also, running a Blast cluster on Docker compose. 
 
 ```bash
 $ docker-compose up
