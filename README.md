@@ -1203,6 +1203,8 @@ $ docker-compose up -d indexer6
 $ docker-compose up -d dispatcher1
 $ docker-compose ps
 $ ./bin/blast manager get --grpc-address=127.0.0.1:5110 /cluster | jq .
+$ ./bin/blast dispatcher index --grpc-address=127.0.0.1:5210 --file=./example/wiki_bulk_index.jsonl --bulk | jq .
+$ ./bin/blast dispatcher search --grpc-address=127.0.0.1:5210 --file=./example/wiki_search_request_simple.json | jq .
 ```
 
 ```bash
