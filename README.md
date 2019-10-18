@@ -1193,14 +1193,20 @@ $ docker exec -it blast-indexer1 blast indexer node info --grpc-address=:5000
 Also, running a Blast cluster on Docker compose. 
 
 ```bash
-$ docker-compose up
+$ docker-compose up -d manager1
+$ docker-compose up -d indexer1
+$ docker-compose up -d indexer2
+$ docker-compose up -d indexer3
+$ docker-compose up -d indexer4
+$ docker-compose up -d indexer5
+$ docker-compose up -d indexer6
+$ docker-compose up -d dispatcher1
 $ docker-compose ps
 $ ./bin/blast manager get --grpc-address=127.0.0.1:5110 /cluster | jq .
 ```
 
 ```bash
-$ docker-compose stop
-$ docker-compose rm
+$ docker-compose down
 ```
 
 
