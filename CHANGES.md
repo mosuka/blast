@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+- Delete the experimentally implemented feature for distributed search #127
 - Add coverage to Makefile #114
 - Docker compose #119
 - Bump Bleve version to v0.8.1 #117
