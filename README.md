@@ -195,6 +195,9 @@ Refer to the following table for the options that can be configured.
 | --certificate-file | BLAST_CERTIFICATE_FILE | certificate_file | path to the client server TLS certificate file |
 | --key-file | BLAST_KEY_FILE | key_file | path to the client server TLS key file |
 | --common-name | BLAST_COMMON_NAME | common_name | certificate common name |
+| --cors-allowed-methods | BLAST_CORS_ALLOWED_METHODS | cors_allowed_methods | CORS allowed methods (ex: GET,PUT,DELETE,POST) |
+| --cors-allowed-origins | BLAST_CORS_ALLOWED_ORIGINS | cors_allowed_origins | CORS allowed origins (ex: http://localhost:8080,http://localhost:80) |
+| --cors-allowed-headers | BLAST_CORS_ALLOWED_HEADERS | cors_allowed_headers | CORS allowed headers (ex: content-type,x-some-key) |
 | --log-level | BLAST_LOG_LEVEL | log_level | log level |
 | --log-file | BLAST_LOG_FILE | log_file | log file |
 | --log-max-size | BLAST_LOG_MAX_SIZE | log_max_size | max size of a log file in megabytes |
