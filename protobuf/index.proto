@@ -1,0 +1,223 @@
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
+import "protoc-gen-swagger/options/annotations.proto";
+
+package index;
+
+option go_package = "github.com/mosuka/blast/protobuf";
+
+service Index {
+    rpc LivenessCheck (google.protobuf.Empty) returns (LivenessCheckResponse) {
+        option (google.api.http) = {
+            get: "/v1/liveness_check"
+        };
+    }
+
+    rpc ReadinessCheck (google.protobuf.Empty) returns (ReadinessCheckResponse) {
+        option (google.api.http) = {
+            get: "/v1/readiness_check"
+        };
+    }
+
+    rpc Node (google.protobuf.Empty) returns (NodeResponse) {
+        option (google.api.http) = {
+            get: "/v1/node"
+        };
+    }
+    rpc Join (JoinRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            put: "/v1/cluster/{id}"
+            body: "node"
+        };
+    }
+    rpc Cluster (google.protobuf.Empty) returns (ClusterResponse) {
+        option (google.api.http) = {
+            get: "/v1/cluster"
+        };
+    }
+    rpc Leave (LeaveRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            delete: "/v1/cluster/{id}"
+        };
+    }
+
+    rpc Snapshot (google.protobuf.Empty) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            get: "/v1/snapshot"
+        };
+    }
+
+    rpc BulkIndex (BulkIndexRequest) returns (BulkIndexResponse) {
+        option (google.api.http) = {
+            put: "/v1/documents"
+            body: "*"
+        };
+    }
+    rpc BulkDelete (BulkDeleteRequest) returns (BulkDeleteResponse) {
+        option (google.api.http) = {
+            delete: "/v1/documents"
+            body: "*"
+        };
+    }
+    rpc Get (GetRequest) returns (GetResponse) {
+        option (google.api.http) = {
+            get: "/v1/documents/{id=**}"
+        };
+    }
+    rpc Set (SetRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            put: "/v1/documents/{id=**}"
+            body: "*"
+        };
+    }
+    rpc Delete (DeleteRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            delete: "/v1/documents/{id=**}"
+        };
+    }
+    rpc Search (SearchRequest) returns (SearchResponse) {
+        option (google.api.http) = {
+            post: "/v1/search"
+            body: "*"
+        };
+    }
+
+    rpc Mapping (google.protobuf.Empty) returns (MappingResponse) {
+        option (google.api.http) = {
+            get: "/v1/mapping"
+        };
+    }
+
+    rpc Watch (google.protobuf.Empty) returns (stream WatchResponse) {}
+
+    rpc Metrics (google.protobuf.Empty) returns (MetricsResponse) {
+        option (google.api.http) = {
+            get: "/v1/metrics"
+        };
+    }
+}
+
+message LivenessCheckResponse {
+    bool alive = 1;
+}
+
+message ReadinessCheckResponse {
+    bool ready = 1;
+}
+
+message Metadata {
+    string grpc_address = 1;
+    string http_address = 2;
+}
+
+message Node {
+    string raft_address = 1;
+    Metadata metadata = 2;
+    string state = 3;
+}
+
+message Cluster {
+    map<string, Node> nodes = 1;
+    string leader = 2;
+}
+
+message JoinRequest {
+    string id = 1;
+    Node node = 2;
+}
+
+message LeaveRequest {
+    string id = 1;
+}
+
+message NodeResponse {
+    Node node = 1;
+}
+
+message ClusterResponse {
+    Cluster cluster = 1;
+}
+
+message Document {
+    string id = 1;
+    bytes fields = 2;
+}
+
+message GetRequest {
+    string id = 1;
+}
+
+message GetResponse {
+    bytes fields = 1;
+}
+
+message SetRequest {
+    string id = 1;
+    bytes fields = 2;
+}
+
+message DeleteRequest {
+    string id = 1;
+}
+
+message BulkIndexRequest {
+    repeated SetRequest requests = 1;
+}
+
+message BulkIndexResponse {
+    int32 count = 1;
+}
+
+message BulkDeleteRequest {
+    repeated DeleteRequest requests = 1;
+}
+
+message BulkDeleteResponse {
+    int32 count = 1;
+}
+
+message SetMetadataRequest {
+    string id = 1;
+    Metadata metadata = 2;
+}
+
+message DeleteMetadataRequest {
+    string id = 1;
+}
+
+message SearchRequest {
+    bytes search_request = 1;
+}
+
+message SearchResponse {
+    bytes search_result = 1;
+}
+
+message MappingResponse {
+    bytes mapping = 1;
+}
+
+message Event {
+    enum Type {
+        Unknown = 0;
+        Join = 1;
+        Leave = 2;
+        Set = 3;
+        Delete = 4;
+        BulkIndex = 5;
+        BulkDelete = 6;
+    }
+    Type type = 1;
+    google.protobuf.Any data = 2;
+}
+
+message WatchResponse {
+    Event event = 1;
+}
+
+message MetricsResponse {
+    bytes metrics = 1;
+}

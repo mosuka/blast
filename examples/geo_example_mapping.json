@@ -1,0 +1,54 @@
+{
+  "types": {
+    "geo_example": {
+      "properties": {
+        "name": {
+          "fields": [
+            {
+              "include_term_vectors": true,
+              "include_in_all": true,
+              "index": true,
+              "store": true,
+              "analyzer": "keyword",
+              "type": "text"
+            }
+          ],
+          "dynamic": true,
+          "enabled": true
+        },
+        "geo": {
+          "fields": [
+            {
+              "include_term_vectors": true,
+              "include_in_all": true,
+              "index": true,
+              "store": true,
+              "type": "geopoint"
+            }
+          ],
+          "dynamic": true,
+          "enabled": true
+        }
+      }
+    }
+  },
+  "default_mapping": {
+    "enabled": true,
+    "dynamic": true,
+    "default_analyzer": "standard"
+  },
+  "type_field": "_type",
+  "default_type": "_default",
+  "default_analyzer": "standard",
+  "default_datetime_parser": "dateTimeOptional",
+  "default_field": "_all",
+  "store_dynamic": true,
+  "index_dynamic": true,
+  "analysis": {
+    "analyzers": {},
+    "char_filters": {},
+    "tokenizers": {},
+    "token_filters": {},
+    "token_maps": {}
+  }
+}

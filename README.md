@@ -1,22 +1,3 @@
-<!--
- Copyright (c) 2019 Minoru Osuka
-
- Licensed to the Apache Software Foundation (ASF) under one or more
- contributor license agreements.  See the NOTICE file distributed with
- this work for additional information regarding copyright ownership.
- The ASF licenses this file to You under the Apache License, Version 2.0
- (the "License"); you may not use this file except in compliance with
- the License.  You may obtain a copy of the License at
-
-     http://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
--->
-
 # Blast
 
 Blast is a full-text search and indexing server written in [Go](https://golang.org) built on top of [Bleve](http://www.blevesearch.com).  
@@ -31,16 +12,14 @@ Blast makes it easy for programmers to develop search applications with advanced
 - Faceted search
 - Spatial/Geospatial search
 - Search result highlighting
-- Distributed search/indexing
 - Index replication
 - Bringing up cluster
-- Cluster Federation
 - An easy-to-use HTTP API
 - CLI is available
 - Docker container image is available
 
 
-## Installing dependencies
+## Install build dependencies
 
 Blast requires some C/C++ libraries if you need to enable cld2, icu, libstemmer or leveldb. The following sections are instructions for satisfying dependencies on particular platforms.
 
@@ -90,63 +69,73 @@ $ sudo cp *.so /usr/local/lib
 ```
 
 
-## Building Blast
+## Build
 
-When you satisfied dependencies, let's build Blast for Linux as following:
+Building Blast as following:
 
 ```bash
 $ mkdir -p ${GOPATH}/src/github.com/mosuka
 $ cd ${GOPATH}/src/github.com/mosuka
 $ git clone https://github.com/mosuka/blast.git
 $ cd blast
-$ make build
+$ make
 ```
 
-If you want to build for other platform, set `GOOS`, `GOARCH` environment variables. For example, build for macOS like following:
+If you omit `GOOS` or `GOARCH`, it will build the binary of the platform you are using.  
+If you want to specify the target platform, please set `GOOS` and `GOARCH` environment variables.
+
+### Linux
 
 ```bash
-$ make \
-    GOOS=darwin \
-    build
-```
-
-Blast supports some [Bleve Extensions (blevex)](https://github.com/blevesearch/blevex). If you want to build with them, please set `CGO_LDFLAGS`, `CGO_CFLAGS`, `CGO_ENABLED` and `BUILD_TAGS`. For example, build LevelDB to be available for index storage as follows:
-
-```bash
-$ make \
-    GOOS=linux \
-    BUILD_TAGS=leveldb \
-    CGO_ENABLED=1 \
-    build
-```
-
-You can enable all the Bleve extensions supported by Blast as follows:
-
-###  Linux
-
-```bash
-$ make \
-    GOOS=linux \
-    BUILD_TAGS="kagome icu libstemmer cld2 cznicb leveldb badger" \
-    CGO_ENABLED=1 \
-    build
+$ make GOOS=linux build
 ```
 
 ### macOS
 
 ```bash
-$ make \
-    GOOS=darwin \
-    BUILD_TAGS="kagome icu libstemmer cld2 cznicb leveldb badger" \
-    CGO_ENABLED=1 \
-    CGO_LDFLAGS="-L/usr/local/opt/icu4c/lib" \
-    CGO_CFLAGS="-I/usr/local/opt/icu4c/include" \
-    build
+$ make GOOS=darwin build
 ```
 
-### Build flags
+### Windows
 
-Please refer to the following table for details of Bleve Extensions:
+```bash
+$ make GOOS=windows build
+```
+
+## Build with extensions
+
+Blast supports some Bleve Extensions (blevex). If you want to build with them, please set CGO_LDFLAGS, CGO_CFLAGS, CGO_ENABLED and BUILD_TAGS. For example, build LevelDB to be available for index storage as follows:
+
+```bash
+$ make GOOS=linux \
+       BUILD_TAGS=icu \
+       CGO_ENABLED=1 \
+       build
+```
+
+### Linux
+
+```bash
+$ make GOOS=linux \
+       BUILD_TAGS="kagome icu libstemmer cld2" \
+       CGO_ENABLED=1 \
+       build
+```
+
+### macOS
+
+```bash
+$ make GOOS=darwin \
+       BUILD_TAGS="kagome icu libstemmer cld2" \
+       CGO_ENABLED=1 \
+       CGO_LDFLAGS="-L/usr/local/opt/icu4c/lib" \
+       CGO_CFLAGS="-I/usr/local/opt/icu4c/include" \
+       build
+```
+
+### Buil flags
+
+Refer to the following table for the build flags of the supported Bleve extensions:
 
 | BUILD_TAGS | CGO_ENABLED | Description |
 | ---------- | ----------- | ----------- |
@@ -154,13 +143,11 @@ Please refer to the following table for details of Bleve Extensions:
 | kagome     | 0           | Enable Japanese Language Analyser |
 | icu        | 1           | Enable ICU Tokenizer, Thai Language Analyser |
 | libstemmer | 1           | Enable Language Stemmer (Danish, German, English, Spanish, Finnish, French, Hungarian, Italian, Dutch, Norwegian, Portuguese, Romanian, Russian, Swedish, Turkish) |
-| cznicb     | 0           | Enable cznicb KV store |
-| leveldb    | 1           | Enable LevelDB |
-| badger     | 0           | Enable Badger (This feature is considered experimental) |
 
-If you want to enable the feature whose `CGO_ENABLE` is `1`, please install it referring to the Installing dependencies section above.
+If you want to enable the feature whose `CGO_ENABLE` is `1`, please install it referring to the Install build dependencies section above.
 
-### Binaries
+
+## Binary
 
 You can see the binary file when build successful like so:
 
@@ -170,128 +157,146 @@ blast
 ```
 
 
-## Testing Blast
+## Test
 
 If you want to test your changes, run command like following:
 
 ```bash
-$ make \
-    test
+$ make test
 ```
 
-You can test with all the Bleve extensions supported by Blast as follows:
+If you want to specify the target platform, set `GOOS` and `GOARCH` environment variables in the same way as the build.
 
-###  Linux
+
+## Package
+
+To create a distribution package, run the following command:
 
 ```bash
-$ make \
-    GOOS=linux \
-    BUILD_TAGS="kagome icu libstemmer cld2 cznicb leveldb badger" \
-    CGO_ENABLED=1 \
-    test
+$ make dist
 ```
 
-### macOS
+
+## Configure
+
+Blast can change its startup options with configuration files, environment variables, and command line arguments.  
+Refer to the following table for the options that can be configured.
+
+| CLI Flag | Environment variable | Configuration File | Description |
+| --- | --- | --- | --- |
+| --config-file | - | - | config file. if omitted, blast.yaml in /etc and home directory will be searched |
+| --id | BLAST_ID | id | node ID |
+| --raft-address | BLAST_RAFT_ADDRESS | raft_address | Raft server listen address |
+| --grpc-address | BLAST_GRPC_ADDRESS | grpc_address | gRPC server listen address |
+| --http-address | BLAST_HTTP_ADDRESS | http_address | HTTP server listen address |
+| --data-directory | BLAST_DATA_DIRECTORY | data_directory | data directory which store the index and Raft logs |
+| --mapping-file | BLAST_MAPPING_FILE | mapping_file | path to the index mapping file |
+| --peer-grpc-address | BLAST_PEER_GRPC_ADDRESS | peer_grpc_address | listen address of the existing gRPC server in the joining cluster |
+| --certificate-file | BLAST_CERTIFICATE_FILE | certificate_file | path to the client server TLS certificate file |
+| --key-file | BLAST_KEY_FILE | key_file | path to the client server TLS key file |
+| --common-name | BLAST_COMMON_NAME | common_name | certificate common name |
+| --log-level | BLAST_LOG_LEVEL | log_level | log level |
+| --log-file | BLAST_LOG_FILE | log_file | log file |
+| --log-max-size | BLAST_LOG_MAX_SIZE | log_max_size | max size of a log file in megabytes |
+| --log-max-backups | BLAST_LOG_MAX_BACKUPS | log_max_backups | max backup count of log files |
+| --log-max-age | BLAST_LOG_MAX_AGE | log_max_age | max age of a log file in days |
+| --log-compress | BLAST_LOG_COMPRESS | log_compress | compress a log file |
+
+
+## Start
+
+Starting server is easy as follows:
 
 ```bash
-$ make \
-    GOOS=darwin \
-    BUILD_TAGS="kagome icu libstemmer cld2 cznicb leveldb badger" \
-    CGO_ENABLED=1 \
-    CGO_LDFLAGS="-L/usr/local/opt/icu4c/lib" \
-    CGO_CFLAGS="-I/usr/local/opt/icu4c/include" \
-    test
+$ ./bin/blast start \
+              --id=node1 \
+              --raft-address=:7000 \
+              --http-address=:8000 \
+              --grpc-address=:9000 \
+              --data-directory=/tmp/blast/node1 \
+              --mapping-file=./examples/example_mapping.json
 ```
 
-
-## Packaging Blast
-
-###  Linux
+You can get the node information with the following command:
 
 ```bash
-$ make \
-    GOOS=linux \
-    BUILD_TAGS="kagome icu libstemmer cld2 cznicb leveldb badger" \
-    CGO_ENABLED=1 \
-    dist
+$ ./bin/blast node | jq .
 ```
 
-### macOS
+or the following URL:
 
 ```bash
-$ make \
-    GOOS=darwin \
-    BUILD_TAGS="kagome icu libstemmer cld2 cznicb leveldb badger" \
-    CGO_ENABLED=1 \
-    CGO_LDFLAGS="-L/usr/local/opt/icu4c/lib" \
-    CGO_CFLAGS="-I/usr/local/opt/icu4c/include" \
-    dist
+$ curl -X GET http://localhost:8000/v1/node | jq .
 ```
 
-
-## Starting Blast in standalone mode
-
-![standalone](https://user-images.githubusercontent.com/970948/59768879-138f5180-92e0-11e9-8b33-c7b1a93e0893.png)
-
-Running a Blast in standalone mode is easy. Start a indexer like so:
-
-```bash
-$ ./bin/blast indexer start \
-    --grpc-address=:5000 \
-    --grpc-gateway-address=:6000 \
-    --http-address=:8000 \
-    --node-id=indexer1 \
-    --node-address=:2000 \
-    --data-dir=/tmp/blast/indexer1 \
-    --raft-storage-type=boltdb \
-    --index-mapping-file=./example/wiki_index_mapping.json \
-    --index-type=upside_down \
-    --index-storage-type=boltdb
-```
-
-Please refer to following document for details of index mapping:
-- http://blevesearch.com/docs/Terminology/
-- http://blevesearch.com/docs/Text-Analysis/
-- http://blevesearch.com/docs/Index-Mapping/
-- https://github.com/blevesearch/bleve/blob/master/mapping/index.go#L43
-
-You can check the node with the following command:
-
-```bash
-$ ./bin/blast indexer node info --grpc-address=:5000 | jq .
-```
-
-You can see the result in JSON format. The result of the above command is:
+The result of the above command is:
 
 ```json
 {
   "node": {
-    "id": "indexer1",
-    "bind_address": ":2000",
-    "state": 3,
+    "raft_address": ":7000",
     "metadata": {
-      "grpc_address": ":5000",
-      "grpc_gateway_address": ":6000",
+      "grpc_address": ":9000",
       "http_address": ":8000"
-    }
+    },
+    "state": "Leader"
   }
 }
 ```
 
-You can now put, get, search and delete the documents via CLI.  
+## Health check
 
-### Indexing a document via CLI
-
-For document indexing, execute the following command:
+You can check the health status of the node.
 
 ```bash
-$ ./bin/blast indexer index --grpc-address=:5000 enwiki_1 '
+$ ./bin/blast healthcheck | jq .
+```
+
+Also provides the following REST APIs
+
+### Liveness prove
+
+This endpoint always returns 200 and should be used to check server health.
+
+```bash
+$ curl -X GET http://localhost:8000/v1/liveness_check | jq .
+```
+
+### Readiness probe
+
+This endpoint returns 200 when server is ready to serve traffic (i.e. respond to queries).
+
+```bash
+$ curl -X GET http://localhost:8000/v1/readiness_check | jq .
+```
+
+## Put a document
+
+To put a document, execute the following command:
+
+```bash
+$ ./bin/blast set 1 '
 {
   "fields": {
-    "title_en": "Search engine (computing)",
-    "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
+    "title": "Search engine (computing)",
+    "text": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
     "timestamp": "2018-07-04T05:41:00Z",
-    "_type": "enwiki"
+    "_type": "example"
+  }
+}
+' | jq .
+```
+
+or, you can use the RESTful API as follows:
+
+```bash
+$ curl -X PUT 'http://127.0.0.1:8000/v1/documents/1' --data-binary '
+{
+  "fields": {
+    "title": "Search engine (computing)",
+    "text": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
+    "timestamp": "2018-07-04T05:41:00Z",
+    "_type": "example"
   }
 }
 ' | jq .
@@ -300,588 +305,217 @@ $ ./bin/blast indexer index --grpc-address=:5000 enwiki_1 '
 or
 
 ```bash
-$ ./bin/blast indexer index --grpc-address=:5000 --file ./example/wiki_doc_enwiki_1.json | jq .
+$ curl -X PUT 'http://127.0.0.1:8000/v1/documents/1' -H "Content-Type: application/json" --data-binary @./examples/example_doc_1.json
 ```
 
-You can see the result in JSON format. The result of the above command is:
+## Get a document
 
-```json
-{}
-```
-
-### Getting a document via CLI
-
-Getting a document is as following:
+To get a document, execute the following command:
 
 ```bash
-$ ./bin/blast indexer get --grpc-address=:5000 enwiki_1 | jq .
+$ ./bin/blast get 1 | jq .
 ```
 
-You can see the result in JSON format. The result of the above command is:
+or, you can use the RESTful API as follows:
+
+```bash
+$ curl -X GET 'http://127.0.0.1:8000/v1/documents/1' | jq .
+```
+
+You can see the result. The result of the above command is:
 
 ```json
 {
   "fields": {
-    "_type": "enwiki",
-    "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
+    "_type": "example",
+    "text": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
     "timestamp": "2018-07-04T05:41:00Z",
-    "title_en": "Search engine (computing)"
+    "title": "Search engine (computing)"
   }
 }
 ```
 
-### Searching documents via CLI
+## Search documents
 
-Searching documents is as like following:
+To search documents, execute the following command:
 
 ```bash
-$ ./bin/blast indexer search --grpc-address=:5000 --file=./example/wiki_search_request.json | jq .
-```
-
-You can see the result in JSON format. The result of the above command is:
-
-```json
+$ ./bin/blast search '
 {
-  "search_result": {
-    "status": {
-      "total": 1,
-      "failed": 0,
-      "successful": 1
+  "search_request": {
+    "query": {
+      "query": "+_all:search"
     },
-    "request": {
-      "query": {
-        "query": "+_all:search"
-      },
-      "size": 10,
-      "from": 0,
-      "highlight": {
-        "style": "html",
-        "fields": [
-          "title",
-          "text"
-        ]
-      },
-      "fields": [
-        "*"
-      ],
-      "facets": {
-        "Timestamp range": {
-          "size": 10,
-          "field": "timestamp",
-          "date_ranges": [
-            {
-              "end": "2010-12-31T23:59:59Z",
-              "name": "2001 - 2010",
-              "start": "2001-01-01T00:00:00Z"
-            },
-            {
-              "end": "2020-12-31T23:59:59Z",
-              "name": "2011 - 2020",
-              "start": "2011-01-01T00:00:00Z"
-            }
-          ]
-        },
-        "Type count": {
-          "size": 10,
-          "field": "_type"
-        }
-      },
-      "explain": false,
-      "sort": [
-        "-_score",
-        "_id",
-        "-timestamp"
-      ],
-      "includeLocations": false
-    },
-    "hits": [
-      {
-        "index": "/tmp/blast/indexer1/index",
-        "id": "enwiki_1",
-        "score": 0.09703538256409851,
-        "locations": {
-          "text_en": {
-            "search": [
-              {
-                "pos": 2,
-                "start": 2,
-                "end": 8,
-                "array_positions": null
-              },
-              {
-                "pos": 20,
-                "start": 118,
-                "end": 124,
-                "array_positions": null
-              },
-              {
-                "pos": 33,
-                "start": 195,
-                "end": 201,
-                "array_positions": null
-              },
-              {
-                "pos": 68,
-                "start": 415,
-                "end": 421,
-                "array_positions": null
-              },
-              {
-                "pos": 73,
-                "start": 438,
-                "end": 444,
-                "array_positions": null
-              },
-              {
-                "pos": 76,
-                "start": 458,
-                "end": 466,
-                "array_positions": null
-              }
-            ]
-          },
-          "title_en": {
-            "search": [
-              {
-                "pos": 1,
-                "start": 0,
-                "end": 6,
-                "array_positions": null
-              }
-            ]
-          }
-        },
-        "sort": [
-          "_score",
-          "enwiki_1",
-          " \u0001\u0015\u001f\u0004~80Pp\u0000"
-        ],
-        "fields": {
-          "_type": "enwiki",
-          "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
-          "timestamp": "2018-07-04T05:41:00Z",
-          "title_en": "Search engine (computing)"
-        }
-      }
+    "size": 10,
+    "from": 0,
+    "fields": [
+      "*"
     ],
-    "total_hits": 1,
-    "max_score": 0.09703538256409851,
-    "took": 122105,
-    "facets": {
-      "Timestamp range": {
-        "field": "timestamp",
-        "total": 1,
-        "missing": 0,
-        "other": 0,
-        "date_ranges": [
-          {
-            "name": "2011 - 2020",
-            "start": "2011-01-01T00:00:00Z",
-            "end": "2020-12-31T23:59:59Z",
-            "count": 1
-          }
-        ]
-      },
-      "Type count": {
-        "field": "_type",
-        "total": 1,
-        "missing": 0,
-        "other": 0,
-        "terms": [
-          {
-            "term": "enwiki",
-            "count": 1
-          }
-        ]
-      }
-    }
-  }
-}
-```
-
-Please refer to following document for details of search request and result:
-- http://blevesearch.com/docs/Query/
-- http://blevesearch.com/docs/Query-String-Query/
-- http://blevesearch.com/docs/Sorting/
-- https://github.com/blevesearch/bleve/blob/master/search.go#L267
-- https://github.com/blevesearch/bleve/blob/master/search.go#L443
-
-### Deleting a document via CLI
-
-Deleting a document is as following:
-
-```bash
-$ ./bin/blast indexer delete --grpc-address=:5000 enwiki_1
-```
-
-You can see the result in JSON format. The result of the above command is:
-
-```json
-{}
-```
-
-### Indexing documents in bulk via CLI
-
-Indexing documents in bulk, run the following command:
-
-```bash
-$ ./bin/blast indexer index --grpc-address=:5000 --file=./example/wiki_bulk_index.jsonl --bulk | jq .
-```
-
-You can see the result in JSON format. The result of the above command is:
-
-```json
-{
-  "count": 36
-}
-```
-
-### Deleting documents in bulk via CLI
-
-Deleting documents in bulk, run the following command:
-
-```bash
-$ ./bin/blast indexer delete --grpc-address=:5000 --file=./example/wiki_bulk_delete.txt | jq .
-```
-
-You can see the result in JSON format. The result of the above command is:
-
-```json
-{
-  "count": 36
-}
-```
-
-
-## Using HTTP REST API
-
-Also you can do above commands via HTTP REST API that listened port 5002.
-
-### Indexing a document via HTTP REST API
-
-Indexing a document via HTTP is as following:
-
-```bash
-$ curl -X PUT 'http://127.0.0.1:6000/v1/documents/enwiki_1' -H 'Content-Type: application/json' --data-binary '
-{
-  "fields": {
-    "title_en": "Search engine (computing)",
-    "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
-    "timestamp": "2018-07-04T05:41:00Z",
-    "_type": "enwiki"
+    "sort": [
+      "-_score"
+    ]
   }
 }
 ' | jq .
 ```
 
-or
+or, you can use the RESTful API as follows:
 
 ```bash
-$ curl -X PUT 'http://127.0.0.1:6000/v1/documents' -H 'Content-Type: application/json' --data-binary @./example/wiki_doc_enwiki_1.json | jq .
-```
-
-You can see the result in JSON format. The result of the above command is:
-
-```json
-{}
-```
-
-### Getting a document via HTTP REST API
-
-Getting a document via HTTP is as following:
-
-```bash
-$ curl -X GET 'http://127.0.0.1:6000/v1/documents/enwiki_1' -H 'Content-Type: application/json' | jq .
-```
-
-You can see the result in JSON format. The result of the above command is:
-
-```json
+$ curl -X POST 'http://127.0.0.1:8000/v1/search' --data-binary '
 {
-  "fields": {
-    "_type": "enwiki",
-    "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
-    "timestamp": "2018-07-04T05:41:00Z",
-    "title_en": "Search engine (computing)"
+  "search_request": {
+    "query": {
+      "query": "+_all:search"
+    },
+    "size": 10,
+    "from": 0,
+    "fields": [
+      "*"
+    ],
+    "sort": [
+      "-_score"
+    ]
   }
 }
+' | jq .
 ```
 
-### Searching documents via HTTP REST API
-
-Searching documents via HTTP is as following:
-
-```bash
-$ curl -X POST 'http://127.0.0.1:6000/v1/search' -H 'Content-Type: application/json' --data-binary @./example/wiki_search_request.json | jq .
-```
-
-You can see the result in JSON format. The result of the above command is:
+You can see the result. The result of the above command is:
 
 ```json
 {
   "search_result": {
-    "status": {
-      "total": 1,
-      "failed": 0,
-      "successful": 1
-    },
-    "request": {
-      "query": {
-        "query": "+_all:search"
-      },
-      "size": 10,
-      "from": 0,
-      "highlight": {
-        "style": "html",
-        "fields": [
-          "title",
-          "text"
+    "facets": null,
+    "hits": [
+      {
+        "fields": {
+          "_type": "example",
+          "text": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
+          "timestamp": "2018-07-04T05:41:00Z",
+          "title": "Search engine (computing)"
+        },
+        "id": "1",
+        "index": "/tmp/blast/node1/index",
+        "score": 0.09703538256409851,
+        "sort": [
+          "_score"
         ]
-      },
+      }
+    ],
+    "max_score": 0.09703538256409851,
+    "request": {
+      "explain": false,
+      "facets": null,
       "fields": [
         "*"
       ],
-      "facets": {
-        "Timestamp range": {
-          "size": 10,
-          "field": "timestamp",
-          "date_ranges": [
-            {
-              "end": "2010-12-31T23:59:59Z",
-              "name": "2001 - 2010",
-              "start": "2001-01-01T00:00:00Z"
-            },
-            {
-              "end": "2020-12-31T23:59:59Z",
-              "name": "2011 - 2020",
-              "start": "2011-01-01T00:00:00Z"
-            }
-          ]
-        },
-        "Type count": {
-          "size": 10,
-          "field": "_type"
-        }
+      "from": 0,
+      "highlight": null,
+      "includeLocations": false,
+      "query": {
+        "query": "+_all:search"
       },
-      "explain": false,
+      "search_after": null,
+      "search_before": null,
+      "size": 10,
       "sort": [
-        "-_score",
-        "_id",
-        "-timestamp"
-      ],
-      "includeLocations": false
+        "-_score"
+      ]
     },
-    "hits": [
-      {
-        "index": "/tmp/blast/indexer1/index",
-        "id": "enwiki_1",
-        "score": 0.09703538256409851,
-        "locations": {
-          "text_en": {
-            "search": [
-              {
-                "pos": 2,
-                "start": 2,
-                "end": 8,
-                "array_positions": null
-              },
-              {
-                "pos": 20,
-                "start": 118,
-                "end": 124,
-                "array_positions": null
-              },
-              {
-                "pos": 33,
-                "start": 195,
-                "end": 201,
-                "array_positions": null
-              },
-              {
-                "pos": 68,
-                "start": 415,
-                "end": 421,
-                "array_positions": null
-              },
-              {
-                "pos": 73,
-                "start": 438,
-                "end": 444,
-                "array_positions": null
-              },
-              {
-                "pos": 76,
-                "start": 458,
-                "end": 466,
-                "array_positions": null
-              }
-            ]
-          },
-          "title_en": {
-            "search": [
-              {
-                "pos": 1,
-                "start": 0,
-                "end": 6,
-                "array_positions": null
-              }
-            ]
-          }
-        },
-        "sort": [
-          "_score",
-          "enwiki_1",
-          " \u0001\u0015\u001f\u0004~80Pp\u0000"
-        ],
-        "fields": {
-          "_type": "enwiki",
-          "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
-          "timestamp": "2018-07-04T05:41:00Z",
-          "title_en": "Search engine (computing)"
-        }
-      }
-    ],
-    "total_hits": 1,
-    "max_score": 0.09703538256409851,
-    "took": 323568,
-    "facets": {
-      "Timestamp range": {
-        "field": "timestamp",
-        "total": 1,
-        "missing": 0,
-        "other": 0,
-        "date_ranges": [
-          {
-            "name": "2011 - 2020",
-            "start": "2011-01-01T00:00:00Z",
-            "end": "2020-12-31T23:59:59Z",
-            "count": 1
-          }
-        ]
-      },
-      "Type count": {
-        "field": "_type",
-        "total": 1,
-        "missing": 0,
-        "other": 0,
-        "terms": [
-          {
-            "term": "enwiki",
-            "count": 1
-          }
-        ]
-      }
-    }
+    "status": {
+      "failed": 0,
+      "successful": 1,
+      "total": 1
+    },
+    "took": 171880,
+    "total_hits": 1
   }
 }
 ```
 
-### Deleting a document via HTTP REST API
+## Delete a document
 
-Deleting a document via HTTP is as following:
-
-```bash
-$ curl -X DELETE 'http://127.0.0.1:6000/v1/documents/enwiki_1' -H 'Content-Type: application/json' | jq .
-```
-
-You can see the result in JSON format. The result of the above command is:
-
-```json
-{}
-```
-
-### Indexing documents in bulk via HTTP REST API
-
-Indexing documents in bulk via HTTP is as following:
+Deleting a document, execute the following command:
 
 ```bash
-$ curl -X PUT 'http://127.0.0.1:6000/v1/bulk' -H 'Content-Type: application/x-ndjson' --data-binary @./example/wiki_bulk_index.jsonl | jq .
+$ ./bin/blast delete 1
 ```
 
-You can see the result in JSON format. The result of the above command is:
-
-```json
-{
-  "count": 36
-}
-```
-
-### Deleting documents in bulk via HTTP REST API
-
-Deleting documents in bulk via HTTP is as following:
+or, you can use the RESTful API as follows:
 
 ```bash
-$ curl -X DELETE 'http://127.0.0.1:6000/v1/bulk' -H 'Content-Type: text/plain' --data-binary @./example/wiki_bulk_delete.txt | jq .
+$ curl -X DELETE 'http://127.0.0.1:8000/v1/documents/1'
 ```
 
-You can see the result in JSON format. The result of the above command is:
+## Index documents in bulk
 
-```json
-{
-  "count": 36
-}
-```
-
-
-## Starting Blast in cluster mode
-
-![cluster](https://user-images.githubusercontent.com/970948/59768677-bf846d00-92df-11e9-8a70-92496ff55ce7.png)
-
-Blast can easily bring up a cluster. Running a Blast in standalone is not fault tolerant. If you need to improve fault tolerance, start two more indexers as follows:
-
-First of all, start a indexer in standalone.
+To index documents in bulk, execute the following command:
 
 ```bash
-$ ./bin/blast indexer start \
-    --grpc-address=:5000 \
-    --grpc-gateway-address=:6000 \
-    --http-address=:8000 \
-    --node-id=indexer1 \
-    --node-address=:2000 \
-    --data-dir=/tmp/blast/indexer1 \
-    --raft-storage-type=boltdb \
-    --index-mapping-file=./example/wiki_index_mapping.json \
-    --index-type=upside_down \
-    --index-storage-type=boltdb
+$ ./bin/blast bulk-index --file ./examples/example_bulk_index.json
 ```
 
-Then, start two more indexers.
+or, you can use the RESTful API as follows:
 
 ```bash
-$ ./bin/blast indexer start \
-    --peer-grpc-address=:5000 \
-    --grpc-address=:5010 \
-    --grpc-gateway-address=:6010 \
-    --http-address=:8010 \
-    --node-id=indexer2 \
-    --node-address=:2010 \
-    --data-dir=/tmp/blast/indexer2 \
-    --raft-storage-type=boltdb
-
-$ ./bin/blast indexer start \
-    --peer-grpc-address=:5000 \
-    --grpc-address=:5020 \
-    --grpc-gateway-address=:6020 \
-    --http-address=:8020 \
-    --node-id=indexer3 \
-    --node-address=:2020 \
-    --data-dir=/tmp/blast/indexer3 \
-    --raft-storage-type=boltdb
+$ curl -X PUT 'http://127.0.0.1:8000/v1/documents' -H "Content-Type: application/x-ndjson" --data-binary @./examples/example_bulk_index.json
 ```
+
+## Delete documents in bulk
+
+To delete documents in bulk, execute the following command:
+
+```bash
+$ ./bin/blast bulk-delete --file ./examples/example_bulk_delete.txt
+```
+
+or, you can use the RESTful API as follows:
+
+```bash
+$ curl -X DELETE 'http://127.0.0.1:8000/v1/documents' -H "Content-Type: text/plain" --data-binary @./examples/example_bulk_delete.txt
+```
+
+## Bringing up a cluster
+
+Blast is easy to bring up the cluster. the node is already running, but that is not fault tolerant. If you need to increase the fault tolerance, bring up 2 more data nodes like so:
+
+```bash
+$ ./bin/blast start \
+              --id=node2 \
+              --raft-address=:7001 \
+              --http-address=:8001 \
+              --grpc-address=:9001 \
+              --peer-grpc-address=:9000 \
+              --data-directory=/tmp/blast/node2 \
+              --mapping-file=./examples/example_mapping.json
+```
+
+```bash
+$ ./bin/blast start \
+              --id=node3 \
+              --raft-address=:7002 \
+              --http-address=:8002 \
+              --grpc-address=:9002 \
+              --peer-grpc-address=:9000 \
+              --data-directory=/tmp/blast/node3 \
+              --mapping-file=./examples/example_mapping.json
+```
+
 
 _Above example shows each Blast node running on the same host, so each node must listen on different ports. This would not be necessary if each node ran on a different host._
 
-This instructs each new node to join an existing node, specifying `--peer-addr=:5001`. Each node recognizes the joining clusters when started.
-So you have a 3-node cluster. That way you can tolerate the failure of 1 node. You can check the peers in the cluster with the following command:
+This instructs each new node to join an existing node, each node recognizes the joining clusters when started.
+So you have a 3-node cluster. That way you can tolerate the failure of 1 node. You can check the cluster with the following command:
 
 ```bash
-$ ./bin/blast indexer cluster info --grpc-address=:5000 | jq .
+$ ./bin/blast cluster | jq .
 ```
 
-or
+or, you can use the RESTful API as follows:
 
 ```bash
-$ curl -X GET 'http://127.0.0.1:6000/v1/cluster/status' -H 'Content-Type: application/json' | jq .
+$ curl -X GET 'http://127.0.0.1:8000/v1/cluster' | jq .
 ```
 
 You can see the result in JSON format. The result of the above command is:
@@ -890,249 +524,121 @@ You can see the result in JSON format. The result of the above command is:
 {
   "cluster": {
     "nodes": {
-      "indexer1": {
-        "id": "indexer1",
-        "bind_address": ":2000",
-        "state": 1,
+      "node1": {
+        "raft_address": ":7000",
         "metadata": {
-          "grpc_address": ":5000",
-          "grpc_gateway_address": ":6000",
+          "grpc_address": ":9000",
           "http_address": ":8000"
-        }
+        },
+        "state": "Leader"
       },
-      "indexer2": {
-        "id": "indexer2",
-        "bind_address": ":2010",
-        "state": 1,
+      "node2": {
+        "raft_address": ":7001",
         "metadata": {
-          "grpc_address": ":5010",
-          "grpc_gateway_address": ":6010",
-          "http_address": ":8010"
-        }
+          "grpc_address": ":9001",
+          "http_address": ":8001"
+        },
+        "state": "Follower"
       },
-      "indexer3": {
-        "id": "indexer3",
-        "bind_address": ":2020",
-        "state": 3,
+      "node3": {
+        "raft_address": ":7002",
         "metadata": {
-          "grpc_address": ":5020",
-          "grpc_gateway_address": ":6020",
-          "http_address": ":8020"
-        }
+          "grpc_address": ":9002",
+          "http_address": ":8002"
+        },
+        "state": "Follower"
       }
-    }
+    },
+    "leader": "node1"
   }
 }
 ```
 
 Recommend 3 or more odd number of nodes in the cluster. In failure scenarios, data loss is inevitable, so avoid deploying single nodes.
 
+The above example, the node joins to the cluster at startup, but you can also join the node that already started on standalone mode to the cluster later, as follows:
+
+```bash
+$ ./bin/blast join --grpc-address=:9000 node2 127.0.0.1:9001
+```
+
+or, you can use the RESTful API as follows:
+
+```bash
+$ curl -X PUT 'http://127.0.0.1:8000/v1/cluster/node2' --data-binary '
+{
+  "raft_address": ":7001",
+  "metadata": {
+    "grpc_address": ":9001",
+    "http_address": ":8001"
+  }
+}
+'
+```
+
+To remove a node from the cluster, execute the following command:
+
+```bash
+$ ./bin/blast leave --grpc-address=:9000 node2
+```
+
+or, you can use the RESTful API as follows:
+
+```bash
+$ curl -X DELETE 'http://127.0.0.1:8000/v1/cluster/node2'
+```
+
 The following command indexes documents to any node in the cluster:
 
 ```bash
-$ ./bin/blast indexer index --grpc-address=:5000 --file ./example/wiki_doc_enwiki_1.json | jq .
+$ ./bin/blast set 1 '
+{
+  "fields": {
+    "title": "Search engine (computing)",
+    "text": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
+    "timestamp": "2018-07-04T05:41:00Z",
+    "_type": "example"
+  }
+}
+' --grpc-address=:9000 | jq .
 ```
 
 So, you can get the document from the node specified by the above command as follows:
 
 ```bash
-$ ./bin/blast indexer get --grpc-address=:5000 enwiki_1 | jq .
+$ ./bin/blast get 1 --grpc-address=:9000 | jq .
 ```
 
-You can see the result in JSON format. The result of the above command is:
+You can see the result. The result of the above command is:
 
-```json
-{
-  "fields": {
-    "_type": "enwiki",
-    "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
-    "timestamp": "2018-07-04T05:41:00Z",
-    "title_en": "Search engine (computing)"
-  }
-}
+```text
+value1
 ```
 
 You can also get the same document from other nodes in the cluster as follows:
 
 ```bash
-$ ./bin/blast indexer get --grpc-address=:5010 enwiki_1 | jq .
-$ ./bin/blast indexer get --grpc-address=:5020 enwiki_1 | jq .
+$ ./bin/blast get 1 --grpc-address=:9001 | jq .
+$ ./bin/blast get 1 --grpc-address=:9002 | jq .
 ```
 
-You can see the result in JSON format. The result of the above command is:
+You can see the result. The result of the above command is:
 
 ```json
 {
   "fields": {
-    "_type": "enwiki",
-    "text_en": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
+    "_type": "example",
+    "text": "A search engine is an information retrieval system designed to help find information stored on a computer system. The search results are usually presented in a list and are commonly called hits. Search engines help to minimize the time required to find information and the amount of information which must be consulted, akin to other techniques for managing information overload. The most public, visible form of a search engine is a Web search engine which searches for information on the World Wide Web.",
     "timestamp": "2018-07-04T05:41:00Z",
-    "title_en": "Search engine (computing)"
+    "title": "Search engine (computing)"
   }
 }
 ```
 
 
-## Starting Blast in federated mode (experimental)
+## Docker
 
-![federation](https://user-images.githubusercontent.com/970948/59768498-6f0d0f80-92df-11e9-8538-2a1c6e44c30a.png)
-
-Running a Blast in cluster mode allows you to replicate the index among indexers in a cluster to improve fault tolerance.  
-However, as the index grows, performance degradation can become an issue. Therefore, instead of providing a large single physical index, it is better to distribute indices across multiple indexers.  
-Blast provides a federated mode to enable distributed search and indexing.
-
-Blast provides the following type of node for federation:
-- manager: Manager manage common index mappings to index across multiple indexers. It also manages information and status of clusters that participate in the federation.
-- dispatcher: Dispatcher is responsible for distributed search or indexing of each indexer. In the case of a index request, send document to each cluster based on the document ID. And in the case of a search request, the same query is sent to each cluster, then the search results are merged and returned to the client.
-
-### Bring up the manager cluster
-
-Manager can also bring up a cluster like an indexer. Specify a common index mapping for federation at startup.
-
-```bash
-$ ./bin/blast manager start \
-    --grpc-address=:5100 \
-    --grpc-gateway-address=:6100 \
-    --http-address=:8100 \
-    --node-id=manager1 \
-    --node-address=:2100 \
-    --data-dir=/tmp/blast/manager1 \
-    --raft-storage-type=boltdb \
-    --index-mapping-file=./example/wiki_index_mapping.json \
-    --index-type=upside_down \
-    --index-storage-type=boltdb
-
-$ ./bin/blast manager start \
-    --peer-grpc-address=:5100 \
-    --grpc-address=:5110 \
-    --grpc-gateway-address=:6110 \
-    --http-address=:8110 \
-    --node-id=manager2 \
-    --node-address=:2110 \
-    --data-dir=/tmp/blast/manager2 \
-    --raft-storage-type=boltdb
-
-$ ./bin/blast manager start \
-    --peer-grpc-address=:5100 \
-    --grpc-address=:5120 \
-    --grpc-gateway-address=:6120 \
-    --http-address=:8120 \
-    --node-id=manager3 \
-    --node-address=:2120 \
-    --data-dir=/tmp/blast/manager3 \
-    --raft-storage-type=boltdb
-```
-
-### Bring up the indexer cluster
-
-Federated mode differs from cluster mode that it specifies the manager in start up to bring up indexer cluster.  
-The following example starts two 3-node clusters.
-
-```bash
-$ ./bin/blast indexer start \
-    --manager-grpc-address=:5100 \
-    --shard-id=shard1 \
-    --grpc-address=:5000 \
-    --grpc-gateway-address=:6000 \
-    --http-address=:8000 \
-    --node-id=indexer1 \
-    --node-address=:2000 \
-    --data-dir=/tmp/blast/indexer1 \
-    --raft-storage-type=boltdb
-
-$ ./bin/blast indexer start \
-    --manager-grpc-address=:5100 \
-    --shard-id=shard1 \
-    --grpc-address=:5010 \
-    --grpc-gateway-address=:6010 \
-    --http-address=:8010 \
-    --node-id=indexer2 \
-    --node-address=:2010 \
-    --data-dir=/tmp/blast/indexer2 \
-    --raft-storage-type=boltdb
-
-$ ./bin/blast indexer start \
-    --manager-grpc-address=:5100 \
-    --shard-id=shard1 \
-    --grpc-address=:5020 \
-    --grpc-gateway-address=:6020 \
-    --http-address=:8020 \
-    --node-id=indexer3 \
-    --node-address=:2020 \
-    --data-dir=/tmp/blast/indexer3 \
-    --raft-storage-type=boltdb
-
-$ ./bin/blast indexer start \
-    --manager-grpc-address=:5100 \
-    --shard-id=shard2 \
-    --grpc-address=:5030 \
-    --grpc-gateway-address=:6030 \
-    --http-address=:8030 \
-    --node-id=indexer4 \
-    --node-address=:2030 \
-    --data-dir=/tmp/blast/indexer4 \
-    --raft-storage-type=boltdb
-
-$ ./bin/blast indexer start \
-    --manager-grpc-address=:5100 \
-    --shard-id=shard2 \
-    --grpc-address=:5040 \
-    --grpc-gateway-address=:6040 \
-    --http-address=:8040 \
-    --node-id=indexer5 \
-    --node-address=:2040 \
-    --data-dir=/tmp/blast/indexer5 \
-    --raft-storage-type=boltdb
-
-$ ./bin/blast indexer start \
-    --manager-grpc-address=:5100 \
-    --shard-id=shard2 \
-    --grpc-address=:5050 \
-    --grpc-gateway-address=:6050 \
-    --http-address=:8050 \
-    --node-id=indexer6 \
-    --node-address=:2050 \
-    --data-dir=/tmp/blast/indexer6 \
-    --raft-storage-type=boltdb
-```
-
-### Start up the dispatcher
-
-Finally, start the dispatcher with a manager that manages the target federation so that it can perform distributed search and indexing.
-
-```bash
-$ ./bin/blast dispatcher start \
-    --manager-grpc-address=:5100 \
-    --grpc-address=:5200 \
-    --grpc-gateway-address=:6200 \
-    --http-address=:8200
-```
-
-### Check the cluster info
-
-```bash
-$ ./bin/blast manager cluster info --grpc-address=:5100 | jq .
-$ ./bin/blast indexer cluster info --grpc-address=:5000 | jq .
-$ ./bin/blast indexer cluster info --grpc-address=:5030 | jq .
-$ ./bin/blast manager get cluster --grpc-address=:5100 --format=json | jq .
-```
-
-```bash
-$ ./bin/blast dispatcher index --grpc-address=:5200 --file=./example/wiki_bulk_index.jsonl --bulk | jq .
-```
-
-```bash
-$ ./bin/blast dispatcher search --grpc-address=:5200 --file=./example/wiki_search_request_simple.json | jq .
-```
-
-```bash
-$ ./bin/blast dispatcher delete --grpc-address=:5200 --file=./example/wiki_bulk_delete.txt | jq .
-```
-
-
-## Blast on Docker
-
-### Building Docker container image on localhost
+### Build Docker container image
 
 You can build the Docker container image like so:
 
@@ -1140,7 +646,7 @@ You can build the Docker container image like so:
 $ make docker-build
 ```
 
-### Pulling Docker container image from docker.io
+### Pull Docker container image from docker.io
 
 You can also use the Docker container image already registered in docker.io like so:
 
@@ -1150,154 +656,101 @@ $ docker pull mosuka/blast:latest
 
 See https://hub.docker.com/r/mosuka/blast/tags/
 
-### Pulling Docker container image from docker.io
+### Start on Docker
 
-You can also use the Docker container image already registered in docker.io like so:
-
-```bash
-$ docker pull mosuka/blast:latest
-```
-
-### Running Indexer on Docker
-
-Running a Blast data node on Docker. Start Blast data node like so:
+Running a Blast data node on Docker. Start Blast node like so:
 
 ```bash
-$ docker run --rm --name blast-indexer1 \
-    -p 2000:2000 \
-    -p 5000:5000 \
-    -p 6000:6000 \
+$ docker run --rm --name blast-node1 \
+    -p 7000:7000 \
     -p 8000:8000 \
-    -v $(pwd)/example:/opt/blast/example \
-    mosuka/blast:latest blast indexer start \
-      --grpc-address=:5000 \
-      --grpc-gateway-address=:6000 \
+    -p 9000:9000 \
+    -v $(pwd)/etc/blast_mapping.json:/etc/blast_mapping.json \
+    mosuka/blast:latest start \
+      --id=node1 \
+      --raft-address=:7000 \
       --http-address=:8000 \
-      --node-id=blast-indexer1 \
-      --node-address=:2000 \
-      --data-dir=/tmp/blast/indexer1 \
-      --raft-storage-type=boltdb \
-      --index-mapping-file=/opt/blast/example/wiki_index_mapping.json \
-      --index-type=upside_down \
-      --index-storage-type=boltdb
+      --grpc-address=:9000 \
+      --data-directory=/tmp/blast/node1 \
+      --mapping-file=/etc/blast_mapping.json
 ```
 
 You can execute the command in docker container as follows:
 
 ```bash
-$ docker exec -it blast-indexer1 blast indexer node info --grpc-address=:5000
+$ docker exec -it blast-node1 blast node --grpc-address=:9000
 ```
 
-### Running cluster on Docker compose
+## Securing Blast
 
-Also, running a Blast cluster on Docker compose. 
+Blast supports HTTPS access, ensuring that all communication between clients and a cluster is encrypted.
+
+### Generating a certificate and private key
+
+One way to generate the necessary resources is via [openssl](https://www.openssl.org/). For example:
 
 ```bash
-$ docker-compose up -d manager1
-$ docker-compose up -d indexer1
-$ docker-compose up -d indexer2
-$ docker-compose up -d indexer3
-$ docker-compose up -d indexer4
-$ docker-compose up -d indexer5
-$ docker-compose up -d indexer6
-$ docker-compose up -d dispatcher1
-$ docker-compose ps
-$ ./bin/blast manager get --grpc-address=127.0.0.1:5110 /cluster | jq .
-$ ./bin/blast dispatcher index --grpc-address=127.0.0.1:5210 --file=./example/wiki_bulk_index.jsonl --bulk | jq .
-$ ./bin/blast dispatcher search --grpc-address=127.0.0.1:5210 --file=./example/wiki_search_request_simple.json | jq .
+$ openssl req -x509 -nodes -newkey rsa:4096 -keyout ./etc/blast_key.pem -out ./etc/blast_cert.pem -days 365 -subj '/CN=localhost'
+Generating a 4096 bit RSA private key
+............................++
+........++
+writing new private key to 'key.pem'
+```
+
+### Secure cluster example
+
+Starting a node with HTTPS enabled, node-to-node encryption, and with the above configuration file. It is assumed the HTTPS X.509 certificate and key are at the paths server.crt and key.pem respectively.
+
+```bash
+$ ./bin/blast start \
+             --id=node1 \
+             --raft-address=:7000 \
+             --http-address=:8000 \
+             --grpc-address=:9000 \
+             --peer-grpc-address=:9000 \
+             --data-directory=/tmp/blast/node1 \
+             --mapping-file=./etc/blast_mapping.json \
+             --certificate-file=./etc/blast_cert.pem \
+             --key-file=./etc/blast_key.pem \
+             --common-name=localhost
 ```
 
 ```bash
-$ docker-compose down
+$ ./bin/blast start \
+             --id=node2 \
+             --raft-address=:7001 \
+             --http-address=:8001 \
+             --grpc-address=:9001 \
+             --peer-grpc-address=:9000 \
+             --data-directory=/tmp/blast/node2 \
+             --mapping-file=./etc/blast_mapping.json \
+             --certificate-file=./etc/blast_cert.pem \
+             --key-file=./etc/blast_key.pem \
+             --common-name=localhost
 ```
 
-
-## Wikipedia example
-
-This section explain how to index Wikipedia dump to Blast.
-
-### Install wikiextractor
-
 ```bash
-$ cd ${HOME}
-$ git clone git@github.com:attardi/wikiextractor.git
+$ ./bin/blast start \
+             --id=node3 \
+             --raft-address=:7002 \
+             --http-address=:8002 \
+             --grpc-address=:9002 \
+             --peer-grpc-address=:9000 \
+             --data-directory=/tmp/blast/node3 \
+             --mapping-file=./etc/blast_mapping.json \
+             --certificate-file=./etc/blast_cert.pem \
+             --key-file=./etc/blast_key.pem \
+             --common-name=localhost
 ```
 
-### Download wikipedia dump
+You can access the cluster by adding a flag, such as the following command:
 
 ```bash
-$ curl -o ~/tmp/enwiki-20190101-pages-articles.xml.bz2 https://dumps.wikimedia.org/enwiki/20190101/enwiki-20190101-pages-articles.xml.bz2
+$ ./bin/blast cluster --grpc-address=:9000 --certificate-file=./etc/blast_cert.pem --common-name=localhost | jq .
 ```
 
-### Parsing wikipedia dump
+or
 
 ```bash
-$ cd wikiextractor
-$ ./WikiExtractor.py -o ~/tmp/enwiki --json ~/tmp/enwiki-20190101-pages-articles.xml.bz2
-```
-
-### Starting Indexer
-
-```bash
-$ ./bin/blast indexer start \
-    --grpc-address=:5000 \
-    --grpc-gateway-address=:6000 \
-    --http-address=:8000 \
-    --node-id=indexer1 \
-    --node-address=:2000 \
-    --data-dir=/tmp/blast/indexer1 \
-    --raft-storage-type=boltdb \
-    --index-mapping-file=./example/enwiki_index_mapping.json \
-    --index-type=upside_down \
-    --index-storage-type=boltdb
-```
-
-### Indexing wikipedia dump
-
-```bash
-$ for FILE in $(find ~/tmp/enwiki -type f -name '*' | sort)
-  do
-    echo "Indexing ${FILE}"
-    TIMESTAMP=$(date -u "+%Y-%m-%dT%H:%M:%SZ")
-    DOCS=$(cat ${FILE} | jq -r '. + {fields: {url: .url, title_en: .title, text_en: .text, timestamp: "'${TIMESTAMP}'", _type: "enwiki"}} | del(.url) | del(.title) | del(.text) | del(.fields.id)' | jq -c)
-    curl -s -X PUT -H 'Content-Type: application/x-ndjson' "http://127.0.0.1:6000/v1/bulk" --data-binary "${DOCS}"
-    echo ""
-  done
-```
-
-
-## Spatial/Geospatial search example
-
-This section explain how to index Spatial/Geospatial data to Blast.
-
-### Starting Indexer with Spatial/Geospatial index mapping
-
-```bash
-$ ./bin/blast indexer start \
-    --grpc-address=:5000 \
-    --http-address=:8000 \
-    --node-id=indexer1 \
-    --node-address=:2000 \
-    --data-dir=/tmp/blast/indexer1 \
-    --raft-storage-type=boltdb \
-    --index-mapping-file=./example/geo_index_mapping.json \
-    --index-type=upside_down \
-    --index-storage-type=boltdb
-```
-
-### Indexing example Spatial/Geospatial data
-
-```bash
-$ ./bin/blast indexer index --grpc-address=:5000 --file ./example/geo_doc_1.json
-$ ./bin/blast indexer index --grpc-address=:5000 --file ./example/geo_doc_2.json
-$ ./bin/blast indexer index --grpc-address=:5000 --file ./example/geo_doc_3.json
-$ ./bin/blast indexer index --grpc-address=:5000 --file ./example/geo_doc_4.json
-$ ./bin/blast indexer index --grpc-address=:5000 --file ./example/geo_doc_5.json
-$ ./bin/blast indexer index --grpc-address=:5000 --file ./example/geo_doc_6.json
-```
-
-### Searching example Spatial/Geospatial data
-
-```bash
-$ ./bin/blast indexer search --grpc-address=:5000 --file=./example/geo_search_request.json
+$ curl -X GET https://localhost:8000/v1/cluster --cacert ./etc/cert.pem | jq .
 ```

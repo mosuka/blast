@@ -1,0 +1,16 @@
+id: "node1"
+raft_address: ":7000"
+grpc_address: ":9000"
+http_address: ":8000"
+data_directory: "/tmp/blast/node1/data"
+#mapping_file: "./etc/blast_mapping.json"
+peer_grpc_address: ""
+#certificate_file: "./etc/blast-cert.pem"
+#key_file: "./etc/blast-key.pem"
+#common_name: "localhost"
+log_level: "INFO"
+log_file: ""
+#log_max_size: 500
+#log_max_backups: 3
+#log_max_age: 30
+#log_compress: false
