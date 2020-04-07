@@ -1,0 +1,8 @@
+{
+  "fields": {
+    "title": "Blast",
+    "text": "Blast is a full text search and indexing server, written in Go, built on top of Bleve.",
+    "timestamp": "2019-12-16T07:12:00Z",
+    "_type": "example"
+  }
+}

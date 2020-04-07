@@ -1,0 +1,11 @@
+{"id": "1","fields": {"title": "Blast", "text": "Blast is a full text search and indexing server, written in Go, built on top of Bleve.", "timestamp": "2019-12-16T07:12:00Z", "_type": "example"}}
+{"id": "2","fields": {"title": "Bleve", "text": "Bleve is a modern text indexing library for go.", "timestamp": "2019-10-30T16:13:00Z", "_type": "example"}}
+{"id": "3","fields": {"title": "Riot", "text": "Riot is Go Open Source, Distributed, Simple and efficient full text search engine.", "timestamp": "2019-12-16T07:12:00Z", "_type": "example"}}
+{"id": "4","fields": {"title": "Bayard", "text": "Bayard is a full text search and indexing server, written in Rust, built on top of Tantivy.", "timestamp": "2019-12-19T10:41:00Z", "_type": "example"}}
+{"id": "5","fields": {"title": "Toshi", "text": "Toshi is meant to be a full-text search engine similar to Elasticsearch. Toshi strives to be to Elasticsearch what Tantivy is to Lucene.", "timestamp": "2019-12-02T04:00:00Z", "_type": "example"}}
+{"id": "6","fields": {"title": "Tantivy", "text": "Tantivy is a full-text search engine library inspired by Apache Lucene and written in Rust.", "timestamp": "2019-12-19T10:07:00Z", "_type": "example"}}
+{"id": "7","fields": {"title": "Sonic", "text": "Sonic is a fast, lightweight and schema-less search backend.", "timestamp": "2019-12-10T23:13:00Z", "_type": "example"}}
+{"id": "8","fields": {"title": "Apache Solr", "text": "Solr is highly reliable, scalable and fault tolerant, providing distributed indexing, replication and load-balanced querying, automated failover and recovery, centralized configuration and more.", "timestamp": "2019-12-19T14:08:00Z", "_type": "example"}}
+{"id": "9","fields": {"title": "Elasticsearch", "text": "Elasticsearch is a distributed, open source search and analytics engine for all types of data, including textual, numerical, geospatial, structured, and unstructured.", "timestamp": "2019-12-19T08:19:00Z", "_type": "example"}}
+{"id": "10","fields": {"title": "Lucene", "text": "Apache Lucene is a high-performance, full-featured text search engine library written entirely in Java.", "timestamp": "2019-12-19T14:08:00Z", "_type": "example"}}
+{"id": "11","fields": {"title": "Whoosh", "text": "Whoosh is a fast, pure Python search engine library.", "timestamp": "2019-10-08T05:30:26Z", "_type": "example"}}
