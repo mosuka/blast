@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+- Implement CORS #128
 - Delete the experimentally implemented feature for distributed search #127
 - Add coverage to Makefile #114
 - Docker compose #119
