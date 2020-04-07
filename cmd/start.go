@@ -37,6 +37,10 @@ var (
 			keyFile = viper.GetString("key_file")
 			commonName = viper.GetString("common_name")
 
+			corsAllowedMethods = viper.GetStringSlice("cors_allowed_methods")
+			corsAllowedOrigins = viper.GetStringSlice("cors_allowed_origins")
+			corsAllowedHeaders = viper.GetStringSlice("cors_allowed_headers")
+
 			logLevel = viper.GetString("log_level")
 			logFile = viper.GetString("log_file")
 			logMaxSize = viper.GetInt("log_max_size")
@@ -73,7 +77,7 @@ var (
 				return err
 			}
 
-			grpcGateway, err := server.NewGRPCGateway(httpAddress, grpcAddress, certificateFile, keyFile, commonName, logger)
+			grpcGateway, err := server.NewGRPCGateway(httpAddress, grpcAddress, certificateFile, keyFile, commonName, corsAllowedMethods, corsAllowedOrigins, corsAllowedHeaders, logger)
 			if err != nil {
 				return err
 			}
@@ -186,6 +190,9 @@ func init() {
 	startCmd.PersistentFlags().StringVar(&certificateFile, "certificate-file", "", "path to the client server TLS certificate file")
 	startCmd.PersistentFlags().StringVar(&keyFile, "key-file", "", "path to the client server TLS key file")
 	startCmd.PersistentFlags().StringVar(&commonName, "common-name", "", "certificate common name")
+	startCmd.PersistentFlags().StringSliceVar(&corsAllowedMethods, "cors-allowed-methods", []string{}, "CORS allowed methods (ex: GET,PUT,DELETE,POST)")
+	startCmd.PersistentFlags().StringSliceVar(&corsAllowedOrigins, "cors-allowed-origins", []string{}, "CORS allowed origins (ex: http://localhost:8080,http://localhost:80)")
+	startCmd.PersistentFlags().StringSliceVar(&corsAllowedHeaders, "cors-allowed-headers", []string{}, "CORS allowed headers (ex: content-type,x-some-key)")
 	startCmd.PersistentFlags().StringVar(&logLevel, "log-level", "INFO", "log level")
 	startCmd.PersistentFlags().StringVar(&logFile, "log-file", os.Stderr.Name(), "log file")
 	startCmd.PersistentFlags().IntVar(&logMaxSize, "log-max-size", 500, "max size of a log file in megabytes")
@@ -203,6 +210,9 @@ func init() {
 	_ = viper.BindPFlag("certificate_file", startCmd.PersistentFlags().Lookup("certificate-file"))
 	_ = viper.BindPFlag("key_file", startCmd.PersistentFlags().Lookup("key-file"))
 	_ = viper.BindPFlag("common_name", startCmd.PersistentFlags().Lookup("common-name"))
+	_ = viper.BindPFlag("cors_allowed_methods", startCmd.PersistentFlags().Lookup("cors-allowed-methods"))
+	_ = viper.BindPFlag("cors_allowed_origins", startCmd.PersistentFlags().Lookup("cors-allowed-origins"))
+	_ = viper.BindPFlag("cors_allowed_headers", startCmd.PersistentFlags().Lookup("cors-allowed-headers"))
 	_ = viper.BindPFlag("log_level", startCmd.PersistentFlags().Lookup("log-level"))
 	_ = viper.BindPFlag("log_max_size", startCmd.PersistentFlags().Lookup("log-max-size"))
 	_ = viper.BindPFlag("log_max_backups", startCmd.PersistentFlags().Lookup("log-max-backups"))

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/gorilla/handlers"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/mosuka/blast/marshaler"
 	"github.com/mosuka/blast/protobuf"
@@ -41,10 +42,14 @@ type GRPCGateway struct {
 	certificateFile string
 	keyFile         string
 
+	corsAllowedMethods []string
+	corsAllowedOrigins []string
+	corsAllowedHeaders []string
+
 	logger *zap.Logger
 }
 
-func NewGRPCGateway(httpAddress string, grpcAddress string, certificateFile string, keyFile string, commonName string, logger *zap.Logger) (*GRPCGateway, error) {
+func NewGRPCGateway(httpAddress string, grpcAddress string, certificateFile string, keyFile string, commonName string, corsAllowedMethods []string, corsAllowedOrigins []string, corsAllowedHeaders []string, logger *zap.Logger) (*GRPCGateway, error) {
 	dialOpts := []grpc.DialOption{
 		grpc.WithDefaultCallOptions(
 			grpc.MaxCallSendMsgSize(math.MaxInt64),
@@ -90,25 +95,52 @@ func NewGRPCGateway(httpAddress string, grpcAddress string, certificateFile stri
 	}
 
 	return &GRPCGateway{
-		httpAddress:     httpAddress,
-		grpcAddress:     grpcAddress,
-		listener:        listener,
-		mux:             mux,
-		cancel:          cancel,
-		certificateFile: certificateFile,
-		keyFile:         keyFile,
-		logger:          logger,
+		httpAddress:        httpAddress,
+		grpcAddress:        grpcAddress,
+		listener:           listener,
+		mux:                mux,
+		cancel:             cancel,
+		certificateFile:    certificateFile,
+		keyFile:            keyFile,
+		corsAllowedMethods: corsAllowedMethods,
+		corsAllowedOrigins: corsAllowedOrigins,
+		corsAllowedHeaders: corsAllowedHeaders,
+		logger:             logger,
 	}, nil
 }
 
 func (s *GRPCGateway) Start() error {
+	corsOpts := make([]handlers.CORSOption, 0)
+
+	if s.corsAllowedMethods != nil && len(s.corsAllowedMethods) > 0 {
+		corsOpts = append(corsOpts, handlers.AllowedMethods(s.corsAllowedMethods))
+	}
+	if s.corsAllowedOrigins != nil && len(s.corsAllowedOrigins) > 0 {
+		corsOpts = append(corsOpts, handlers.AllowedMethods(s.corsAllowedOrigins))
+	}
+	if s.corsAllowedHeaders != nil && len(s.corsAllowedHeaders) > 0 {
+		corsOpts = append(corsOpts, handlers.AllowedMethods(s.corsAllowedHeaders))
+	}
+
+	corsMux := handlers.CORS(
+		corsOpts...,
+	)(s.mux)
+
 	if s.certificateFile == "" && s.keyFile == "" {
 		go func() {
-			_ = http.Serve(s.listener, s.mux)
+			if len(corsOpts) > 0 {
+				_ = http.Serve(s.listener, corsMux)
+			} else {
+				_ = http.Serve(s.listener, s.mux)
+			}
 		}()
 	} else {
 		go func() {
-			_ = http.ServeTLS(s.listener, s.mux, s.certificateFile, s.keyFile)
+			if len(corsOpts) > 0 {
+				_ = http.ServeTLS(s.listener, corsMux, s.certificateFile, s.keyFile)
+			} else {
+				_ = http.ServeTLS(s.listener, s.mux, s.certificateFile, s.keyFile)
+			}
 		}()
 	}
 
