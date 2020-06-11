@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+- Upgrade Bleve to v1.0.9 #130
 - Add test #129
 
 ## [v0.9.0]
