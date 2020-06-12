@@ -3,13 +3,13 @@ module github.com/mosuka/blast
 go 1.14
 
 require (
-	github.com/bbva/raft-badger v1.0.0
+	github.com/bbva/raft-badger v1.0.1
 	github.com/blevesearch/bleve v1.0.9
 	github.com/blevesearch/cld2 v0.0.0-20200327141045-8b5f551d37f5 // indirect
 	github.com/cznic/b v0.0.0-20181122101859-a26611c4d92d // indirect
 	github.com/cznic/mathutil v0.0.0-20181122101859-297441e03548 // indirect
 	github.com/cznic/strutil v0.0.0-20181122101858-275e90344537 // indirect
-	github.com/dgraph-io/badger/v2 v2.0.0
+	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/facebookgo/ensure v0.0.0-20160127193407-b4ab57deab51 // indirect
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
 	github.com/facebookgo/subset v0.0.0-20150612182917-8dac2c3c4870 // indirect
