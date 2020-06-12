@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+- Update raft #132
+- Update tests #131
 - Upgrade Bleve to v1.0.9 #130
 - Add test #129
 
