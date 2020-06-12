@@ -18,7 +18,7 @@ require (
 	github.com/gorilla/handlers v1.4.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
-	github.com/grpc-ecosystem/grpc-gateway v1.14.3
+	github.com/grpc-ecosystem/grpc-gateway v1.14.6
 	github.com/hashicorp/raft v1.1.2
 	github.com/ikawaha/kagome.ipadic v1.1.2 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
@@ -33,7 +33,7 @@ require (
 	github.com/tebeka/snowball v0.4.1 // indirect
 	github.com/tecbot/gorocksdb v0.0.0-20190705090504-162552197222 // indirect
 	go.uber.org/zap v1.14.1
-	google.golang.org/genproto v0.0.0-20190927181202-20e1ac93f88c
-	google.golang.org/grpc v1.28.0
+	google.golang.org/genproto v0.0.0-20200513103714-09dca8ec2884
+	google.golang.org/grpc v1.29.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )
