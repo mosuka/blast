@@ -29,7 +29,11 @@ type GRPCServer struct {
 	logger *zap.Logger
 }
 
-func NewGRPCServer(grpcAddress string, raftServer *RaftServer, certificateFile string, keyFile string, commonName string, logger *zap.Logger) (*GRPCServer, error) {
+func NewGRPCServer(grpcAddress string, raftServer *RaftServer, logger *zap.Logger) (*GRPCServer, error) {
+	return NewGRPCServerWithTLS(grpcAddress, raftServer, "", "", "", logger)
+}
+
+func NewGRPCServerWithTLS(grpcAddress string, raftServer *RaftServer, certificateFile string, keyFile string, commonName string, logger *zap.Logger) (*GRPCServer, error) {
 	grpcLogger := logger.Named("grpc")
 
 	opts := []grpc.ServerOption{
