@@ -25,17 +25,21 @@ func Test_GRPCServer_Start_Stop(t *testing.T) {
 
 	logger := log.NewLogger("WARN", "", 500, 3, 30, false)
 
-	// Raft server
-	rafAddress := fmt.Sprintf(":%d", util.TmpPort())
+	raftAddress := fmt.Sprintf(":%d", util.TmpPort())
+	grpcAddress := fmt.Sprintf(":%d", util.TmpPort())
+
 	dir := util.TmpDir()
 	defer func() {
 		_ = os.RemoveAll(dir)
 	}()
+
 	indexMapping, err := mapping.NewIndexMappingFromFile(filepath.Join(curDir, "../examples/example_mapping.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	raftServer, err := NewRaftServer("node1", rafAddress, dir, indexMapping, true, logger)
+
+	// Raft server
+	raftServer, err := NewRaftServer("node1", raftAddress, dir, indexMapping, true, logger)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -49,12 +53,7 @@ func Test_GRPCServer_Start_Stop(t *testing.T) {
 	}
 
 	// gRPC server
-	grpcAddress := fmt.Sprintf(":%d", util.TmpPort())
-	certificateFile := ""
-	keyFile := ""
-	commonName := ""
-
-	grpcServer, err := NewGRPCServer(grpcAddress, raftServer, certificateFile, keyFile, commonName, logger)
+	grpcServer, err := NewGRPCServer(grpcAddress, raftServer, logger)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

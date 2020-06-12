@@ -72,7 +72,7 @@ var (
 				return err
 			}
 
-			grpcServer, err := server.NewGRPCServer(grpcAddress, raftServer, certificateFile, keyFile, commonName, logger)
+			grpcServer, err := server.NewGRPCServerWithTLS(grpcAddress, raftServer, certificateFile, keyFile, commonName, logger)
 			if err != nil {
 				return err
 			}
