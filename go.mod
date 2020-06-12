@@ -32,7 +32,7 @@ require (
 	github.com/spf13/viper v1.4.0
 	github.com/tebeka/snowball v0.4.1 // indirect
 	github.com/tecbot/gorocksdb v0.0.0-20190705090504-162552197222 // indirect
-	go.uber.org/zap v1.14.1
+	go.uber.org/zap v1.15.0
 	google.golang.org/genproto v0.0.0-20200513103714-09dca8ec2884
 	google.golang.org/grpc v1.29.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
