@@ -569,7 +569,7 @@ func Test_GRPCService_Start_Stop(t *testing.T) {
 //		_ = os.RemoveAll(tmpDir)
 //	}()
 //
-//	logger := log.NewLogger("WARN", "", 500, 3, 30, false)
+//	logger := log.NewLogger("DEBUG", "", 500, 3, 30, false)
 //
 //	certificateFile := ""
 //	commonName := ""
@@ -604,6 +604,8 @@ func Test_GRPCService_Start_Stop(t *testing.T) {
 //			},
 //		),
 //	}
+//
+//	ctx := context.Background()
 //
 //	// Node1
 //	raftAddress1 := fmt.Sprintf(":%d", util.TmpPort())
@@ -662,7 +664,22 @@ func Test_GRPCService_Start_Stop(t *testing.T) {
 //	if err := raftServer1.WaitForDetectLeader(60 * time.Second); err != nil {
 //		t.Fatalf("%v", err)
 //	}
-//	time.Sleep(3 * time.Second)
+//	time.Sleep(10 * time.Second)
+//
+//	req1 := &protobuf.JoinRequest{
+//		Id: "node1",
+//		Node: &protobuf.Node{
+//			RaftAddress: raftAddress1,
+//			Metadata: &protobuf.Metadata{
+//				GrpcAddress: grpcAddress1,
+//				HttpAddress: httpAddress1,
+//			},
+//		},
+//	}
+//	_, err = grpcService1.Join(ctx, req1)
+//	if err != nil {
+//		t.Fatalf("%v", err)
+//	}
 //
 //	// Node2
 //	raftAddress2 := fmt.Sprintf(":%d", util.TmpPort())
@@ -718,7 +735,22 @@ func Test_GRPCService_Start_Stop(t *testing.T) {
 //			t.Fatalf("%v", err)
 //		}
 //	}()
-//	time.Sleep(3 * time.Second)
+//	time.Sleep(10 * time.Second)
+//
+//	req2 := &protobuf.JoinRequest{
+//		Id: "node2",
+//		Node: &protobuf.Node{
+//			RaftAddress: raftAddress2,
+//			Metadata: &protobuf.Metadata{
+//				GrpcAddress: grpcAddress2,
+//				HttpAddress: httpAddress2,
+//			},
+//		},
+//	}
+//	_, err = grpcService1.Join(ctx, req2)
+//	if err != nil {
+//		t.Fatalf("%v", err)
+//	}
 //
 //	// Node3
 //	raftAddress3 := fmt.Sprintf(":%d", util.TmpPort())
@@ -774,38 +806,7 @@ func Test_GRPCService_Start_Stop(t *testing.T) {
 //			t.Fatalf("%v", err)
 //		}
 //	}()
-//	time.Sleep(3 * time.Second)
-//
-//	ctx := context.Background()
-//	req1 := &protobuf.JoinRequest{
-//		Id: "node1",
-//		Node: &protobuf.Node{
-//			RaftAddress: raftAddress1,
-//			Metadata: &protobuf.Metadata{
-//				GrpcAddress: grpcAddress1,
-//				HttpAddress: httpAddress1,
-//			},
-//		},
-//	}
-//	_, err = grpcService1.Join(ctx, req1)
-//	if err != nil {
-//		t.Fatalf("%v", err)
-//	}
-//
-//	req2 := &protobuf.JoinRequest{
-//		Id: "node2",
-//		Node: &protobuf.Node{
-//			RaftAddress: raftAddress2,
-//			Metadata: &protobuf.Metadata{
-//				GrpcAddress: grpcAddress2,
-//				HttpAddress: httpAddress2,
-//			},
-//		},
-//	}
-//	_, err = grpcService1.Join(ctx, req2)
-//	if err != nil {
-//		t.Fatalf("%v", err)
-//	}
+//	time.Sleep(10 * time.Second)
 //
 //	req3 := &protobuf.JoinRequest{
 //		Id: "node3",
