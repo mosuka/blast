@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+- Update tests #139
 - Update protocol buffers #135
 - Update zap #134
 - Update gRPC #133
