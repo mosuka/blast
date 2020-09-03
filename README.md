@@ -133,7 +133,7 @@ $ make GOOS=darwin \
        build
 ```
 
-### Buil flags
+### Build flags
 
 Refer to the following table for the build flags of the supported Bleve extensions:
 
