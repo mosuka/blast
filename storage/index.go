@@ -4,10 +4,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve/document"
-	"github.com/blevesearch/bleve/index/scorch"
-	"github.com/blevesearch/bleve/mapping"
+	"github.com/blevesearch/bleve/v2"
+	"github.com/blevesearch/bleve/v2/index/scorch"
+	"github.com/blevesearch/bleve/v2/mapping"
+	bleveindex "github.com/blevesearch/bleve_index_api"
 	_ "github.com/mosuka/blast/builtin"
 	"github.com/mosuka/blast/errors"
 	"github.com/mosuka/blast/protobuf"
@@ -60,49 +60,49 @@ func (i *Index) Close() error {
 }
 
 func (i *Index) Get(id string) (map[string]interface{}, error) {
-	d, err := i.index.Document(id)
+	doc, err := i.index.Document(id)
 	if err != nil {
 		i.logger.Error("failed to get document", zap.String("id", id), zap.Error(err))
 		return nil, err
 	}
-	if d == nil {
+	if doc == nil {
 		err := errors.ErrNotFound
 		i.logger.Debug("document does not found", zap.String("id", id), zap.Error(err))
 		return nil, err
 	}
 
 	fields := make(map[string]interface{}, 0)
-	for _, f := range d.Fields {
+	doc.VisitFields(func(field bleveindex.Field) {
 		var v interface{}
-		switch field := f.(type) {
-		case *document.TextField:
-			v = string(field.Value())
-		case *document.NumericField:
+		switch field := field.(type) {
+		case bleveindex.TextField:
+			v = field.Text()
+		case bleveindex.NumericField:
 			n, err := field.Number()
 			if err == nil {
 				v = n
 			}
-		case *document.DateTimeField:
+		case bleveindex.DateTimeField:
 			d, err := field.DateTime()
 			if err == nil {
 				v = d.Format(time.RFC3339Nano)
 			}
 		}
-		existing, existed := fields[f.Name()]
+		existing, existed := fields[field.Name()]
 		if existed {
 			switch existing := existing.(type) {
 			case []interface{}:
-				fields[f.Name()] = append(existing, v)
+				fields[field.Name()] = append(existing, v)
 			case interface{}:
 				arr := make([]interface{}, 2)
 				arr[0] = existing
 				arr[1] = v
-				fields[f.Name()] = arr
+				fields[field.Name()] = arr
 			}
 		} else {
-			fields[f.Name()] = v
+			fields[field.Name()] = v
 		}
-	}
+	})
 
 	return fields, nil
 }
@@ -207,7 +207,7 @@ func (i *Index) SnapshotItems() <-chan *protobuf.Document {
 	ch := make(chan *protobuf.Document, 1024)
 
 	go func() {
-		idx, _, err := i.index.Advanced()
+		idx, err := i.index.Advanced()
 		if err != nil {
 			i.logger.Error("failed to get index", zap.Error(err))
 			return
