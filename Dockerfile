@@ -1,4 +1,4 @@
-FROM golang:1.14.1-stretch
+FROM golang:1.15.6-buster
 
 ARG VERSION
 
@@ -37,7 +37,7 @@ RUN echo "deb http://ftp.us.debian.org/debian/ jessie main contrib non-free" >> 
          VERSION="${VERSION}" \
          build
 
-FROM debian:stretch-slim
+FROM debian:buster-slim
 
 MAINTAINER Minoru Osuka "minoru.osuka@gmail.com"
 
