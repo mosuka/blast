@@ -12,15 +12,15 @@ RUN echo "deb http://ftp.us.debian.org/debian/ jessie main contrib non-free" >> 
     apt-get upgrade -y && \
     apt-get install -y \
             git \
-            golang \
+           # golang \
             libicu-dev \
             libstemmer-dev \
             gcc-4.8 \
             g++-4.8 \
             build-essential && \
     apt-get clean && \
-    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 80 && \
-    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 80 && \
+    #update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 80 && \
+    #update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 80 && \
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 90 && \
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 90 && \
     go get -u -v github.com/blevesearch/cld2 && \
