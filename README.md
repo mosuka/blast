@@ -1,3 +1,8 @@
+# This project has been taken over by [Phalanx](https://github.com/mosuka/phalanx).
+
+This project has not been maintained for a long time.
+
+
 # Blast
 
 Blast is a full-text search and indexing server written in [Go](https://golang.org) built on top of [Bleve](http://www.blevesearch.com).  
